@@ -325,7 +325,7 @@
     letter('СОЖЖЕНО ТОКЕНОВ', 960, 330, 54, A2.hazard, { font: ruFont(54) });
     const v = t < HIT ? lerp(999000, 999999.99, Math.pow(seg(t, 52.85, HIT), 2.2)) : 1000000;
     counter(960, 500, 140, v, { col: t >= HIT ? '#FFE38A' : A2.hazard });
-    if (t >= HIT) letter('ПЛАН ВЫПОЛНЕН', 960, 640, 40, GREEN, { font: ruFont(40), pop: (t - HIT) * 4 });
+    if (t >= HIT) letter('KPI ДОСТИГНУТ', 960, 640, 40, GREEN, { font: ruFont(40), pop: (t - HIT) * 4 });
     // two cheering hard-hat Clawds
     for (const [x, fl] of [[250, false], [1670, true]]) {
       const up = t >= HIT, a = up ? 1.6 + .2 * Math.sin(t * 14) : .3;
