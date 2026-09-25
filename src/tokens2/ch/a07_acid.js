@@ -3,8 +3,9 @@
 //   132.55 a GPU grows out of his head (then a tower of them) · 137.7 he turns into a PCIe slot · 143.9 the whole
 //   factory plugs into him. Each hit flips the frame into acidField + acid-smiley tokens with a SHORT Matrix burst.
 //   In the gaps (135.2–137.7, 140.2–143.9) the watercolour runs and Clawd holds his own slipping outline together.
-// 145.55 the loop lines: GPU → ТОКЕНЫ → АГЕНТЫ → ЗАДАЧИ → ТОКЕНЫ, each line lights its pair, tasks multiply like wet prints.
-// 155.0 «ЭКОНОМИКА РАБОТАЕТ!»: the factory's output chute («ВЫХОД») feeds its own mouth («ВХОД»). Hard cut at 157.35.
+// 145.55 the loop lines as a wheel of samsara: CEO-demon holds the wheel GPU → ТОКЕНЫ → АГЕНТЫ → ЗАДАЧИ → ТОКЕНЫ,
+//   each sung half-line lights/whips to its realm, the wheel spins faster every lap; exit moon «ЛИМИТ 0» out of reach.
+// 155.0 «ЭКОНОМИКА РАБОТАЕТ!»: the demon lets go of the rim and eats everything the wheel throws off. Hard cut at 157.35.
 (() => {
   const INK = PAL.ink;
   const HIT1 = 132.55, HIT2 = 137.7, HIT3 = 143.9, LOOP0 = 145.55, ECO = 155.0, END = 157.35;
@@ -257,126 +258,263 @@
     sqText('GPU!', 1400, 120, 160, t, W3[1], sq, { cols: ['#FFFFFF', A2.acid, A2.magenta] });
   }
 
-  // ---------- 145.55 the loop lines: GPU → ТОКЕНЫ → АГЕНТЫ → ЗАДАЧИ → ТОКЕНЫ ----------
-  const N = { gpu: [240, 330], tok: [960, 230], agt: [1440, 640], tsk: [480, 640] };
-  const LINES = [[145.55, 'gpu', 'tok', 'token'], [147.75, 'tok', 'agt', 'agent'], [150.3, 'agt', 'tsk', 'task'], [152.8, 'tsk', 'tok', 'token']];
-  const WORDS = { gpu: [145.78], tok: [145.96, 147.08, 147.8, 153.3], agt: [148.16, 149.46, 150.36], tsk: [150.72, 151.88, 152.86] };
+  // ---------- 145.55 the loop lines as a WHEEL OF SAMSARA (bhavachakra-style, deadpan corporate) ----------
+  // CEO-Clawd in black shades is the demon holding the wheel from behind (teeth on the rim, claws on the sides).
+  // Four realms GPU → ТОКЕНЫ → АГЕНТЫ → ЗАДАЧИ (clockwise; the last line jumps ЗАДАЧИ → ТОКЕНЫ straight across the hub),
+  // hub = token, GPU and agent chasing each other's tails, rim = 12 tiny rebirth scenes, upper corner the unreachable
+  // exit moon «ЛИМИТ 0». Each sung half-line whips the camera to its realm; the wheel spins faster every lap.
+  const WC = [960, 640], WR = 400, RIM = 300, HUB = 100, DU = 80, DGY = WC[1] - WR + 4.4 * DU;   // DGY: demon's ground line (mouth on the rim)
+  const RK = ['gpu', 'tok', 'agt', 'tsk'];
+  const RB = { gpu: -Math.PI / 2, tok: 0, agt: Math.PI / 2, tsk: Math.PI };
+  const RCOL = { gpu: A2.acid, tok: A2.hazard, agt: '#8E6BFF', tsk: A2.magenta };
   const LABEL = { gpu: 'GPU', tok: 'ТОКЕНЫ', agt: 'АГЕНТЫ', tsk: 'ЗАДАЧИ' };
-  const CEN = [960, 500];
-  const edgePts = (a, b, n = 16) => {
-    const [ax, ay] = N[a], [bx, by] = N[b], mx = (ax + bx) / 2, my = (ay + by) / 2;
-    let nx = -(by - ay), ny = bx - ax; const d = Math.hypot(nx, ny) || 1; nx /= d; ny /= d;
-    if ((mx - CEN[0]) * nx + (my - CEN[1]) * ny < 0) { nx = -nx; ny = -ny; }
-    const cx = mx + nx * 110, cy = my + ny * 110, out = [];
-    for (let i = 0; i <= n; i++) { const f = i / n, g = 1 - f; out.push([g * g * ax + 2 * g * f * cx + f * f * bx, g * g * ay + 2 * g * f * cy + f * f * by]); }
-    return out;
-  };
-  const along = (pts, f) => { const i = Math.min(pts.length - 2, Math.floor(f * (pts.length - 1))), q = f * (pts.length - 1) - i; return [lerp(pts[i][0], pts[i + 1][0], q), lerp(pts[i][1], pts[i + 1][1], q)]; };
-  // wet prints: every «задач» the task sheets monoprint themselves, each copy paler, sliding off the last
-  const PRINT_T = [150.72, 151.3, 151.88, 152.35, 152.86, 153.3, 153.9, 154.4];
-  function wetPrints(t) {
-    let n = 0; for (const pt of PRINT_T) if (t >= pt) n = n ? Math.min(n * 2, 72) : 2;
-    if (!n) return 0;
-    for (let i = n - 1; i >= 0; i--) {
-      const gen = Math.floor(Math.log2(i + 1)), born = PRINT_T[Math.min(gen, PRINT_T.length - 1)], k = backOut(seg(t, born, born + .15));
-      if (k < .02) continue;
-      const a = i * 2.39996, r = 70 + 58 * Math.sqrt(i) * 1.25, x = N.tsk[0] + Math.cos(a) * r * 1.5, y = N.tsk[1] - 60 + Math.sin(a) * r * .8;
-      if (y > 900 || y < -40) continue;
-      taskSheet(x, y, (.9 - gen * .06) * k, (hash(i) - .5) * .5, { wet: clamp(1 - (t - born) * .8), pale: gen * .12 });
+  const GEN = { gpu: 'GPU!', tok: 'ТОКЕНОВ!', agt: 'АГЕНТОВ!', tsk: 'ЗАДАЧ!' };
+  // sung lines (lyrics.js) light their pair of realms
+  const LINES = [[145.55, 'gpu', 'tok'], [147.75, 'tok', 'agt'], [150.3, 'agt', 'tsk'], [152.8, 'tsk', 'tok']];
+  // half-lines («Больше X»): whisper onsets; line starts repeat the realm (camera punch), second halves whip onwards
+  const EV = [[145.6, 'gpu', '×2'], [146.56, 'tok', '×1000'], [147.8, 'tok', '×10⁶'], [149.1, 'agt', '+100'],
+    [150.36, 'agt', '+10 000'], [151.58, 'tsk', '+1000'], [152.86, 'tsk', '+10⁶'], [154.0, 'tok', '∞']];
+  const EVT = EV.map(e => e[0]);
+  const wAng = t => { const d = Math.max(0, t - 145.0); return .5 * d + .14 * d * d; };          // speeds up every lap
+  const wOmg = t => .5 + .28 * Math.max(0, t - 145.0);
+  const polar = (a, r, c = WC) => [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r];
+  const realmXY = (k, t, c = WC) => polar(RB[k] + wAng(t), (HUB + RIM) / 2 + 10, c);
+  const nEv = (t, k) => EV.filter(e => e[1] === k && t >= e[0]).length;
+  const gEv = (t, k) => { let g = 0; for (const e of EV) if (e[1] === k && t >= e[0]) g = Math.max(g, Math.exp(-(t - e[0]) * 2.6)); return g; };
+  const arcPts = (a0, a1, r, c, n = 14) => { const p = []; for (let i = 0; i <= n; i++) p.push(polar(lerp(a0, a1, i / n), r, c)); return p; };
+
+  // the upright scene inside a realm (n = hits so far, g = hit glow)
+  function realmScene(k, x, y, n, g, lit, t) {
+    if (k === 'gpu') {                                                   // a shrine of GPUs, stacked higher every hit
+      const m = Math.min(4, 2 + n);
+      for (let i = 0; i < m; i++) gpuCard(x + (i % 2 ? 14 : -14), y + 50 - i * 34, .3, t * (1 + n), { glow: (i === m - 1 ? g : 0) + lit * .25 });
+      clawd(x - 95, y + 80, 4.2, { eyes: 'happy', mouth: 'smile', aL: 1.4, aR: 1.4, noShadow: true, dy: -Math.abs(Math.sin(t * 9)) * 1.5 });
+    } else if (k === 'tok') {                                            // the token pile burns, the acid smiley on top melts
+      const rows = [4, 3, 2]; let c = 0;
+      rows.forEach((m, r) => { for (let j = 0; j < m; j++, c++) token(x + (j - (m - 1) / 2) * 40, y + 70 - r * 28, 19, { burn: r === 2 ? .4 + lit * .3 : 0 }); });
+      acidSmiley(x, y - 25, 42 * (1 + .25 * g), t, { melt: .2 + .1 * n, glow: g * .8, rot: Math.sin(t * 5) * .2 });
+    } else if (k === 'agt') {                                            // agents hiring agents hiring agents
+      const m = Math.min(3, 1 + n);
+      for (let i = 0; i < m; i++) agentBot(x + (i - (m - 1) / 2) * 52, y + 70 - (i % 2) * 22, 4.6, t, { n: 7 + i * 13, hire: i === m - 1, dance: g > .2 ? 'hop' : 'bounce', seed: i, noShadow: true, eyes: g > .2 ? 'happy' : 'normal', mouth: 'grin' });
+    } else {                                                             // the tasks monoprint themselves
+      const m = Math.min(8, 2 + n * 3);
+      for (let i = m - 1; i >= 0; i--) taskSheet(x - 75 + (i % 4) * 50 + hash(i) * 10, y + 55 - Math.floor(i / 4) * 40 - i * 2, .6, (hash(i + 4) - .5) * .6, { wet: i >= m - 3 ? g : 0, pale: Math.floor(i / 4) * .15 });
     }
-    return n;
   }
-  function loopShot(t, lt) {
-    const li = LINES.reduce((j, L, i) => t >= L[0] ? i : j, 0), [l0, fa, fb, kind] = LINES[li], lend = li < 3 ? LINES[li + 1][0] : ECO;
-    const hits = hitsIn(145.5, ECO, 6), hk = hitK(t, hits, .2), sq = squelch(t, l0, lend);
-    acidField(t, { k: .45 + hk * .4, sq, hy: 520, speed: 1 + li * .5, cols: li % 2 ? [A2.magenta, A2.acid] : [A2.acid, A2.magenta] });
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#1A0B40', washOp: 120, ink: null });   // knock the rave back so the loop reads
-    const [sx, sy] = shakeXY(t, 6 * hk);
-    camBegin(960 + sx + Math.sin(lt * .5) * 30, 520 + sy, 1 + lt * .012 + .04 * hk, Math.sin(lt * .6) * .025);
-    gear(CEN[0], CEN[1] + 30, 150, t, { speed: .15 + li * .35 + (t > 152.8 ? (t - 152.8) * .4 : 0), col: A2.steel });
-    letter('₮', CEN[0], CEN[1] + 30, 90, A2.hazard, { font: ruFont(90) });
-    const nPrints = wetPrints(t);
-    // edges: drawn dim, the active one glows and carries items
+  // one of the 12 rim scenes (upright), the little rebirth cycle of the AI economy
+  function rimScene(i, x, y, t) {
+    const kind = i % 6, s = i * 5 + 1;
+    if (kind === 0) {                                                    // a little Clawd is reborn as an agent
+      clawd(x - 34, y + 22, 4, { noShadow: true, eyes: 'scared', mouth: 'o', aL: .2, aR: .2 });
+      inkLine([[x - 8, y], [x + 10, y]], 1.4, INK, 'ink', 0); paint([[x + 16, y], [x + 8, y - 6], [x + 8, y + 6]], { wash: INK, ink: null });
+      agentBot(x + 38, y + 22, 4, t, { n: s, noShadow: true, eyes: 'happy', mouth: 'grin' });
+    } else if (kind === 1) agentBot(x, y + 26, 5, t, { n: s, hire: true, noShadow: true, mouth: 'grin', aR: 1.2 });
+    else if (kind === 2) token(x, y, 24, { burn: i < 6 ? .6 : 0, spin: t * 2 + i });   // ponytail: one burning rim token, fire() is the cost
+    else if (kind === 3) gpuCard(x, y, .24, t, { glow: .3 });
+    else if (kind === 4) for (let j = 2; j >= 0; j--) taskSheet(x - 20 + j * 20, y + 4 - j * 6, .42, (j - 1) * .25, { pale: j * .2 });
+    else { agentBot(x - 22, y + 24, 4, t, { n: s, noShadow: true, aR: 1.4 }); taskSheet(x + 26, y - 6, .38, .3); }
+  }
+  // hub: token, GPU and agent chasing each other's tails, each biting the tail in front of it
+  function hub(t, c, sp) {
+    paint(ellPts(c[0], c[1], HUB, HUB, 30), { wash: A2.gunDk, fill: A2.uv, fillOp: 70, tex: .5, ink: INK, sw: 1.4 });
+    const a0 = -t * (1.6 + sp * .6), r = 56;
+    for (let i = 0; i < 3; i++) {
+      const a = a0 + i * TAU / 3;                                        // tail trails clockwise behind (they run ccw)
+      inkLine(arcPts(a + .25, a + TAU / 3 - .3, r, c, 8), 5, [A2.hazard, A2.acid, '#8E6BFF'][i], 'marker', .4);
+    }
+    for (let i = 0; i < 3; i++) {
+      const a = a0 + i * TAU / 3, [x, y] = polar(a, r, c), rot = a - Math.PI / 2;
+      if (i === 0) token(x, y, 22, { rot, glow: .3 });
+      else if (i === 1) gpuCard(x, y, .17, t, { rot });
+      else agentBot(x, y + 14, 3.4, t, { n: 1, noShadow: true, rot, mouth: 'grin', eyes: 'happy' });
+    }
+  }
+  // the wheel itself. o.lit {k: 0..1}, o.sq squelch, o.c centre
+  function wheel(t, o = {}) {
+    const c = o.c || WC, A = wAng(t), w = wOmg(t), sq = o.sq || 0, lit = o.lit || {};
+    // outer rim disc (squelch-wobbled) + the 12 rebirth cells
+    const rimPts = []; for (let i = 0; i < 64; i++) { const a = i / 64 * TAU; rimPts.push(polar(a, WR * (1 + .018 * sq * Math.sin(a * 7 + t * 14)), c)); }
+    paint(rimPts, { wash: '#E9DCC0', fill: A2.rust, fillOp: 60, tex: .6, border: .4, ink: INK, sw: 2 });
+    for (let i = 0; i < 12; i++) {
+      const a0 = A + i * TAU / 12, a1 = a0 + TAU / 12;
+      paint([...arcPts(a0, a1, WR - 6, c, 6), ...arcPts(a1, a0, RIM + 4, c, 6)], { wash: i % 2 ? '#F1E4C6' : '#E4CFAA', washOp: 200, ink: INK, sw: .7 });
+      const [x, y] = polar(a0 + TAU / 24, (RIM + WR) / 2, c);
+      rimScene(i, x, y, t);
+    }
+    // the four realms
+    for (const k of RK) {
+      const a = RB[k] + A, L = lit[k] || 0, g = gEv(t, k), col = mixCol(RCOL[k], A2.gunDk, .55 * (1 - L));
+      paint([...arcPts(a - Math.PI / 4, a + Math.PI / 4, RIM, c), ...arcPts(a + Math.PI / 4, a - Math.PI / 4, HUB, c, 6)],
+        { wash: col, fill: mixCol(col, INK, .3), fillOp: 70, tex: .5, border: .5, ink: INK, sw: 1.6 });
+      if (g > .02) paint(ellPts(...realmXY(k, t, c), 160 + 60 * g, 160 + 60 * g, 16), { fill: '#FFFFFF', fillOp: 90 * g, bleed: .3, ink: null });
+    }
+    for (const k of RK) {
+      const [x, y] = realmXY(k, t, c), L = lit[k] || 0;
+      realmScene(k, x, y - 10, nEv(t, k), gEv(t, k), L, t);
+      const [px, py] = polar(RB[k] + A, RIM - 26, c), lw = textW(LABEL[k], ruFont(34)) + 26;   // upright plaque near the rim
+      paint(rrPts(px - lw / 2, py - 22, lw, 44, 8), { wash: L > .5 ? RCOL[k] : A2.gunDk, ink: INK, sw: .8 });
+      letter(LABEL[k], px, py, 34, L > .5 ? INK : '#A9B2BC', { font: ruFont(34), ink: false });
+    }
+    // spokes between the realms + the clockwise arrows of the loop
     for (let i = 0; i < 4; i++) {
-      const [e0, a, b, k2] = LINES[i], pts = edgePts(a, b), on = i === li, done = t >= e0;
-      const rev = on ? seg(t, e0, e0 + .5) : done ? 1 : 0;
-      inkLine(pts, on ? 6 : 3, done ? (on ? A2.hazard : A2.acid) : '#4A3C80', 'marker', .5);
-      if (rev > .02) {
-        const shown = pts.slice(0, Math.max(2, Math.ceil(pts.length * rev)));
-        if (on) inkLine(shown, 2.2, '#FFFFFF', 'ink', .5);
-      }
-      const [hx, hy] = along(pts, .8), [px, py] = along(pts, .74), ang = Math.atan2(hy - py, hx - px);
-      paint([[hx + Math.cos(ang) * 30, hy + Math.sin(ang) * 30], [hx + Math.cos(ang + 2.4) * 26, hy + Math.sin(ang + 2.4) * 26], [hx + Math.cos(ang - 2.4) * 26, hy + Math.sin(ang - 2.4) * 26]], { wash: done ? A2.hazard : '#4A3C80', ink: INK, sw: .7 });
-      if (on) for (let j = 0; j < 4; j++) {
-        const f = frac((t - e0) * (.9 + li * .25) + j / 4); if (f < .12 || f > .88) continue;
-        const [ix, iy] = along(pts, f);
-        if (k2 === 'token') token(ix, iy, 36, { spin: t + j });
-        else if (k2 === 'agent') agentBot(ix, iy + 50, 7.5, t, { n: 7 + j, noShadow: true, dance: 'run' });
-        else taskSheet(ix, iy, .65, Math.sin(t * 4 + j) * .3);
+      const a = A + Math.PI / 4 + i * Math.PI / 2;
+      inkLine([polar(a, HUB, c), polar(a, WR, c)], 5, INK, 'marker', 0);
+      const [ax, ay] = polar(a, HUB + 60, c), ta = a + Math.PI / 2, on = lit[RK[i]] > .5 && lit[RK[(i + 1) % 4]] > .5;
+      paint([[ax + Math.cos(ta) * 26, ay + Math.sin(ta) * 26], [ax + Math.cos(ta + 2.4) * 20, ay + Math.sin(ta + 2.4) * 20], [ax + Math.cos(ta - 2.4) * 20, ay + Math.sin(ta - 2.4) * 20]], { wash: on ? A2.hazard : A2.steel, ink: INK, sw: .7 });
+    }
+    // motion-blur fans trailing the spokes once it's really going
+    if (w > 1.6) for (let i = 0; i < 4; i++) {
+      const a0 = A + Math.PI / 4 + i * Math.PI / 2, span = clamp((w - 1.4) * .12, 0, .6);
+      paint([polar(a0, HUB, c), ...arcPts(a0, a0 - span, WR * .97, c, 6)], { wash: '#FFFFFF', washOp: 55, ink: null });
+    }
+    hub(t, c, w);
+    if (lit.tsk > .5 && lit.tok > .5 && t > 152.8 && t < ECO) {                   // the last line: ЗАДАЧИ → ТОКЕНЫ straight through the hub
+      const [x0, y0] = realmXY('tsk', t, c), [x1, y1] = realmXY('tok', t, c), f = Math.floor(t * 20), p = seg(t, 153.9, 154.1);
+      if (p > 0) {
+        const pts = [[x0, y0]]; for (let i = 1; i < 8; i++) { const q = i / 8; pts.push([lerp(x0, x1, q) + (hash(f + i) - .5) * 50, lerp(y0, y1, q) + (hash(f + i + 7) - .5) * 50]); }
+        pts.push([x1, y1]);
+        inkLine(pts.slice(0, Math.max(2, Math.ceil(pts.length * p))), 9, A2.acid, 'marker', 0);
+        inkLine(pts.slice(0, Math.max(2, Math.ceil(pts.length * p))), 3, '#FFFFFF', 'ink', 0);
       }
     }
-    // the nodes: four spinning acid smileys; each line lights its pair, each word kicks its node
-    for (const key of ['gpu', 'tok', 'agt', 'tsk']) {
-      const [nx, ny] = N[key], active = key === fa || key === fb, wk = hitK(t, WORDS[key].filter(w => w <= t + .001), .3);
-      const r = 86 * (1 + .25 * wk) * (active ? 1.08 : .92);
-      acidSmiley(nx, ny, r, t, { rot: Math.sin(t * (2 + li) + nx) * .25 + sq * .4, glow: active ? .5 + .5 * wk : 0, melt: key === 'tsk' ? .15 + nPrints / 150 : .1,
-        col: active ? A2.hazard : mixCol(A2.hazard, '#6A5E7A', .55), eyes: key === 'tsk' && nPrints > 30 ? 'x' : undefined });
-      const lw = textW(LABEL[key], ruFont(46)) + 40;
-      paint(rotPts(rectPts(nx - lw / 2, ny + r + 12, lw, 62, 1.5), nx, ny + r + 43, -.04), { wash: active ? A2.hazard : A2.gunDk, ink: INK, sw: .8 });
-      letter(LABEL[key], nx, ny + r + 45, 46, active ? INK : '#8A95A1', { font: ruFont(46), ink: false, rot: -.04 });
-      if (key === 'gpu') gpuCard(nx, ny - r - 50, .42, t, { glow: active ? .6 : 0 });
+    // sparks thrown tangentially off the rim: more, longer, hotter as it speeds up
+    const n = Math.min(26, Math.floor(4 + w * 5));
+    for (let i = 0; i < n; i++) {
+      const per = .45, cy = Math.floor(t / per + hash(i)), f = frac(t / per + hash(i)), q = hash(i * 3 + cy * 7) * TAU;
+      const [px, py] = polar(q, WR * 1.02, c), v = 260 + w * 110 + hash(i + cy) * 200;
+      const vx = -Math.sin(q) * v, vy = Math.cos(q) * v, x = px + vx * f * per, y = py + vy * f * per + 900 * (f * per) ** 2;
+      inkLine([[x, y], [x - vx * .05, y - vy * .05]], 3 * (1 - f) + .6, [A2.acid, A2.magenta, A2.hazard][i % 3], 'ink', 0);
     }
-    if (nPrints) letter('×' + nPrints, N.tsk[0] + 150, N.tsk[1] - 120, 64, A2.acid, { font: ruFont(64), stroke: INK, rot: -.1, pop: (t - 150.72) * 5 });
-    camEnd();
+    // each sung half-line: shock ring + its goods flung out of the realm
+    for (const [te, k] of EV) {
+      const age = t - te; if (age < 0 || age > 1) continue;
+      const [x, y] = realmXY(k, t, c), rr = 120 + age * 520;
+      if (age < .5) paint(ellPts(x, y, rr, rr * .8, 30), { ink: RCOL[k], sw: 4 * (1 - age * 2) + .3 });
+      const ux = (x - c[0]) / 190, uy = (y - c[1]) / 190;
+      for (let i = 0; i < 7; i++) {
+        const sp = (hash(i + te) - .5) * 1.8, v = 500 + hash(i + te * 3) * 500, dx = ux * Math.cos(sp) - uy * Math.sin(sp), dy = ux * Math.sin(sp) + uy * Math.cos(sp);
+        const bx = x + dx * v * age, by = y + dy * v * age + 700 * age * age, rot = age * (hash(i) - .5) * 14;
+        if (k === 'gpu') gpuCard(bx, by, .22, t, { rot, fans: false });
+        else if (k === 'tok') token(bx, by, 18, { spin: age * 3 + hash(i), rot });
+        else if (k === 'agt') agentBot(bx, by, 3.6, t, { n: i + 50, rot, noShadow: true, eyes: 'happy', mouth: 'O' });
+        else taskSheet(bx, by, .4, rot);
+      }
+    }
+  }
+  // the demon: CEO-Clawd behind the wheel, huge, shades on. Draw BEFORE the wheel; claws + fangs AFTER (demonFront).
+  function demon(t, o = {}) {
+    const gy = DGY, chew = o.chew || 0, maw = o.maw || 0;
+    for (const s of [-1, 1]) fire(WC[0] + s * 560, WC[1] + 60, 360, 620 + 60 * Math.sin(t * 3 + s), t, { cols: [A2.magenta, A2.uv, A2.acid], seed: s + 4, k: .9 });
+    ceoClawd(WC[0], gy, DU, { hat: 'shades', noClicker: true, noShadow: true, noLegs: true, mouth: maw > .05 ? null : 'grin', aL: -1.05, aR: -1.05, sq: .03 * Math.sin(t * 9),
+      draw: maw > .05 ? (u, sw) => {                                      // the open maw (ECO): chews on the hits
+        const open = (.5 + 1.1 * chew) * maw * u, my = -4.55 * u;
+        paint(rrPts(-2.4 * u, my - open / 2, 4.8 * u, open, .5 * u), { wash: '#1A0710', ink: INK, sw: sw });
+        for (let i = 0; i < 7; i++) {
+          const tx = -2.3 * u + i * .66 * u;
+          paint([[tx, my - open / 2], [tx + .6 * u, my - open / 2], [tx + .3 * u, my - open / 2 + .45 * u]], { wash: '#F4EEDC', ink: INK, sw: sw * .4 });
+          paint([[tx, my + open / 2], [tx + .6 * u, my + open / 2], [tx + .3 * u, my + open / 2 - .45 * u]], { wash: '#F4EEDC', ink: INK, sw: sw * .4 });
+        }
+      } : null });
+  }
+  function demonFront(t, o = {}) {
+    const c = o.c || WC;
+    for (const s of [-1, 1]) {                                          // claws hooked over the rim
+      const hx = WC[0] + s * (4.9 + 2.2 * Math.cos(-1.05)) * DU, hy = DGY - (4.5 + 2.2 * Math.sin(-1.05)) * DU;
+      for (let j = 0; j < 3; j++) {
+        const a = Math.PI / 2 - s * (Math.PI / 2 + .55 - j * .28), [rx, ry] = polar(a, WR - 40, c), bend = [(hx + rx) / 2 - s * 30, (hy + ry) / 2 - 50];
+        paint([[hx, hy - 16], bend, [rx, ry], [bend[0] + s * 10, bend[1] + 24], [hx, hy + 16]], { wash: PAL.clayDk, fill: PAL.clay, fillOp: 60, tex: .4, ink: INK, sw: 1, curv: .5 });
+        const ta = a + Math.PI; paint([[rx, ry], polar(ta + s * .5, 34, [rx, ry]), polar(ta - s * .4, 10, [rx, ry])], { wash: '#1A1418', ink: INK, sw: .6 });   // the black talon tip
+      }
+      paint(ellPts(hx, hy, 46, 40, 14), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
+    }
+    if (!o.noFangs) for (const s of [-1, 1]) {                         // fangs biting the top of the rim
+      const fx = c[0] + s * 70, fy = c[1] - WR - 18;
+      paint([[fx - 22, fy], [fx + 22, fy], [fx + s * 4, fy + 78]], { wash: '#F4EEDC', fill: '#CFC4AA', fillOp: 60, ink: INK, sw: 1 });
+    }
+  }
+  // the exit: a moon with a door, «ЛИМИТ 0»; a tiny Clawd on a ladder that is one rung too short
+  function exitMoon(t) {
+    const mx = 1600, my = 40, r = 105;
+    paint(ellPts(mx, my, r * 2, r * 2, 20), { fill: '#FFF6C8', fillOp: 80 + 30 * Math.sin(t * 2), bleed: .3, ink: null });
+    paint(ellPts(mx, my, r, r, 28), { wash: '#FFF6D8', fill: '#E8DDB0', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
+    paint(rrPts(mx - 26, my - 36, 52, 76, 22), { wash: A2.gunDk, ink: INK, sw: .9 });
+    paint(ellPts(mx + 14, my + 6, 4, 4, 6), { wash: A2.hazard, ink: null });
+    letter('ВЫХОД', mx, my - 52, 20, INK, { font: ruFont(20), ink: false });
+    paint(rrPts(mx - 88, my + r + 10, 176, 50, 8), { wash: A2.cream, ink: INK, sw: .8 });
+    letter('ЛИМИТ 0', mx, my + r + 36, 34, '#D0202A', { font: ruFont(34), ink: false });
+    const lb = [1390, 250], lt = [1455, 120];                            // ladder from the demon's shoulder, short by a mile
+    for (const d of [-14, 14]) inkLine([[lb[0] + d, lb[1]], [lt[0] + d, lt[1]]], 3, A2.rust, 'marker', 0);
+    for (let i = 1; i < 6; i++) { const q = i / 6; inkLine([[lerp(lb[0], lt[0], q) - 14, lerp(lb[1], lt[1], q)], [lerp(lb[0], lt[0], q) + 14, lerp(lb[1], lt[1], q)]], 2, A2.rust, 'ink', 0); }
+    clawd(lt[0], lt[1] + 6, 5.5, { aL: .2, aR: 1.5 + .15 * Math.sin(t * 8), eyes: 'normal', mouth: 'o', noShadow: true, dy: -Math.abs(Math.sin(t * 6)) * .6 });
   }
 
-  // ---------- 155.0 «ЭКОНОМИКА РАБОТАЕТ!»: the factory eats its own output ----------
+  // camera: whips to the sung realm (tracking it as the wheel spins), punches in on repeated realms, wide at the ends
+  const FOC = [[145.4, 'wide'], [145.7, 'gpu'], [146.56, 'tok'], [147.8, 'tok'], [149.1, 'agt'], [150.36, 'agt'], [151.58, 'tsk'], [152.86, 'tsk'], [154.0, 'tok'], [154.55, 'wide']];
+  const focusOf = (k, t) => k === 'wide' ? [1000, 500, .86] : [...realmXY(k, t), 1.75];
+  function t07_whip(x) { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function wheelCam(t) {
+    let i = 0; for (let j = 1; j < FOC.length; j++) if (t >= FOC[j][0] - .1) i = j;
+    const te = FOC[i][0], p = i ? t07_whip(seg(t, te - .1, te + .14)) : 1, a = focusOf(FOC[i][1], t), b = i ? focusOf(FOC[i - 1][1], t) : a;
+    const same = i && FOC[i][1] === FOC[i - 1][1];
+    const z = lerp(b[2], a[2], p) * (same ? 1 - .32 * Math.sin(Math.PI * p) : 1) * (1 + .03 * (t - te) * (a[2] > 1));
+    return [lerp(b[0], a[0], p), lerp(b[1], a[1], p), z];
+  }
+  function loopShot(t, lt) {
+    const li = LINES.reduce((j, L, i) => t >= L[0] ? i : j, 0), l0 = LINES[li][0], lend = li < 3 ? LINES[li + 1][0] : ECO;
+    const hk = hitK(t, [...EVT, ...hitsIn(145.5, ECO, 6)], .2), sq = squelch(t, l0, lend);
+    acidField(t, { k: .5 + hk * .4, sq, hy: 560, speed: 1 + li * .6, cols: li % 2 ? [A2.magenta, A2.acid] : [A2.acid, A2.magenta] });
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#1A0B40', washOp: 130, ink: null });      // knock the rave back so the wheel reads
+    const [cx, cy, z] = wheelCam(t), [sx, sy] = shakeXY(t, 9 * hk + 2 * wOmg(t));
+    camBegin(cx + sx, cy + sy, z * (1 + .05 * hk), Math.sin(t * 1.3) * .02 + sq * .02 * Math.sin(t * 11));
+    const lit = { [LINES[li][1]]: 1, [LINES[li][2]]: 1 };
+    exitMoon(t);
+    demon(t);
+    wheel(t, { sq, lit });
+    demonFront(t);
+    camEnd();
+    const le = EV.reduce((r, e) => t >= e[0] ? e : r, null);
+    if (le) {
+      sqText('БОЛЬШЕ ' + GEN[le[1]], 960, 92, 92, t, le[0], sq * .6, { cols: [RCOL[le[1]], '#FFFFFF', A2.hazard] });
+      const age = t - le[0];
+      sfx(le[2], 1560, 300, 110, RCOL[le[1]], age, { life: 1, rot: .12, font: ruFont(110), stroke: INK });
+    }
+    letter('ОБОРОТ ' + (Math.floor(wAng(t) / TAU) + 1), 190, 200, 40, A2.acid, { font: ruFont(40), stroke: INK, rot: -.06 });
+    counter(250, 255, 30, 1e6 * Math.pow(10, Math.max(0, t - 145.5) * .9), { suffix: ' ₮' });
+    flash(Math.exp(-(t - (le ? le[0] : -9)) * 14) * .3, '#FFFFFF');
+  }
+
+  // ---------- 155.0 «ЭКОНОМИКА РАБОТАЕТ!»: the demon lets go of the rim and eats what the wheel throws off ----------
   function economy(t, lt) {
     const hits = [155.06, 155.55, 155.92, 156.4, 157.0], hk = hitK(t, hits, .18), sq = squelch(t, ECO, END);
-    acidField(t, { k: .85 + hk * .5, sq, hy: 470, speed: 2.4 });
-    const [sx, sy] = shakeXY(t, 10 * hk), zin = seg(t, 156.7, END);
-    camBegin(960 + sx, 560 + sy - zin * 40, 1 + lt * .02 + .05 * hk + easeIn(zin) * .5);
-    // the machine
-    const mx = 560, my = 380, mw = 800, mh = 480, chew = Math.min(1, ...hits.map(h => Math.abs(t - h) / .16));
-    paint(rectPts(mx, my, mw, mh, 1.5), { wash: A2.gunmetal, fill: A2.steel, fillOp: 70, tex: .6, border: .4, ink: INK, sw: 1.2 });
-    hazard(mx, my + mh - 50, mw, 50);
-    for (let i = 0; i < 8; i++) paint(ellPts(mx + 30 + i * (mw - 60) / 7, my + 24, 7, 7, 8), { wash: A2.steelLt, ink: null });
-    paint(rectPts(mx + mw / 2 - 170, my + 40, 340, 64, 1), { wash: A2.rust, fill: '#6E2E18', fillOp: 70, tex: .5, ink: INK, sw: .8 });
-    letter('ЭКОНОМИКА', mx + mw / 2, my + 73, 46, A2.hazard, { font: ruFont(46), ink: false });
-    for (const ex of [mx + 230, mx + mw - 230]) {                                                   // gauge eyes pinned in the red
-      paint(ellPts(ex, my + 175, 62, 62, 20), { wash: A2.cream, ink: INK, sw: 1 });
-      paint([[ex, my + 175], [ex + 50, my + 145], [ex + 40, my + 200]], { wash: '#FF3A3A', washOp: 150, ink: null });
-      const na = -.4 + Math.sin(t * 40) * .06 * (1 + hk);
-      inkLine([[ex, my + 175], [ex + Math.cos(na) * 52, my + 175 + Math.sin(na) * 52]], 2, INK, 'ink', 0);
-    }
-    const open = 20 + 110 * chew, mo = [mx + mw / 2 - 210, my + 290];                                // the chewing mouth: ВХОД
-    paint(rectPts(mo[0], mo[1] - open / 2, 420, open, 1), { wash: '#1A0710', ink: INK, sw: 1 });
-    for (let i = 0; i < 8; i++) {
-      const tx = mo[0] + 8 + i * 51;
-      paint([[tx, mo[1] - open / 2], [tx + 44, mo[1] - open / 2], [tx + 22, mo[1] - open / 2 + 30]], { wash: A2.steelLt, ink: INK, sw: .5 });
-      paint([[tx, mo[1] + open / 2], [tx + 44, mo[1] + open / 2], [tx + 22, mo[1] + open / 2 - 30]], { wash: A2.steelLt, ink: INK, sw: .5 });
-    }
-    letter('ВХОД', mo[0] - 70, mo[1] - 60, 34, A2.acid, { font: ruFont(34), stroke: INK, rot: -.2 });
-    // the output chute on the right: ВЫХОД, and everything it makes arcs straight back into the mouth
-    paint([[mx + mw, my + 300], [mx + mw + 170, my + 360], [mx + mw + 170, my + 460], [mx + mw, my + 420]], { wash: A2.steel, fill: A2.gunDk, fillOp: 80, tex: .5, ink: INK, sw: 1 });
-    letter('ВЫХОД', mx + mw + 110, my + 320, 34, A2.hazard, { font: ruFont(34), stroke: INK, rot: .1 });
+    acidField(t, { k: .85 + hk * .5, sq, hy: 560, speed: 2.6 });
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#1A0B40', washOp: 100, ink: null });
+    const drop = 70 * easeOut(seg(t, ECO, ECO + .3)), C = [WC[0], WC[1] + drop], chew = Math.min(1, ...hits.map(h => Math.abs(t - h) / .16));
+    const maw = [WC[0], DGY - 4.55 * DU], zin = easeIn(seg(t, 156.7, END));
+    const [sx, sy] = shakeXY(t, 10 * hk);
+    camBegin(lerp(960, maw[0], zin) + sx, lerp(500, maw[1], zin) + sy, lerp(.74, 2.6, zin) * (1 + .04 * hk));
+    exitMoon(t);
+    demon(t, { maw: easeOut(seg(t, ECO, ECO + .25)), chew });
+    wheel(t, { c: C, sq, lit: { gpu: 1, tok: 1, agt: 1, tsk: 1 } });
+    demonFront(t, { c: C, noFangs: true });
+    // everything the wheel throws off arcs straight back into the maw: ВЫХОД → ВХОД
     const kinds = ['token', 'task', 'agent', 'token', 'gpu', 'task'];
-    for (let i = 0; i < 12; i++) {
-      const f = frac(t * .85 + i / 12), ox = mx + mw + 150, oy = my + 410, tx = mo[0] + 210 + (hash(i) - .5) * 200, ty = mo[1];
-      const x = lerp(ox, tx, f), y = lerp(oy, ty, f) - Math.sin(f * Math.PI) * (330 + hash(i + 3) * 110), k = kinds[i % kinds.length];
-      if (k === 'token') token(x, y, 30, { spin: t + i, burn: f > .8 ? (f - .8) * 4 : 0 });
+    for (let i = 0; i < 10; i++) {
+      const f = frac(t * .9 + i / 10), side = i % 2 ? 1 : -1, [ox, oy] = polar(Math.PI / 2 - side * (Math.PI / 2 + .3), WR, C);
+      const x = lerp(ox, maw[0] + (hash(i) - .5) * 260, f), y = lerp(oy, maw[1], f) - Math.sin(f * Math.PI) * (260 + hash(i + 3) * 120), k = kinds[i % 6];
+      if (k === 'token') token(x, y, 28, { spin: t + i, burn: f > .8 ? (f - .8) * 4 : 0 });
       else if (k === 'task') taskSheet(x, y, .5, t * 3 + i);
-      else if (k === 'gpu') gpuCard(x, y, .3, t, { rot: t * 2 + i });
+      else if (k === 'gpu') gpuCard(x, y, .28, t, { rot: t * 2 + i });
       else agentBot(x, y + 30, 5, t, { n: 40 + i, noShadow: true, rot: t * 3 + i, eyes: 'scared', mouth: 'o' });
     }
-    steam(mx + 60, my, t, { k: .6 + hk, len: 220, seed: 5 }); steam(mx + mw - 60, my, t, { k: .6 + hk, len: 220, seed: 9 });
-    // Clawd, pale, his outline taped back on, watching deadpan
-    const cx = 250, cy = 900, u = 14;
+    letter('ВЫХОД', C[0] - WR - 40, C[1] - 60, 40, A2.hazard, { font: ruFont(40), stroke: INK, rot: -.2 });
+    letter('ВХОД', maw[0] + 330, maw[1] - 70, 44, A2.acid, { font: ruFont(44), stroke: INK, rot: .15 });
+    camEnd();
+    // Clawd, pale, his outline taped back on, watching deadpan from the corner
+    const cx = 170, cy = 930, u = 13;
     clawd(cx, cy, u, { col: mixCol(PAL.clay, '#EDE4D0', .55), dk: mixCol(PAL.clayDk, '#D9CDB4', .5), eyes: 'narrow', mouth: 'flat', aL: .2, aR: .2 });
     for (const [px, py, r] of [[cx - 5 * u, cy - 8 * u, -.6], [cx + 5 * u, cy - 2 * u, .5]]) paint(rotPts(rectPts(px - 22, py - 7, 44, 14), px, py, r), { wash: A2.hazard, ink: INK, sw: .5 });
-    camEnd();
-    sqText('ЭКОНОМИКА', 960, 130, 110, t, 155.06, sq, { cols: [A2.acid, A2.hazard, '#FFFFFF'] });
-    stamp('РАБОТАЕТ!', 960, 280, 96, t, 155.92, { col: A2.acid, rot: -.07, punch: .1 });
+    sqText('ЭКОНОМИКА', 960, 90, 110, t, 155.06, sq, { cols: [A2.acid, A2.hazard, '#FFFFFF'] });
+    stamp('РАБОТАЕТ!', 960, 700, 130, t, 155.92, { col: A2.acid, rot: -.07, punch: .1 });
   }
 
   // every shot change is a hard glitch cut (both sides of it, since frames render independently)

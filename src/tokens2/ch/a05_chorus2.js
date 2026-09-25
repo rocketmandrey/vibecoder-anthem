@@ -1,7 +1,7 @@
 // a05_chorus2.js: «Жги токены» v2, chorus 2 (91.8–116.3). OUTDOOR NIGHT: the token factory seen from the city.
 // Striped chimneys burn tokens, their smoke writes the lyric; chimney 3 carries the weekly-limit gauge that drains all
 // chorus long; a public counter on the facade rolls to 1 000 000; agents march out of the gate in columns; GPUs arrive
-// on freight trains; «Это полезно!» on a Soviet mosaic lit by floodlights. 113.6 break: the gauge hits 0%, the city,
+// by cargo drone (a heavy-lift one on the second «железа»); «Это полезно!» on a stock-photo LED billboard that stutters on. 113.6 break: the gauge hits 0%, the city,
 // chimneys and facade black out on the hits, one spotlight stays on CEO-Clawd on the roof → the bridge.
 // World coords = screen coords of the wide shot (horizon y 645); the shots are cameras into that one world.
 
@@ -19,12 +19,13 @@ function a05_count(t) {
   return 1000000 + (t - 101.26) * 37;
 }
 
+const a05_flick = (t, a) => t >= a && t < a + .18 && frac(t * 29) < .45 ? .3 : 1;   // LED power-on stutter
 // light levels (0..1) over the chapter: the break kills them on the hits
 function a05_lights(t) {
   const off = (a) => t >= a ? (t < a + .08 && frac(t * 40) < .5 ? .6 : 0) : 1;   // flicker, then dark
   return {
     city: off(114.15), fire: off(114.79), facade: off(115.26), sky: off(115.74),
-    banner: t < 110.88 ? .18 : t < 111.64 ? .6 : 1
+    banner: (t < 110.88 ? .18 : t < 111.64 ? .6 : 1) * a05_flick(t, 110.88) * a05_flick(t, 111.64)
   };
 }
 
@@ -129,10 +130,11 @@ function a05_chimney(i, t, L, flare) {
 }
 function a05_factory(t, L) {
   const f = L.facade;
-  // admin building with the mosaic (left wing)
+  // glass office wing with the LED billboard on its face
   if (a05_vis(160, 550)) {
-  paint(rectPts(160, 330, 390, a05_HY - 330 + 4), { wash: '#2E2632', fill: '#1E1A22', fillOp: 80, tex: .5, ink: PAL.ink, sw: .8 });
-  a05_mosaic(190, 356, 330, 212, t, Math.max(.12, L.banner * f), 33);
+  paint(rectPts(160, 330, 390, a05_HY - 330 + 4), { wash: '#1A2236', fill: '#10162A', fillOp: 80, tex: .4, ink: PAL.ink, sw: .8 });
+  for (let c = 1; c < 8; c++) inkLine([[160 + c * 48.75, 330], [160 + c * 48.75, a05_HY]], .6, '#34406A', 'inkfine', 0);
+  a05_billboard(190, 356, 330, 212, t, Math.max(.12, L.banner * f));
   for (let c = 0; c < 6; c++) paint(rectPts(190 + c * 58, 590, 34, 36), { wash: A5.win, washOp: 170 * f * (hash(c + 4) > .3 ? 1 : .2), ink: null });
   }
   // main hall: brick, sawtooth roof, glowing windows, the gate
@@ -164,39 +166,41 @@ function a05_world(t, L) {
   a05_sky(t, L); a05_city(t, L); a05_factory(t, L);
 }
 
-// ---------- the Soviet mosaic: heroic Clawd raising a burning token like a torch ----------
-function a05_tile(u, v) {
-  // u, v in 0..1 over the panel → colour key. Hero Clawd on the left half, torch raised; the right half is sun rays
-  const tx = .36, ty = .17, dt = Math.hypot((u - tx) * 1.75, v - ty);
-  if (v < .1 && Math.abs(u - tx) < .045 + (.1 - v) * .08 * (1 + Math.sin(v * 60) * .5)) return v < .05 ? 'y' : 'o';   // flame
-  if (dt < .13) {
-    if (dt < .09 && ((v > ty - .06 && v < ty - .02 && Math.abs(u - tx) < .045) || (Math.abs(u - tx) < .019 && v > ty - .06 && v < ty + .07))) return 'k';  // the T
-    return dt < .09 ? 'g' : 'G';
-  }                                                         // the token torch
-  const ax = .345 + (v - .27) * .12;                                                                 // raised arm
-  if (v > .28 && v < .56 && Math.abs(u - ax) < .04) return 'c';
-  if (v > .27 && v < .57 && Math.abs(u - ax) < .07) return 'k';
-  const inBody = (m) => u > .07 - m && u < .43 + m && v > .5 - m * 1.7 && v < .8 + m * 1.7;
-  if (inBody(0)) {
-    if (v > .56 && v < .64 && ((u > .15 && u < .19) || (u > .3 && u < .34))) return 'k';            // eye slits
-    return u > .37 || v > .74 ? 'C' : 'c';
+// ---------- the LED billboard: a cheesy stock-photo ad, grinning Clawd in a tie giving a thumbs-up ----------
+// (x, y, w, h) screen rect; lit 0..1 (0 = screen off). The design is laid out on a 1400 x 780 canvas and scaled.
+function a05_billboard(x, y, w, h, t, lit) {
+  const s = Math.min(w / 1400, h / 780), X = u => x + u * w, Y = v => y + v * h, dk = '#070A14';
+  const C = c => mixCol(c, dk, 1 - lit);
+  paint(rectPts(x - 14 * s, y - 14 * s, w + 28 * s, h + 28 * s, 1), { wash: A2.gunDk, fill: A2.steel, fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.2 });
+  // sky-blue stock gradient + soft bokeh
+  paint(rectPts(x, y, w, h), { wash: C('#2F6FE8'), ink: null });
+  paint(rectPts(x, y + h * .45, w, h * .55), { wash: C('#6FB2FF'), washOp: 200, ink: null });
+  paint(rectPts(x, y + h * .75, w, h * .25), { wash: C('#CFE8FF'), washOp: 190, ink: null });
+  if (s > .4) for (let i = 0; i < 9; i++) {
+    const r = (30 + hash(i * 4.1) * 70) * s;
+    paint(ellPts(X(hash(i * 2.7)), Y(.1 + hash(i * 5.3) * .8), r, r, 16), { wash: '#FFFFFF', washOp: 40 * lit, ink: null });
   }
-  if (v >= .8 && v < .92 && [.1, .18, .29, .37].some(l => u > l && u < l + .04)) return 'C';          // legs
-  if (inBody(.035) || (v >= .8 && v < .93 && [.1, .18, .29, .37].some(l => u > l - .015 && u < l + .055))) return 'k';
-  const dg = Math.hypot((u - .88) * 1.75, v - .9);
-  if (dg < .2 && dg > .09 && Math.sin(Math.atan2(v - .9, u - .88) * 12) > -.2) return 's';            // cogwheel
-  const a = Math.atan2(v - ty, (u - tx) * 1.75);
-  return Math.sin(a * 10) > 0 ? 'r' : 'R';                                                           // sun rays
-}
-const a05_TILE = { y: '#FFF1B0', o: '#FF8A1F', g: '#F2B632', G: '#A8741A', c: '#E8875A', C: '#B8603E', k: '#1E1216', s: '#9AA4AE', r: '#B82A22', R: '#DD5530' };
-function a05_mosaic(x, y, w, h, t, lit, cell) {
-  const cols = Math.max(4, Math.round(w / cell)), rows = Math.max(3, Math.round(h / cell)), cw = w / cols, chh = h / rows;
-  paint(rectPts(x - 6, y - 6, w + 12, h + 12), { wash: '#2A2226', ink: PAL.ink, sw: .8 });
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const key = a05_tile((c + .5) / cols, (r + .5) / rows), jv = hash(r * 31 + c * 7);
-    const col = mixCol(mixCol(a05_TILE[key], '#FFFFFF', (jv - .5) * .18 + .06), '#120E14', 1 - lit);
-    paint(rectPts(x + c * cw + 1.2, y + r * chh + 1.2, cw - 2.4, chh - 2.4), { wash: col, ink: null });
-  }
+  // the model: Clawd in a tie, grin, thumbs up
+  const u = h * .056, cx = X(.25), cy = Y(.94), thumb = (uu, sw) => {
+    rotate(.95);
+    paint(rrPts(-.3 * uu, -.8 * uu, 1.5 * uu, 1.5 * uu, .4 * uu), { wash: C(PAL.clay), ink: PAL.ink, sw: sw * .8 });
+    paint(rrPts(.15 * uu, -2.2 * uu, .6 * uu, 1.6 * uu, .3 * uu), { wash: C(PAL.clay), ink: PAL.ink, sw: sw * .8 });
+  };
+  if (lit > .3) paint(ellPts(cx, cy - 4.5 * u, 9 * u, 6 * u, 20), { wash: '#FFFFFF', washOp: 70 * lit, ink: null });
+  clawd(cx, cy, u, { eyes: lit > .3 ? 'happy' : 'narrow', mouth: 'grin', aR: .95, armR: thumb, aL: -.1, noShadow: true,
+    col: C(PAL.clay), dk: C(PAL.clayDk), lt: C('#F5B394') });
+  paint(rectPts(cx - 1.15 * u, cy - 4.75 * u, 2.3 * u, .4 * u), { wash: C('#FFFFFF'), ink: null });          // stock-photo teeth
+  paint([[cx - .4 * u, cy - 3.75 * u], [cx + .4 * u, cy - 3.75 * u], [cx + .22 * u, cy - 3.35 * u], [cx + .55 * u, cy - 2.3 * u], [cx, cy - 1.9 * u], [cx - .55 * u, cy - 2.3 * u], [cx - .22 * u, cy - 3.35 * u]],
+    { wash: C('#1B3AB0'), ink: PAL.ink, sw: .8 });                                                        // the tie
+  // copy
+  const tc = C('#FFFFFF'), a = Math.max(.25, lit);
+  letter('ЭТО', X(.68), Y(.17), 118 * s, tc, { font: ruFont(118 * s), ink: false, alpha: a, stroke: C('#123A8F') });
+  letter('ПОЛЕЗНО!', X(.68), Y(.35), 112 * s, C('#FFE38A'), { font: ruFont(112 * s), ink: false, alpha: a, stroke: C('#123A8F') });
+  for (let i = 0; i < 5; i++) paint(starPts(X(.52 + i * .075), Y(.54), 38 * s, .45, 5), { wash: C(TK.yellow), ink: PAL.ink, sw: .8 });
+  letter('5,0 · 12 480 отзывов', X(.67), Y(.64), 34 * s, tc, { font: ruFont(34 * s), ink: false, alpha: a });
+  paint(rrPts(X(.44), Y(.72), w * .48, h * .12, 40 * s), { wash: C('#FFFFFF'), ink: PAL.ink, sw: .8 });
+  letter('#1 в рейтинге полезности', X(.68), Y(.78), 38 * s, C('#1B3AB0'), { font: ruFont(38 * s), ink: false, alpha: a });
+  if (s > .4) letter('ОБРАЗЕЦ', X(.5), Y(.5), 170 * s, '#FFFFFF', { font: ruFont(170 * s), ink: false, alpha: .13 * lit, rot: -.3 });  // stock watermark
 }
 
 // ---------- shots ----------
@@ -312,58 +316,50 @@ function a05_march(t, lt, dur) {
   }
   punkText('БОЛЬШЕ АГЕНТОВ!', 960, 150, 88, t, t >= 103.76 ? 103.76 : 102.32, { seed: t >= 103.76 ? 7 : 3 });
 }
-// 104.92 GPUs arrive on freight trains
-function a05_wagon(x, y, s, t, i) {
-  paint(rectPts(x, y - 34 * s, 440 * s, 34 * s, 1), { wash: A2.rust, ink: PAL.ink, sw: s });
-  letter('ЖЕЛЕЗО', x + 220 * s, y - 17 * s, 20 * s, A2.hazard, { font: ruFont(20 * s), ink: false });
-  for (const wx of [60, 120, 320, 380]) {
-    paint(ellPts(x + wx * s, y + 6 * s, 22 * s, 22 * s, 14), { wash: A2.gunDk, ink: PAL.ink, sw: .8 * s });
-    const a = -t * 12; inkLine([[x + wx * s + Math.cos(a) * 18 * s, y + 6 * s + Math.sin(a) * 18 * s], [x + wx * s - Math.cos(a) * 18 * s, y + 6 * s - Math.sin(a) * 18 * s]], s, A2.steel, 'inkfine', 0);
+// 104.92 «Больше железа!»: a V of cargo drones ferries GPUs in; on the second «железа» a heavy-lift drone the size of
+// the factory drops in with a GPU as big as a hangar
+function a05_drone(x, y, s, t, seed, cs) {
+  const sway = Math.sin(t * 2.3 + seed) * .06, cy = y + 40 * s + 65 * cs;
+  for (const d of [-1, 1]) inkLine([[x + d * 40 * s, y + 14 * s], [x + d * 130 * cs + Math.sin(sway) * 60 * cs, cy - 60 * cs]], Math.max(.5, .9 * s), A2.steelLt, 'inkfine', 0);
+  gpuCard(x + Math.sin(sway) * 60 * cs, cy, cs, t + seed, { rot: sway, glow: cs > 1 ? .7 + .3 * Math.sin(t * 6) : 0, fans: cs > 1 });
+  for (const d of [-1, 1]) {
+    inkLine([[x + d * 50 * s, y - 4 * s], [x + d * 110 * s, y - 24 * s]], 3 * s, A2.gunDk, 'marker', 0);                      // arms
+    paint(rectPts(x + d * 110 * s - 6 * s, y - 34 * s, 12 * s, 14 * s), { wash: A2.gunmetal, ink: PAL.ink, sw: .6 * s });
+    for (const k of s > 1.5 ? [0, 1] : [0]) {                                                                          // blurred rotors
+      const ph = Math.sin(t * 60 + k * 2 + seed + d);
+      paint(ellPts(x + d * 110 * s, y - 36 * s - k * 3 * s, 78 * s * (.75 + .25 * Math.abs(ph)), 7 * s, 14), { wash: '#B8C4D8', washOp: 70, ink: null });
+    }
   }
-  gpuCard(x + 220 * s, y - 34 * s - 76 * s, 1.1 * s, t + i, { glow: s > 1 ? .8 + .2 * Math.sin(t * 6 + i) : 0, fans: s > 1 });
-  inkLine([[x + 30 * s, y - 34 * s], [x + 110 * s, y - 140 * s]], .8 * s, A2.hazard, 'inkfine', 0);  // tie-down straps
-  inkLine([[x + 410 * s, y - 34 * s], [x + 330 * s, y - 140 * s]], .8 * s, A2.hazard, 'inkfine', 0);
+  paint(rrPts(x - 62 * s, y - 20 * s, 124 * s, 40 * s, 14 * s), { wash: A2.steel, fill: A2.gunDk, fillOp: 70, tex: .4, ink: PAL.ink, sw: .9 * s });
+  hazard(x - 50 * s, y + 6 * s, 100 * s, 8 * s);
+  const bl = frac(t * 1.6 + seed * .3) < .15;
+  paint(ellPts(x - 58 * s, y - 6 * s, 6 * s, 6 * s, 8), { wash: bl ? '#FFFFFF' : A2.acid, ink: null });                    // nav strobes
+  paint(ellPts(x + 58 * s, y - 6 * s, 6 * s, 6 * s, 8), { wash: bl ? '#FFFFFF' : A2.sodium, ink: null });
+  if (s > 1.5) letter('ЖЕЛЕЗО', x, y - 4 * s, 18 * s, A2.hazard, { font: ruFont(18 * s), ink: false });
 }
-function a05_loco(x, y, s, t, dir) {
-  push(); translate(x, y); scale(dir * s, s);
-  paint(rectPts(-10, -150, 330, 116, 1), { wash: '#7A1E1A', fill: '#4A1210', fillOp: 90, tex: .5, ink: PAL.ink, sw: 1 });
-  paint(rrPts(200, -210, 110, 70, 10), { wash: '#5A1614', ink: PAL.ink, sw: .9 });                          // cab
-  paint(rectPts(222, -196, 64, 36), { wash: A5.win, washOp: 220, ink: null });
-  paint(rectPts(30, -200, 34, 52), { wash: A2.gunDk, ink: PAL.ink, sw: .8 });                                // stack
-  paint([[-10, -150], [-60, -34], [-10, -34]], { wash: A2.gunDk, ink: PAL.ink, sw: .8 });                   // cow-catcher
-  hazard(-10, -48, 330, 14);
-  for (const wx of [30, 110, 190, 270]) paint(ellPts(wx, 0, 32, 32, 16), { wash: A2.gunDk, ink: PAL.ink, sw: .9 });
-  pop();
-  token(x + dir * 110 * s, y - 95 * s, 30 * s, { glow: .4 });
-  const hx = x - dir * 14 * s, hy = y - 110 * s;                                                             // headlight beam
-  paint([[hx, hy - 10 * s], [hx - dir * 900 * s, hy - 160 * s], [hx - dir * 900 * s, hy + 150 * s], [hx, hy + 10 * s]], { wash: '#FFF3C8', washOp: 55, ink: null });
-  paint(ellPts(hx, hy, 14 * s, 14 * s, 10), { wash: '#FFF7DA', ink: PAL.ink, sw: .6 });
-  steam(x + dir * 47 * s, y - 205 * s, t, { k: 1, len: 280 * s, dir: -Math.PI / 2 + dir * .9, seed: 4, n: 5, per: .6 });
-}
-function a05_train(t, t0, y, s, dir, n, seed) {
-  const age = t - t0; if (age < -.1) return;
-  const head = dir > 0 ? -300 + age * 900 : W + 300 - age * 900;
-  for (let i = n - 1; i >= 0; i--) {
-    const x = head - dir * (360 * s + i * 460 * s);
-    if (x < -600 * s || x > W + 600 * s) continue;
-    a05_wagon(dir > 0 ? x - 440 * s : x, y, s, t, i + seed);
-  }
-  a05_loco(head, y, s, t, dir);
-}
-function a05_trains(t, lt, dur) {
-  const L = a05_lights(t);
-  a05_cam(t, lerp(900, 1020, lt / dur), 470, 1.25, 3);
+function a05_drones(t, lt, dur) {
+  const L = a05_lights(t), big = t - 106.4, land = big >= 0 ? easeOut(clamp(big / .5)) : 0, k = big >= .45 ? Math.exp(-(big - .45) / .25) : 0;
+  const [sx, sy] = shakeXY(t, 14 * k);
+  camBegin(lerp(900, 1020, lt / dur) + sx, 470 + sy, 1.25);
   a05_world(t, L);
   camEnd();
-  paint(rectPts(-60, 700, W + 120, 440), { wash: '#0A0A14', ink: null });
-  for (const [ry, rs] of [[760, .7], [915, 1.15]]) {                                                           // two tracks
-    paint(rectPts(-60, ry + 20 * rs, W + 120, 26 * rs), { wash: '#2A2530', ink: null });
-    for (let x = -60 + frac(0) * 60; x < W + 60; x += 70 * rs) paint(rectPts(x, ry + 16 * rs, 34 * rs, 12 * rs), { wash: '#3A2A22', ink: null });
-    for (const o of [0, 16]) inkLine([[-60, ry + (18 + o) * rs], [W + 60, ry + (18 + o) * rs]], 1.4 * rs, A2.steelLt, 'inkfine', 0);
+  flushLetters();
+  // wave 1: seven small drones in a V, flying in from the right and climbing away once the big one arrives
+  const age = t - 104.92;
+  for (let i = 6; i >= 0; i--) {
+    const r = Math.ceil(i / 2), side = i % 2 ? -1 : 1, s = 1 - r * .07;
+    const x = W + 320 - age * 1000 + r * 260 + (side < 0 ? 130 : 0), y = 400 + side * r * 85 - Math.max(0, big) * 260 + Math.sin(t * 2 + i) * 6;
+    if (x > -300 && x < W + 300) a05_drone(x, y, s, t, i, s * .75);
   }
-  a05_train(t, 104.92, 760, .7, 1, 6, 0);
-  a05_train(t, 106.4, 915, 1.15, -1, 4, 3);
-  punkText('БОЛЬШЕ ЖЕЛЕЗА!', 960, 140, 88, t, t >= 106.4 ? 106.4 : 104.92, { seed: t >= 106.4 ? 12 : 9 });
+  // wave 2: the heavy-lift drone drops in and hovers, searchlights on the ground
+  if (big >= 0) {
+    const bx = 960 + Math.sin(t * 1.3) * 12, by = lerp(-700, 330, land) + Math.sin(t * 2.4) * 6;
+    for (const d of [-1, 1]) paint([[bx + d * 150, by + 10], [bx + d * 150 + 18, by + 10], [bx + d * 520, 1000], [bx + d * 250, 1000]], { wash: '#FFF3C8', washOp: 30 * land, ink: null });
+    if (land > .9) for (const d of [-1, 1]) paint(ellPts(bx + d * 385, 990, 170, 30, 18), { wash: '#FFF7DA', washOp: 60, ink: null });
+    a05_drone(bx, by, 3.1, t, 9, 2.5);
+    if (k > .05) { flushLetters(); sparks(960, 860, big - .45, 41, 14, 420); }
+  }
+  punkText('БОЛЬШЕ ЖЕЛЕЗА!', 960, 140, t >= 106.4 ? 104 : 88, t, t >= 106.4 ? 106.4 : 104.92, { seed: t >= 106.4 ? 12 : 9 });
 }
 // 107.5 «Зачем — неважно!» ×2: the smoke asks, the stamp answers and the question burns
 function a05_why(t, lt, dur) {
@@ -376,32 +372,21 @@ function a05_why(t, lt, dur) {
   stamp('НЕВАЖНО', 760, 330, 110, t, 107.94, { col: A2.hazard, rot: -.12 });
   stamp('НЕВАЖНО', 1180, 520, 124, t, 109.26, { col: '#FF3A3A', rot: .08 });
 }
-// 110.85 «Это полезно!»: the Soviet mosaic lights up under floodlights
+// 110.85 «Это полезно!»: the giant LED billboard on the glass tower stutters on (110.88 half, 111.64 full)
 function a05_banner(t, lt, dur) {
   const L = a05_lights(t), lit = L.banner, p = ease(lt / dur);
   camBegin(960, lerp(600, 520, p), lerp(1, 1.06, p));
-  paint(rectPts(-100, -100, W + 200, H + 300), { wash: '#1A1620', fill: '#2A2430', fillOp: 90, tex: .6, border: .3, ink: null });
-  for (let c = 0; c < 8; c++) inkLine([[-100 + c * 300, -100], [-100 + c * 300, H + 200]], 1, '#0E0C12', 'inkfine', 0);  // concrete panels
-  a05_mosaic(260, 90, 1400, 780, t, Math.max(.14, lit), 50);
-  // text strip: tiled lettering (grout drawn over the flushed letters)
-  paint(rectPts(1010, 170, 620, 320), { wash: mixCol('#7A1A16', '#120E14', 1 - Math.max(.14, lit)), ink: null });
-  letter('ЭТО', 1320, 250, 130, mixCol(A5.white, '#1A1620', 1 - lit), { font: ruFont(130), ink: false });
-  letter('ПОЛЕЗНО!', 1320, 405, 116, mixCol('#FFE38A', '#1A1620', 1 - lit), { font: ruFont(116), ink: false });
-  flushLetters();
-  for (let x = 260; x <= 1660; x += 50) inkLine([[x, 90], [x, 870]], 1.2, '#1A1418', 'inkfine', 0);
-  for (let y = 90; y <= 870; y += 52) inkLine([[260, y], [1660, y]], 1.2, '#1A1418', 'inkfine', 0);
-  paint(rectPts(250, 80, 1420, 800), { ink: PAL.ink, sw: 2 });
-  // floodlights at the foot of the wall, clacking on at 110.88 and 111.64
-  for (const [fx, ton, s] of [[420, 110.88, 1], [1500, 111.64, -1]]) {
-    const on = t >= ton ? 1 : 0, a = t - ton;
-    paint(rrPts(fx - 50, 900, 100, 60, 12), { wash: A2.gunDk, ink: PAL.ink, sw: 1 });
-    if (on) {
-      paint([[fx - 40, 900], [fx + 40, 900], [fx + s * 700, 40], [fx + s * 100, 40]], { wash: '#FFF3C8', washOp: 22 + 50 * Math.exp(-a * 5), ink: null });
-      paint(ellPts(fx, 910, 44, 22, 14), { wash: '#FFF7DA', ink: null });
-    }
-  }
+  paint(rectPts(-100, -100, W + 200, H + 300), { wash: '#10162A', fill: '#1A2236', fillOp: 90, tex: .4, border: .3, ink: null });
+  for (let c = 0; c < 12; c++) inkLine([[-100 + c * 190, -100], [-100 + c * 190, H + 200]], 1, '#34406A', 'inkfine', 0);  // curtain wall
+  for (let r = 0; r < 9; r++) inkLine([[-100, -60 + r * 140], [W + 100, -60 + r * 140]], 1, '#34406A', 'inkfine', 0);
+  for (let i = 0; i < 14; i++) { const c = Math.floor(hash(i * 3.1) * 11), r = Math.floor(hash(i * 7.7) * 8);   // late-night office lights
+    paint(rectPts(-96 + c * 190, -56 + r * 140, 182, 132), { wash: '#FFE9B8', washOp: 40, ink: null }); }
+  if (lit > .3) paint(ellPts(960, 480, 900, 520, 24), { fill: '#6FB2FF', fillOp: 90 * lit, bleed: .3, tex: .2, ink: null });   // screen glow on the glass
+  a05_billboard(260, 90, 1400, 780, t, Math.max(.06, lit));
+  // a dark scan band rolls while it powers up
+  if (t < 111.64) { const sy = 90 + frac(t * 3) * 780; paint(rectPts(260, sy, 1400, 40), { wash: '#070A14', washOp: 150, ink: null }); }
   camEnd();
-  flash(t >= 110.88 && t < 111.0 ? .35 : t >= 111.64 && t < 111.76 ? .45 : 0, '#FFF3C8');
+  flash(t >= 110.88 && t < 111.0 ? .3 : t >= 111.64 && t < 111.78 ? .5 : 0, '#CFE8FF');
 }
 // 113.6 break: the gauge hits 0% → the lights die on the hits → one spotlight on CEO-Clawd on the roof
 function a05_zero(t, lt, dur) {
@@ -437,5 +422,5 @@ function a05_dark(t, lt, dur) {
 
 chapter('chorus2', 91.8, 116.3, [
   [91.8, a05_wide], [94.94, a05_gauge], [96.86, a05_city2], [100.04, a05_counter], [102.32, a05_march],
-  [104.92, a05_trains], [107.5, a05_why], [110.85, a05_banner], [113.6, a05_zero], [114.12, a05_dark]
+  [104.92, a05_drones], [107.5, a05_why], [110.85, a05_banner], [113.6, a05_zero], [114.12, a05_dark]
 ]);

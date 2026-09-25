@@ -5,8 +5,8 @@
 // 185.68 «Доходы — потом! Прибыль — потом!»: the CEO feeds ДОХОДЫ and ПРИБЫЛЬ into the shredder, stamped «ПОТОМ» →
 // 188.8 «AGI — скоро! CAPEX — сейчас!»: a dusty AGI billboard spins «СКОРО…», whip-pan to the chimney: CAPEX neon →
 // 191.74 «Плюс процент к бенчмарку»: two presses push the chart's axis down so the +1% bar "grows" →
-// 193.77 «плюс триста миллиардов»: the counter slams to 300 000 000 000, the line slams three times and the last press
-// mints... one tiny ✓ on a velvet cushion → 196.28 the acid sweep: the ✓ goes acid, melts, and the acid stain dries into
+// 193.32 «плюс триста миллиардов»: the counter slams in at 300 000 000 000, the line slams three times and the last press
+// mints... one tiny ✓ on a velvet cushion (195.05 close-up «ПРОДУКЦИЯ: 1 шт.») → 196.28 the acid sweep: the ✓ goes acid, melts, and the acid stain dries into
 // a grey circle «0 токенов» → hard cut to the quiet outro.
 (() => {
   const INK = PAL.ink;
@@ -67,8 +67,10 @@
   const P_BIG = [180.92, 182.44, 183.0], P_L = [180.92, 181.72, 182.44, 183.0], P_R = [181.2, 181.72, 182.7, 183.3];
   function blast(t, lt) {
     const a = acc(t), [sx, sy] = shakeXY(t, 16 * a);
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: A2.gunDk, ink: null });        // the wide cam sees past the hall's top edge
     a09_hall(t);
-    camBegin(960 + sx, 450 + sy - lt * 10, 1.0 + lt * .03 + a * .05);
+    // wide: the whole big press with the two of them on top, the floor on fire below
+    camBegin(960 + sx, 322 + sy - lt * 8, .78 + lt * .02 + a * .04);
     fire(960, 430, 1300, 380, t, { k: .95 + .35 * a, seed: 4, n: 7 });
     press(20, 380, 300, 460, t, P_L, { label: 'ПРЕСС 2', seed: 3 });
     press(1600, 380, 300, 460, t, P_R, { label: 'ПРЕСС 3', seed: 7 });
@@ -79,9 +81,10 @@
     const hop = -a * 1.6;
     clawd(720, 330, 21, { dy: hop, sq: a * .12, aL: 2.1, aR: 2.1, armL: fist(PAL.clay), armR: fist(PAL.clay), eyes: 'angry', mouth: 'o' });
     ceoClawd(1200, 330, 21, { dy: hop * .8, sq: a * .1, aL: 2.1, aR: .4, armL: fist(PAL.clay), eyes: 'happy', mouth: 'grin', click: a });
+    fire(960, 940, 2300, 170, t, { k: .9 + .4 * a, seed: 17, n: 9 });                   // the floor burning under the press
     camEnd();
-    punkText('ЖГИ!', 330, 200, 120, t, 180.92, { seed: 3 });
-    punkText('ЖГИ!', 1590, 200, 120, t, 182.44, { seed: 9 });
+    punkText('ЖГИ ТОКЕНЫ!', 960, 168, 100, t, 180.92, { seed: 3 });
+    if (t > 182.44) punkText('ЖГИ ТОКЕНЫ!', 960, 305, 120, t, 182.44, { seed: 9 });
     a09_hud(t);
     flash(pr.k * .25, '#FFE7B0');
     glitchCut(t, 180.85);
@@ -278,27 +281,27 @@
   }
 
   // ---------- 193.77 «плюс триста миллиардов»: the counter slams, the line slams, the last press mints ONE ✓ ----------
-  const L_HITS = [[194.34], [194.97], [195.62]], TICK_T = 195.62;
+  const L_HITS = [[194.34], [194.66], [194.97]], T_PLUS = 193.32;
   const cushion = (cx, bedY, r, age) => {
     paint(rrPts(cx - 70, bedY - 38, 140, 38, 16), { wash: '#8A1430', fill: '#5A0A1E', fillOp: 80, tex: .5, ink: INK, sw: .5 });
     for (const e of [-1, 1]) paint(ellPts(cx + e * 68, bedY - 18, 10, 10, 8), { wash: A2.hazard, ink: INK, sw: .3 });
     a09_check(cx, bedY - 58, 22, A2.acid, { glow: Math.exp(-age / .3) });
   };
   function lineShot(t, lt) {
-    const a = acc(t), [sx, sy] = shakeXY(t, 22 * hitK(t, [193.77], .2) + 8 * a);
-    const cam = kf(t, [[193.77, [960, 230, 1.15]], [194.2, [960, 250, 1.12]], [194.5, [960, 470, .92]], [195.5, [1060, 480, .95]], [195.72, [1540, 690, 2.6]], [196.0, [1540, 690, 2.9]]], ease);
+    const a = acc(t), [sx, sy] = shakeXY(t, 22 * hitK(t, [T_PLUS, 193.77], .2) + 8 * a);
+    const cam = kf(t, [[T_PLUS, [960, 230, 1.15]], [194.05, [960, 250, 1.12]], [194.3, [960, 470, .92]], [195.05, [980, 480, .95]]], ease);
     a09_hall(t);
     camBegin(cam[0] + sx, cam[1] + sy, cam[2]);
-    // the counter slams in at the monster hit
-    const ag = t - 193.77, sc = ag < .12 ? lerp(1.8, 1, easeOut(ag / .12)) : 1 + .04 * a;
-    const val = 299999999999 + seg(t, 193.77, 193.95);
+    // the counter slams in already full on «Плюс», and slams again on the monster hit
+    const ag = t - 193.77, a0 = t - T_PLUS, sc = a0 < .12 ? lerp(1.8, 1, easeOut(a0 / .12)) : ag >= 0 && ag < .12 ? lerp(1.25, 1, easeOut(ag / .12)) : 1 + .04 * a;
+    const val = 300000000000;
     push(); translate(960, 200); scale(sc); translate(-960, -200);
     paint(rectPts(160, 90, 1600, 240, 1), { wash: A2.gunDk, ink: A2.hazard, sw: 1.4 });
     hazard(160, 300, 1600, 30);
     pop();
     counter(960, 190, 124 * sc, val, { col: A2.hazard });
     letter('ТОКЕНОВ СОЖЖЕНО ЗА НЕДЕЛЮ', 960, 60, 44, A2.cream, { font: ruFont(44) });
-    if (ag < .5) for (let i = 0; i < 10; i++) {                                    // gold burst
+    if (ag >= 0 && ag < .5) for (let i = 0; i < 10; i++) {                                    // gold burst
       const q = i / 10 * TAU, d = 300 + 700 * easeOut(ag / .5);
       token(960 + Math.cos(q) * d, 200 + Math.sin(q) * d * .5, 30, { spin: t * 3 + i });
     }
@@ -308,21 +311,13 @@
     press(620, 360, 360, 440, t, L_HITS[1], { label: 'ОБРАБОТКА', seed: 5 });
     press(1340, 360, 360, 440, t, L_HITS[2], { label: 'ФИНАЛЬНАЯ СБОРКА', seed: 9, token: cushion });
     fire(1160, 800, 180, 260, t, { k: .8 + .4 * a, seed: 44 });
-    if (t >= TICK_T + .15) {
-      const k = backOut((t - TICK_T - .15) / .2);
-      paint(rotPts(rrPts(1560, 690, 170 * k, 64 * k, 8), 1560, 690, .06), { wash: A2.cream, ink: INK, sw: .5 });
-      if (k > .6) {
-        letter('ПРОДУКЦИЯ', 1645, 708, 20, INK, { font: ruFont(20), ink: false, rot: .06 });
-        letter('1 шт.', 1640, 736, 24, '#E0302A', { font: ruFont(24), ink: false, rot: .06 });
-      }
-    }
     camEnd();
-    flash(hitK(t, [193.77], .09) * .7, '#FFF2C0');
+    flash(hitK(t, [T_PLUS], .09) * .4 + hitK(t, [193.77], .09) * .7, '#FFF2C0');
   }
 
-  // ---------- 196.0 the ✓ close-up → 196.28 acid sweep → the stain dries into a grey circle «0 токенов» ----------
+  // ---------- 195.05 the ✓ close-up (ПРОДУКЦИЯ: 1 шт.) → 196.28 acid sweep → the stain dries into a grey circle «0 токенов» ----------
   function sweep(t, lt) {
-    const tA = 196.28, tS = 196.94, tD = 197.6, a = acc(t);
+    const tA = 196.28, tS = 196.85, tD = 197.35, a = acc(t);
     if (t < tA) {                                                                  // hold on the product: one tiny tick, admired
       paint(rectPts(-60, -60, W + 120, H + 120), { wash: A2.gunDk, ink: null });
       glowAt(960, 560, 520, A2.sodium, 60);
@@ -330,10 +325,11 @@
       paint(rectPts(560, 700, 800, 70, 1), { wash: A2.gunmetal, ink: INK, sw: 1 });
       hazard(560, 770, 800, 40);
       paint(rrPts(760, 590, 400, 110, 44), { wash: '#8A1430', fill: '#5A0A1E', fillOp: 80, tex: .5, ink: INK, sw: 1 });
-      a09_check(960, 530, 70, A2.acid, { glow: .6 });
+      a09_check(960, 510, 110 * (1 + .12 * hitK(t, [195.62], .15)), A2.acid, { glow: .7 + .5 * hitK(t, [195.62], .2) });
       clawd(360, 800, 26, { eyes: 'happy', mouth: 'o', aL: .3, aR: 1.2, rot: .12 });
       ceoClawd(1560, 800, 26, { eyes: 'happy', mouth: 'grin', aL: 1.6, aR: 1.6, flip: true, rot: -.12, noClicker: true });
-      letter('ИТОГО: 1 шт.', 960, 300, 70, A2.cream, { font: ruFont(70) });
+      letter('ПРОДУКЦИЯ:', 790, 250, 96, A2.cream, { font: ruFont(96) });
+      stamp('1 шт.', 1340, 250, 110, t, 195.62, { col: '#E0302A', rot: -.08 });
       camEnd();
       return;
     }
@@ -364,6 +360,6 @@
   }
 
   chapter('capex', 180.85, 197.9, [
-    [180.85, blast], [183.76, drain], [185.4, shred], [188.7, capex], [191.7, bench], [193.77, lineShot], [196.0, sweep]
+    [180.85, blast], [183.76, drain], [185.4, shred], [188.7, capex], [191.7, bench], [T_PLUS, lineShot], [195.05, sweep]
   ]);
 })();

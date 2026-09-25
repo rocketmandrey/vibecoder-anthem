@@ -1,10 +1,10 @@
 // a03_chorus1.js: «Жги токены» v2, chapter 3 "pre-chorus + chorus 1" (39.8–67.1). ЗАВОД ТОКЕНОВ, the token shredder line.
 // 39.8 the inference hall is on fire, coolers howl → 41.82 / 42.47 a press slams the hall flat, the ram lifts and the
-// flattened racks spring up as candles: a stock chart → 42.9 the chart (БИРЖА) grows eyes, looks at us, drops its jaw
+// flattened racks spring up as candles: a stock chart → 42.72 the chart (БИРЖА) grows eyes, looks at us, drops its jaw
 // and says «ЖГИ!» → 45.05 chorus: two gangs (hard-hat Clawds left, agents right) feed tokens into the ШРЕДЕР ТОКЕНОВ,
 // call-and-response on every «Жги!» → 47.75 the limit bar burns down → 52.85 the odometer rolls to 1 000 000 →
 // 55.25 agents step off the belt already holding job postings and hire; GPUs pile off the upper belt → 60.35 two presses
-// crush «ЗАЧЕМ?» into tokens: «НЕВАЖНО» ×2 → 63.75 QC stamps the heap of shreds «ОТК: ПОЛЕЗНО» → 66.4 the edit gap.
+// crush «ЗАЧЕМ?» into tokens: «НЕВАЖНО» ×2 → 63.75 QC stamps the heap of shreds «ПОЛЕЗНО» → 66.4 the edit gap.
 (() => {
   const INK = PAL.ink;
   const GREEN = '#2FBF71';
@@ -78,8 +78,8 @@
     if (t < 41.82) return lerp(-120, 560, easeIn(seg(t, 41.62, 41.82)));
     if (t < 42.37) return 560 - 38 * Math.sin(seg(t, 41.82, 42.2) * Math.PI) * Math.exp(-seg(t, 41.82, 42.37) * 2);
     if (t < 42.47) return lerp(560, 880, easeIn(seg(t, 42.37, 42.47)));
-    if (t < 42.6) return 880;
-    return lerp(880, -260, ease(seg(t, 42.6, 42.95)));
+    if (t < 42.52) return 880;
+    return lerp(880, -260, ease(seg(t, 42.52, 42.72)));                                // ponytail: short hold, the grey slab mustn't linger
   }
   function a03_ram(rb, t) {
     if (rb < -100) return;
@@ -189,11 +189,11 @@
 
   // ---------- 42.9–45.05: БИРЖА looks at us and says «ЖГИ!» ----------
   function a03_talk(t, lt) {
-    const eyes = seg(t, 42.95, 43.25), lookK = seg(t, 43.78, 43.9);
+    const eyes = seg(t, 42.8, 43.1), lookK = seg(t, 43.78, 43.9);
     const wander = Math.sin(t * 2.2) * .9, lx = lerp(wander, 0, lookK), ly = lerp(-.5 + Math.sin(t * 1.7) * .4, .35, lookK);
-    const open = t < 43.78 ? .75 : lerp(1.25, 1.05, seg(t, 43.8, 44.2)), jaw = backOut(seg(t, 44.62, 44.86));
-    const [sx, sy] = shakeXY(t, 14 * hitK(t, [42.95, 44.72], .12));
-    camBegin(960 + sx, kf(t, [[42.9, 500], [44.6, 470], [45.05, 500]]) + sy, kf(t, [[42.9, .95], [44.6, 1.0], [44.7, .92], [45.05, .98]]));
+    const open = t < 43.78 ? .75 : lerp(1.25, 1.05, seg(t, 43.8, 44.2)), jaw = t < 44.72 ? backOut(seg(t, 44.3, 44.45)) * (.55 + .2 * Math.abs(Math.sin((t - 44.3) * 22))) : lerp(.7, 1, backOut(seg(t, 44.72, 44.86)));   // mouth opens on «говорит», gapes on the shout
+    const [sx, sy] = shakeXY(t, 14 * hitK(t, [42.8, 44.72], .12));
+    camBegin(960 + sx, kf(t, [[42.72, 500], [44.6, 470], [45.05, 500]]) + sy, kf(t, [[42.72, .95], [44.6, 1.0], [44.7, .92], [45.05, .98]]));
     a03_bourse(t, { rise: 1, eyes, lx, ly, open, jaw });
     camEnd();
     if (t > 44.8) {                                                                     // the shout leaves the mouth
@@ -204,6 +204,14 @@
   }
 
   // ---------- 45.05–52.85: the token shredder line ----------
+  // the furnace in the back wall the shredder feeds: brick arch, roaring fire, flares on every chomp
+  function a03_furnace(t, k) {
+    paint([[600, 900], [600, 330], [700, 210], [1220, 210], [1320, 330], [1320, 900]], { wash: '#5A2A1C', fill: '#2A120C', fillOp: 110, tex: .7, border: .4, ink: INK, sw: 1.2 });
+    for (let y = 250; y < 900; y += 44) inkLine([[606, y], [1314, y]], .4, '#2A120C', 'inkfine', 0);
+    paint([[650, 900], [650, 360], [730, 270], [1190, 270], [1270, 360], [1270, 900]], { wash: '#FF7A1A', fill: TK.ember, fillOp: 120, bleed: .3, tex: .4, ink: INK, sw: .8 });
+    fire(960, 900, 620, 560 * (.9 + .25 * k), t, { k: 1, seed: 31 });
+    for (const s of [-1, 1]) fire(960 + s * 420, 900, 240, 260 + 120 * k, t + s, { k: 1, seed: 40 + s });
+  }
   function a03_shredder(t) {
     const k = hitK(t, CHOMPS, .28), [jx, jy] = shakeXY(t + .3, 7 * k);
     push(); translate(jx, jy);
@@ -267,6 +275,7 @@
     conveyor(60, 640, 680, t, { items: ['token'], speed: 170, gap: 130, legs: 230, seed: 1, size: .6 });
     conveyor(1180, 640, 680, t, { items: ['token'], speed: -170, gap: 130, legs: 230, seed: 5, size: .6 });
     const kLimit = kf(t, [[45.05, .64], [45.2, .56], [46.6, .48], [47.75, .4], [49.2, .12], [49.8, .06], [51.8, .03]]);
+    a03_furnace(t, hitK(t, CHOMPS, .28));
     const k = a03_shredder(t);
     // gangs stand on a catwalk behind the belts (drawn after the belts so they read, feet hidden by the rail)
     for (const side of ['A', 'B']) {
@@ -298,7 +307,8 @@
     camBegin(cx + sx, 545 + sy, z, t < 47.75 ? 0 : kf(t, [[49.7, -.035], [52.85, .03]]));
     a03_line(t);
     camEnd();
-    for (const [zt, side] of ZHGI) a03_caption('ЖГИ ТОКЕНЫ!', side === 'A' ? 430 : 1490, 300, 66, t, zt, side);
+    const zi = ZHGI.filter(z => z[0] <= t).length - 1;                                    // only the latest shout, centred over the shredder
+    if (zi >= 0) a03_caption('ЖГИ ТОКЕНЫ!', 960, 290, 130, t, ZHGI[zi][0], ZHGI[zi][1]);
     a03_end(t);
   }
   // 47.75 «Пока лимит не обнулён!»: close on the burning bar, then down to the teeth
@@ -381,16 +391,19 @@
     const up = seg(t, 57.95, 58.25), [sx, sy] = shakeXY(t, 6 * hitK(t, [55.30, 56.64, 58.0, 59.3], .15));
     camBegin(lerp(840, 820, ease(up)) + sx, lerp(640, 420, ease(up)) + sy, lerp(1.16, 1.24, ease(up)) + (t - 55.25) * .008);
     a03_hall(t, { lamps: [420, 1300] });
+    for (let i = 0; i < 3; i++) fire(820 + i * 460, 900, 480, 300 + 60 * Math.sin(t * 5 + i), t + i, { k: 1, seed: 50 + i, n: 3, glow: false });   // the floor is still burning
     conveyor(A03_BELT.x0, A03_BELT.y, A03_BELT.x1 - A03_BELT.x0, t, { items: [() => {}], speed: -A03_BELT.sp, legs: 150, seed: 2 });
     paint(rectPts(1180, 170, 330, 56, 1), { wash: A2.rust, ink: INK, sw: .7 });
     letter('СКЛАД ЖЕЛЕЗА', 1345, 198, 32, A2.hazard, { font: ruFont(32) });
     a03_gpus(t);
     a03_agents(t);
     camEnd();
-    a03_caption('БОЛЬШЕ АГЕНТОВ!', 520, 135, 60, t, 55.30, 'A', 1.3);
-    a03_caption('БОЛЬШЕ АГЕНТОВ!', 1400, 135, 60, t, 56.64, 'B', 1.3);
-    a03_caption('БОЛЬШЕ ЖЕЛЕЗА!', 520, 135, 60, t, 58.00, 'A', 1.3);
-    a03_caption('БОЛЬШЕ ЖЕЛЕЗА!', 1400, 135, 60, t, 59.30, 'B', 1.05);
+    const BIG = [[55.30, 'БОЛЬШЕ АГЕНТОВ!', 'A'], [56.64, 'БОЛЬШЕ АГЕНТОВ!', 'B'], [58.00, 'БОЛЬШЕ ЖЕЛЕЗА!', 'A'], [59.30, 'БОЛЬШЕ ЖЕЛЕЗА!', 'B']];
+    const bi = BIG.filter(b => b[0] <= t).length - 1;
+    if (bi >= 0) {
+      paint(rectPts(-60, 60, W + 120, 170), { wash: TK.soot, washOp: 190, ink: null });
+      a03_caption(BIG[bi][1], 960, 145, 120, t, BIG[bi][0], BIG[bi][2], 9);
+    }
     a03_end(t);
   }
 
@@ -431,7 +444,8 @@
     siren(1640, 250, t, { col: GREEN, on: t >= S1 ? 1 : 0, r: 32, len: 520 });
     smoke(960, 470, t, { n: 5, h: 300, r: 60, col: '#3A3336', seed: 4 });
     a03_cart(960, 900, 820, 260, t);
-    stamp('ОТК: ПОЛЕЗНО', 960, 760, 72, t, S1, { col: GREEN, rot: -.07, punch: .03 });
+    if (t >= S1) paint(rotPts(rrPts(960 - 330, 760 - 75, 660, 150, 20), 960, 760, -.07), { wash: TK.soot, washOp: 235, ink: INK, sw: 1 });
+    stamp('ПОЛЕЗНО', 960, 760, 84, t, S1, { col: TK.yellow, rot: -.07, punch: .03 });
     // the QC inspector with a clipboard, ticks it on «полезно»
     const ok = t >= S2;
     clawd(1600, 890, 19, {
@@ -449,7 +463,7 @@
     a03_qc(66.4, 2.65, { dark: .8 });
     const p = seg(t, 66.4, 66.6);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#050607', washOp: 150 + 90 * p, ink: null });
-    letter('ОТК: ПОЛЕЗНО', 960, 804, 80, GREEN, { font: ruFont(80), alpha: .35 + .25 * Math.sin(t * 40), rot: -.07, ink: false });
+    letter('ПОЛЕЗНО', 960, 804, 88, TK.yellow, { font: ruFont(80), alpha: .35 + .25 * Math.sin(t * 40), rot: -.07, ink: false });
     const tear = hitK(t, [66.87], .12);
     if (tear > .05) { paint(rectPts(-60, 380, W + 120, 60), { wash: A2.hazard, washOp: 220 * tear, ink: null }); hazard(-60, 440, W + 120, 40); }
     a03_end(t);
@@ -457,7 +471,7 @@
 
   chapter('chorus1', 39.8, 67.1, [
     [39.8, a03_crush],
-    [42.9, a03_talk],
+    [42.72, a03_talk],
     [45.05, a03_chorusA],
     [47.75, a03_limit],
     [49.7, a03_chorusA],

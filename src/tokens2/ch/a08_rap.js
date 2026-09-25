@@ -1,10 +1,11 @@
 // a08_rap.js: «Жги токены» v2, verse 3 (the fast rap), 157.35–180.85.
-// The CEO's AGI keynote gets hijacked by Clawd's toy railway: one slide per rap line, the toy train keeps running
-// across them. 157.35 AGI «ВЕСНА» calendar crossed out year by year → 159.3 loading 99.999% (the train stalls on the
-// progress bar) → 162.25 a robot arm writes dissertations and code → 164.6 programmers replaced by «СКОРО ЗАМЕНИМ»
-// signs (they leave in the toy wagons) → 167.25 Clawd walks on stage with the board-game box → 169.7 the painted game
-// map Царское Село → Москва → Казань → 172.1 pull back: 100 000 GPUs wired to the little table → 174.85 the calm one:
-// a wall of GPU fans blows the toy steam train through a watercolour pine forest to «КАЗАНЬ», held to 180.85.
+// The CEO's AGI keynote gets hijacked by Clawd's toy railway. No train until 169.7 (user: "too much train").
+// 157.35 AGI «ВЕСНА» calendar crossed out year by year (Clawd keeps a tally) → 159.3 loading 99.999% (Clawd pushes
+// the stuck bar) → 162.25 a robot arm writes dissertations and code → 164.6 programmers replaced by «СКОРО ЗАМЕНИМ»
+// signs (they walk off with their cardboard boxes) → 167.25 Clawd walks on stage with the board-game box → 169.7 the
+// painted game map Царское Село → Москва → Казань → 172.1 pull back: 100 000 GPUs wired to the little table →
+// 174.85 the payoff: the GPU fans blow the toy train through the watercolour pine forest, faster and faster, the track
+// ends at a gorge («мост — в следующем релизе»), 179.4 launch, cartoon freeze, drop, puff of smoke, «ту-ту…».
 (() => {
   const INK = PAL.ink;
   const L1 = 157.35, L2 = 159.3, L3 = 162.25, L4 = 164.6, L5 = 167.25, L6 = 169.7, L7 = 172.1, L8 = 174.85, END = 180.85;
@@ -36,12 +37,7 @@
   // past time (so smoke stays where it was puffed), o.t, o.driver (Clawd's face in the cab window), o.glow.
   function a08_train(x, y, s, t, o = {}) {
     const dist = o.dist ?? x, cars = o.cars ?? 2, sw = clamp(s * 1.1, .5, 1.5), carCols = o.carCols || [TOY.blue, TOY.gold, TOY.green, TOY.red];
-    // smoke puffs (world-fixed at the moment they were puffed)
-    for (const pt of o.puffs || []) {
-      const age = t - pt; if (age < 0 || age > 2) continue;
-      const bx = o.xAt ? o.xAt(pt) : x, p = age / 2, r = (14 + 46 * easeOut(p)) * s;
-      paint(ellPts(bx + (48 - 70 * p) * s, y - (118 + 150 * easeOut(p)) * s, r, r * .82, 14, r * .06), { fill: o.smoke || '#F4F1EA', fillOp: 210 * (1 - p), bleed: .2, tex: .3, border: .5, ink: null });
-    }
+    a08_puffs(o.puffs || [], o.xAt || (() => x), y, s, t, o.smoke);
     // wagons trailing left
     for (let i = 0; i < cars; i++) {
       const cx = x - (150 + i * 132) * s, col = carCols[i % carCols.length];
@@ -68,11 +64,25 @@
     paint(rectPts(-84, -112, 60, 78, 1), { wash: TOY.green, fill: '#1E5E3A', fillOp: 60, tex: .5, ink: INK, sw });           // cab
     paint(rectPts(-92, -122, 76, 11, 1), { wash: '#2B2233', ink: INK, sw: sw * .7 });                                        // roof
     paint(rectPts(-74, -102, 36, 26), { wash: o.driver ? PAL.clay : '#FFF5E2', ink: INK, sw: sw * .6 });                    // window
-    if (o.driver) for (const ex of [-66, -52]) paint(rectPts(ex, -96, 4, 8), { wash: INK, ink: null });
+    if (o.driver === 'panic' || o.driver === 'look') {
+      const jx = o.driver === 'panic' ? Math.sin(t * 60) * 1.2 : 0;
+      for (const ex of [-64, -48]) { paint(ellPts(ex + jx, -94, 6, 6.5, 10), { wash: '#FFFFFF', ink: INK, sw: .5 }); paint(ellPts(ex + jx + (o.driver === 'look' ? 0 : 2), -94 + (o.driver === 'look' ? 1 : -1), 2, 2, 6), { wash: INK, ink: null }); }
+      if (o.driver === 'panic') paint(ellPts(-56 + jx, -82, 4, 3.5, 8), { wash: '#3A1418', ink: null });
+      else inkLine([[-61, -82], [-51, -82]], 1, INK, 'inkfine', 0);
+      for (const cx of [-70, -44]) paint(a08_rr(cx - 4, -80, 8, 6, 2), { wash: PAL.clay, ink: INK, sw: .4 });  // claws gripping the sill
+    } else if (o.driver) for (const ex of [-66, -52]) paint(rectPts(ex, -96, 4, 8), { wash: INK, ink: null });
     pop();
     for (const [wx, r] of [[-50, 21], [-4, 21], [48, 13]]) a08_wheel(x + wx * s, y - r * s, r * s, dist / (r * s), TOY.red, sw);
     const a = dist / (21 * s), rx = Math.cos(a) * 10 * s, ry = Math.sin(a) * 10 * s;
     inkLine([[x - 50 * s + rx, y - 21 * s + ry], [x - 4 * s + rx, y - 21 * s + ry]], 1.4 * sw, "#C9CED6", "inkfine", 0);           // coupling rod
+  }
+  // smoke puffs, world-fixed where they were puffed (xAt(pt)); life shortens when many are in flight
+  function a08_puffs(list, xAt, y, s, t, smoke, life = 2) {
+    for (const pt of list) {
+      const age = t - pt; if (age < 0 || age > life) continue;
+      const bx = xAt(pt), p = age / life, r = (14 + 46 * easeOut(p)) * s;
+      paint(ellPts(bx + (48 - 70 * p) * s, y - (118 + 150 * easeOut(p)) * s, r, r * .82, 14, r * .06), { fill: smoke || '#F4F1EA', fillOp: 210 * (1 - p), bleed: .2, tex: .3, border: .5, ink: null });
+    }
   }
   function a08_wheel(x, y, r, a, col, sw) {
     paint(ellPts(x, y, r, r, 16), { wash: col, ink: INK, sw: sw * .7 });
@@ -95,22 +105,21 @@
     paint(rectPts(-60, 720, W + 120, 400), { wash: '#2A2630', fill: '#15131A', fillOp: 90, tex: .5, border: .3, ink: null });
     inkLine([[-60, 722], [W + 60, 722]], 1.4, '#5A5563', 'ink', 0);
     for (const sx of [360, 1560]) paint([[sx - 40, -40], [sx + 40, -40], [sx + 330, 820], [sx - 330, 820]], { fill: '#FFF3D0', fillOp: 22, bleed: .2, tex: .2, border: .1, ink: null });
-    a08_rails(-60, W + 60, 800, 1, { bal: "#3A3440" });
-    // CEO at his podium (right), Clawd with the train remote (left)
+    if (o.big) return a08_bigCast(t, o);
+    // CEO at his podium (right), Clawd (left)
     if (o.ceo !== false) {
       ceoClawd(1760, 790, 19, { click: o.click || 0, aR: o.ceoArm ?? .9, eyes: o.ceoEyes, mouth: o.ceoMouth || 'smile', emote: o.ceoEmote, emoteK: o.ceoEmoteK, noShadow: true });
       paint([[1650, 700], [1870, 700], [1848, 830], [1672, 830]], { wash: '#2E3138', fill: '#1C1F24', fillOp: 80, tex: .4, ink: INK, sw: 1 });
       letter("AGI 2.0", 1760, 760, 36, A2.hazard, { font: ruFont(36), ink: false });
     }
     if (o.clawd !== false) {
-      const ph = Math.sin(t * 9);
-      clawd(150, 790, 15, { mouth: 'cat', eyes: 'happy', aR: .9 + ph * .1, aL: .3, armR: (u, sw) => {
-        paint(a08_rr(-.2 * u, -1.2 * u, 2 * u, 2.4 * u, .4 * u), { wash: TOY.gold, ink: INK, sw: sw * .6 });
-        inkLine([[1.4 * u, -1.2 * u], [2.4 * u, -3.6 * u]], sw * .6, INK, 'ink', 0);
-        paint(ellPts(.8 * u, 0, .45 * u, .45 * u, 8), { wash: RED, ink: null });
-      } });
+      // Clawd heckles from the left wing: a tally card by default (o.tally strokes), or o.clawdO overrides
+      const ph = Math.sin(t * 9), n = o.tally || 0;
+      clawd(150, 790, 15, { mouth: 'cat', eyes: 'happy', aR: 1.35 + ph * .05, aL: .3, ...o.clawdO, armR: o.clawdO?.armR || ((u, sw) => {
+        paint(rectPts(-1 * u, -5.2 * u, 7 * u, 5 * u, 1), { wash: '#FFFDF6', ink: INK, sw: sw * .7 });
+        for (let k = 0; k < n; k++) inkLine([[(.2 + k * 1.3) * u, -4.4 * u], [(.5 + k * 1.3) * u, -1 * u]], sw * 1.3, RED, 'marker', 0);
+      }) });
     }
-    if (o.train) { const tr = o.train; a08_train(tr.x, 800, tr.s || .9, t, { cars: 3, driver: true, ...tr }); }
     // the audience: dark heads, a few phones filming the keynote
     for (let i = 0; i < 16; i++) {
       const hx = -40 + i * 132 + hash(i) * 50, hy = 900 + hash(i + 4) * 40 + Math.abs(Math.sin(t * 6 + i)) * 4;
@@ -119,14 +128,37 @@
       if (hash(i * 7) > .6) { paint(rectPts(hx + 30, hy - 90, 30, 50, 1), { wash: '#DDE8FF', ink: '#0B0C10', sw: .8 }); glowAt(hx + 45, hy - 65, 50, '#9FBFFF', 50); }
     }
   }
+  // big foreground cast for the fast rap slides: the CEO (right) and Clawd with his tally card (left), ~1/3+ frame
+  // tall, feet hidden behind the frame bottom; both bob on the beat (o.pk = punch 0..1)
+  function a08_bigCast(t, o) {
+    const pk = o.pk || 0, n = o.tally || 0;
+    paint(ellPts(1720, 1010, 300, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
+    ceoClawd(1720, 1000, 47, { click: o.click || 0, aR: (o.ceoArm ?? 1.1) + pk * .25, aL: .35, dy: -pk * .15, eyes: o.ceoEyes, mouth: o.ceoMouth || 'smile', emote: o.ceoEmote, emoteK: o.ceoEmoteK, noShadow: true });
+    paint(ellPts(200, 1010, 280, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
+    const cy = 1000 - pk * 6;
+    // the tally card of broken «весна» promises, on a stick in Clawd's raised right hand
+    inkLine([[450, cy - 170], [520, cy - 230]], 7, '#7A5A3A', 'ink', 0);
+    push(); translate(560, cy - 250 + pk * 10); rotate(.08 - pk * .1);
+    paint(rectPts(-110, -64, 220, 128, 1), { wash: '#FFFDF6', fill: '#E4DCCB', fillOp: 40, tex: .4, ink: INK, sw: 1.2 });
+    for (let k = 0; k < n; k++) inkLine([[-66 + k * 48, -44], [-54 + k * 48, 44]], 6, RED, 'ink', 0);
+    if (n >= 3) inkLine([[-86, 30], [80, -30]], 6, RED, 'ink', 0);
+    pop();
+    clawd(200, cy, 44, { mouth: 'cat', eyes: 'happy', aR: 1.0, aL: .25, noShadow: true, ...o.clawdO });
+  }
+  // camera punch on every sung word / strong hit of the fast verse
+  const a08_BEATS = [157.47, 158.42, 159.02, 159.08, 159.32, 159.8, 160.34, 160.68, 160.86, 161.36, 162.28, 162.6, 162.88, 163.62, 164.2, 164.64, 165.34, 166.18, 166.68, 166.9];
+  const a08_pk = t => hitK(t, a08_BEATS, .11);
+  function a08_cam(t, lt, cy = 520) {
+    const p = a08_pk(t), [sx, sy] = shakeXY(t, 9 * p);
+    camBegin(960 + sx, cy + sy, 1 + lt * .012 + .05 * p, (hash(Math.floor(t * 24)) - .5) * .012 * p);
+    return p;
+  }
   // slide chrome: title top-left + a small page number / logo
   function a08_slideTitle(x, y, w, txt, col = '#1E1E24') {
     letter(txt, x + 50, y + 62, 54, col, { font: ruFont(54), align: 'left', ink: false });
     paint(rectPts(x + 50, y + 100, 180, 8), { wash: A2.sodium, ink: null });
     letter('KEYNOTE · AGI', x + w - 40, y + 44, 22, '#8A8A95', { font: ruFont(22), align: 'right', ink: false });
   }
-  // the train that crosses the stage floor across shots 1, 3, 5 (continuous speed)
-  const a08_floorX = t => -380 + frac((t - L1) / 7.2) * 2700;
 
   // ---------- 157.35 AGI «ВЕСНА»: calendar crossed out year by year ----------
   const CAL = [[2023, 157.47, 157.9], [2024, 158.42, 158.75], [2025, 159.02, 159.2], [2026, 99, 99]];
@@ -144,7 +176,7 @@
     }
   }
   function shotCalendar(t, lt) {
-    camBegin(960, 440, 1 + lt * .03);
+    const pk = a08_cam(t, lt);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI — К ВЕСНЕ!');
       const cx = x + w * .5, cy = y + h * .56, pw = 320, ph = 380;
@@ -169,7 +201,8 @@
         inkLine([[x + 82, y + 262 + j * 58], [x + 320, y + 258 + j * 58]], 5, RED, 'marker', 0);
       });
       stamp('ОПЯТЬ', x + w * .82, y + h * .62, 64, t, 159.02, { col: RED, rot: .12 });
-    }, { train: { x: a08_floorX(t), dist: a08_floorX(t), cargo: (i, cx, ty, s) => token(cx, ty + 4, 22 * s, {}) }, click: hitK(t, [157.47, 158.42, 159.02], .15), ceoMouth: 'grin' });
+    }, { big: true, pk, tally: CAL.filter(c => t >= c[1] + .1).length, clawdO: { eyes: t > 159.02 ? 'narrow' : 'happy', mouth: t > 159.02 ? 'flat' : 'cat' }, click: hitK(t, [157.47, 158.42, 159.02], .15), ceoMouth: 'grin' });
+    if (t > 159.02) emote('!', 330, 560, 30, seg(t, 159.02, 159.2));
     camEnd();
     glitchCut(t, L1, { k: 1.2 });
   }
@@ -177,8 +210,7 @@
   // ---------- 159.3 each release: «осталось чуть-чуть», the train stalls at 99.999% ----------
   const LOAD = [[159.3, '99%', '5.0'], [159.8, '99.9%', '5.5'], [160.34, '99.99%', '6.0'], [160.86, '99.999%', '6.5'], [161.36, '99.9999%', '7.0']];
   function shotLoading(t, lt) {
-    const [sx, sy] = shakeXY(t, 6 * hitK(t, LOAD.map(l => l[0]), .1));
-    camBegin(960 + sx, 360 + sy, 1.3 + lt * .03);
+    const pk = a08_cam(t, lt);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI: ЗАГРУЗКА…');
       let i = 0; while (i + 1 < LOAD.length && t >= LOAD[i + 1][0]) i++;
@@ -191,11 +223,12 @@
       paint(rectPts(bx + bw - 30, by - 110, 6, 110), { wash: '#555', ink: null });                                            // finish flag
       paint([[bx + bw - 24, by - 110], [bx + bw + 40, by - 92], [bx + bw - 24, by - 74]], { wash: RED, ink: INK, sw: .8 });
       letter('100%', bx + bw + 8, by - 132, 30, RED, { font: ruFont(30), ink: false });
-      // train on the bar top: runs, then stalls just short of the flag, wheels spinning
-      const tx = bx + 250 + (bw - 470) * easeOut(seg(t, L2, 160.7)), dist = (t - L2) * 900;
-      const puffs = []; for (let pt = L2; pt < t; pt += t > 160.7 ? .22 : .45) puffs.push(pt);
-      a08_train(tx, by, .75, t, { cars: 2, driver: true, dist, puffs, xAt: p => bx + 250 + (bw - 470) * easeOut(seg(p, L2, 160.7)), cargo: (j, cx, ty, s) => token(cx, ty + 4, 20 * s, {}) });
-      if (t > 160.8) emote('sweat', tx - 55, by - 110, 12, seg(t, 160.8, 161));
+      // Clawd on the bar top: runs for the flag, hits the invisible 0.001% wall and pushes it, legs spinning
+      const run = ease(seg(t, L2, 160.7)), wall = bx + bw - 90, cxl = lerp(bx + 120, wall - 62, run), stuck = t > 160.7;
+      clawd(cxl + (stuck ? Math.sin(t * 40) * 2 : 0), by, 11, { walk: t * (stuck ? 6 : 3), eyes: stuck ? 'closed' : 'happy', mouth: stuck ? 'wobble' : 'cat', aR: stuck ? .15 : .5, aL: stuck ? .2 : -.4, rot: stuck ? .18 : 0, noShadow: true });
+      if (stuck) { for (let q = 0; q < 3; q++) inkLine([[wall + 4, by - 70 + q * 22], [wall + 4, by - 58 + q * 22]], 3, RED, 'ink', 0);
+        letter('0,001%', wall + 36, by - 40, 22, RED, { font: ruFont(22), rot: -1.2, ink: false }); }
+      if (t > 160.8) emote('sweat', cxl - 30, by - 110, 12, seg(t, 160.8, 161));
       // big percentage + release sticker
       const pk = backOut(age / .14);
       letter(LOAD[i][1], x + w / 2, y + 520, 120 * pk, '#1E1E24', { font: ruFont(120 * pk), ink: false });
@@ -205,7 +238,7 @@
       letter("релиз " + LOAD[i][2], x + w - 200, y + 125, 38 * pk, '#1E1E24', { font: ruFont(38 * pk), rot: .12, ink: false });
       if (t >= 160.86) stamp('ОСТАЛОСЬ ЧУТЬ-ЧУТЬ', x + w * .36, y + 200, 40, t, 160.86, { col: RED, rot: -.06 });
       if (t >= 161.36) letter('…подождите', x + w / 2, y + 610, 36, '#8A8A95', { font: ruFont(36), pop: (t - 161.36) * 5, ink: false });
-    }, { click: hitK(t, LOAD.map(l => l[0]), .15) });
+    }, { big: true, pk, tally: 3, clawdO: { eyes: 'narrow', mouth: 'flat' }, click: hitK(t, LOAD.map(l => l[0]), .15) });
     camEnd();
   }
 
@@ -215,7 +248,7 @@
     paint(rectPts(x + w * .06, y + h * .25, w * .88, h * .12), { wash: TOY.gold, ink: null });
   }
   function shotArm(t, lt) {
-    camBegin(960, 420, 1.08 + lt * .025);
+    const pk = a08_cam(t, lt);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI УЖЕ ПИШЕТ:');
       const base = [x + w * .5, y + h - 40], coding = t >= 163.95;
@@ -250,8 +283,7 @@
       // labels on the word hits
       stamp('ДИССЕРТАЦИИ: ' + (nB * 1024), x + 240, y + 190, 32, t, 162.88, { col: '#2E4A7A', rot: -.05 });
       stamp('КОД', mx + 150, my - 40, 44, t, 164.2, { col: RED, rot: .08 });
-    }, { train: { x: a08_floorX(t), dist: a08_floorX(t), cargo: (i, cx, ty, s) => { for (let b = 0; b < 3; b++) a08_book(cx - 40 * s, ty - b * 14 * s, 80 * s, 13 * s, ['#2E4A7A', '#7A2E3A', '#2E6A4A'][(b + i) % 3]); } },
-         click: hitK(t, [162.28, 162.88, 164.2], .15) });
+    }, { big: true, pk, tally: 3, clawdO: { eyes: t > 164.2 ? 'scared' : 'narrow', mouth: t > 164.2 ? 'o' : 'flat' }, click: hitK(t, [162.28, 162.88, 164.2], .15) });
     camEnd();
   }
 
@@ -259,11 +291,11 @@
   const REP = [165.34, 166.18, 166.68];
   const a08_prog = (x, y, u, t, seed, o = {}) => clawd(x, y, u, { col: '#9AA7B5', dk: '#5E6B78', lt: '#C9D2DC', mouth: 'flat', eyes: 'narrow', seed, noShadow: true, ...o });
   function shotReplace(t, lt) {
-    camBegin(960, 385, 1.22 + lt * .02);
+    const pk = a08_cam(t, lt);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'ПЛАН: ЗАМЕНИТЬ ПРОГРАММИСТОВ');
       const floorY = y + 470;
-      a08_rails(x + 10, x + w - 10, y + 590, .7, { bal: '#B8AE9A' });
+      paint(rectPts(x, y + 600, w, h - 600), { wash: '#DAD4C8', ink: null });
       [x + 250, x + 630, x + 1010].forEach((dx, i) => {
         // desk + monitor
         paint(rectPts(dx - 20, floorY - 110, 110, 74, 1), { wash: '#1A1C22', ink: INK, sw: .8 });
@@ -278,21 +310,26 @@
         } else {
           // the sign stands on the chair
           const k = backOut(age / .2), s = k;
-          paint(rectPts(dx - 72, floorY - 60 * s, 6, 70 * s), { wash: '#7A5A3A', ink: null });
-          push(); translate(dx - 70, floorY - 90 * s); rotate(-.05 + .04 * i); scale(s);
-          paint(a08_rr(-86, -46, 172, 92, 8), { wash: '#FFFDF6', ink: RED, sw: 1.6 });
+          paint(rectPts(dx - 73, floorY - 60 * s, 8, 70 * s), { wash: '#7A5A3A', ink: null });
+          push(); translate(dx - 70, floorY - 120 * s); rotate(-.05 + .04 * i); scale(s);
+          paint(a08_rr(-160, -78, 320, 156, 10), { wash: '#FFFDF6', ink: RED, sw: 2.2 });
           pop();
-          const lab = i === 2 ? ['ВОТ-', 'ВОТ'] : ['СКОРО', 'ЗАМЕНИМ'];
-          letter(lab[0], dx - 70, floorY - 90 * s - 20 * s, 30 * s, RED, { font: ruFont(30 * s), rot: -.05 + .04 * i, ink: false });
-          letter(lab[1], dx - 70, floorY - 90 * s + 18 * s, 30 * s, RED, { font: ruFont(30 * s), rot: -.05 + .04 * i, ink: false });
+          const lab = i === 2 ? ['ВОТ-', 'ВОТ!'] : ['СКОРО', 'ЗАМЕНИМ'];
+          letter(lab[0], dx - 70, floorY - 120 * s - 34 * s, 62 * s, RED, { font: ruFont(62 * s), rot: -.05 + .04 * i, ink: false });
+          letter(lab[1], dx - 70, floorY - 120 * s + 34 * s, 62 * s, RED, { font: ruFont(62 * s), rot: -.05 + .04 * i, ink: false });
           if (age < .4) for (let q = 0; q < 7; q++) { const a = q / 7 * TAU, d = 30 + age * 260; paint(ellPts(dx - 70 + Math.cos(a) * d, floorY - 40 + Math.sin(a) * d * .5, 16 * (1 - age / .4) + 2, 14 * (1 - age / .4) + 2, 8), { wash: '#D8D2C4', ink: null }); }
         }
       });
-      // the toy train takes the replaced programmers away (left → right along the slide)
-      const trX = t0 => x - 250 + (t0 - L4) * 520;
-      a08_train(trX(t), y + 590, .7, t, { cars: 3, driver: true, dist: trX(t), puffs: [164.9, 165.5, 166.1, 166.7], xAt: trX,
-        cargo: (j, cx, ty, s) => { if (t >= REP[2 - j] + .15) a08_prog(cx, ty + 34 * s, 6.5, t, j + 5, { eyes: 'closed', mouth: 'wobble', aL: .2, aR: .2 }); } });
-    }, { click: hitK(t, REP, .15), ceoMouth: 'grin' });
+      // each replaced programmer trudges off to the right with the classic cardboard box (plant on top)
+      [x + 250, x + 630, x + 1010].forEach((dx, i) => {
+        const age = t - REP[i] - .1; if (age < 0) return;
+        const px = dx - 70 + age * 450, py = y + 600; if (px > x + w + 80) return;
+        a08_prog(px, py, 9, t, i + 5, { walk: age * 2.6, eyes: 'closed', mouth: 'wobble', aL: 1.2, aR: 1.2, noShadow: true });
+        paint(rectPts(px - 42, py - 118, 84, 50, 1), { wash: '#C89B62', fill: '#9C7440', fillOp: 60, tex: .5, ink: INK, sw: .8 });
+        paint(ellPts(px + 18, py - 128, 12, 14, 8), { wash: '#4E8F4E', ink: INK, sw: .5 });
+        paint(rectPts(px - 30, py - 136, 26, 20), { wash: '#1A1C22', ink: null });
+      });
+    }, { big: true, pk, tally: 3, clawdO: { eyes: 'narrow', mouth: 'flat' }, click: hitK(t, REP, .15), ceoMouth: 'grin' });
     camEnd();
   }
 
@@ -305,7 +342,6 @@
     for (let i = 0; i < 6; i++) { const px = x + w * (.08 + i * .17), py = y + h * .56; paint([[px, py - h * .2], [px + w * .05, py], [px - w * .05, py]], { wash: '#2E5B3E', ink: null }); }
     paint(ellPts(x + w * .82, y + h * .22, h * .1, h * .1, 12), { wash: '#FFE38A', ink: null });
     a08_rails(x + 6, x + w - 6, y + h * .82, w / 600, { bal: '#8A7A6A' });
-    a08_train(x + w * .62, y + h * .82, w / 900, t, { cars: 2, dist: t * 60 });
     paint(rectPts(x, y, w, h * .24), { wash: '#C8324A', ink: INK, sw: 1 });
     letter('ПАРОВОЗИКИ', cx, y + h * .12, h * .14, '#FFF5E2', { font: ruFont(h * .14), ink: false });
     letter('Царское Село · 1837', cx, y + h * .33, h * .065, '#1E1E24', { font: ruFont(h * .065), ink: false });
@@ -318,10 +354,10 @@
     camBegin(960, lerp(450, 500, seg(t, 168.2, 169.4)), z);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI ЗАМЕНИТ ВСЕХ');
-      letter('ЭТО РЕВОЛЮЦИЯ', x + w / 2, y + h * .5, 90, '#1E1E24', { font: ruFont(90), ink: false });
+      letter('ЭТО ПРОРЫВ', x + w / 2, y + h * .5, 90, '#1E1E24', { font: ruFont(90), ink: false });
       flushLetters(); if (one > 0) paint(rectPts(x, y, w, h), { wash: '#15171D', washOp: 190 * one, ink: null });                           // the CEO's slide dims
     }, { clawd: false, click: 0, ceoArm: .3, ceoEyes: 'scared', ceoMouth: 'o', ceoEmote: '?', ceoEmoteK: seg(t, 167.6, 167.9),
-         train: { x: a08_floorX(t), dist: a08_floorX(t) } });
+         });
     if (one > 0) paint([[cxw - 60, -40], [cxw + 60, -40], [cxw + 320, 820], [cxw - 320, 820]], { fill: '#FFF3D0', fillOp: 70 * one, bleed: .2, tex: .2, border: .1, ink: null });
     const up = .75 + .25 * easeOut(lift), bob = walk < 1 ? Math.abs(Math.sin(t * 14)) * 6 : 0;
     clawd(cxw, 808, 23, { walk: walk < 1 ? t * 3 : null, dy: -bob / 23, aL: lerp(.3, 1.45, up), aR: lerp(.3, 1.45, up), eyes: one > 0 ? 'spark' : 'happy', mouth: one > 0 ? 'grin' : 'cat' });
@@ -444,9 +480,24 @@
     flash(.5 * Math.exp(-Math.max(0, lit) * 8) * (lit > 0 ? 1 : 0), '#DFFFE9');
   }
 
-  // ---------- 174.85 the calm one: fans blow the toy steam train through the pine forest to КАЗАНЬ ----------
-  const a08_trainFx = t => lerp(520, 2780, ease(seg(t, L8, 179.35)));
-  const PUFF = [174.9, 175.1, 175.75, 176.42, 177.04, 177.7, 178.35, 178.9, 179.4, 179.9, 180.5];
+  // ---------- 174.85 the payoff: fans blow the toy train through the pine forest, faster and faster, off a cliff ----------
+  // speed: gentle V0, then each GPU-fan boost (on the words/hits) adds speed over RAMP s. x is the exact integral.
+  const V0 = 220, RAMP = .3, BOOST = [[175.75, 180], [176.42, 300], [177.04, 450], [177.8, 700], [178.5, 1000]];
+  const VMAX = V0 + BOOST.reduce((a, b) => a + b[1], 0);
+  const LAUNCH = 179.4, HANG_T = 179.85, DROP_T = 180.12, BOOM = 180.5;   // «лес» ends 179.4 → fly → freeze → drop → smoke
+  const a08_vRun = t => V0 + BOOST.reduce((a, [ti, dv]) => a + dv * clamp((t - ti) / RAMP), 0);
+  const a08_xRun = t => 520 + V0 * (t - L8) + BOOST.reduce((a, [ti, dv]) => { const u = t - ti; return a + dv * (u <= 0 ? 0 : u < RAMP ? u * u / (2 * RAMP) : u - RAMP / 2); }, 0);
+  const XL = a08_xRun(LAUNCH), EDGE = XL - 40, HANG = XL + 640, FAR = EDGE + 1000, CAMF = HANG + 160;
+  const a08_k = t => t < LAUNCH ? clamp((a08_vRun(t) - V0) / (VMAX - V0)) : t < HANG_T ? 1 : 0;
+  // train pose: [x, y, angle]
+  function a08_pose(t) {
+    if (t < LAUNCH) return [a08_xRun(t), 800, 0];
+    if (t < DROP_T) { const p = seg(t, LAUNCH, HANG_T), e = 1 - (1 - p) * (1 - p); return [lerp(XL, HANG, e), 800 - 64 * Math.sin(e * Math.PI / 2), -.05 * e]; }
+    const u = t - DROP_T; return [HANG + 160 * u, 736 + 7500 * u * u, Math.min(1.25, u * 2.8)];
+  }
+  // puffs every 170 px of travel before the launch (so they come faster and faster), precomputed = pure in t
+  const PUFFS = []; { let next = 520; for (let tt = L8; tt < LAUNCH; tt += .002) if (a08_xRun(tt) >= next) { PUFFS.push(tt); next += a08_vRun(tt) > 900 ? 240 : 170; } }
+  let SMASH = LAUNCH; for (let tt = L8; tt < LAUNCH; tt += .002) if (a08_xRun(tt) + 124 >= EDGE - 10) { SMASH = tt; break; }
   // a watercolour treeline: one jagged silhouette, n spiky crowns between x0..x1 standing on y
   function a08_treeline(x0, x1, y, step, hMin, hMax, seed, col, fill, sway) {
     const pts = [[x0, y + 200]];
@@ -468,47 +519,95 @@
     }
     for (const p of tiers) paint(p, { wash: col, ink, sw: .7, curv: .12 });
     for (const p of tiers) paint([p[2], p[3], p[4], [lerp(p[2][0], p[4][0], .45), p[4][1] - h * .02]], { wash: "#7FB06A", washOp: 110, ink: null });
-    paint(tiers[0].map(([px, py], i) => [px + (i === 2 ? 0 : 0), py]).concat([[x + sway, y - h * .98]]), { fill: dk, fillOp: 70, bleed: .12, tex: .6, border: .5, ink: null });
+    paint(tiers[0].concat([[x + sway, y - h * .98]]), { fill: dk, fillOp: 70, bleed: .12, tex: .6, border: .5, ink: null });
+  }
+  // a rocky cliff face going down from (x, top); dir +1 = rock to the left of x (near side), -1 = to the right
+  function a08_cliff(x, top, dir, seed) {
+    const pts = [[x - dir * 700, top], [x, top]];
+    for (let i = 1; i <= 7; i++) pts.push([x - dir * (hash(i + seed) * 70 + i * 14), top + i * 70]);
+    pts.push([x - dir * 700, top + 560]);
+    paint(pts, { wash: '#8A6E58', fill: '#4E3A30', fillOp: 90, bleed: .1, tex: .8, border: .6, ink: '#3A2A22', sw: 1.2 });
+    for (let i = 0; i < 6; i++) inkLine([[x - dir * (20 + hash(i * 3 + seed) * 60), top + 40 + i * 80], [x - dir * (90 + hash(i + seed) * 120), top + 70 + i * 80]], 1.4, '#3A2A22', 'inkfine', .5);
   }
   function shotForest(t, lt) {
-    const trX = a08_trainFx(t), camX = clamp(trX + 180, 960, 2500) + lt * 6, wind = Math.sin(t * 1.3) * .5 + .5;
-    const L = f => { push(); translate(960 - camX * f, 0); };
+    const [trX, trY, trA] = a08_pose(t), k = a08_k(t), v = a08_vRun(Math.min(t, LAUNCH));
+    const camRun = tt => a08_xRun(tt) + 180 + 300 * a08_k(tt);
+    const camX = t < LAUNCH ? camRun(t) : lerp(camRun(LAUNCH), CAMF, ease(seg(t, LAUNCH, HANG_T + .1)));
+    const camDY = 110 * ease(seg(t, DROP_T, BOOM)), boom = t - BOOM;
+    const [sx, sy] = shakeXY(t, 9 * k * k + (boom > 0 ? 14 * Math.exp(-boom * 9) : 0));
+    const wind = t < HANG_T ? Math.sin(t * 1.3) * .5 + .5 + k * 2 : 1, frozen = t >= HANG_T && t < DROP_T;
+    const L = f => { push(); translate(960 - camX * f + sx, -camDY * f + sy); };
+    const scr = (x, y) => [x - camX + 960 + sx, y - camDY + sy];
     // sky: dusk washes, the low sun, soft clouds
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#A4BEDC', ink: null });
     const bands = ['#B6C8E0', '#CCD0E0', '#E4D3D0', '#F2CFB2', '#F7C99E', '#F6D6B0'];
-    for (let i = 0; i < 6; i++) paint(rectPts(-60, 220 + i * 70, W + 120, 700), { wash: bands[i], washOp: 150, ink: null });
-    const sunX = 1260 - (camX - 960) * .08;
-    paint(ellPts(sunX, 540, 190, 190, 24), { wash: "#FFE9C4", washOp: 90, ink: null });
-    paint(ellPts(sunX, 540, 64, 64, 22), { wash: '#FFF3D6', ink: null });
-    for (let i = 0; i < 5; i++) { const a = -2.3 + i * .38 + Math.sin(t * .3 + i) * .02; paint([[sunX, 540], [sunX + Math.cos(a) * 1600, 540 + Math.sin(a) * 1600], [sunX + Math.cos(a + .07) * 1600, 540 + Math.sin(a + .07) * 1600]], { fill: '#FFF1D0', fillOp: 40, bleed: .2, tex: .2, border: .1, ink: null }); }
-    for (let i = 0; i < 5; i++) paint(ellPts(frac(i * .27 + t * .004) * 2600 - 300 - (camX - 960) * .1, 130 + (i % 3) * 70, 220, 36, 16), { fill: '#FFF6EC', fillOp: 110, bleed: .2, tex: .4, ink: null });
-    // Kazan on the far horizon: soft spires + a tower, then two watercolour treelines with mist between
+    for (let i = 0; i < 6; i++) paint(rectPts(-60, 220 + i * 70 - camDY * .3, W + 120, 700), { wash: bands[i], washOp: 150, ink: null });
+    const sunX = 1260 - (camX - 960) * .06;
+    paint(ellPts(sunX, 540 - camDY * .3, 190, 190, 24), { wash: "#FFE9C4", washOp: 90, ink: null });
+    paint(ellPts(sunX, 540 - camDY * .3, 64, 64, 22), { wash: '#FFF3D6', ink: null });
+    for (let i = 0; i < 5; i++) { const a = -2.3 + i * .38 + Math.sin(t * .3 + i) * .02; paint([[sunX, 540], [sunX + Math.cos(a) * 1600, 540 + Math.sin(a) * 1600], [sunX + Math.cos(a + .07) * 1600, 540 + Math.sin(a + .07) * 1600]], { fill: '#FFF1D0', fillOp: 40 * (1 - k * .6), bleed: .2, tex: .2, border: .1, ink: null }); }
+    for (let i = 0; i < 5; i++) paint(ellPts(frac(i * .27 + t * .004 - camX * .00004) * 2600 - 300, 130 + (i % 3) * 70, 220, 36, 16), { fill: '#FFF6EC', fillOp: 110, bleed: .2, tex: .4, ink: null });
+    // Kazan on the far horizon (only comes into view over the gorge), then two treelines with mist between
     L(.3);
-    for (const [kx, kh, kw] of [[2050, 250, 14], [2110, 180, 44], [2180, 280, 12], [2250, 150, 80], [2320, 250, 14]]) paint([[kx - kw / 2, 650], [kx - kw / 2, 650 - kh * .8], [kx, 650 - kh], [kx + kw / 2, 650 - kh * .8], [kx + kw / 2, 650]], { wash: '#BDB2C8', washOp: 210, ink: null });
+    const kz = .3 * CAMF + 470;
+    for (const [kx, kh, kw] of [[0, 250, 14], [60, 180, 44], [130, 280, 12], [200, 150, 80], [270, 250, 14]]) paint([[kz + kx - kw / 2, 650], [kz + kx - kw / 2, 650 - kh * .8], [kz + kx, 650 - kh], [kz + kx + kw / 2, 650 - kh * .8], [kz + kx + kw / 2, 650]], { wash: '#9A8CB0', washOp: 220, ink: null });
+    paint(ellPts(kz + 240, 560, 26, 30, 12), { wash: '#9A8CB0', washOp: 220, ink: null });
     pop();
-    L(.45); a08_treeline(-800, 3400, 690, 64, 90, 170, 1, '#93A6BD', '#7488A2', wind * 3); pop();
-    paint(rectPts(-60, 655, W + 120, 40), { wash: "#FBE8D6", washOp: 90, ink: null });
-    L(.7); a08_treeline(-800, 3900, 760, 88, 170, 280, 7, '#5F8570', '#46695A', wind * 6); pop();
-    paint(rectPts(-60, 735, W + 120, 36), { wash: "#FBEBDD", washOp: 70, ink: null });
-    // main layer: meadow, fans, track, pines, station, train
-    L(1);
-    paint(rectPts(-800, 770, 4600, 400), { wash: '#7FAE62', fill: '#557F45', fillOp: 80, bleed: .1, tex: .7, border: .5, ink: null });
-    for (let i = 0; i < 60; i++) { const fx = -600 + hash(i * 1.7) * 4000, fy = 850 + hash(i * 2.9) * 60; paint(ellPts(fx, fy, 5, 4, 6), { wash: ['#FFF3D6', '#F2B632', '#E27A92'][i % 3], ink: null }); }
-    // the wall of GPU fans at the far left: they blow the train along
-    paint(rectPts(-260, 60, 560, 720, 1), { wash: '#3A4450', fill: '#232A33', fillOp: 80, tex: .5, ink: INK, sw: 1 });
-    for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) cooler(-160 + c * 170, 150 + r * 138, 60, t, { speed: 5, howl: c === 2 ? .7 : 0 });
-    paint(rectPts(-260, 60, 560, 720), { fill: '#DCE6F2', fillOp: 70, bleed: .2, tex: .3, border: .2, ink: null });
-    for (let i = 0; i < 12; i++) {
-      const p = frac(t * .42 + i / 12), wx = 320 + p * 2900, wy = 200 + hash(i) * 560 + Math.sin(p * 8 + i) * 34, len = 260 + hash(i + 2) * 260, a = Math.sin(p * Math.PI);
-      inkLine([[wx, wy], [wx + len * .35, wy - 18], [wx + len * .7, wy - 4], [wx + len, wy - 16]], 3 * a, '#FFFFFF', 'inkfine', .5);
+    L(.45); a08_treeline(-800, .45 * CAMF + 1800, 690, 64, 90, 170, 1, '#93A6BD', '#7488A2', wind * 3); pop();
+    paint(rectPts(-60, 655 - camDY * .5, W + 120, 40), { wash: "#FBE8D6", washOp: 90, ink: null });
+    L(.7); a08_treeline(-800, .7 * CAMF + 1800, 760, 88, 170, 280, 7, '#5F8570', '#46695A', wind * 6); pop();
+    paint(rectPts(-60, 735 - camDY * .7, W + 120, 36), { wash: "#FBEBDD", washOp: 70, ink: null });
+    // speed blur over the far forest: long horizontal smears, stronger with speed
+    if (k > .15) {
+      paint(rectPts(-60, 560 - camDY * .6, W + 120, 220), { fill: '#A9B8B0', fillOp: 70 * k, bleed: .2, tex: .2, border: .2, ink: null });
+      for (let i = 0; i < 22; i++) {
+        const y = 500 + hash(i * 1.9) * 280, x = frac(hash(i * 2.3) - camX * (.00025 + hash(i) * .0002)) * 2800 - 440;
+        paint(ellPts(x, y - camDY * .6, 180 + 520 * k, 5 + hash(i + 5) * 9, 12), { fill: y < 640 ? '#7488A2' : '#46695A', fillOp: 110 * k, bleed: .2, tex: .3, border: .2, ink: null });
+      }
     }
-    a08_rails(-800, 3600, 800, 1.3, { bal: '#8A7A6A' });
-    for (let i = 0; i < 11; i++) {                                                    // pines behind the track
+    // main layer
+    L(1);
+    const vis = x => x > camX - 1400 && x < camX + 1400;
+    // near side: meadow up to the edge; far side from FAR
+    paint(rectPts(-800, 770, EDGE + 800, 400), { wash: '#7FAE62', fill: '#557F45', fillOp: 80, bleed: .1, tex: .7, border: .5, ink: null });
+    paint(rectPts(FAR, 770, 4000, 400), { wash: '#7FAE62', fill: '#557F45', fillOp: 80, bleed: .1, tex: .7, border: .5, ink: null });
+    // the gorge: dusky depth, mist, cliff faces
+    if (camX > EDGE - 1500) {
+      paint(rectPts(EDGE - 40, 770, FAR - EDGE + 80, 900), { wash: '#4A4660', fill: '#23202E', fillOp: 110, bleed: .15, tex: .5, border: .4, ink: null });
+      for (let i = 0; i < 4; i++) paint(ellPts(lerp(EDGE, FAR, .2 + i * .2), 900 + i * 60, 360, 40, 14), { fill: '#C9C3D8', fillOp: 70, bleed: .3, tex: .3, border: .2, ink: null });
+      a08_cliff(EDGE, 770, 1, 3); a08_cliff(FAR, 770, -1, 8);
+    }
+    for (let i = 0; i < 110; i++) { const fx = -600 + hash(i * 1.7) * (EDGE + 500), fy = 850 + hash(i * 2.9) * 60; if (vis(fx) && fx < EDGE - 30) paint(ellPts(fx, fy, 5, 4, 6), { wash: ['#FFF3D6', '#F2B632', '#E27A92'][i % 3], ink: null }); }
+    // the wall of GPU fans at the far left: they blow the train along
+    if (camX < 2400) {
+      paint(rectPts(-260, 60, 560, 720, 1), { wash: '#3A4450', fill: '#232A33', fillOp: 80, tex: .5, ink: INK, sw: 1 });
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) cooler(-160 + c * 170, 150 + r * 138, 60, t, { speed: 5 + k * 20, howl: c === 2 ? .7 : 0 });
+      paint(rectPts(-260, 60, 560, 720), { fill: '#DCE6F2', fillOp: 70, bleed: .2, tex: .3, border: .2, ink: null });
+    }
+    a08_rails(-800, EDGE, 800, 1.3, { bal: '#8A7A6A' });
+    a08_rails(FAR + 20, FAR + 3000, 800, 1.3, { bal: '#8A7A6A' });
+    for (let i = 0; i < 24; i++) {                                                    // pines behind the track (both sides)
       const x = 500 + i * 330 + hash(i * 7) * 120, h = 330 + hash(i + 9) * 170;
-      if (Math.abs(x - 3050) < 260) continue;
+      if (!vis(x) || (x > EDGE - 180 && x < FAR + 120) || Math.abs(x - (FAR + 320)) < 260) continue;
       a08_pine(x, 780, h, '#3F6B4F', '#2A4A38', wind * 12 + Math.sin(t * 1.7 + i) * 4, '#22382C');
     }
-    // station КАЗАНЬ
+    // near-side edge: the warning sign + the barrier (smashed at SMASH)
+    if (camX > EDGE - 1600) {
+      const wx = EDGE - 300;
+      paint(rectPts(wx - 6, 620, 12, 160), { wash: '#4A3326', ink: null });
+      push(); translate(wx, 600); rotate(-.04);
+      paint(a08_rr(-150, -70, 300, 130, 8), { wash: '#FFFDF6', ink: INK, sw: 1.3 });
+      hazard(-150, 48, 300, 14);
+      pop();
+      const sm = t - SMASH;
+      if (sm < 0) { for (const px of [EDGE - 60, EDGE + 30]) paint(rectPts(px - 5, 730, 10, 70), { wash: '#555', ink: null }); hazard(EDGE - 70, 735, 110, 26); }
+      else for (let q = 0; q < 3; q++) {                                            // planks flying
+        const u = Math.min(sm, 1.2), px = EDGE - 30 + q * 30 + u * (500 + q * 260), py = 740 - u * (380 - q * 90) + 900 * u * u;
+        push(); translate(px, py); rotate(u * (6 + q * 3)); hazard(-40, -9, 80, 18); pop();
+      }
+    }
+    // station КАЗАНЬ on the far side
+    push(); translate(FAR - 2760, 0);
     paint(rectPts(2760, 770, 560, 30, 1), { wash: '#B9AFA0', ink: INK, sw: .9 });
     paint(rectPts(3110, 620, 14, 150), { wash: '#4A3326', ink: null });
     paint(a08_rr(2960, 560, 310, 76, 10), { wash: '#FFFDF6', ink: INK, sw: 1.4 });
@@ -516,23 +615,70 @@
     paint([[3156, 654], [3235, 604], [3314, 654]], { wash: TOY.red, ink: INK, sw: .9 });
     paint(rectPts(3218, 700, 36, 70), { wash: '#6B4A2E', ink: null });
     paint(rectPts(3180, 670, 26, 22), { wash: '#FFE38A', ink: INK, sw: .5 });
-    // the train (arrives 179.35, then rests with a lazy puff)
-    const dist = trX - 520;
-    a08_train(trX, 800, 1.35, t, { cars: 3, driver: true, dist, puffs: PUFF.filter(p => p <= t), xAt: a08_trainFx, glow: .5,
-      cargo: (i, cx, ty, s) => token(cx, ty + 2, 22 * s, {}) });
     pop();
-    // low foreground ferns (parallax 1.25), kept under the track line
+    // the train
+    const S = 1.35, drv = frozen ? 'look' : (k > .3 || t >= DROP_T) ? 'panic' : true;
+    a08_puffs(PUFFS.filter(p => p <= t), a08_xRun, 800, S, t, null, k > .5 ? 1.1 : 2);
+    push(); translate(trX, trY); rotate(trA);
+    a08_train(0, 0, S, t, { cars: 3, driver: drv, dist: frozen ? a08_xRun(LAUNCH) + (t - HANG_T) * 300 : a08_xRun(Math.min(t, LAUNCH)) + Math.max(0, t - LAUNCH) * 2500, glow: .5,
+      cargo: (i, cx, ty, s) => token(cx, ty + 2 - (frozen ? 10 + i * 4 : 0), 22 * s, {}) });
+    if (k > .3 && t < LAUNCH) {                                                     // wheel sparks
+      const f = Math.floor(t * 30);
+      for (const wx of [-50, -4, 48, -182, -118, -314, -250, -446, -382]) for (let q = 0; q < 2; q++) {
+        const h = hash(f * 3.1 + wx + q * 7), l = (30 + 70 * h) * k;
+        inkLine([[wx * S, 0], [wx * S - l, -8 - 26 * h * k]], 2.2, q ? '#FFE38A' : '#FF9A3A', 'inkfine', .3);
+      }
+    }
+    pop();
+    if (k > .45 && t < LAUNCH) emote('sweat', trX - 90 * S, 800 - 150 * S, 12, 1);
+    // impact: smoke billows up from the gorge
+    if (boom > 0) for (let i = 0; i < 7; i++) {
+      const g = easeOut(boom / .35), r = (40 + 90 * g) * (1 - i * .08);
+      paint(ellPts(HANG + 180 + (hash(i) - .5) * 220, 1150 - g * (260 + i * 45), r, r * .8, 14, r * .08), { fill: i % 2 ? '#E8E2D8' : '#F4F1EA', fillOp: 220 * (1 - boom * .9), bleed: .25, tex: .4, border: .5, ink: null });
+    }
+    pop();
+    // low foreground ferns (parallax 1.25): only over solid ground, never over the gorge
     L(1.25);
-    for (let i = 0; i < 16; i++) { const x = -400 + i * 300 + hash(i * 5) * 120; paint([[x - 90, 1090], [x - 30, 900 + hash(i) * 30], [x + 10, 980], [x + 50, 910 + hash(i + 1) * 30], [x + 100, 1090]], { wash: '#2F5A3A', fill: '#1E3A28', fillOp: 70, tex: .5, ink: null, curv: .3 }); }
+    const i0 = Math.floor((1.25 * camX - 1500) / 300);
+    for (let i = i0; i < i0 + 11; i++) {
+      const x = -400 + i * 300 + hash(i * 5) * 120, gx = x - .25 * camX; if (gx > EDGE - 80 && gx < FAR + 80) continue;
+      paint([[x - 90, 1090], [x - 30, 900 + hash(i) * 30], [x + 10, 980], [x + 50, 910 + hash(i + 1) * 30], [x + 100, 1090]], { wash: '#2F5A3A', fill: '#1E3A28', fillOp: 70, tex: .5, ink: null, curv: .3 });
+    }
     pop();
+    // wind lines (screen space): the fans' gale, more, longer and faster with speed
+    if (t < HANG_T) for (let i = 0; i < 36; i++) {
+      if (hash(i * 4.7) > .3 + .7 * k) continue;
+      const p = frac(hash(i * 1.3) + t * .42 + (Math.min(t, LAUNCH) - L8) * .35 * k), wx = -300 + p * 2600, wy = 140 + hash(i) * 620 + Math.sin(p * 8 + i) * 34, len = (260 + hash(i + 2) * 260) * (1 + 1.6 * k), a = Math.sin(p * Math.PI);
+      inkLine([[wx, wy], [wx + len * .35, wy - 18], [wx + len * .7, wy - 4], [wx + len, wy - 16]], (3 + 2 * k) * a, '#FFFFFF', 'inkfine', .5);
+    }
     // screen-space lettering
-    const scr = x => x - camX + 960;
-    letter('КАЗАНЬ', scr(3115), 598, 56, '#1E1E24', { font: ruFont(56), ink: false });
-    letter('GPU × 100 000', scr(20), 40, 34, '#FFF5E2', { font: ruFont(34) });
-    if (t >= 179.35) sfx('ту-ту!', scr(trX + 60), 520, 64, '#FFF5E2', t - 179.35, { life: 1.4, font: ruFont(64), stroke: TOY.red });
+    const [kx, ky] = scr(FAR + 355, 598);
+    letter('КАЗАНЬ', kx, ky, 56, '#1E1E24', { font: ruFont(56), ink: false });
+    if (camX > EDGE - 1600) {
+      const [wx, wy] = scr(EDGE - 300, 600);
+      letter('МОСТ —', wx, wy - 42, 34, RED, { font: ruFont(34), ink: false, rot: -.04 });
+      letter('в следующем', wx, wy - 8, 30, '#1E1E24', { font: ruFont(30), ink: false, rot: -.04 });
+      letter('релизе', wx, wy + 24, 30, '#1E1E24', { font: ruFont(30), ink: false, rot: -.04 });
+    }
+    if (t < LAUNCH) {                                                               // the fan HUD
+      const pct = Math.round(100 + 900 * k), kmh = Math.round(v * .14);
+      const hx = W - 460, [hsx, hsy] = shakeXY(t + 3, 4 * k);
+      push(); translate(hsx, hsy);
+      paint(a08_rr(hx, 40, 420, 128, 14), { wash: '#101318', washOp: 200, ink: INK, sw: 1 });
+      paint(rectPts(hx + 24, 94, 372 * (.12 + .88 * k), 18), { wash: k > .7 ? RED : '#48E08A', ink: null });
+      pop();
+      letter('ВЕНТИЛЯТОРЫ GPU', hx + 24 + hsx, 72 + hsy, 26, '#48E08A', { font: ruFont(26), align: 'left', ink: false });
+      letter(k > .95 ? 'MAX!!!' : pct + '%', hx + 396 + hsx, 72 + hsy, 26, k > .7 ? '#FF6A6A' : '#48E08A', { font: ruFont(26), align: 'right', ink: false });
+      letter(kmh + ' км/ч', hx + 24 + hsx, 140 + hsy, 34, '#FFF5E2', { font: ruFont(34), align: 'left', ink: false });
+      for (const [ti] of BOOST) sfx('ВЖУХ!', 620 + (ti * 37 % 1) * 500, 150 + (ti * 53 % 1) * 200, 64, '#FFF5E2', t - ti, { life: .7, font: ruFont(64), stroke: TOY.blue });
+    }
+    if (frozen) {                                                                    // cartoon freeze: he looks at us
+      const [cx, cy] = scr(HANG - 75 * S, 736 - 190 * S);
+      sfx('ой.', cx, cy, 58, '#FFF5E2', t - HANG_T - .06, { life: 1, font: ruFont(58), stroke: INK, rot: .05 });
+    }
+    if (boom > .02) { const [bx, by] = scr(HANG + 180, 1150 - 380 * easeOut(boom / .35)); letter('ту-ту…', bx + 70, by - 50, 50, '#FFF5E2', { font: ruFont(50), stroke: INK, alpha: 1 - boom * 1.2, pop: boom * 4, rot: -.06 }); }
     glitchCut(t, L8, { k: .6, span: .06 });
   }
-
   chapter('rap', L1, END, [
     [L1, shotCalendar],
     [L2, shotLoading],

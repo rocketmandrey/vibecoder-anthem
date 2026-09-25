@@ -17,7 +17,7 @@
   const a06_WIN = { pylon: [400, 130, 240, 430], coil: [960, 90, 250, 420], drop: [1520, 130, 240, 430] };   // cx, top, w, h
   const a06_PILLARS = [20, 660, 1160, 1800];
   const a06_CEO = [960, 700, 32];                                    // ground x, y, u (legs hidden by the pulpit)
-  const a06_BILL = [1320, 240];                                      // scroll hangs at world x .. x + w
+  const a06_BILL = [1190, 390];                                      // scroll hangs at world x .. x + w
 
   // ---------- small helpers ----------
   function a06_arch(cx, top, w, h) {                                 // pointed gothic arch
@@ -231,8 +231,8 @@
     const rev = seg(t, 118.2, 118.4), zapK = seg(t, 118.5, 118.8) * (1 - seg(t, 120.1, 120.6)), stab = hitK(t, a06_HC, .3);
     const [sx, sy] = shakeXY(t, 10 * stab * rev);
     camBegin(960 + sx, 520 + sy, 1 + lt * .014 + stab * .012);
-    a06_nave(t, { L: lerp(.06, 1, rev) * (.85 + .15 * stab), win: { pylon: 1 + zapK * .5 }, zap: { pylon: zapK * (.5 + .5 * Math.abs(Math.sin(t * 23))) }, heat: zapK * .3 });
-    a06_dark((1 - rev) * .8);
+    a06_nave(t, { L: lerp(.42 + .13 * seg(t, 116.3, 118.2), 1, rev) * (.85 + .15 * stab), win: { pylon: 1 + zapK * .5 }, zap: { pylon: zapK * (.5 + .5 * Math.abs(Math.sin(t * 23))) }, heat: zapK * .3 });
+    a06_dark((1 - rev) * .3);
     a06_beam(960, 960, 60, 260, 880, lerp(.9, .35, rev));                                // the preacher's spotlight
     // electricity: cables from the pylon window crackle down the racks
     if (zapK > .05) for (let i = 0; i < 3; i++) {
@@ -319,8 +319,8 @@
     camEnd();
     // the choir answers in the beams
     const cK = seg(t, 120.86, 121.05), dK = seg(t, 122.38, 122.55);
-    if (cK > 0) letter('БОЛЬШЕ МЕДИ.', 330, 470, 64, '#F2B27A', { font: ruFont(64), pop: cK, stroke: '#2B2233', alpha: 1 - seg(t, 123.4, 123.7) });
-    if (dK > 0) letter('БОЛЬШЕ ВОДЫ.', W - 330, 470, 64, '#8EC3E6', { font: ruFont(64), pop: dK, stroke: '#2B2233', alpha: 1 - seg(t, 123.4, 123.7) });
+    if (cK > 0) letter('БОЛЬШЕ МЕДИ.', 330, 560, 64, '#F2B27A', { font: ruFont(64), pop: cK, stroke: '#2B2233', alpha: 1 - seg(t, 123.4, 123.7) });
+    if (dK > 0) letter('БОЛЬШЕ ВОДЫ.', W - 330, 560, 64, '#8EC3E6', { font: ruFont(64), pop: dK, stroke: '#2B2233', alpha: 1 - seg(t, 123.4, 123.7) });
     flushLetters();
     // screen space: the neighbouring town's reservoir, taped up top-left
     const lvl = a06_reservoir(t, 40, 40, 560, 360);
@@ -344,35 +344,36 @@
   }
 
   // ---------- 125.15 the madman; the intelligence price tag shrinks, the bill unrolls to the floor ----------
-  const a06_ITEMS = ['ЭЛЕКТРИЧЕСТВО  1 ГВт', 'МЕДЬ  40 000 т', 'ВОДА  3 000 000 л', 'GPU  × 100 000', 'СОБОР СЕРВЕРНЫЙ  1 шт', 'ХОР АГЕНТОВ  × 16', 'НИМБЫ (токены)  × 16', 'КАФЕДРА-GPU  1 шт'];
-  function a06_bill(t, p) {                                          // p 0..1 unrolled; scroll hangs from the vault to the floor then pools right
+  function a06_bill(t, p, tot = 1) {                                          // p 0..1 unrolled; scroll hangs from the vault to the floor then pools right
     const [x, w] = a06_BILL, top = 60, fl = 880, len = p * 1500, vert = Math.min(len, fl - top), pool = Math.max(0, len - vert);
     paint(rectPts(x - 16, top - 30, w + 32, 34, 1), { wash: '#B4502A', fill: '#6E2E18', fillOp: 80, tex: .5, ink: INK, sw: .7 });   // the roller
     if (vert < 4) return;
     paint(rectPts(x, top, w, vert, .5), { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .5 });
-    letter('СЧЁТ', x + w / 2, top + 30, 34, '#2B2233', { font: ruFont(34), ink: false });
-    for (let i = 0; i < a06_ITEMS.length; i++) {
-      const y = top + 80 + i * 86; if (y > top + vert - 20) break;
-      letter(a06_ITEMS[i], x + 12, y, 15, '#33333A', { font: ruFont(15), align: 'left', ink: false });
-      inkLine([[x + 12, y + 22], [x + w - 12, y + 22]], .4, '#8A8480', 'inkfine', 0);
-      letter('$$$', x + w - 12, y + 44, 18, '#D8262A', { font: ruFont(18), align: 'right', ink: false });
-    }
+    letter('СЧЁТ', x + w / 2, top + 40, 48, '#2B2233', { font: ruFont(48), ink: false });
+    for (let y = top + 90; y < top + vert - 10; y += 34) inkLine([[x + 20, y], [x + w - 20, y]], .4, '#C8C0B4', 'inkfine', 0);   // ruled paper, no text
     if (pool > 4) {                                                   // the tail piles up on the floor in loops
       paint([[x, fl - 10], [x + w, fl - 10], [x + w + pool * .55, fl + 34], [x + pool * .55 - 40, fl + 50]], { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .5 });
       for (let i = 0; i < Math.min(5, pool / 110); i++) paint(ellPts(x + w * .5 + i * 70, fl + 10 - i * 4, 60, 26, 14), { ink: INK, sw: .5 });
-      if (p > .9) letter('ИТОГО: 300 000 000 000 $', x + pool * .3 + 60, fl + 22, 22, '#D8262A', { font: ruFont(22), ink: false, rot: .06 });
     }
+    // the total rides down on the unrolling edge and stops mid-scroll
+    const k = seg(p, .15, .35) * tot; if (k <= 0) return;
+    const ty = Math.min(top + vert - 120, 500);
+    paint(rectPts(x + 14, ty - 46, w - 28, 150, 1), { wash: '#FFF5E2', washOp: 255 * k, ink: k > .99 ? '#D8262A' : null, sw: 1.2 });
+    letter('ИТОГО:', x + w / 2, ty, 52, '#2B2233', { font: ruFont(52), ink: false, alpha: k });
+    letter('$300 МЛРД', x + w / 2, ty + 64, 56, '#D8262A', { font: ruFont(56), ink: false, alpha: k });   // ponytail: 300 000 000 000 won't fit ≥40 px on the scroll
   }
   function a06_tag(t, x, y, price, s) {
     inkLine([[x, -40], [x, y - 150 * s]], 1, '#8A8480', 'inkfine', 0);
     push(); translate(x, y); rotate(Math.sin(t * 2.5) * .06); scale(s);
-    paint([[-95, -100], [0, -150], [95, -100], [95, 100], [-95, 100]], { wash: '#FFF5E2', fill: '#E8AA38', fillOp: 40, tex: .4, ink: INK, sw: 1 });
+    paint([[-130, -100], [0, -150], [130, -100], [130, 100], [-130, 100]], { wash: '#FFF5E2', fill: '#E8AA38', fillOp: 40, tex: .4, ink: INK, sw: 1 });
     paint(ellPts(0, -112, 11, 11, 10), { wash: '#2B2233', ink: null });
     pop();
-    const fmt = price >= 1 ? '$' + price.toFixed(2) : '$' + price.toFixed(Math.min(6, 1 - Math.floor(Math.log10(price))));
-    letter('ИНТЕЛЛЕКТ', x, y - 60 * s, 30 * s, '#2B2233', { font: ruFont(30 * s), ink: false });
-    letter('за 1M токенов', x, y - 25 * s, 18 * s, '#59636E', { font: ruFont(18 * s), ink: false });
-    letter(fmt, x, y + 40 * s, 48 * s, '#D8262A', { font: ruFont(48 * s), ink: false });
+    const fmt = '$' + String(+price.toPrecision(price >= 1 ? 2 : 1)).replace('.', ',');
+    letter('$20', x, y - 45 * s, 52 * s, '#59636E', { font: ruFont(52 * s), ink: false });
+    if (price < 19.5) {
+      inkLine([[x - 55 * s, y - 40 * s], [x + 55 * s, y - 52 * s]], 3 * s, '#D8262A', 'ink', 0);   // struck out
+      letter(fmt, x, y + 40 * s, 64 * s, '#D8262A', { font: ruFont(64 * s), ink: false });
+    }
   }
   function a06_madman(t, x, y, u) {
     const sh = Math.floor(t * 14);
@@ -390,7 +391,7 @@
     a06_bill(t, easeOut(seg(t, 125.3, 127.1)));
     a06_madman(t, 60, 900, 32);
     a06_beam(700, 700, 40, 180, 520, Math.max(.3, stab));                               // the choir stabs light the price tag
-    a06_tag(t, 700, 440, price, lerp(1, .32, pe));
+    a06_tag(t, 700, 440, price, lerp(1.05, .85, pe));
     camEnd();
     punkText('ЧТОБЫ ИНТЕЛЛЕКТ', 620, 110, 76, t, 125.2, { seed: 3 });
     punkText('СТАЛ ДЕШЕВЛЕ!', 620, 215, 88, t, 126.1, { seed: 8 });
@@ -403,8 +404,8 @@
     const offs = [129.8, 130.56, 131.25], out = offs.map(o => seg(t, o, o + .08)), clicks = hitK(t, offs, .2);
     camBegin(960, cy, z);
     a06_nave(t, { L: 1 - .25 * seg(t, 131.25, 131.4), win: { pylon: 1 - out[0] * .92, drop: 1 - out[1] * .92, coil: 1 - out[2] * .92 }, choirO: { eyes: 'normal', mouth: () => 'flat' } });
-    a06_bill(t, 1);
-    a06_tag(t, 700, 440, .002, .32);
+    a06_bill(t, 1, 1 - seg(t, 129.8, 130.3));                                          // the total fades with the lights
+    a06_tag(t, 700, 440 - 900 * easeIn(seg(t, 129.8, 130.5)), .002, .85);   // reeled up out of the push-in
     a06_dark(seg(t, 129.8, 131.4) * .55);
     a06_beam(960, 960, 50, 250, 880, .35 + .55 * seg(t, 129.8, 131.4));
     // the shades descend from above ("deal with it") and land on the face at 132.05
