@@ -99,6 +99,8 @@
     stageBack(t, { spots: [[960, PAL.cream]] });
     letter("I'M UPPING MY", 960, 245, 100, PAL.cream, { rot: -.03 });
     letter('P(DOOM)', 960, 425, 250, PAL.clay, { rot: -.03 + Math.sin(bpOf(t) * Math.PI) * .015 });
+    letter('КРЕМЛЬ-ПОП', 1150, 585, 74, KP.goldLt, { pop: seg(t, .55, .85) * 1.4, rot: -.1, stroke: KP.rubyDk, font: `74px ${RU_FONT}` });
+    letter('K-POP · K IS FOR KREMLIN', 1150, 650, 30, KP.cream, { pop: seg(t, .75, 1.0) * 1.4, rot: -.1, stroke: KP.rubyDk, font: `30px ${RU_FONT}` });
     flushLetters();                                      // the title is painted on the backdrop, under Clawd and the curtains
     const hx = 960, hy = 885, open = easeOut(seg(t, .42, .6)), rx = 190 * open, ry = 46 * open;
     if (open > .02) {

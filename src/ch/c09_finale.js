@@ -81,6 +81,7 @@
       backdrop: tt => {
         paint(rectPts(-400, -400, W + 800, 1240), { wash: '#F6E3C8', washOp: 255, ink: null });
         sunburst(960, 430, CRIMSON, GOLD, tt * (o.spin || .12), 16, 1300, o.burstOp || 120);
+        kremlinSkyline(tt);
       }
     });
     // footlights along the stage lip
@@ -100,7 +101,7 @@
         const a = -Math.PI / 2 + sd * (.45 + .25 * Math.sin(bp * TAU + i)), L = r * 1.5 * cheer;
         const sx = x + sd * r * .7, sy = y - r * .1;
         inkLine([[sx, sy], [sx + Math.cos(a) * L * .6, sy + Math.sin(a) * L * .6], [sx + Math.cos(a) * L, sy + Math.sin(a) * L]], 5.5, HEAD, 'marker', .4);
-        paint(ellPts(sx + Math.cos(a) * L, sy + Math.sin(a) * L, 16, 16, 10), { wash: HEAD, ink: null });
+        rubyStar(sx + Math.cos(a) * L, sy + Math.sin(a) * L, 20, { glow: .5 + .5 * pulse(t, 4), rot: a + Math.PI / 2 });
       }
       paint(ellPts(x, y, r, r * 1.05, 18), { wash: HEAD, fill: PAL.violet, fillOp: 45, tex: .4, border: .3, ink: null });
       inkLine([[x - r * .7, y - r * .72], [x, y - r * 1.04], [x + r * .7, y - r * .72]], .7, GOLD, 'inkfine', .6);
@@ -198,7 +199,7 @@
     }
     trapLip(open);
     if (rise > 0) burstConfetti(HX, GY - 120, t - tr, 20, 900);
-    stageFront(t, {});
+    stageFront(t, { crowd: false });
     camEnd();
     audience(t, .15 + .5 * seg(t, tr, tr + .3));
   }
@@ -224,7 +225,7 @@
         emote: done ? (c.k === 'res' ? 'heart' : c.k === 'clawd' ? 'spark' : undefined) : undefined, emoteK: seg(t, tb(i) + .5, tb(i) + .75) });
     });
     flowers(t);
-    stageFront(t, {});
+    stageFront(t, { crowd: false });
     camEnd();
     confettiRain(t, GB - .2, 36);
     audience(t, .7);
@@ -300,7 +301,7 @@
       push(); translate(sgx, sgy); rotate(srot); paint(rrPts(-114, -35, 228, 70, 12, 2), { wash: WOOD, fill: WOOD_DK, fillOp: 60, tex: .6, ink: PAL.ink, sw: 1.2 }); pop();
       letter('P(DOOM)', sgx, sgy, 44, PAL.cream, { rot: srot });
     }
-    stageFront(t, {});
+    stageFront(t, { crowd: false });
     camEnd();
     if (popped) { flash(.8 * (1 - seg(age, 0, .12))); confettiRain(t, TP + .15, 40); }
     audience(t, popped ? .9 : .1 + .2 * inf);
@@ -346,7 +347,7 @@
       who(c, c.x, GY, t, { m, aL: c.k === 'res' && aL != null ? 1.3 : aL, aR: c.k === 'res' && aR != null ? 1.3 : aR, eyes, mouth: 'grin',
         wave: c.k === 'shog' ? 1 : 0, emote: ta ? 'spark' : undefined, emoteK: seg(t, B(221.5), B(221.5) + .25), x: c.k === 'clawd' ? { blush: true } : undefined });
     });
-    stageFront(t, {});
+    stageFront(t, { crowd: false });
     camEnd();
     confettiRain(t, 148.5, 50);
     audience(t, 1);
@@ -401,9 +402,10 @@
       for (let k = 0; k < 8; k++) puff(140 + k * 235, 1010, land * .8 - hash(k) * .05, k % 2 ? 1 : -1);
       letter("I'M UPPING MY", 960, 300, 96, GOLD, { pop: seg(t, TD + .7, TD + 1.0) * 1.5, rot: -.03 });
       letter('P(DOOM)', 960, 480, 240, PAL.cream, { pop: seg(t, TD + .95, TD + 1.3) * 1.5, rot: -.03 + Math.sin(bpOf(t) * Math.PI) * .012, stroke: CURTAIN_DK });
-      letter('created by Claude Opus 5.5', 960, 690, 50, GOLD, { pop: seg(t, 153.0, 153.35) * 1.5, font: '800 50px "Shantell Sans", sans-serif' });
+      letter('КРЕМЛЬ-ПОП EDITION', 960, 610, 64, KP.goldLt, { pop: seg(t, TD + 1.2, TD + 1.5) * 1.5, rot: -.03, stroke: CURTAIN_DK, font: `64px ${RU_FONT}` });
+      letter('created by Claude Opus 5.5', 960, 700, 50, GOLD, { pop: seg(t, 153.0, 153.35) * 1.5, font: '800 50px "Shantell Sans", sans-serif' });
     }
-    stageFront(t, {});
+    stageFront(t, { crowd: false });
     camEnd();
     audience(t, .8 * (1 - seg(t, 154, 155.5)));
     flushLetters();

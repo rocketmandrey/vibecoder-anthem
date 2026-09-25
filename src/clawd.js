@@ -26,7 +26,10 @@ function clawd(x, y, u, o = {}) {
   if (!o.noLegs) [-4, -2, 1, 3].forEach((lx, i) => {
     let h = 2.2;
     if (o.walk != null) { const ph = Math.sin((o.walk + (i % 2 ? .5 : 0)) * TAU); if (ph > 0) h = 2.2 - ph * .9; }
-    paint(rectPts(lx * u, -2.4 * u, u, h * u, J * .6), { wash: dk, washOp: 255, ink: PAL.ink, sw: sw * .8 });
+    // o.kick (-1..1): the outermost leg on that side swings out sideways (prisyadka)
+    const kick = o.kick && ((o.kick > 0 && i === 3) || (o.kick < 0 && i === 0)) ? Math.abs(o.kick) : 0;
+    if (kick > .02) { push(); translate((lx + .5) * u, -2.4 * u); rotate((o.kick > 0 ? -1 : 1) * kick * 1.45); paint(rectPts(-.5 * u, 0, u, 2.6 * u, J * .6), { wash: dk, washOp: 255, ink: PAL.ink, sw: sw * .8 }); pop(); }
+    else paint(rectPts(lx * u, -2.4 * u, u, h * u, J * .6), { wash: dk, washOp: 255, ink: PAL.ink, sw: sw * .8 });
   });
 
   // arms
@@ -133,6 +136,8 @@ function eyes(u, o, sw) {
 
 function hat(u, h, sw) {
   if (!h || h === 'mask') return;
+  h = HAT_SWAP[h] || h;                                    // Kremlin-pop wardrobe (kremlin.js)
+  if (KHAT[h]) return KHAT[h](u, sw);
   if (h === 'party') {
     paint([[-1.8 * u, -7.9 * u], [0, -12.8 * u], [1.8 * u, -7.9 * u]], { wash: PAL.rose, fill: PAL.violet, fillOp: 50, ink: PAL.ink, sw: sw * .8 });
     paint(ellPts(0, -12.8 * u, u * .75, u * .75, 12), { wash: PAL.ochre, ink: PAL.ink, sw: sw * .6 });
@@ -221,7 +226,7 @@ function mood(t, keys) {
 // Dance moves: return pose offsets in body units, driven by the song's beat.
 function move(style, t, seed = 0) {
   const bp = bpOf(t), bi = Math.floor(bp), bf = bp - bi, hit = Math.max(0, 1 - bf * 3.5), s1 = Math.sin(bp * Math.PI), ab = Math.abs(s1);
-  const o = { dy: 0, sq: 0, aL: .2, aR: .2, rot: 0, walk: null, sx: 1, dx: 0 };
+  const o = { dy: 0, sq: 0, aL: .2, aR: .2, rot: 0, walk: null, sx: 1, dx: 0, kick: 0 };
   if (style === 'mix') style = ['bounce', 'roof', 'sway', 'spin', 'hop', 'wave'][(Math.floor(bp / 8) + seed) % 6];
   switch (style) {
     case 'bounce': o.dy = -ab * 1.6; o.sq = hit * .12; o.aL = .4 + s1; o.aR = .4 - s1; break;
@@ -234,6 +239,7 @@ function move(style, t, seed = 0) {
     case 'run': o.walk = bp * 1.5; o.dy = -Math.abs(Math.sin(bp * TAU)); o.aL = .8 * Math.sin(bp * TAU * 1.5); o.aR = -o.aL; o.rot = -.08; break;
     case 'idle': o.dy = -ab * .5; o.sq = hit * .05; break;
     case 'stomp': o.dy = -Math.max(0, Math.sin(bp * TAU)) * 1.4; o.sq = hit * .2; o.rot = (bi % 2 ? 1 : -1) * .06 * hit; o.aL = o.aR = -.3 + hit * .9; break;
+    case 'prisyadka': { const sd = bi % 2 ? 1 : -1, k = Math.sin(clamp(bf / .7) * Math.PI); o.kick = sd * k; o.dy = -k * .9; o.sq = .2 - k * .12; o.aL = o.aR = .05 + .1 * k; o.rot = -sd * k * .05; break; }
     case 'shimmy': o.dx = Math.sin(bp * TAU * 2) * .6; o.rot = Math.sin(bp * TAU * 2) * .05; o.aL = .9 + .4 * Math.sin(bp * TAU * 2); o.aR = .9 - .4 * Math.sin(bp * TAU * 2); o.dy = -ab * .5; break;
   }
   return o;

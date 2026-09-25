@@ -62,6 +62,7 @@ function cornerMeter(t) {
     for (let q = 1; q < 5; q++) inkLine([[-36, 62 + 300 * q / 5], [-16, 62 + 300 * q / 5]], .7, PAL.ink, 'inkfine', 0);
     paint(ellPts(0, 410, 56, 56, 22, 2), { wash: col, washOp: 240, fill: PAL.ink, fillOp: 25, ink: PAL.ink, sw: 1.3 });
     pop();
+    rubyStar(x, y - 44, 30 * k, { glow: .4 + .6 * pulse(t, 4) });
     letter('P(DOOM)', x, y + 14, 40 * k, PAL.cream, { rot: -.05 });
     letter(Math.floor(v) + '%', x, y + 410 * k * .85, 36 * k, PAL.cream);
   }
@@ -69,7 +70,7 @@ function cornerMeter(t) {
 
 // ---------- brush wipe ----------
 // Fat paint strokes sweep across to cover the old scene, the scene swaps under full cover (p = .5), then they drag off.
-const WIPE_COLS = [[PAL.clayDk, PAL.clay], [PAL.indigo, PAL.violet], [PAL.teal, PAL.sap], [PAL.violet, PAL.rose], [PAL.ochre, PAL.clay]];
+const WIPE_COLS = [[KP.rubyDk, KP.ruby], [KP.brickDk, KP.gold], [KP.ruby, KP.goldDk], [KP.rubyDk, KP.brick], [KP.goldDk, KP.ruby]];
 function wipe(p, idx) {
   const [c1, c2] = WIPE_COLS[idx % WIPE_COLS.length], n = 5, bh = (H + 420) / n + 40;
   push(); translate(W / 2, H / 2); rotate(-.1); translate(-W / 2, -H / 2);
@@ -87,32 +88,43 @@ function wipe(p, idx) {
       hatch: { d: 44, a: 0, o: { rand: .6, gradient: .5 }, b: 'charcoal', c: i % 2 ? c2 : PAL.cream, w: .8 } });
   }
   pop();
+  // a ruby star spins through while the frame is covered
+  const k = clamp(1 - Math.abs(p - .5) / .2);
+  if (k > .02) rubyStar(960, 540, 230 * backOut(k), { glow: k, rot: (p - .5) * 5 });
 }
 
 // ---------- karaoke ----------
 function karaoke(t) {
   const L = LY.find(l => t >= l[0] && t < l[1]); if (!L) return;
   const [a, b, txt] = L;
-  outX.font = '800 50px "Shantell Sans", sans-serif';
-  const tw = outX.measureText(txt).width, grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
+  outX.font = '800 44px "Shantell Sans", sans-serif';
+  let tw = outX.measureText(txt).width;
+  outX.font = `30px ${RU_FONT}`; tw = Math.max(tw, outX.measureText(RU[txt] || '').width);
+  const grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
   if (grow < .02) return;
-  const w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = 978;
-  const pts = [[x0 + jit(8), y0 + jit(4)], [x0 + w / 2, y0 - 4 + jit(4)], [x0 + w + jit(8), y0 + jit(4)], [x0 + w + 14 + jit(8), y0 + 44], [x0 + w + jit(8), y0 + 88 + jit(4)], [x0 + w / 2, y0 + 92 + jit(4)], [x0 + jit(8), y0 + 88 + jit(4)], [x0 - 14 + jit(8), y0 + 44]];
-  paint(pts, { wash: PAL.ink, washOp: 225, fill: PAL.violet, fillOp: 60, tex: .7, border: .4, ink: null });
+  const w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = 962, h = 106;
+  const pts = [[x0 + jit(8), y0 + jit(4)], [x0 + w / 2, y0 - 4 + jit(4)], [x0 + w + jit(8), y0 + jit(4)], [x0 + w + 14 + jit(8), y0 + h / 2], [x0 + w + jit(8), y0 + h + jit(4)], [x0 + w / 2, y0 + h + 4 + jit(4)], [x0 + jit(8), y0 + h + jit(4)], [x0 - 14 + jit(8), y0 + h / 2]];
+  paint(pts, { wash: KP.night, washOp: 232, fill: KP.ruby, fillOp: 70, tex: .7, border: .4, ink: KP.gold, sw: .7 });
+  for (const sd of [-1, 1]) if (grow > .6) rubyStar(960 + sd * (w / 2 - 6), y0 + h / 2, 22 * grow);
   KARAOKE = { a, b, txt, grow };
 }
 function drawKaraokeText(c) {
   if (!KARAOKE || KARAOKE.grow < .85) return;
   const { a, b, txt } = KARAOKE, t = T;
-  c.font = '800 50px "Shantell Sans", sans-serif'; c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.font = '800 44px "Shantell Sans", sans-serif'; c.textBaseline = 'middle'; c.textAlign = 'left';
   const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width);
   const total = ws.reduce((p, q) => p + q, 0) + sp * (words.length - 1);
   const singDur = Math.min(b - a - .1, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;
-  let x = 960 - total / 2, done = 0; const y = 1022;
+  let x = 960 - total / 2, done = 0; const y = 994;
   words.forEach((w, i) => {
     const f = clamp((sung - done) / w.length); done += w.length;
     c.fillStyle = PAL.cream; c.fillText(w, x, y);
-    if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - 40, ws[i] * f + 2, 80); c.clip(); c.fillStyle = PAL.ochre; c.fillText(w, x, y); c.restore(); }
+    if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - 36, ws[i] * f + 2, 72); c.clip(); c.fillStyle = KP.goldLt; c.fillText(w, x, y); c.restore(); }
     x += ws[i] + sp;
   });
+  const ru = RU[txt]; if (!ru) return;
+  c.font = `30px ${RU_FONT}`; c.textAlign = 'center';
+  const rw = c.measureText(ru).width, rf = clamp(sung / txt.replace(/ /g, '').length);
+  c.fillStyle = '#F2C9B8'; c.fillText(ru, 960, 1042);
+  c.save(); c.beginPath(); c.rect(960 - rw / 2 - 2, 1020, rw * rf + 2, 48); c.clip(); c.fillStyle = KP.rubyLt; c.fillText(ru, 960, 1042); c.restore();
 }

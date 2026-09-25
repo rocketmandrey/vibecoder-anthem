@@ -184,7 +184,7 @@ async function setup() {
   brush.scaleBrushes(5); defineBrushes();
   paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H); letG.pixelDensity(1);
   outC = document.getElementById('out'); outX = outC.getContext('2d');
-  await Promise.all([document.fonts.load('100px "Permanent Marker"'), document.fonts.load('800 50px "Shantell Sans"')]);
+  await Promise.all([document.fonts.load('100px "Permanent Marker"'), document.fonts.load('800 50px "Shantell Sans"'), document.fonts.load('50px "Russo One"', 'КРЕМЛЬ')]);
   window.ready = true;
   if (!location.search.includes('render')) devUI();
 }

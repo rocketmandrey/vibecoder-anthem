@@ -597,6 +597,25 @@
     paint(ellPts(9.05 * u, -3.45 * u, .75 * u, .24 * u, 14, 0, -.25), { wash: '#5A3A1A', ink: null });
     paint(rectPts(.55 * u, -4.55 * u, .6 * u, .4 * u), { wash: PAL.ink, ink: null });
   }
+  // Kremlin-pop: the sax is swapped for a balalaika (body-local: body on Clawd's lower right, neck up and out to the right)
+  const BAL_HOLE = [4.6, -2.55];
+  function balalaika(u, sw) {
+    const A = [5.6, -5.6], B1 = [1.3, -.5], B2 = [6.9, -1.4], M = [(B1[0] + B2[0]) / 2, (B1[1] + B2[1]) / 2];
+    const dl = Math.hypot(A[0] - M[0], A[1] - M[1]), d = [(A[0] - M[0]) / dl, (A[1] - M[1]) / dl], n = [-d[1], d[0]];
+    const E = [A[0] + d[0] * 5, A[1] + d[1] * 5], P2 = [E[0] + d[0] * 1.5 + n[0] * .25, E[1] + d[1] * 1.5 + n[1] * .25], U = p => [p[0] * u, p[1] * u];
+    const q = (p, k, w) => U([p[0] + n[0] * w + d[0] * k, p[1] + n[1] * w + d[1] * k]);
+    paint([q(A, -.3, .32), q(E, 0, .22), q(E, 0, -.22), q(A, -.3, -.32)], { wash: '#6B3F22', fill: '#3E2414', fillOp: 70, tex: .5, ink: PAL.ink, sw: sw * .6 });   // neck
+    for (let k = 1; k < 6; k++) { const f = [lerp(A[0], E[0], k / 6), lerp(A[1], E[1], k / 6)]; inkLine([q(f, 0, .22), q(f, 0, -.22)], sw * .35, '#E8C98A', 'inkfine', 0); }
+    paint([q(E, 0, .3), q(P2, 0, .26), q(P2, 0, -.26), q(E, 0, -.3)], { wash: '#8A4B26', ink: PAL.ink, sw: sw * .6 });                                          // pegbox
+    for (const k of [.4, .9, 1.3]) for (const s of [-1, 1]) paint(ellPts(...q(E, k, s * .45), .16 * u, .16 * u, 8), { wash: KP.cream, ink: PAL.ink, sw: sw * .3 });
+    const body = [U(B1), U([lerp(B1[0], B2[0], .5), lerp(B1[1], B2[1], .5) + .45]), U(B2), U(A)];
+    paint(body, { wash: '#E6A64E', fill: '#B7701F', fillOp: 90, tex: .6, border: .5, ink: PAL.ink, sw: sw * .8, curv: .2 });
+    for (let k = 1; k < 4; k++) inkLine([U([lerp(B1[0], A[0], k / 4 * .9), lerp(B1[1], A[1], k / 4 * .9)]), U([lerp(B2[0], A[0], k / 4 * .9), lerp(B2[1], A[1], k / 4 * .9)])], sw * .3, '#B7701F', 'inkfine', .2);
+    paint(ellPts(BAL_HOLE[0] * u, BAL_HOLE[1] * u, .55 * u, .55 * u, 12), { wash: '#3A2010', ink: PAL.ink, sw: sw * .4 });
+    rubyStar(...U([lerp(B1[0], B2[0], .25), lerp(B1[1], B2[1], .25) - .45]), .5 * u, { sw: sw * .3 });
+    const br = [lerp(M[0], A[0], .12), lerp(M[1], A[1], .12)];
+    for (const w of [-.12, 0, .12]) inkLine([q(br, 0, w), q(E, 0, w * .7)], sw * .25, '#FFF1C4', 'inkfine', 0);                                             // strings
+  }
   function ribbonMic(x, y, h) {
     const cy = y - h;
     paint(ellPts(x, y, 46, 10, 16), { wash: '#2A2E40', ink: CINK, sw: .8 });
@@ -657,10 +676,10 @@
       const tw = 1 - seg(t, 106.6, 107.3);
       if (tw > 0) paint(starPts(cross[0], cross[1], 50 * tw * lock, .25, 4), { wash: PAL.cream, ink: null });
     }
-    // the band: Clawd on sax (left), the Researcher at the ribbon mic (right), both a bit singed at first
+    // the band: Clawd on balalaika (left), the Researcher at the ribbon mic (right), both a bit singed at first
     const sway = Math.sin(bp * Math.PI / 2), cm = mood(t, [[105.4, 'swirl'], [106.1, 'closed', 'music'], [107.97, 'happy', 'heart'], [108.6, 'closed']]);
     const u = 38, cX = 600, cY = 850, crot = sway * .07 - .03, cdy = -Math.abs(Math.sin(bp * Math.PI)) * .5;
-    clawd(cX, cY, u, { hat: 'fedora', rot: crot, dy: cdy, sq: .06 * pulse(t, 6), aL: .35 + .25 * Math.sin(bp * Math.PI), aR: -.55, blush: true, ...cm, draw: sax });
+    clawd(cX, cY, u, { hat: 'ushanka', rot: crot, dy: cdy, sq: .06 * pulse(t, 6), aL: .35 + .25 * Math.sin(bp * Math.PI), aR: -.55 + .18 * pulse2(t, 7), blush: true, ...cm, draw: balalaika });
     const s = 28, rX = 1330, rY = 850;
     ribbonMic(1232, 858, 262);
     const rm = mood(t, [[105.4, 'swirl'], [106.2, 'closed']]), singing = t > 106.1;
@@ -669,7 +688,7 @@
       draw: (s2, sw2) => { paint(ellPts(1.4 * s2, -9.9 * s2, .55 * s2, .32 * s2, 12), { fill: '#3F3A48', fillOp: 110 * (1 - seg(t, 106, 108)), bleed: .2, ink: null }); } });
     if (t < 107.2) for (let i = 0; i < 3; i++) { const ph = frac((t - 105.4) * .8 + i / 3), y0 = rY - 14.3 * s - ph * 120; inkLine([[rX - 10 + i * 12, y0 + 40], [rX + Math.sin(ph * 6 + i) * 14, y0 + 20], [rX - 6 + Math.sin(ph * 6 + i + 2) * 14, y0]], .8, '#9AA3B8', 'inkfine', .6); }
     // notes drift up from the bell and the mic
-    const bell = (() => { const lx = 9.05 * u, ly = (-3.45 + cdy) * u, c = Math.cos(crot), sn = Math.sin(crot); return [cX + lx * c - ly * sn, cY + lx * sn + ly * c]; })();
+    const bell = (() => { const lx = BAL_HOLE[0] * u, ly = (BAL_HOLE[1] + cdy) * u, c = Math.cos(crot), sn = Math.sin(crot); return [cX + lx * c - ly * sn, cY + lx * sn + ly * c]; })();
     const NC = [PAL.cream, '#F6C35A', PAL.sky, PAL.rose];
     for (let n = 155; n <= 160; n++) for (const [src, off] of [[bell, 0], [[1232, 560], .5]]) {
       const age = t - bt(n) - off * BEAT; if (age < 0 || age > 2.6 || (off && n % 2)) continue;

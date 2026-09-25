@@ -1,4 +1,19 @@
-# I'm Upping My P(doom)
+# I'm Upping My P(doom) · КРЕМЛЬ-ПОП EDITION
+
+> K-pop, but the K is for Kremlin.
+
+This fork re-dresses the whole video as a Kremlin-pop idol show. It's one shared layer ([`src/kremlin.js`](src/kremlin.js)) plus a few small hooks, so every chapter picks it up:
+
+- **The stage is Red Square.** A crenellated wall with swallowtail merlons, two towers with ruby stars and a fast-running clock, St Basil's candy-striped onion domes and a garland whose bulbs chase on the beat. Snow falls on every stage shot.
+- **Idol wardrobe.** Party hats are ushankas now, top hats are budenovkas and the crown is Monomakh's cap. The dance-break back line wears gold kokoshniks.
+- **Choreography.** A new `move('prisyadka')` squats and kicks a leg out on every beat (`clawd({ kick })`).
+- **The fandom.** The front rows swing ruby-star lightsticks in unison and shout fan chants on the first beats of each chorus (КЛОД! КЛОД! КРЕМЛЬ-ПОП!).
+- **Bilingual karaoke.** A ruby bar with the English lyric on top and a Russian subtitle underneath.
+- **Set pieces.** Red-and-gold brush wipes with a spinning ruby star, a ruby star on the P(doom) meter, a balalaika instead of the sax in the orthogonality blues, a КРЕМЛЬ-ПОП stamp on the title and on the final curtain.
+
+Render it the same way as below (on macOS, `render.mjs` now finds Chrome and uses Metal automatically).
+
+---
 
 Source code for the [Claude Opus 5.5 music video for *I'm Upping My P(doom)*](https://youtu.be/8j-hR4fJywU).
 

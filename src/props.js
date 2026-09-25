@@ -24,7 +24,8 @@ function stageBack(t, o = {}) {
   if (o.backdrop) o.backdrop(t);
   else {
     paint(rectPts(-400, -400, W + 800, 1240), { wash: o.wall || '#F6E3C8', washOp: 255, ink: null });
-    sunburst(960, 430, o.a || PAL.rose, o.b || PAL.ochre, t * .12);
+    sunburst(960, 430, mixCol(o.a || PAL.rose, KP.ruby, .35), mixCol(o.b || PAL.ochre, KP.gold, .5), t * .12);
+    if (o.kremlin !== false) kremlinSkyline(t, o);
   }
   // floor with slightly converging planks
   const fl = o.floor || WOOD;
@@ -68,6 +69,8 @@ function stageFront(t, o = {}) {
   paint(v, { wash: CURTAIN, washOp: 255, fill: CURTAIN_DK, fillOp: 110, bleed: .05, tex: .7, border: .6, ink: PAL.ink, sw: 1.5 });
   const fr = []; for (let i = 0; i <= 24; i++) fr.push([i * 80, i % 2 ? 106 : 96]);
   inkLine(fr, 1.2, GOLD, 'ink', .3);
+  for (let i = 0; i < 12; i++) paint(starPts(i * 160 + 80, 122, 17, .45, 5), { wash: KP.goldLt, ink: PAL.ink, sw: .5 });
+  kpopHouse(t, o);
   if (o.alarm) paint(rectPts(-400, -400, W + 800, H + 800), { fill: '#E0283F', fillOp: 110 * clamp(o.alarm), bleed: .02, tex: .5, border: .2, ink: null });
 }
 
@@ -93,6 +96,7 @@ function meterProp(x, y, s, v, o = {}) {
   }
   // sign
   paint(rrPts(-120, -610, 240, 70, 12, 2), { wash: WOOD, fill: WOOD_DK, fillOp: 60, tex: .6, ink: PAL.ink, sw });
+  rubyStar(0, -660, 42, { glow: clamp(v / 100) });
   pop();
   letterAt(o.label || 'P(DOOM)', x, y - 575 * s, 46 * s, PAL.cream);
   letterAt((v >= 99.5 ? v.toFixed(1) : Math.floor(v)) + '%', x, y - 92 * s, 40 * s, PAL.cream);

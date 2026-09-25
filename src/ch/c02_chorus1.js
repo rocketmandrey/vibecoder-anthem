@@ -706,11 +706,11 @@
     // back line: the wave travels left → right through everyone
     [[400, 0], [575, 1], [1265, 5], [1440, 6], [1600, 7]].forEach(([x, i]) => {
       const ph = spinPh(bp, i), m = move('bounce', t);
-      miniClawd(x, 778, 18, { ...m, sx: ph > 0 ? Math.cos(ph * TAU) : 1, dy: m.dy - Math.sin(ph * Math.PI) * 3, aL: ph > 0 ? 1.4 : m.aL, aR: ph > 0 ? 1.4 : m.aR, eyes: 'happy', mouth: 'smile', hat: 'party', seed: i, noShadow: true });
+      miniClawd(x, 778, 18, { ...m, sx: ph > 0 ? Math.cos(ph * TAU) : 1, dy: m.dy - Math.sin(ph * Math.PI) * 3, aL: ph > 0 ? 1.4 : m.aL, aR: ph > 0 ? 1.4 : m.aR, eyes: 'happy', mouth: 'smile', hat: i % 2 ? 'kokoshnik' : 'ushanka', blush: i % 2 === 1, seed: i, noShadow: true });
     });
     // left medium Clawd
-    { const ph = spinPh(bp, 2), m = move('roof', t);
-      clawd(500, 990, 27, { ...m, sx: ph > 0 ? Math.cos(ph * TAU) : 1, dy: m.dy - Math.sin(ph * Math.PI) * 3, eyes: 'happy', mouth: 'grin', hat: 'party', blush: true }); }
+    { const ph = spinPh(bp, 2), m = move('prisyadka', t);        // prisyadka: squat and kick on every beat
+      clawd(500, 990, 27, { ...m, sx: ph > 0 ? Math.cos(ph * TAU) : 1, dy: m.dy - Math.sin(ph * Math.PI) * 3, eyes: 'happy', mouth: 'grin', hat: 'ushanka', blush: true }); }
     // the Researcher doing the robot on eighth notes (bowtie from the lab chapter)
     { const e = Math.floor(bp * 2), k = backOut(clamp(frac(bp * 2) / .25)), P = ROBOT[((e % 8) + 8) % 8], Q = ROBOT[(((e - 1) % 8) + 8) % 8];
       const L = j => lerp(Q[j], P[j], k);
