@@ -25,6 +25,7 @@ Object.assign(KP, {
   ruby: '#E8508A', rubyDk: '#9C2F6B', rubyLt: '#FFB3D1', gold: '#F2C84B', goldLt: '#FFE9A8', goldDk: '#B98A1E', night: '#241A4A'
 });
 for (const k of Object.keys(HAT_SWAP)) delete HAT_SWAP[k];
+WIPE_COLS.splice(0, WIPE_COLS.length, ['#C2527E', '#F48FB1'], ['#7C5CC4', '#9FD3F5'], ['#E8508A', '#FFE9A8'], ['#7C5CC4', '#F48FB1']);   // pastel brush wipes
 const MG = {
   pink: '#F48FB1', pinkDk: '#C2527E', hot: '#E8508A', lilac: '#B79CE8', lilacDk: '#7C5CC4', sky: '#9FD3F5', navy: '#241A4A',
   blue: '#3A6FD8', blueDk: '#23489A', red: '#E8364F', gold: '#F2C84B', goldLt: '#FFE9A8', hair: '#F6C95B', hairDk: '#C9912F',
