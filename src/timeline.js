@@ -90,14 +90,16 @@ function wipe(p, idx) {
   pop();
   // a ruby star spins through while the frame is covered
   const k = clamp(1 - Math.abs(p - .5) / .2);
-  if (k > .02) rubyStar(960, 540, 230 * backOut(k), { glow: k, rot: (p - .5) * 5 });
+  if (k > .02) (window.WIPE_ICON || rubyStar)(960, 540, 230 * backOut(k), { glow: k, rot: (p - .5) * 5 });   // a song kit may set window.WIPE_ICON
 }
 
 // ---------- karaoke ----------
+// line 1 = sung text (LY), line 2 = its translation from the RU dict (for a Russian song RU holds English).
+const LY_FONT = SONG.lyFont ?? '800 44px "Shantell Sans", sans-serif';
 function karaoke(t) {
   const L = LY.find(l => t >= l[0] && t < l[1]); if (!L) return;
   const [a, b, txt] = L;
-  outX.font = '800 44px "Shantell Sans", sans-serif';
+  outX.font = LY_FONT;
   let tw = outX.measureText(txt).width;
   outX.font = `30px ${RU_FONT}`; tw = Math.max(tw, outX.measureText(RU[txt] || '').width);
   const grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
@@ -111,7 +113,7 @@ function karaoke(t) {
 function drawKaraokeText(c) {
   if (!KARAOKE || KARAOKE.grow < .85) return;
   const { a, b, txt } = KARAOKE, t = T;
-  c.font = '800 44px "Shantell Sans", sans-serif'; c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.font = LY_FONT; c.textBaseline = 'middle'; c.textAlign = 'left';
   const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width);
   const total = ws.reduce((p, q) => p + q, 0) + sp * (words.length - 1);
   const singDur = Math.min(b - a - .1, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;

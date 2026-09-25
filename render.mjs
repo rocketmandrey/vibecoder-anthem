@@ -13,7 +13,7 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
-const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, itgirl: { page: 'itgirl.html', audio: 'assets/itgirl/itgirl.m4a', dur: 160 } };
+const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, itgirl: { page: 'itgirl.html', audio: 'assets/itgirl/itgirl.m4a', dur: 160 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 } };
 const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);
