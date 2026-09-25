@@ -8,10 +8,10 @@ const CH = [];
 function chapter(name, start, end, shots) { CH.push({ name, start, end, shots }); CH.sort((a, b) => a.start - b.start); }
 
 // Chapter breaks that get a brush wipe (cover by the boundary, reveal after it).
-const WIPES = [1.5, 38.5, 73.0, 109.4];
+const WIPES = SONG.wipes ?? [1.5, 38.5, 73.0, 109.4];
 const WIPE_TR = .3;
 
-const METER = [[23, 35.5, 8, 34], [59, 69.9, 34, 61], [95.4, 105.4, 61, 86], [123.5, 132, 86, 99.9]];
+const METER = SONG.meter ?? [[23, 35.5, 8, 34], [59, 69.9, 34, 61], [95.4, 105.4, 61, 86], [123.5, 132, 86, 99.9]];
 // P(doom) at time t: climbs in pump-sized steps on each beat during the chorus windows, holds in between.
 function pdoomAt(t) {
   let v = 5;

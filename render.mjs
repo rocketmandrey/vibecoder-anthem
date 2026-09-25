@@ -13,16 +13,18 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
+const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, itgirl: { page: 'itgirl.html', audio: 'assets/itgirl/itgirl.m4a', dur: 160 } };
+const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
-const DUR = 156.6, fps = +(args.fps || 24);
-const FRAMES_DIR = 'out/frames';
+const DUR = S.dur, fps = +(args.fps || 24);
+const FRAMES_DIR = args.song && args.song !== 'pdoom' ? `out/frames_${args.song}` : 'out/frames';
 
 const run = (cmd, a) => new Promise((ok, bad) => { const p = spawn(cmd, a, { stdio: 'inherit' }); p.on('close', c => c ? bad(new Error(cmd + ' exited ' + c)) : ok()); });
 
 if (args.encode) {
   const out = args.out || 'out/pdoom.mp4', n = readdirSync(FRAMES_DIR).filter(f => f.endsWith('.jpg')).length;
   console.log(`encoding ${n} frames → ${out}`);
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-i', `${FRAMES_DIR}/f%05d.jpg`, '-i', 'assets/pdoom.mp3',
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-i', `${FRAMES_DIR}/f%05d.jpg`, '-i', S.audio,
     '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
     '-movflags', '+faststart', '-shortest', out]);
   console.log('wrote ' + out);
@@ -37,7 +39,7 @@ async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(resolve('studio.html')).href + '?render', { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(resolve(S.page)).href + '?render', { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   if (args.loop) await page.evaluate(name => { window.LOOP = LOOPS[name]; }, args.loop);
   return page;
@@ -98,7 +100,7 @@ if (args.sheet) {
   const [a, b] = args.clip ? String(args.clip).split(':').map(Number) : [0, DUR];
   const out = args.out || 'out/clip.mp4'; mkdirSync(dirname(out), { recursive: true });
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-    '-ss', String(a), '-t', String(b - a), '-i', 'assets/pdoom.mp3',
+    '-ss', String(a), '-t', String(b - a), '-i', S.audio,
     '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', out],
     { stdio: ['pipe', 'inherit', 'inherit'] });
   const n = Math.round((b - a) * fps), start = Date.now();

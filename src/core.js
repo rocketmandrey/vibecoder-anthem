@@ -1,6 +1,8 @@
 // core.js: constants, helpers, paper, paint wrapper, compositing and render hooks.
 const W = 1920, H = 1080;
-const BPM = 88, BEAT = 60 / BPM, OFF = 0.21, BOIL = 12, DUR = 156.6;
+// A page can set window.SONG = { bpm, off, dur, wipes, meter } before this script to drive another song.
+const SONG = window.SONG || {};
+const BPM = SONG.bpm ?? 88, BEAT = 60 / BPM, OFF = SONG.off ?? 0.21, BOIL = 12, DUR = SONG.dur ?? 156.6;
 const TAU = Math.PI * 2;
 const PAL = {
   paper: '#F3EBDC', ink: '#2B2233', clay: '#D97757', clayDk: '#A84D33', clayLt: '#F2A283',
@@ -222,6 +224,7 @@ window.gpuInfo = () => { const gl = drawingContext, e = gl.getExtension('WEBGL_d
 
 function devUI() {
   const s = document.getElementById('scrub'), lab = document.getElementById('tt');
+  s.max = DUR;
   let busy = false, want = null;
   const go = async () => { if (busy) return; busy = true; while (want != null) { const t = want; want = null; const t0 = performance.now(); await window.renderAt(t); lab.textContent = `${t.toFixed(2)}s  ·  ${Math.round(performance.now() - t0)} ms/frame`; } busy = false; };
   s.addEventListener('input', () => { want = +s.value; go(); });
