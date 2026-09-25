@@ -401,3 +401,6 @@ function zineCut(x, y, w, h, o = {}) {
   const m = Math.min(w, h) * .06;
   return [x + m, y + m, w - 2 * m, h - 2 * m];
 }
+
+// karaoke bar end caps: a token, not the Kremlin ruby star
+window.KARAOKE_ICON = (x, y, r) => token(x, y, r * .9, { glow: .3 });

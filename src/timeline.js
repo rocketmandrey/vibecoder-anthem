@@ -107,7 +107,7 @@ function karaoke(t) {
   const w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = 962, h = 106;
   const pts = [[x0 + jit(8), y0 + jit(4)], [x0 + w / 2, y0 - 4 + jit(4)], [x0 + w + jit(8), y0 + jit(4)], [x0 + w + 14 + jit(8), y0 + h / 2], [x0 + w + jit(8), y0 + h + jit(4)], [x0 + w / 2, y0 + h + 4 + jit(4)], [x0 + jit(8), y0 + h + jit(4)], [x0 - 14 + jit(8), y0 + h / 2]];
   paint(pts, { wash: KP.night, washOp: 232, fill: KP.ruby, fillOp: 70, tex: .7, border: .4, ink: KP.gold, sw: .7 });
-  for (const sd of [-1, 1]) if (grow > .6) rubyStar(960 + sd * (w / 2 - 6), y0 + h / 2, 22 * grow);
+  for (const sd of [-1, 1]) if (grow > .6) (window.KARAOKE_ICON || rubyStar)(960 + sd * (w / 2 - 6), y0 + h / 2, 22 * grow);   // a song kit may set window.KARAOKE_ICON
   KARAOKE = { a, b, txt, grow };
 }
 function drawKaraokeText(c) {
