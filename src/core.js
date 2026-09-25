@@ -103,8 +103,9 @@ function paint(pts, o = {}) {
     if (o.fill) { brush.fill(o.fill, o.fillOp ?? 170); brush.fillBleed(o.bleed ?? .1); brush.fillTexture(o.tex ?? .4, o.border ?? .35); } else brush.noFill();
     if (o.hatch) { brush.hatch(o.hatch.d, o.hatch.a, o.hatch.o || { rand: .15 }); brush.hatchStyle(o.hatch.b || 'HB', o.hatch.c || PAL.ink, o.hatch.w || 1); } else brush.noHatch();
     brush.noStroke();
-    if (o.curv) { brush.beginShape(o.curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); }
-    else brush.polygon(pts);
+    const draw = () => { if (o.curv) { brush.beginShape(o.curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); } else brush.polygon(pts); };
+    // ponytail: p5.brush's fill scatter occasionally throws on thin self-crossing shapes; drop the fill texture for that one shape
+    try { draw(); } catch { brush.noFill(); draw(); }
   }
   // the outline is one continuous tapered stroke, not a stroke per side
   if (o.ink !== null) {
