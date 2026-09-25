@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ЖГИ ТОКЕНЫ studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Russo+One&family=Shantell+Sans:wght@800&display=block">
+<style>
+  html, body { margin: 0; background: #1b1820; color: #eee; font: 13px system-ui, sans-serif; }
+  main { padding: 12px; display: grid; gap: 8px; }
+  #out { width: min(100%, 1280px); aspect-ratio: 16 / 9; height: auto; background: #F3EBDC; }
+  .p5Canvas { display: none !important; }
+  .bar { display: flex; gap: 10px; align-items: center; max-width: 1280px; }
+  #scrub { flex: 1; }
+  #tt { font-variant-numeric: tabular-nums; min-width: 190px; }
+</style>
+<script>window.SONG = { bpm: 94.2, off: 0.514, dur: 239, wipes: [], meter: [], lyFont: '44px "Russo One", "Arial Black", sans-serif' };</script>
+<script src="node_modules/p5/lib/p5.min.js"></script>
+<script src="node_modules/p5.brush/dist/p5.brush.js"></script>
+</head>
+<body>
+<main>
+  <canvas id="out" width="1920" height="1080"></canvas>
+  <div class="bar"><input id="scrub" type="range" min="0" max="239" step="0.0417" value="0"><span id="tt">loading…</span></div>
+</main>
+<script src="src/core.js"></script>
+<script src="src/kremlin.js"></script>
+<script src="src/clawd.js"></script>
+<script src="src/cast.js"></script>
+<script src="src/props.js"></script>
+<script src="src/tokens2/lyrics.js"></script>
+<script src="src/timeline.js"></script>
+<script src="src/tokens/kit.js"></script>
+<script src="src/tokens2/acid.js"></script>
+<script>const CAST = {};</script>
+<script src="src/tokens2/ch/a01_boot.js"></script>
+<script src="src/tokens2/ch/a02_friday.js"></script>
+<script src="src/tokens2/ch/a03_chorus1.js"></script>
+<script src="src/tokens2/ch/a04_kpi.js"></script>
+<script src="src/tokens2/ch/a05_chorus2.js"></script>
+<script src="src/tokens2/ch/a06_sermon.js"></script>
+<script src="src/tokens2/ch/a07_acid.js"></script>
+<script src="src/tokens2/ch/a08_rap.js"></script>
+<script src="src/tokens2/ch/a09_capex.js"></script>
+<script src="src/tokens2/ch/a10_sunday.js"></script>
+</body>
+</html>
