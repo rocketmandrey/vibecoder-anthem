@@ -1,8 +1,8 @@
 // a04_kpi.js: «Жги токены» v2, verse 2 (67.1–91.8). The factory office above the floor, where the bonuses are physical.
 // 67.1 the new KPI board (plan 100% burned, fact breaks the board) → 69.95 the more you burned, the higher your chair;
 // the thrifty one is eaten by his desk → 72.65 the fire extinguisher gets a reprimand for saving → 74.6 the token
-// champion as a golden idol with worshippers → 77.3 agents hiring agents on a line, then a hundred more → 79.85 the report
-// nobody reads, sealed «ПРОЧТЕНИЕ НЕ ВХОДИТ» → 84.8 its price, 40 000 000 → 88.2 industrial break: four presses on four
+// champion as a golden idol with worshippers → 77.3 the org chart: agent #1 hires #2, who hires a hundred (from v1)
+// → 79.85 the report thuds onto a desk and gathers dust, «ПРОЧТЕНИЙ: 0» (from v1) → 84.8 its price, 40 000 000 → 88.2 industrial break: four presses on four
 // hits = print → bind → award → shred.
 const a04_HITS = hitsIn(66.5, 92);                                    // floor presses behind the office glass
 const a04_BREAK = [88.7, 89.33, 89.97, 90.6];                         // 90.6: fourth hit on the .635 s grid (not in hits.txt)
@@ -98,14 +98,6 @@ function a04_cup(x, y, s, sw = 1) {
   paint(rectPts(x - 26 * s, y - 20 * s, 52 * s, 20 * s), { ...G, wash: A2.gunDk, fill: null });
   paint(ellPts(x - 14 * s, y - 80 * s, 6 * s, 10 * s, 8), { wash: '#FFF3B0', washOp: 200, ink: null });
   letter('₮', x + 2 * s, y - 70 * s, 30 * s, '#7A4A0A', { font: ruFont(30 * s), ink: false });
-}
-// cheap mini agent (for the hundred)
-function a04_mini(x, y, s, seed) {
-  paint(rectPts(x - 5 * s, y - 8 * s, 10 * s, 6 * s), { wash: '#6F8BE0', ink: PAL.ink, sw: .5 });
-  for (const lx of [-4, -2, 1, 3]) paint(rectPts(x + lx * s, y - 2 * s, s, 2 * s), { wash: '#3D55A8', ink: null });
-  for (const ex of [-3, 2]) paint(rectPts(x + ex * s, y - 7 * s, s, 2 * s), { wash: PAL.ink, ink: null });
-  paint(rectPts(x - 1.3 * s, y - 3.6 * s, 2.6 * s, 1.5 * s), { wash: TK.cream, ink: null });
-  if (hash(seed) > .5) paint(rectPts(x + 5 * s, y - 5 * s, 2.4 * s, 1.8 * s), { wash: TK.cream, ink: PAL.ink, sw: .3 });   // a job posting
 }
 const a04_shake = (k, amp = 16, t = 0) => [(hash(Math.floor(t * 30)) - .5) * 2 * amp * k, (hash(Math.floor(t * 30) + 9) - .5) * 2 * amp * k];
 
@@ -281,91 +273,150 @@ function a04_god(t, lt) {
   if (godK > .02) flash(godK * .55, '#FFE9A8');
 }
 
-// ---------- 77.3 agent hired an agent, who hired another... ----------
-function a04_hire(t, lt) {
-  camBegin(960, 540, 1.02 + lt * .04);
-  a04_office(t, { bg: 'pipes' });
-  paint(rectPts(460, 540, 1000, 100), { wash: A2.cream, ink: PAL.ink, sw: .8 });
-  letter('ВАКАНСИЯ: АГЕНТ · ОПЫТ НЕ НУЖЕН', 960, 590, 44, TK.blueDk, { font: ruFont(44), ink: false });
-  conveyor(-40, 840, W + 80, t, { speed: 260, gap: 340, legs: 0, items: [(x, y, i) => agentBot(x, y, 15, t, { n: ((i % 90) + 90) % 90 + 2, hire: true, seed: i })] });
-  // the first agent at the belt head pops a new hire onto the belt on each word
-  const pop = hitK(t, [77.64, 78.12, 78.9], .25);
-  agentBot(200, 700, 24, t, { n: 1, hire: true, aR: .6 + pop * 1.2, eyes: 'happy', mouth: 'grin', dance: 'bounce' });
-  const hc = t < 77.64 ? 1 : t < 78.12 ? 2 : t < 78.9 ? 3 : 4;
-  paint(rrPts(1560, 520, 300, 120, 16), { wash: A2.gunDk, ink: PAL.ink, sw: .8 });
-  letter('ШТАТ', 1710, 556, 40, A2.hazard, { font: ruFont(40), ink: false });
-  counter(1710, 605, 50, hc, { col: A2.acid });
+// ---------- 77.3 «Агент нанял агента, тот нанял ещё сто»: the org chart (port of v1 t03 orgChart) ----------
+const a04_MBLUE = '#2445B8', a04_MBLK = '#2B2B33';
+const a04_AG = { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0' };
+const a04_N0 = [960, 300], a04_N1 = [960, 540], a04_BUS = 600, a04_COLS = 20;
+const a04_SLOTS = []; for (let r = 0; r < 5; r++) for (let c = 0; c < a04_COLS; c++) a04_SLOTS.push([130 + c * (1660 / (a04_COLS - 1)), 680 + r * 62]);
+const a04_RANK = []; a04_SLOTS.map((p, i) => [Math.hypot(p[0] - a04_N1[0], (p[1] - a04_N1[1]) * 2), i]).sort((a, b) => a[0] - b[0]).forEach((p, k) => a04_RANK[p[1]] = k);
+// the cheap mini agent for the hundred (sq = squash on the hop)
+function a04_mini(x, y, s, sq = 0) {
+  const h = 6 * s * (1 - sq);
+  for (const lx of [-3.6, 2]) paint(rectPts(x + lx * s, y - 2.2 * s, 1.6 * s, 2.2 * s), { wash: a04_AG.dk, ink: null });
+  paint(rectPts(x - 5 * s, y - 2 * s - h, 10 * s, h), { wash: a04_AG.col, ink: PAL.ink, sw: .45 });
+  for (const ex of [-3, 2]) paint(rectPts(x + ex * s, y - 2 * s - h * .82, s, h * .3), { wash: PAL.ink, ink: null });
+  paint(rectPts(x - 1.3 * s, y - 3.6 * s, 2.6 * s, 1.4 * s), { wash: TK.cream, ink: null });
+}
+function a04_org(t, lt) {
+  const tB = 78.9, tBang = 79.58;
+  const pull = easeOut(seg(t, 78.85, 79.55)), bang = t > tBang ? Math.exp(-(t - tBang) * 6) : 0, [sx, sy] = shakeXY(t, 12 * bang);
+  camBegin(960 + sx, lerp(390, 560, pull) + sy, lerp(1.5, 1.0, pull));
+  // the chart sheet pinned over the whole wall: cream paper, steel-blue grid, hazard tape across the top
+  paint(rectPts(-500, -400, W + 1000, 1900), { wash: A2.cream, fill: '#CFC4AE', fillOp: 60, tex: .6, border: .3, ink: null });
+  for (let i = -6; i < 30; i++) inkLine([[-500, i * 60], [W + 500, i * 60]], .35, '#A9B9CC', 'inkfine', 0);
+  hazard(-500, -40, W + 1000, 26);
+  letter('ОРГСТРУКТУРА', 960, 70, 50, a04_MBLUE, { font: ruFont(50), ink: false, rot: -.02 });
+  letter('отдел AI-трансформации', 960, 122, 28, a04_MBLK, { font: ruFont(28), ink: false, rot: -.02 });
+  const card = ([x, y], k, lab) => {
+    if (k < .02) return;
+    paint(rrPts(x - 150 * k, y - 125 * k, 300 * k, 170 * k, 14), { wash: '#FBF8F2', ink: PAL.ink, sw: 1.2 });
+    paint(rectPts(x - 150 * k, y - 125 * k, 300 * k, 12 * k), { wash: A2.steel, ink: null });
+    if (lab) letter(lab, x, y + 26 * k, 20 * k, '#6A6A75', { font: ruFont(20 * k), ink: false });
+  };
+  const k0 = backOut(seg(t, 77.32, 77.55)), k1 = backOut(seg(t, 78.12, 78.35));
+  card(a04_N0, k0, 'AGENT #1 · нанят: пн 09:00'); card(a04_N1, k1, 'AGENT #2 · нанят: пн 09:01');
+  const l1 = seg(t, 77.8, 78.1);
+  if (l1 > 0) inkLine([[a04_N0[0], a04_N0[1] + 45], [a04_N0[0], lerp(a04_N0[1] + 45, a04_N1[1] - 125, l1)]], 3, PAL.ink, 'ink', 0);
+  if (k0 > .3) agentBot(a04_N0[0], a04_N0[1] - 5, 10 * Math.min(1, k0), t, { n: 1, dance: 'idle', eyes: 'happy', mouth: 'smile', hire: t > 77.64 && t < 78.12, aR: 1.1 });
+  const up = t > 78.74 && t < tB;
+  if (k1 > .3) agentBot(a04_N1[0], a04_N1[1] - 5, 10 * Math.min(1, k1), t, { n: 2, dance: 'idle', eyes: t > tB ? 'happy' : 'normal', mouth: 'smile', seed: 2, aR: up ? 1.8 : .3, aL: up ? 1.8 : .3 });
+  // the bus line and the hundred flying out into the grid
+  const bk = seg(t, tB, tB + .25);
+  if (bk > 0) {
+    inkLine([[a04_N1[0], a04_N1[1] + 45], [a04_N1[0], a04_BUS]], 3, PAL.ink, 'ink', 0);
+    inkLine([[a04_N1[0] - 830 * bk, a04_BUS], [a04_N1[0] + 830 * bk, a04_BUS]], 3, PAL.ink, 'ink', 0);
+    for (let c = 0; c < a04_COLS; c++) { const x = a04_SLOTS[c][0]; if (Math.abs(x - 960) < 830 * bk) inkLine([[x, a04_BUS], [x, a04_BUS + 26]], 1.6, PAL.ink, 'ink', 0); }
+  }
+  let hired = 0;
+  a04_SLOTS.forEach(([x, y], i) => {
+    const t0 = tB + .05 + a04_RANK[i] * .0045, p = seg(t, t0, t0 + .25);
+    if (p <= 0) return;
+    hired++;
+    const e = easeOut(p), mx = lerp(a04_N1[0], x, e), my = lerp(a04_N1[1], y, e) - Math.sin(p * Math.PI) * 120;
+    const hop = p >= 1 ? Math.abs(Math.sin((t * 3.1 + hash(i)) * Math.PI)) : 0;
+    a04_mini(mx, my - hop * 10, 5.4, p < 1 ? 0 : hop * .1);
+  });
   camEnd();
+  // headcount 1 → 2 → 102
+  const hc = (t >= 77.32 ? 1 : 0) + (t >= 78.12 ? 1 : 0) + hired;
+  paint(rrPts(1450, 40, 420, 100, 14), { wash: A2.gunDk, ink: PAL.ink, sw: .8 });
+  letter('ШТАТ:', 1560, 90, 40, A2.hazard, { font: ruFont(40), ink: false });
+  counter(1750, 90, 56, hc, { col: A2.hazard });
+  if (t > tBang) sfx('+100', 1720, 200, 70, TK.ember, t - tBang, { life: .8, font: ruFont(70) });
   glitchCut(t, 77.3, { span: .06, k: .6 });
 }
-function a04_hundred(t, lt) {
-  const z = kf(t, [[78.74, 1.5], [79.6, 1]], ease);
-  camBegin(960, kf(t, [[78.74, 740], [79.6, 520]], ease), z);
-  paint(rectPts(-400, -400, W + 800, H + 800), { wash: '#383D45', fill: A2.gunDk, fillOp: 50, tex: .5, ink: null });
-  hazard(-400, 880, W + 800, 20);
-  // snap → the grid of a hundred cascades out from the centre
-  for (let i = 0; i < 100; i++) {
-    const gx = i % 10, gy = Math.floor(i / 10), d = Math.hypot(gx - 4.5, gy - 4.5), ti = 78.9 + d * .09;
-    if (t < ti) continue;
-    const k = backOut(seg(t, ti, ti + .15)), x = 170 + gx * 175, y = 120 + gy * 80;
-    if (Math.abs(gx - 4.5) < 1 && Math.abs(gy - 6.5) < 2) continue;                 // leave room for the hirer
-    a04_mini(x, y + 30 * (1 - k), 5.6 * k, i);
-  }
-  const snap = hitK(t, [78.9], .25);
-  agentBot(960, 880, 19, t, { n: 3, aR: 1.6 + snap * .4, aL: .2, eyes: t > 78.9 ? 'happy' : 'normal', mouth: 'smile', emote: t > 78.9 ? 'spark' : null, emoteK: seg(t, 78.9, 79.1) });
-  paint(rrPts(1560, 30, 320, 120, 16), { wash: A2.gunDk, ink: PAL.ink, sw: .8 });
-  letter('ШТАТ', 1720, 66, 40, A2.hazard, { font: ruFont(40), ink: false });
-  counter(1720, 112, 50, 4 + Math.round(99 * easeOut(seg(t, 78.9, 79.58))), { col: A2.acid });
-  if (t > 79.58) stamp('+100', 380, 900, 70, t, 79.58, { col: A2.acid, rot: -.1 });
-  camEnd();
-}
 
-// ---------- 79.85 the report nobody read ----------
-function a04_report_shot(t, lt) {
-  camBegin(960, 560, 1 + lt * .02);
-  a04_office(t, { wy: 60, wh: 300, bg: 'blinds' });
-  // conference table
-  paint([[240, 690], [1680, 690], [1820, 860], [100, 860]], { wash: '#8A5A3A', fill: '#5E3A24', fillOp: 70, tex: .5, ink: PAL.ink, sw: 1 });
-  paint(rectPts(100, 860, 1720, 40), { wash: '#6E4028', ink: PAL.ink, sw: .8 });
-  // the report lands with a thud at «сделали»
-  const land = t < 80.24 ? -400 * (1 - easeIn(seg(t, 79.85, 80.24))) : 0, thud = hitK(t, [80.24], .15);
-  const rx = 960, ry = 760 + land;
-  for (let i = 0; i < 5; i++) a04_report(rx, ry - i * 88, 1.4, 2);           // five volumes, stacked
-  letter('1 400 стр.', rx + 340, ry - 380, 46, A2.cream, { font: ruFont(46), ink: false });
-  if (thud > .05) for (const sd of [-1, 1]) paint(ellPts(rx + sd * 260, ry - 10, 60 * thud + 20, 20, 12), { wash: '#D8CDB4', washOp: 160 * thud, ink: null });
-  // shrink-wrap + the seal
-  if (t > 81.08) {
-    paint(rectPts(rx - 230, ry - 450, 460, 455), { fill: '#DDEEFF', fillOp: 70, bleed: .1, tex: .2, ink: '#BFD3E6', sw: 1 });
-    for (let i = 0; i < 4; i++) inkLine([[rx - 200 + i * 110, ry - 440], [rx - 160 + i * 110, ry - 20]], 1.5, '#FFFFFF', 'inkfine', .3);
-    const k = backOut(seg(t, 81.08, 81.2));
-    paint(ellPts(rx, ry - 230, 170 * k, 170 * k, 30), { wash: A2.hazard, ink: PAL.ink, sw: 1.2 });
-    letter('ПРОЧТЕНИЕ', rx, ry - 258, 42 * k, TK.ember, { font: ruFont(42 * k), rot: -.15, ink: false });
-    letter('НЕ ВХОДИТ', rx, ry - 200, 42 * k, TK.ember, { font: ruFont(42 * k), rot: -.15, ink: false });
+// ---------- 79.85 «Они сделали доклад — не прочитал никто: “Как сократить расходы на AI”» (port of v1 t03 report) ----------
+// binder (top-left of the cover at x, y), cover 800 x 330 in slight perspective, 90 px of pages below; same navy +
+// hazard-tape binding as a04_report, so it's the same report that gets priced at 84.8 and shredded at 88.2
+function a04_binder(x, y, s, o = {}) {
+  const w = 800 * s, h = 330 * s, d = 90 * s, sk = 40 * s, sw = clamp(s * 1.3, .4, 1.4);
+  const cov = [[x + sk, y], [x + w - sk, y], [x + w, y + h], [x, y + h]];
+  paint([[x, y + h], [x + w, y + h], [x + w, y + h + d], [x, y + h + d]], { wash: '#F4EFE4', fill: '#D6CDBC', fillOp: 70, tex: .5, ink: PAL.ink, sw });
+  for (let i = 1; i < 9; i++) inkLine([[x + 8 * s, y + h + i * d / 9], [x + w - 8 * s, y + h + i * d / 9]], .4, '#B8AE9C', 'inkfine', 0);
+  paint(cov, { wash: '#1E3A6E', fill: '#0F2146', fillOp: 80, tex: .6, border: .5, ink: PAL.ink, sw: sw * 1.2 });
+  paint([[x + sk, y], [x + sk + w * .07, y], [x + w * .075, y + h], [x, y + h]], { wash: A2.hazard, ink: PAL.ink, sw: sw * .6 });   // binding tape
+  paint(rectPts(x + w * .16, y + h * .12, w * .68, h * .72), { wash: A2.cream, ink: PAL.ink, sw: sw * .6 });
+  const f = z => ruFont(z * s);
+  letter('КАК СОКРАТИТЬ', x + w / 2, y + h * .27, 50 * s, TK.soot, { font: f(50), ink: false });
+  letter('РАСХОДЫ НА AI', x + w / 2, y + h * .47, 50 * s, TK.ember, { font: f(50), ink: false });
+  letter('доклад · 100 агентов · 3 400 стр.', x + w / 2, y + h * .7, 20 * s, '#55555F', { font: f(20), ink: false });
+  if (o.dust > .01) {
+    paint(cov, { wash: '#8C857C', washOp: 150 * o.dust, fill: '#77706A', fillOp: 150 * o.dust, bleed: .1, tex: .9, border: .9, ink: null });
+    for (let i = 0; i < 40 * o.dust; i++) paint(ellPts(lerp(x + sk, x + w - sk, hash(i * 3.3)), lerp(y + 6, y + h - 6, hash(i * 7.1)), 3, 2, 6), { wash: '#B5ADA1', ink: null });
   }
-  // the authors: agents present it, then turn away
-  const away = t > 81.28;
-  for (const [x, n, fl] of [[330, 7, false], [560, 12, false], [1360, 31, true], [1590, 58, true]]) {
-    agentBot(x, 700, 17, t, { n, flip: away ? !fl : fl, eyes: away ? 'closed' : 'happy', mouth: away ? 'flat' : 'grin', aL: away ? .1 : 1.3, aR: away ? .1 : 1.3, emote: away && n === 12 ? 'zzz' : null, emoteK: seg(t, 81.5, 81.9) });
-  }
-  camEnd();
 }
-
-// ---------- 82.25 close-up on the cover: the title, as sung ----------
-function a04_title(t, lt) {
-  camBegin(960, 520, 1.04 + lt * .03, -.03);
-  paint(rectPts(-300, -300, W + 600, H + 600), { wash: '#6E4028', fill: '#4A2A18', fillOp: 70, tex: .6, ink: null });   // the table
-  paint(rectPts(330, 90, 1260, 800), { wash: '#1E3A6E', fill: '#0F2146', fillOp: 90, tex: .6, border: .5, ink: PAL.ink, sw: 1.4 });
-  paint(rectPts(330, 90, 90, 800), { wash: A2.hazard, ink: PAL.ink, sw: .8 });
-  const words = [['КАК', 82.28], ['СОКРАТИТЬ', 82.76], ['РАСХОДЫ', 83.58], ['НА AI', 84.38]];
-  words.forEach(([w, wt], i) => { if (t > wt) letter(w, 1000, 280 + i * 120, 104, A2.cream, { font: ruFont(104), pop: (t - wt) * 7, ink: false }); });
-  letter('1 400 страниц. Цена — в конце.', 820, 800, 40, A2.steelLt, { font: ruFont(40), ink: false });
-  // shrink-wrap glare, the seal, a cobweb in the corner
-  for (let i = 0; i < 5; i++) inkLine([[420 + i * 260, 100], [560 + i * 260, 880]], 5, '#FFFFFF', 'inkfine', .3);
-  paint(ellPts(1440, 740, 150, 150, 30, 0, 0), { wash: A2.hazard, ink: PAL.ink, sw: 1.2 });
-  letter('ПРОЧТЕНИЕ', 1440, 714, 40, TK.ember, { font: ruFont(40), rot: -.15, ink: false });
-  letter('НЕ ВХОДИТ', 1440, 766, 40, TK.ember, { font: ruFont(40), rot: -.15, ink: false });
-  for (let i = 0; i < 6; i++) inkLine([[1590, 90], [1590 - Math.cos(i * .3) * 240, 90 + Math.sin(i * .3) * 240]], .8, '#E8E8E8', 'inkfine', 0);
-  for (let r = 1; r <= 3; r++) inkLine(Array.from({ length: 7 }, (_, i) => [1590 - Math.cos(i * .25) * r * 70, 90 + Math.sin(i * .25) * r * 70 + 8]), .7, '#E8E8E8', 'inkfine', .5);
+function a04_cobweb(cx, cy, k) {
+  if (k < .02) return;
+  const R = 260 * k, angs = [Math.PI * .5, Math.PI * .62, Math.PI * .75, Math.PI * .88, Math.PI];
+  for (const a of angs) inkLine([[cx, cy], [cx + Math.cos(a) * R, cy + Math.sin(a) * R]], .6, '#F4F2EE', 'ink', 0);
+  for (let r = 1; r <= 5; r++) {
+    const rr = R * r / 5.4, pts = angs.map((a, j) => [cx + Math.cos(a) * rr * (1 + .06 * Math.sin(j * 2 + r)), cy + Math.sin(a) * rr]);
+    if (rr > 10) inkLine(pts, .9, '#F4F2EE', 'ink', .3);
+  }
+}
+function a04_rep(t, lt) {
+  const tL = 80.58, land = t >= tL, age = t - tL, hit = land ? Math.exp(-age * 7) : 0, [sx, sy] = shakeXY(t, 18 * hit);
+  camBegin(960 + sx, kf(t, [[80.8, 560], [84.8, 580]], ease) + sy, kf(t, [[80.8, 1.1], [84.8, 1.34]], ease));
+  a04_office(t, { bg: 'wall' });
+  // wall clock racing from the landing on: time passes, nobody reads it
+  const tl = Math.max(0, t - 80.8);
+  paint(ellPts(1500, 250, 70, 70, 24), { wash: '#FBF8F2', ink: PAL.ink, sw: 1.4 });
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; inkLine([[1500 + Math.cos(a) * 56, 250 + Math.sin(a) * 56], [1500 + Math.cos(a) * 64, 250 + Math.sin(a) * 64]], .8, PAL.ink, 'inkfine', 0); }
+  const ma = -Math.PI / 2 + tl * 14, ha = -Math.PI / 2 + tl * 14 / 12;
+  inkLine([[1500, 250], [1500 + Math.cos(ha) * 36, 250 + Math.sin(ha) * 36]], 2.6, PAL.ink, 'ink', 0);
+  inkLine([[1500, 250], [1500 + Math.cos(ma) * 56, 250 + Math.sin(ma) * 56]], 1.6, PAL.ink, 'ink', 0);
+  // colleagues stroll past without a glance (the first one crosses centre on «никто»)
+  for (let k = 0; k < 3; k++) {
+    const p = (t - 81.0 - k * 1.0) / 2.8;
+    if (p < 0 || p > 1) continue;
+    const dir = k % 2 ? -1 : 1, x = dir > 0 ? lerp(-150, 2070, p) : lerp(2070, -150, p);
+    clawd(x, 690, 17, { ...move('walk', t, k), eyes: 'look', lookX: dir, mouth: 'flat', seed: k, flip: dir < 0, ...(k === 1 ? a04_AG : { draw: a04_tie(k ? A2.uv : TK.ember) }),
+      armR: (u, sw) => paint(rrPts(-.2 * u, -1.2 * u, 1.3 * u, 1.6 * u, .2 * u), { wash: k === 1 ? TK.orange : TK.cream, ink: PAL.ink, sw: sw * .5 }) });
+  }
+  // desk
+  paint([[-200, 690], [W + 200, 690], [W + 400, 1300], [-400, 1300]], { wash: '#8A6446', fill: '#5E4230', fillOp: 80, tex: .6, border: .4, ink: PAL.ink, sw: 1.2 });
+  for (let i = 0; i < 6; i++) inkLine([[-200, 740 + i * 60 + i * i * 6], [W + 200, 735 + i * 62 + i * i * 6]], .6, '#6E4E36', 'inkfine', .5);
+  paint(rectPts(-200, 680, W + 400, 16), { wash: '#A07654', ink: PAL.ink, sw: .8 });
+  if (!land) { const k = seg(t, 80.0, tL); paint(ellPts(960, 890, 420 * (.4 + .6 * k), 30 * (.4 + .6 * k), 20), { fill: PAL.ink, fillOp: 120 * k, bleed: .2, ink: null }); }
+  // the report drops like a brick on «доклад»
+  const fall = land ? 0 : -950 * (1 - easeIn(seg(t, 80.3, tL))), bounce = land ? -Math.abs(Math.sin(age * 16)) * 26 * Math.exp(-age * 9) : 0;
+  a04_binder(560, 460 + fall + bounce, 1, { dust: seg(t, 81.4, 84.6) });
+  if (land && age < 1.1) {
+    for (let i = 0; i < 14; i++) {
+      const side = i % 2 ? 1 : -1, a = hash(i + 3) * .9, d = easeOut(age / 1.1) * (140 + hash(i) * 240), r = (30 + hash(i + 9) * 40) * (.5 + age);
+      paint(ellPts(960 + side * (400 + Math.cos(a) * d), 870 - Math.sin(a) * d * .5, r, r * .7, 14), { wash: '#D8CFC0', washOp: 200 * (1 - age / 1.1), ink: null });
+    }
+    sfx('БУМ!', 1480, 520, 120, TK.ember, age, { life: .7, rot: .12, font: ruFont(120) });
+  }
+  // cobweb, spider, the view counter
+  a04_cobweb(1340, 462, seg(t, 82.0, 83.8));
+  const sp = seg(t, 82.8, 84.0);
+  if (sp > 0) {
+    const spx = 1240 + Math.sin(t * 2.2) * 8, spy = lerp(0, 420, easeOut(sp));
+    inkLine([[spx, -60], [spx, spy - 20]], .8, '#8A8480', 'inkfine', 0);
+    for (const e of [-1, 1]) for (let j = 0; j < 4; j++) inkLine([[spx, spy], [spx + e * 26, spy - 10 + j * 8], [spx + e * 36, spy + 6 + j * 9]], 1.1, TK.soot, 'inkfine', .3);
+    paint(ellPts(spx, spy, 15, 18, 10), { wash: TK.soot, ink: null }); paint(ellPts(spx, spy - 20, 9, 9, 8), { wash: TK.soot, ink: null });
+  }
+  const vk = backOut(seg(t, 81.08, 81.3));
+  if (vk > .02) {
+    push(); translate(460, 360); rotate(-.05); scale(vk);
+    paint(rectPts(-172, -60, 372, 120), { wash: TK.yellowLt, fill: TK.yellow, fillOp: 70, tex: .5, ink: PAL.ink, sw: .8 });
+    pop();
+    paint(ellPts(322, 367, 26 * vk, 15 * vk, 16), { wash: '#FFFFFF', ink: PAL.ink, sw: .8 });
+    paint(ellPts(322, 367, 9 * vk, 9 * vk, 10), { wash: PAL.ink, ink: null });
+    letter('ПРОЧТЕНИЙ: 0', 494, 358, 34 * vk, TK.soot, { font: ruFont(34 * vk), ink: false, rot: -.05 });
+  }
   camEnd();
 }
 
@@ -429,6 +480,6 @@ function a04_break(t, lt) {
 }
 
 chapter('verse2', 67.1, 91.8, [
-  [67.1, a04_kpi], [69.95, a04_chairs], [72.65, a04_extinguisher], [74.6, a04_god], [77.3, a04_hire], [78.74, a04_hundred],
-  [79.85, a04_report_shot], [82.25, a04_title], [84.8, a04_bill], [88.2, a04_break]
+  [67.1, a04_kpi], [69.95, a04_chairs], [72.65, a04_extinguisher], [74.6, a04_god], [77.3, a04_org],
+  [79.85, a04_rep], [84.8, a04_bill], [88.2, a04_break]
 ]);
