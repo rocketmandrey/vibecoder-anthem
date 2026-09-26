@@ -2,12 +2,12 @@
 // Every cut on a beat, the big accents on the bar downbeats (231.39, 234.05, 236.69, 239.34); no picture-in-picture:
 // 234.05 (downbeat) the blue agents slam into the mosh with Clawd in the burning data centre → 235.37 Clawd stage-dives
 // and crowd-surfs on the agents' hands → 236.69 (downbeat) outside: БУМ, the roof blows off, a pillar of burning tokens
-// → 238.02 orbit: the planet's «НЕДЕЛЬНЫЙ ЛИМИТ» burns to 0%, the Earth flips into a token → 238.68 Clawd winds up the
+// → 237.35 orbit: the planet's «НЕДЕЛЬНЫЙ ЛИМИТ» burns to 0% by 238.02, «0%» + the Earth flips into a token → 238.68 Clawd winds up the
 // laptop and SMASHES it on the 239.34 downbeat («0%») → 240.0 fists up → 240.4 white flash → black by 240.72.
 (() => {
   const INK = PAL.ink, SOOT = '#141012', BLACK = '#060709';
   const B = Array.from({ length: 12 }, (_, k) => +(233.384 + k * .6617).toFixed(3));   // 233.38 … 240.66; B[1], B[5], B[9] are downbeats
-  const S1 = 234.05, S2 = B[3], S3 = 236.69, S4 = B[7], S5 = B[8], SMASH = 239.34, FLASH = 240.4, END = 240.9;   // downbeats pinned to the frame grid
+  const S1 = 234.05, S2 = B[3], S3 = 236.69, S4 = 237.35, MID = 238.02, S5 = B[8], SMASH = 239.34, FLASH = 240.4, END = 240.9;   // downbeats pinned to the frame grid
   const AG = { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0' };
   const bk = (t, d = .15) => hitK(t, B, d);                                         // punch on every beat
   const bgFill = (col, fill, op = 90) => paint(rectPts(-400, -400, W + 800, H + 800), { wash: col, fill: fill || col, fillOp: op, tex: .5, border: .3, ink: null });
@@ -112,7 +112,7 @@
     for (let i = 0; i < 5; i++) { const a = hash(i + 4) * TAU, d = hash(i + 9) * .7 * r; glowAt(Math.cos(a) * d, Math.sin(a) * d, r * .12, A2.sodium, 120); }
   }
   function shotOrbit(t, lt) {
-    const k = bk(t), flip = seg(t, 238.3, 238.6), R = 330 * lerp(1.15, 1, easeOut(seg(t, S4, S4 + .6))) * (1 + .03 * k);
+    const k = bk(t), flip = seg(t, MID, MID + .35), R = 330 * lerp(1.2, 1, easeOut(seg(t, S4, MID))) * (1 + .03 * k);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#05060B', ink: null });
     for (let i = 0; i < 60; i++) paint(ellPts(hash(i) * W, hash(i + 70) * H, 2 + hash(i + 3) * 2, 2 + hash(i + 3) * 2, 5), { wash: '#FFF5E2', washOp: 120 + 100 * hash(i + 5), ink: null });
     glowAt(960, 580, R * 1.5, flip > .5 ? TK.yellow : A2.sodium, 90);
@@ -123,10 +123,10 @@
     if (flip < .5) { scale(sxk, 1); b10_earth(R, t); } else { pop(); push(); token(960, 580, R, { spin: .5 + flip * .5, glow: 1 }); }
     pop();
     // the limit bar over the planet, burning from 7% to 0
-    const v = lerp(.07, 0, ease(seg(t, S4, 238.28)));
+    const v = lerp(.07, 0, ease(seg(t, S4 + .1, MID)));
     limitBar(460, 110, 1000, v, { h: 62, burn: 1, glow: .5, label: 'НЕДЕЛЬНЫЙ ЛИМИТ · ПЛАНЕТА ЗЕМЛЯ' });
-    if (t > 238.3) stamp('0%', 1560, 820, 120, t, 238.3, { rot: -.12 });
-    flash(.4 * hitK(t, [S4], .12), '#FFF3C8');
+    if (t >= MID) stamp('0%', 1560, 820, 120, t, MID, { rot: -.12 });
+    flash(.4 * hitK(t, [S4], .12) + .35 * hitK(t, [MID], .1), '#FFF3C8');
   }
 
   // ---------- 238.68 the smash: wind up, SMASH on the beat, tokens + sparks, fists up, white flash → black ----------

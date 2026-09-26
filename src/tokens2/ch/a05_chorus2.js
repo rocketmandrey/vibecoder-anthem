@@ -38,8 +38,11 @@ function a05_smokeWord(txt, ox, oy, x, y, size, t, t0, o = {}) {
   chars.forEach((c, i) => {
     const w = ws[i], sx = cx + w / 2; cx += w;
     const la = age - i * .045, q = easeOut(la / .35); if (la < 0) return;
-    const rise = age * 34, px = lerp(ox, sx, q) + Math.sin(t * 2.2 + i) * 5, py = lerp(oy, y, q) - rise + Math.sin(t * 3 + i * 1.7) * 4;
-    const fade = 1 - seg(age, life - .45, life), burn = burnA > 0 ? clamp(burnA / .25) : 0, a = Math.min(1, la * 5) * fade * (1 - seg(burnA, .15, .45));
+    const rise = age * 34, px = lerp(ox, sx, q) + Math.sin(t * 2.2 + i) * 5;
+    // the rising word stops short of the top edge (a full letter height plus margin below the frame top)
+    const yMin = CAM ? CAM.cy - H / 2 / CAM.zoom + size * .7 + 24 / CAM.zoom : -1e9;
+    const py = Math.max(yMin, lerp(oy, y, q) - rise) + Math.sin(t * 3 + i * 1.7) * 4;
+    const fade = 1 - seg(age, life - .45, life), burn = burnA > 0 ? clamp(burnA / .25) : 0, a = Math.min(1, la * 10) * fade * (1 - seg(burnA, .15, .45));
     if (a < .02) return;
     for (let k = 0; k < 2; k++) {                                              // soft puffs behind each letter
       const r = size * (.34 + .12 * k) * (.6 + .4 * q);
@@ -214,8 +217,8 @@ function a05_wide(t, lt, dur) {
   const L = a05_lights(t);
   a05_cam(t, lerp(960, 930, lt / dur), lerp(470, 430, ease(lt / dur)), lerp(1.04, 1.16, ease(lt / dur)));
   a05_world(t, L);
-  a05_smokeWord('ЖГИ', 790, 60, 760, 30, 90, t, 91.86, { life: 1.9 });
-  a05_smokeWord('ТОКЕНЫ', 1130, 80, 1170, 60, 80, t, 92.94, { life: 1.8 });
+  a05_smokeWord('ЖГИ', 790, 60, 760, 30, 90, t, 91.86, { life: 1.8 });
+  a05_smokeWord('ТОКЕНЫ', 1130, 80, 1170, 60, 80, t, 92.94, { life: 1.26 });
   a05_smokeWord('ЖГИ', 640, 120, 620, 80, 90, t, 93.66, { life: 1.4 });
   a05_smokeWord('ТОКЕНЫ', 1280, 130, 1150, 120, 88, t, 94.2, { life: .9 });
   camEnd();
@@ -238,7 +241,7 @@ function a05_city2(t, lt, dur) {
   a05_cam(t, lerp(1040, 900, ease(lt / dur)), 420, 1.3);
   a05_world(t, L);
   a05_smokeWord('ЖГИ', 790, 90, 780, 60, 84, t, 96.86, { life: 1.6 });
-  a05_smokeWord('ТОКЕНЫ', 1130, 100, 1120, 90, 76, t, 98.02, { life: 1.9 });
+  a05_smokeWord('ТОКЕНЫ', 1130, 100, 1120, 90, 76, t, 98.02, { life: 1.22 });
   a05_smokeWord('ЖГИ', 640, 130, 660, 150, 80, t, 98.78, { life: 1.3 });
   a05_smokeWord('ТОКЕНЫ', 1280, 140, 1080, 200, 80, t, 99.24, { life: .8 });
   camEnd();
@@ -253,7 +256,6 @@ function a05_city2(t, lt, dur) {
     }
     inkLine([[x + w * .7, top], [x + w * .7, top - 90]], 1.4, PAL.ink, 'ink', 0);                    // antenna / pole
   }
-  inkLine([[-40, 690], [700, 745], [1300, 720], [1960, 760]], 1.2, '#05060E', 'ink', .6);          // power line to the factory
 }
 // 100.04 the public counter: 999 998 → 999 999 → 1 000 000 slammed on «миллион»
 function a05_counter(t, lt, dur) {
@@ -369,7 +371,7 @@ function a05_why(t, lt, dur) {
   a05_smokeWord('ЗАЧЕМ?', 790, 110, 820, 140, 96, t, 107.54, { life: 1.3, burnAt: 107.94 });
   a05_smokeWord('ЗАЧЕМ?', 1130, 130, 1140, 200, 110, t, 108.84, { life: 1.3, burnAt: 109.26 });
   camEnd();
-  stamp('НЕВАЖНО', 760, 330, 110, t, 107.94, { col: A2.hazard, rot: -.12 });
+  if (t < 108.84) stamp('НЕВАЖНО', 760, 330, 110, t, 107.94, { col: A2.hazard, rot: -.12 });   // gone before the 2nd «ЗАЧЕМ?» rises next to it
   stamp('НЕВАЖНО', 1180, 520, 124, t, 109.26, { col: '#FF3A3A', rot: .08 });
 }
 // 110.85 «Это полезно!»: the giant LED billboard on the glass tower stutters on (110.88 half, 111.64 full)

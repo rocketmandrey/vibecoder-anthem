@@ -305,7 +305,8 @@
     const k = hitK(t, CHOMPS, .2), [sx, sy] = shakeXY(t, 12 * k);
     const z = t < 47.75 ? kf(t, [[45.05, 1.42], [45.7, 1.2], [47.75, 1.24]], easeOut) : kf(t, [[49.7, 1.34], [52.85, 1.2]]);
     const cx = t < 47.75 ? 960 : kf(t, [[49.7, 1080], [52.85, 840]]);
-    camBegin(cx + sx, 545 + sy, z, t < 47.75 ? 0 : kf(t, [[49.7, -.035], [52.85, .03]]));
+    camBegin(cx + sx, (t < 47.75 ? 545 : 510) + sy, z,                                    // after 49.7: framed lower so the limit label clears the top
+       t < 47.75 ? 0 : kf(t, [[49.7, -.035], [52.85, .03]]));
     a03_line(t);
     camEnd();
     const zi = ZHGI.filter(z => z[0] <= t).length - 1;                                    // only the latest shout, centred over the shredder
@@ -315,7 +316,7 @@
   // 47.75 «Пока лимит не обнулён!»: close on the burning bar, then down to the teeth
   function a03_limit(t, lt) {
     const p = seg(t, 47.75, 49.7);
-    camBegin(960, kf(t, [[47.75, 200], [48.9, 230], [49.7, 470]]), kf(t, [[47.75, 2.05], [48.9, 2.2], [49.7, 1.6]]), Math.sin(t * 3) * .015);
+    camBegin(960, kf(t, [[47.75, 200], [48.9, 230], [49.7, 440]]), kf(t, [[47.75, 2.05], [48.9, 2.2], [49.7, 1.6]]), Math.sin(t * 3) * .015);
     a03_line(t);
     camEnd();
     if (t > 49.0) stamp('ПОЧТИ 0%', 1380, 420, 70, t, 49.04, { col: TK.ember, rot: .1 });

@@ -164,8 +164,6 @@
       camBegin(960 + Math.sin(t * 1.4) * 30 + sx, 540 + sy, 1.03 + .02 * p2 + .06 * hk, Math.sin(t * 1.7) * .02 * lvl);
       a07_hall(t, { heat: .5 + .3 * lvl + .4 * hk });
       for (const [x, s] of [[330, 1], [1590, -1]]) siren(x, 190, t, { col: s > 0 ? A2.sodium : TK.ember, speed: 1.6, len: 700 });
-      paint(rrPts(960 - 330, 170, 660, 84, 10), { wash: A2.hazard, fill: '#C9A40E', fillOp: 60, tex: .5, ink: INK, sw: 1.2 });   // wall sign
-      letter('ОТДЕЛ ЗАКУПОК GPU', 960, 213, 54, INK, { font: ruFont(54), ink: false });
       for (const x of [110, 1810]) fire(x, 905, 300, (230 + 60 * lvl) * (.8 + .3 * p2 + .5 * hk), t, { seed: x + seed, k: .6 + .2 * lvl });
       // GPUs raining down behind everything
       for (let i = 0; i < 4 + lvl; i++) rainCard(i, t, seed, .3);
@@ -198,6 +196,10 @@
         }
         if (age < .4) paint(ellPts(960, 880, 120 + age * 1600, 40 + age * 400, 30), { ink: A2.hazard, sw: 4 * (1 - age / .4) + .4 });
       }
+      // the wall sign goes last and is flushed now, so no falling GPU / flyer ever covers it
+      paint(rrPts(960 - 330, 170, 660, 84, 10), { wash: A2.hazard, fill: '#C9A40E', fillOp: 60, tex: .5, ink: INK, sw: 1.2 });
+      letter('ОТДЕЛ ЗАКУПОК GPU', 960, 213, 54, INK, { font: ruFont(54), ink: false });
+      flushLetters();
       camEnd();
       for (const s0 of slams) sfx('ЕЩЁ GPU!', 960, 400, 120, A2.hazard, t - s0, { life: .9, font: ruFont(120), stroke: INK, rot: -.06 });
       const bought = 1200 * Math.pow(3, (t - 135.2) * .9);
@@ -322,8 +324,8 @@
       inkLine([[960 + Math.cos(q) * 520, cy + Math.sin(q) * 110], [960 + Math.cos(q) * 640, cy + Math.sin(q) * 150]], 2.5 * lit, A2.hazard, 'ink', 0);
     }
     camEnd();
-    sqText('БОЛЬШЕ', 560, 120, 120, t, W3[0], .2 * hk);
-    sqText('GPU!', 1400, 120, 160, t, W3[1], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
+    sqText('БОЛЬШЕ', 560, 175, 120, t, W3[0], .2 * hk);
+    sqText('GPU!', 1400, 175, 160, t, W3[1], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
   }
 
   // ---------- 145.55 «МАХОВИК ЭКОНОМИКИ» (ported from v1 t05 97.3–114, retimed to v2's words) ----------
@@ -478,8 +480,8 @@
     counter(ST.tok.x, ST.tok.y + 130, 28, 1e6 * Math.pow(10, Math.max(0, t - 145.5) / 2));
     counter(ST.task.x, ST.task.y + 130, 28, Math.pow(2, 6 + Math.max(0, t - 145.5) * 2.6));
     camEnd();
-    if (last) punkText(last[2], 960, 96, window.VERT ? 68 : 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
-    const [bx, by] = window.VERT ? [446, 930] : [34, 168];                          // VERT: bottom-left of the square window
+    if (last) punkText(last[2], 960, 112, window.VERT ? 68 : 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
+    const [bx, by] = window.VERT ? [446, 930] : [34, 214];                          // VERT: bottom-left of the square window
     paint(rrPts(bx, by, 470, 118, 10), { wash: A2.gunDk, washOp: 220, ink: INK, sw: .8 });
     letter('МАХОВИК ЭКОНОМИКИ', bx + 16, by + 32, 42, A2.hazard, { font: ruFont(42), align: 'left', stroke: INK, rot: -.03 });
     letter('КРУГ ' + (Math.floor(fwAng(t) / TAU) + 1), bx + 16, by + 88, 40, A2.cream, { font: ruFont(40), align: 'left', stroke: INK, rot: -.03 });
