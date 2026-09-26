@@ -2,11 +2,11 @@
 // Written as shots: [start, x, w] holds until the next start and cuts there (hard, 0.01 s); [t, x, w, 1] glides (smoothstep) in from the key before it.
 const VSHOTS = [
   [0, 1270, 1300],                                      // the dark: the match scrape, coin + Clawd
-  [2.92, 1170, 1500],                                   // the flame on the token, Clawd right
+  [2.915, 1170, 1500],                                   // the flame on the token, Clawd right
   [5.54, 1000, 1200],                                   // ПРЕСС №1 slam → «ЖГИ ТОКЕНЫ» over the burning token
   [7.54, 960, 1080],                                    // the vigil row
   [11.9, 960, 1080], [12.6, 960, 1500, 1],             // the ride: ЗАВОД ТОКЕНОВ sign passes
-  [17.35, 960, 1920], [18.6, 940, 1600, 1],              // 17.4 SLAM: the big sign spans the frame
+  [17.44, 960, 1920], [18.6, 940, 1600, 1],              // 17.4 SLAM: the big sign spans the frame
   [24.88, 1150, 1540],                                  // Friday room: Clawd + to-dos + calendar
   [27.78, 1040, 1700],                                  // the laptop: limit bar 50%, «ПОЛПУТИ»
   [30.0, 1100, 1600],                                   // the park window, calendar flips
@@ -16,8 +16,8 @@ const VSHOTS = [
   [40.37, 960, 1700],                                   // arcade «0 ИГРОКОВ»
   [42.79, 900, 1500],                                   // «МОЙ САЙТ» «0 ПОСЕТИТЕЛЕЙ» → the hot rack
   [45.49, 960, 1080],                                   // the burning hall
-  [48.06, 1000, 1450],                                  // БИРЖА chart, eyes, «ЖГИ!»
-  [50.21, 960, 1300],                                   // chorus: the shredder, «ЖГИ ТОКЕНЫ»
+  [47.955, 1000, 1450],                                  // БИРЖА chart, eyes, «ЖГИ!»
+  [50.245, 960, 1300],                                   // chorus: the shredder, «ЖГИ ТОКЕНЫ»
   [52.83, 1020, 1800],                                  // the limit bar burns down
   [55.6, 960, 1300],                                    // shredder again
   [57.98, 960, 1080],                                   // odometer 1 000 000
@@ -26,7 +26,7 @@ const VSHOTS = [
   [71.35, 1000, 1200],                                  // the stamp afterimage
   [72.14, 980, 1800],                                  // new KPI board
   [74.79, 940, 1500],                                   // the chairs
-  [77.21, 1000, 1540],                                   // the extinguisher reprimand
+  [77.245, 1000, 1540],                                   // the extinguisher reprimand
   [79.58, 960, 1540],                                   // the golden idol
   [82.04, 960, 1920],                                   // org chart
   [84.70, 960, 1700],                                   // the report gathers dust
@@ -39,9 +39,9 @@ const VSHOTS = [
   [107.29, 920, 1400],                                  // agents march out, «БОЛЬШЕ АГЕНТОВ / ЖЕЛЕЗА»
   [112.17, 920, 1400],                                  // GPU drone, «НЕВАЖНО» stamps
   [115.45, 930, 1750],                                  // «ЭТО ПОЛЕЗНО!» billboard
-  [118.42, 1250, 1080],                                  // the gauge hits 0%
+  [118.41, 1080, 1200],                                  // the gauge hits 0%
   [119.16, 960, 1080],                                  // blackout, one spotlight
-  [121.5, 960, 1080],                                   // the cathedral
+  [121.5, 960, 1500],                                   // the cathedral
   [125.37, 960, 1920],                                  // «больше меди / больше воды»
   [128.25, 930, 1080],                                  // «Зачем?»
   [129.87, 960, 1920],                                  // the madman, the price tag, the bill
@@ -54,9 +54,9 @@ const VSHOTS = [
   [149.27, 960, 1080],                                  // samsara wheel: VERT camera (a07 CAMKV) whips to each pod centred, square window
   [158.37, 960, 1250],                                  //   the pull-back whip to the whole wheel
   [160.3, 900, 1400],                                   // «ЭКОНОМИКА РАБОТАЕТ!»
-  [162.59, 960, 1700],                                  // AGI spring calendar / loading 99.999% (a08 VERT pulls the cast in)
+  [162.62, 960, 1700],                                  // AGI spring calendar / loading 99.999% (a08 VERT pulls the cast in)
   [167.79, 960, 1300],                                  // the robot arm
-  [170.34, 960, 1920],                                  // programmers «ВОТ-ВОТ»
+  [170.37, 960, 1920],                                  // programmers «ВОТ-ВОТ»
   [172.66, 960, 1300],                                 // hug the phone
   [175.54, 960, 1080],                                  // calorie tracker
   [177.46, 960, 1500],                                  // 100 000 GPU
@@ -67,24 +67,24 @@ const VSHOTS = [
   [194.32, 880, 1080],                                   // AGI billboard
   [196.2, 880, 1080], [196.8, 1150, 1300, 1],           // whip to CAPEX neon
   [197.29, 980, 1400],                                  // benchmark +1%
-  [198.96, 960, 1920],                                  // 300 000 000 000
-  [199.46, 960, 1600],                                  // puppets
+  [198.955, 960, 1920],                                  // 300 000 000 000
+  [199.41, 960, 1600],                                  // puppets
   [202.21, 1000, 1080],                                  // the big hand / TV off
   [203.58, 1100, 1500],                                 // ВС 23:58
   [211.0, 1040, 1200],                                  // 0 токенов
   [213.66, 1100, 1600],                                 // 3 games / 7 sites
-  [216.17, 920, 1080],                                  // 42 agents
+  [216.16, 920, 1080],                                  // 42 agents
   [218.5, 1100, 1500],                                  // the desk, the clock
   [222.6, 1100, 1500], [223.2, 960, 1080, 1],           // to the window
-  [226.42, 1000, 1300],                                 // «лимит восстановлен»
+  [226.37, 1000, 1300],                                 // «лимит восстановлен»
   [227.64, 960, 1500],                                   // close-up, «Сука»
   [230.87, 1000, 1080],                                 // blast
   [233.42, 960, 1080],                                  // laptop corridor
   [234.08, 920, 1500],                                  // mosh with the agents
   [235.37, 800, 1400],                                  // stage-dive
   [236.21, 960, 1080],                                  // «прыжок веры» / БУМ
-  [238.02, 1020, 1440],                                 // planet limit → token, 0%
-  [239.38, 860, 1200],                                  // smash «0%», fists up
+  [238.02, 1060, 1560],                                 // planet limit → token, 0%
+  [239.37, 860, 1200],                                  // smash «0%», fists up
   [240.05, 860, 1200], [240.3, 1000, 1600, 1],          // «ЖГИ!» flashes in on the right
   [240.9, 960, 1540],                                   // credit card
 ];
