@@ -142,7 +142,7 @@
   // ---------- shots ----------
   function sRoom(t) {                                                         // 197.9 «Воскресенье. 23:58»
     const z = kf(t, [[197.9, 1], [205.65, 1.14]]), cx = kf(t, [[197.9, 960], [205.65, 1040]]), cy = kf(t, [[197.9, 520], [205.65, 470]]);
-    const fl = hitK(t, [198.26, 199.94, 202.61, 203.28, 204.93], .12);
+    const fl = hitK(t, window.TIME_WARP ? hitsIn(197.9, 205.65, 10) : [198.26, 199.94, 202.61, 203.28, 204.93], .12);   // v3: the track's own hits
     camBegin(cx, cy, z);
     room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: 1 }) });
     camEnd();
@@ -235,10 +235,10 @@
   }
 
   function sSuka(t) {                                                         // 224.2 «…Сука.» deadpan close-up
-    const u = 150 + (t - 224.2) * 8;                                          // EXTREME close-up: the face fills the frame, eyes still shut from «Я счастлив»
+    const u = 150 + (t - 224.2) * 8;                                          // EXTREME close-up: the face fills the frame, eyes shut, they open on «Сука» (224.57)
     bgFill(WALL, WALL2);
     glowAt(960, 1200, 900, '#9CFFB8', 90);
-    clawd(960, 540 + 6 * u, u, { eyes: 'closed', mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
+    clawd(960, 540 + 6 * u, u, { eyes: t < 224.57 ? 'closed' : 'narrow', squint: t < 224.57 ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
 
