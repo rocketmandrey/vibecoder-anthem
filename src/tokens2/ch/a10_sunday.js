@@ -104,6 +104,12 @@
     sites(t, g.sites || 0, D * (1 - (lit.sites || 0)));
     clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0);
     agents(t, g.agents || 0, D * (1 - (lit.agents || 0)));
+    // the office chair at the desk (he sits on it; it stays when he gets up)
+    paint(rrPts(784, 596, 34, 170, 12), { wash: '#2E3440', fill: '#1C2028', fillOp: 90, tex: .4, ink: PAL.ink, sw: .7 });
+    paint(rrPts(790, 752, 230, 26, 10), { wash: '#2E3440', fill: '#1C2028', fillOp: 90, tex: .4, ink: PAL.ink, sw: .7 });
+    paint(rectPts(898, 778, 16, 58), { wash: '#4A505C', ink: PAL.ink, sw: .5 });
+    for (const [x0, x1] of [[906, 820], [906, 992]]) inkLine([[x0, 834], [x1, 846]], 4, '#4A505C', 'ink', 0);
+    for (const wx of [820, 992]) paint(ellPts(wx, 848, 9, 9, 8), { wash: '#15181E', ink: PAL.ink, sw: .4 });
     if (o.clawd) o.clawd();
     // desk + laptop (lid back to camera, screen light spilling round it)
     const gl = o.glow ?? 1;
@@ -229,10 +235,10 @@
   }
 
   function sSuka(t) {                                                         // 224.2 «…Сука.» deadpan close-up
-    const u = 150 + (t - 224.2) * 8, blink = t > 225.9 && t < 226.05;       // EXTREME close-up: the face fills the frame
+    const u = 150 + (t - 224.2) * 8;                                          // EXTREME close-up: the face fills the frame, eyes still shut from «Я счастлив»
     bgFill(WALL, WALL2);
     glowAt(960, 1200, 900, '#9CFFB8', 90);
-    clawd(960, 540 + 6 * u, u, { eyes: 'narrow', squint: blink ? 1 : .55, mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
+    clawd(960, 540 + 6 * u, u, { eyes: 'closed', mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
 
