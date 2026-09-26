@@ -1,35 +1,56 @@
 // tokens3/warp.js: «Жги токены» v3 plays the v2 chapters unchanged through a time warp.
-// WARP = [v3 time, v2 time] anchors on the same sung words (whisper, both tracks), the v2 chapters' own cue times and the big hits; piecewise linear.
+// WARP = [v3 time, v2 time] anchors: true v3 audio events (truth.json line starts, word onsets, beats, hits) paired with the v2 chapters' own cue times and the big hits; piecewise linear.
 // Two anchors with (almost) the same v3 time are a hard cut in v2 time.
 // Beats and hits are the real v3 ones (audio.js): bpOf() and HITS are rebuilt so the camera pulses sit on this track's beat,
 // not on v2's fixed 94.2 grid (Suno's tempo drifts 0.639 → 0.662 s/beat after 2:00; that grid is what slid under the sermon and the wheel).
 const WARP = [
-  [0, 0], [.22, .2], [.85, .86], [1.61, 1.66], [2.88, 2.93], [5.6, 4.86], [11.05, 10.99], [17.44, 16.92], [24.88, 20.1],   // intro: the same hits (the slam on the kick entry 17.44), v3 holds 5 s longer after the slam
-  [26.27, 21.29], [26.74, 21.77], [27.78, 22.65],   // the limit screen on «Лимиты целы» (27.76; kick 27.83)
-  [30.0, 25.25], [32.9, 27.8], [35.5, 30.5], [37.7, 32.52], [38.9, 33.98], [40.42, 35.14], [42.8, 37.78], [45.54, 39.84], [47.33, 41.82], [47.79, 42.47], [48.3, 42.95],
-  [50.26, 45.1], [52.86, 47.78], [55.66, 49.74], [58.0, 52.88], [58.44, 53.66], [58.98, 54.2], [60.32, 55.3], [62.86, 58.0], [65.28, 60.4], [68.52, 63.78], [69.28, 64.54],
-  [72.18, 67.14], [74.8, 69.98], [77.24, 72.68], [79.58, 74.62], [82.06, 77.32], [83.42, 78.74], [84.74, 79.88], [87.28, 82.28], [89.62, 84.86], [91.7, 87.0], [92.74, 88.2], [93.379, 88.7], [95.283, 90.6],   // the break: cut on the kick, the four presses on the next four kicks
-  [96.92, 91.86], [99.7, 94.94], [100.04, 95.38], [100.56, 95.88], [101.86, 96.86], [104.96, 100.04], [105.4, 100.78], [105.94, 101.26], [107.28, 102.32], [109.82, 104.92], [112.18, 107.54], [115.44, 110.88], [118.41, 113.6], [119.2, 114.15], [119.68, 114.79], [120.15, 115.26], [120.63, 115.74],   // a05 «щёлк» ×4 on the v3 hits
-  [121.56, 116.36], [122.87, 118.26], [123.54, 119.08], [124.3, 119.87], [125.42, 120.86], [126.3, 121.6], [127.06, 122.38], [127.46, 122.82], [128.32, 123.8], [129.9, 125.2], [130.2, 125.54], [131.12, 126.44], [132.48, 127.18], [133.74, 129.0], [135.12, 129.8], [136.56, 132.64], [139.17, 134.36], [139.81, 135.2], [142.43, 137.78],
-  // GPU rush (instrumental in v3): its glitch cuts and slam flashes on the kick (140.2 cut, 142.07 / 143.03 slams, 143.9 drop3)
-  [144.81, 140.2], [146.69, 142.07], [147.34, 143.03], [147.97, 143.9],
-  // the samsara wheel: each whip (a07 FH, v2 time) lands on its own sung «Больше …» in v3
-  // (the «Больше» phrases sit on the kick every 2 beats: 149.31 + 1.305·k, fitted to the kick onsets; whisper's word times drift here)
-  [149.31, 145.6], [150.62, 146.56], [151.92, 147.8], [153.22, 149.1], [154.53, 150.36], [155.84, 151.58], [157.14, 152.86], [158.44, 154.0],
-  [160.35, 155.06], [161.64, 155.92],
-  [162.62, 157.4], [164.76, 159.32], [167.82, 162.28], [170.38, 164.64], [172.68, 167.28],
-  // 172.68–186.74 is the v3-only mayonnaise chapter (tokens3/ch/b08_mayo.js, real time); the warp just stays continuous here
-  [186.74, 180.92], [187.97, 182.44], [189.22, 183.76], [190.38, 184.88], [191.62, 185.68], [192.18, 186.66], [193.12, 187.48], [194.4, 188.8], [195.64, 190.0], [196.28, 190.72], [197.32, 191.74],
-  [199.4, 193.77], [200.95, 195.29], [203.58, 197.9], [204.52, 198.64],
-  // outro: every word (prompted whisper pass on the v3 outro, assets/tokens3/outro.json)
-  [205.74, 199.9], [206.78, 200.88], [208.2, 203.24], [211.08, 205.72], [212.12, 206.42], [213.74, 207.68], [214.06, 208.38], [214.6, 208.8], [214.84, 209.06],
-  [216.16, 210.16], [216.8, 210.86], [218.48, 212.28], [218.74, 213.06], [219.04, 213.36], [219.3, 213.62], [220.5, 213.98],
-  [223.04, 216.88], [223.28, 217.58], [224.859, 218.44], [224.86, 219.14], [224.9, 219.18], [226.42, 220.76], [227.583, 223.18], [227.64, 223.24],   // «Полночь»: cut to ВС 23:59 on the 224.86 hit (flash), flips a frame later on «Полночь» 224.9
-  // the ending: the refill, then the close-up with his eyes still shut, he opens them on the whispered «…Сука.» (~228.2), and the band crashes in on the 228.57 hit
-  // the bar hits 100% with its flash on the 227.59 onset (frame 5462), close-up from 227.641 (eyes shut), eyes open 228.2 (= v2 224.57), hard cut into sBlast just past CRASH so frame 5486 (228.583) is the slam
-  [227.641, 224.2], [228.2, 224.57], [228.55, 224.9], [228.551, 227.28], [231.39, 229.15],
-  // 233.4–240.9 is the v3-only finale (tokens3/ch/b10_finale.js, real time); the credit card closes on the last bars
-  [240.9, 237.85], [242.6, 239.0], [260, 256]
+  // Real times are the audio ground truth (truth.json): line starts, word onsets, beats/downbeats, hits. v2 times are the v2 chapters' own cues
+  // (shot starts, v2 line starts, v2 hits), so each shot starts on the first frame at/after its true event.
+  // NEVER put an anchor after a // on the same line: it silently disappears.
+  // intro (a01): song start 0.203, the intro onsets, the conveyor on the 7.34 downbeat, the slam on the kick-push entry 17.45 (strong kick, one 16th before the 17.615 downbeat)
+  [0, 0], [.203, .2], [.865, .86], [1.551, 1.66], [2.86, 2.93], [5.564, 4.86], [7.343, 7.0], [11.193, 10.99], [17.45, 16.92],
+  // a02 friday: every shot on its true line start / word («дела» 26.32, «позади» 26.70, «вперёд» 39.15)
+  [25.249, 20.1], [26.32, 21.29], [26.7, 21.77], [27.658, 22.65], [30.36, 25.25], [32.94, 27.8], [35.614, 30.5], [37.73, 32.5], [39.149, 33.98], [40.342, 35.1], [42.986, 37.75],
+  // a03 chorus 1: «Кулеры» 45.69, the 47.32 stab (press), «Биржа» 47.82, the band re-entry hit 48.27, then the chorus lines (8th pickups)
+  [45.694, 39.8], [47.322, 41.82], [47.824, 42.47], [48.268, 42.72], [50.477, 45.05], [52.872, 47.75], [55.577, 49.7], [57.96, 52.85],
+  // «один» on the 2/4-bar accent 58.456, «миллион» 59.10; «Это полезно!» 68.54, «полезно» 69.52 (chorus-2 twin 116.47 − 46.95); TV-off on the 71.77 beat after the vocal
+  [58.456, 53.66], [59.101, 54.2], [60.311, 55.25], [62.897, 57.95], [65.09, 60.35], [68.54, 63.75], [69.52, 64.54], [71.77, 66.4],
+  // a04 verse 2: line starts («нанял» 83.72), the bill shakes on the 90.17 / 90.81 beats, «пускай» 91.81, the break on the 92.71 downbeat, the presses on the beats
+  [72.069, 67.1], [75.23, 69.95], [77.761, 72.65], [79.83, 74.6], [82.538, 77.3], [83.72, 78.9], [84.753, 79.85], [86.973, 82.25], [89.861, 84.8], [90.17, 85.21], [90.805, 85.84], [91.809, 87.0],
+  [92.709, 88.2], [93.344, 88.7], [95.248, 90.6],
+  // a05 chorus 2 (= chorus 1 + 46.95 s): lines, «лимит»/«не», «один» on the 105.40 downbeat hit, «миллион» 106.12; ЩЁЛК on the 118.08 downbeat after «полезно», the four «щёлк» on the next four beats
+  [97.45, 91.8], [99.736, 94.94], [100.066, 95.38], [100.618, 95.88], [102.5, 96.86], [104.9, 100.04], [105.401, 100.78], [106.12, 101.26], [107.244, 102.32], [109.81, 104.92],
+  [112.03, 107.5], [115.479, 110.85], [118.075, 113.6], [118.71, 114.13], [119.344, 114.79], [119.978, 115.26], [120.613, 115.74],
+  // a06 sermon: the preacher on the drum stop 121.87 (section start; «Нам» follows at 122.27), «больше» 122.83, the stab 123.84 and drum hit 124.49, then the words
+  [121.868, 116.3], [122.834, 118.26], [123.844, 119.08], [124.494, 119.87], [126.012, 120.8], [126.44, 121.6], [127.155, 122.38], [127.565, 122.82],
+  [128.72, 123.7], [129.974, 125.15], [130.34, 125.54], [131.193, 126.44], [132.464, 127.15], [133.851, 129.0], [135.004, 129.75],
+  // «нам понадобится…» is held through the snare roll: the shades land on the 136.48 beat, the cut into drop1 on the sung «БОЛЬШЕ» 137.71,
+  // «GPU!» 138.41, the tower grows on the 138.77 onset and on the drop 139.15, the rush cuts in on the 139.80 beat
+  [136.49, 132.05], [137.705, 132.55], [137.71, 132.675], [138.41, 133.375], [138.785, 133.74], [139.16, 134.38], [139.81, 135.2],
+  // GPU rush (instrumental in v3), on the beats: drop2 + «БОЛЬШЕ» 142.42, «GPU!»/КЛАЦ 143.08, rush2 145.03, slams 146.34 / 146.995,
+  // drop3 + «БОЛЬШЕ» on the 147.65 beat (the chant pickup), its «GPU!» on the next beat 148.30
+  [142.45, 137.7], [142.455, 137.815], [143.08, 138.515], [145.035, 140.2], [146.37, 142.1], [146.995, 143.06], [147.649, 143.9], [147.653, 143.975], [148.302, 144.815],
+  // the samsara wheel: each whip (a07 FH) on its «Больше …» half-phrase, every even beat b232…b246 (148.96…158.09)
+  [148.955, 145.6], [150.261, 146.56], [151.564, 147.8], [152.869, 149.1], [154.175, 150.36], [155.48, 151.58], [156.788, 152.86], [158.092, 154.0],
+  // «ЭКОНОМИКА» on the 160.05 downbeat, «РАБОТАЕТ» 161.48; a08 cuts in on the band re-entry hit 162.545 (the line itself starts 161.98, karaoke has it)
+  [160.048, 155.0], [161.483, 155.92], [162.545, 157.35], [164.734, 159.3], [167.819, 162.25], [170.252, 164.6], [172.66, 167.25],
+  // 172.66–186.95 is the v3-only mayonnaise chapter (tokens3/ch/b08_mayo.js, real time)
+  // a09 chorus 3: «Жги» 186.95 (8th pickup), the 189.22 drum hit, «обнулён» 190.78, ШРЕДЕР on the 191.34 stop, «Доходы» 191.62, «потом» 192.36, «Прибыль» 193.10
+  [186.95, 180.85], [187.935, 182.44], [189.219, 183.76], [190.775, 184.88], [191.344, 185.4], [191.62, 185.68], [192.36, 186.66], [193.1, 187.48],
+  // «ЭЙДЖИАЙ» 194.31, «скоро» on the 195.73 downbeat, «CAPEX» 196.32, «Плюс процент» 197.59, the 198.93 stop → «плюс триста» on the 199.40 stab, the 200.93 hit, TV-off on the 202.24 beat
+  [194.313, 188.7], [195.726, 190.0], [196.32, 190.72], [197.59, 191.7], [198.931, 193.32], [199.396, 193.77], [200.934, 195.29], [202.243, 196.28],
+  // a10 sunday on the 203.565 downbeat; the spoken outro on the vocal-stem word onsets («Время» 206.50, «23» 206.88, «58» 209.19)
+  [203.565, 197.9], [204.478, 198.64], [206.501, 199.9], [206.88, 200.88], [209.19, 203.24], [211.827, 205.65], [212.227, 206.42],
+  [213.232, 207.6], [214.57, 208.8], [214.869, 209.06], [215.873, 210.16], [216.881, 210.86], [218.62, 212.28], [218.921, 213.06], [219.16, 213.36], [219.48, 213.62],
+  [219.91, 213.95], [223.048, 216.8], [223.42, 217.58],
+  // «Полночь» 224.78: hard cut to ВС 23:59, it flips to ПН 00:00 on the 224.845 hit; the refill screen on «Ваш недельный лимит» 226.42, the bar full on «восстановлен» 227.64
+  [224.775, 218.44], [224.78, 219.14], [224.845, 219.18], [226.424, 220.72], [227.637, 223.18],
+  // the ending: the close-up cuts in on the snare-roll pickup 228.554; eyes shut through the roll and the whispered «…Сука» (230.36);
+  // the band slam 231.375 (downbeat) hard-cuts to the snap (a10 sSnap, v2 225.0+): eyes fly open, red; one beat later (232.036) the blast (CRASH flash),
+  // the second flash (HEY2) on the 232.70 accent, the burning hall (HALL) on the 233.37 beat, the finale on the 234.03 downbeat
+  [228.54, 224.2], [231.36, 224.99], [231.365, 225.0], [232.03, 225.66], [232.035, 227.28], [232.701, 228.8], [233.367, 229.15],
+  // 234.03–240.64 is the v3-only finale (tokens3/ch/b10_finale.js, real time); the credit card cuts in on the 240.64 beat after the white-out → black
+  [240.641, 237.85], [242.6, 239.0], [260, 256]
 ];
 const lerpTab = (tab, x, i, j) => {                          // piecewise-linear lookup of column j by column i
   let k = 1; while (k < tab.length - 1 && tab[k][i] <= x) k++;

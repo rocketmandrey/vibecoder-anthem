@@ -13,7 +13,7 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
-const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, itgirl: { page: 'itgirl.html', audio: 'assets/itgirl/itgirl.m4a', dur: 160 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.6 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.6 } };
+const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, itgirl: { page: 'itgirl.html', audio: 'assets/itgirl/itgirl.m4a', dur: 160 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.6 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.6 }, tokens3h: { page: 'tokens3.html', q: '&hamster', audio: 'assets/tokens3/tokens3.m4a', dur: 242.6 } };
 const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);

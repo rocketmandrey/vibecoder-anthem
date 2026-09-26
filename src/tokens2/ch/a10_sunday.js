@@ -234,11 +234,25 @@
     if (full) flash(.7 * hitK(t, [223.18], .1), '#E6FFE8');
   }
 
+  // v3 only (tokens3 warp): he says «Сука» with his eyes shut; the band crash cuts to this snap: the eyes fly open, red, on a zoom punch (v2 225.0+)
+  const SNAP = 225.0;
+  function sSnap(t) {
+    const a = t - SNAP, k = Math.exp(-a * 7), u = 172 + 34 * Math.exp(-a * 12), [sx, sy] = shakeXY(t, 22 * k);
+    bgFill('#2A0C08', '#5A1A0C', 90);
+    glowAt(960, 1150, 1100, TK.ember, 140);
+    for (let i = 0; i < 18; i++) {                                            // speed lines bursting out from the eyes
+      const q = i / 18 * TAU + hash(i) * .2, r0 = 520 + a * 900, r1 = r0 + 260 + hash(i + 3) * 200;
+      inkLine([[960 + Math.cos(q) * r0, 540 + Math.sin(q) * r0 * .6], [960 + Math.cos(q) * r1, 540 + Math.sin(q) * r1 * .6]], 3.5 * k + .5, i % 2 ? '#FFD9A0' : TK.ember, 'ink', 0);
+    }
+    clawd(960 + sx, 540 + 6 * u + sy, u, { eyes: 'red', squint: 1 - seg(a, 0, .06), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
+    flash(.55 * Math.exp(-a / .1), '#FF7A3A');
+  }
   function sSuka(t) {                                                         // 224.2 «…Сука.» deadpan close-up
-    const u = 150 + (t - 224.2) * 8;                                          // EXTREME close-up: the face fills the frame, eyes shut, they open on «Сука» (224.57)
+    if (window.TIME_WARP && t >= SNAP) return sSnap(t);
+    const u = 150 + (t - 224.2) * 8, shut = window.TIME_WARP || t < 224.57;   // EXTREME close-up: the face fills the frame, eyes shut, they open on «Сука» (224.57; v3 keeps them shut, see sSnap)
     bgFill(WALL, WALL2);
     glowAt(960, 1200, 900, '#9CFFB8', 90);
-    clawd(960, 540 + 6 * u, u, { eyes: t < 224.57 ? 'closed' : 'narrow', squint: t < 224.57 ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
+    clawd(960, 540 + 6 * u, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
 

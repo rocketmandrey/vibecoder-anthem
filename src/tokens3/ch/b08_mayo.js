@@ -1,13 +1,13 @@
-// b08_mayo.js: «Жги токены» v3, the rap verse's payoff, 172.68–186.74 in REAL v3 time (replaces v2's board-game train).
-// 172.68 «А мне от неё нужно только одно»: Clawd hugs a giant smartphone in the lamp-lit room (v2 hug staging), bloom on «одно»
-// 175.54 «Трекер калорий я хочу давно»: the phone screen, an empty calorie diary, a clay finger taps «+» on «давно»
-// 177.44 «Сто тысяч GPU, весь мировой прогресс»: pull back, the phone is wired into a whole data centre, «анализ фото…» crawls
-// 180.50 «Чтобы в тарелке разглядеть майонез»: the phone camera on a bun with a blob of mayo, AI label on «майонез»
-// 182.2 the camera dives into the dollop → 183.1 a creamy tunnel, faster on every beat → 186.74 cream white-out (a09 cuts in)
+// b08_mayo.js: «Жги токены» v3, the rap verse's payoff, 172.66–186.95 in REAL v3 time (cues on the truth line starts / words / beats) (replaces v2's board-game train).
+// 172.66 «А мне от неё нужно только одно»: Clawd hugs a giant smartphone in the lamp-lit room (v2 hug staging), bloom on «одно»
+// 175.55 «Трекер калорий я хочу давно»: the phone screen, an empty calorie diary, a clay finger taps «+» on «давно»
+// 177.88 «Сто тысяч GPU, весь мировой прогресс»: pull back, the phone is wired into a whole data centre, «анализ фото…» crawls
+// 180.64 «Чтобы в тарелке разглядеть майонез»: the phone camera on a bun with a blob of mayo, AI label on «майонез»
+// 182.76 the camera dives into the dollop → 183.41 (the 2/4 bar's downbeat) a creamy tunnel, faster on every beat → 186.95 cream white-out (a09 cuts in on «Жги»)
 (() => {
   const INK = PAL.ink;
-  const S1 = 172.68, S2 = 175.54, S3 = 177.44, S4 = 180.50, S5 = 183.1, END = 186.74;
-  const ONE = 174.58, TAP = 176.98, MAYO = 181.64, DIVE = 182.2;
+  const S1 = 172.66, S2 = 175.552, S3 = 177.876, S4 = 180.637, S5 = 183.409, END = 186.95;
+  const ONE = 174.846, TAP = 177.096, MAYO = 181.757, DIVE = 182.76;   // «одно», «давно», «майонез», the beat before the 2/4 bar
   const CREAM = '#FFF8E8', MAYO_C = '#FFFBEF', MAYO_SH = '#E9DDBE', APP = '#5CC27E', APP_DK = '#2F8F5B', PLUS = '#FF7A3D';
   const beatsIn = (a, b) => V3_BEATS.filter(x => x >= a && x < b);
 
@@ -33,8 +33,8 @@
     letter('КАЛОРИЙ', cx, cy + r * 1.95, w * .13, INK, { font: ruFont(w * .13), ink: false });
   }
 
-  // ---------- 172.68 the hug (v2 a08 shotHijack staging, the box is now a phone) ----------
-  const HUG_B = [172.7, ...beatsIn(172.9, 175.4)];
+  // ---------- 172.66 the hug (v2 a08 shotHijack staging, the box is now a phone) ----------
+  const HUG_B = [S1 + .02, ...beatsIn(S1 + .2, S2 - .15)];
   function shotHug(t, lt) {
     const sway = Math.sin(t * 2.4) * .045, one = seg(t, ONE - .22, ONE + .08), fade = Math.exp(-Math.max(0, t - ONE) * 1.6) * one;
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#F4C99A', fill: '#E8A878', fillOp: 70, tex: .5, ink: null });
@@ -71,7 +71,7 @@
     flash(.45 * fade * (t > ONE ? 1 : 0), '#FFF6D8');
   }
 
-  // ---------- 175.54 the app: empty diary, the finger taps «+» on «давно» ----------
+  // ---------- 175.55 the app: empty diary, the finger taps «+» on «давно» ----------
   function shotApp(t, lt) {
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#E8B488', fill: '#C98A5E', fillOp: 70, tex: .5, ink: null });
     const tapK = hitK(t, [TAP], .12), [sx, sy] = shakeXY(t, 6 * tapK);
@@ -115,13 +115,13 @@
     sfx('ТЫК!', 1370, 640, 90, PLUS, t - TAP, { life: .45, rot: .12, font: ruFont(90), stroke: '#FFFFFF' });
   }
 
-  // ---------- 177.44 pull back: a whole data centre wired into the phone ----------
-  const S3_HITS = [178.24, 179.7];
+  // ---------- 177.88 pull back: a whole data centre wired into the phone ----------
+  const S3_HITS = [178.221, 179.68], PB = S3 + .76, GP = 179.0;   // the 178.22 downbeat snare, the 179.68 kick; pull-back done; «весь» 179.0
   function shotGPUs(t, lt) {
-    const heat = .15 + .6 * seg(t, 178.0, 180.4), hk = hitK(t, S3_HITS, .15), pb = pulse(t, 7);
-    const z = kf(t, [[S3, 2.8], [178.2, 1.25], [180.5, 1.08]], easeOut) * (1 + .03 * pb + .05 * hk);
+    const heat = .15 + .6 * seg(t, S3 + .12, S4 - .1), hk = hitK(t, S3_HITS, .15), pb = pulse(t, 7);
+    const z = kf(t, [[S3, 2.8], [PB, 1.25], [S4, 1.08]], easeOut) * (1 + .03 * pb + .05 * hk);
     const [sx, sy] = shakeXY(t, 4 + 10 * hk);
-    camBegin(960 + sx, kf(t, [[S3, 800], [178.2, 580], [180.5, 560]], easeOut) + sy, z);
+    camBegin(960 + sx, kf(t, [[S3, 800], [PB, 580], [S4, 560]], easeOut) + sy, z);
     dataCenter(t, { heat, n: 7, seed: 3 });
     // GPU cards hanging in the air on both sides (the sea goes on), fans spinning
     for (let i = 0; i < 6; i++) {
@@ -156,19 +156,19 @@
       pop();
       letter('GPU', 960 + 330 * k, 120, 76 * k, '#48E08A', { font: ruFont(76 * k), ink: false });
     }
-    if (t >= 178.2) {
-      const p = .002 + .018 * seg(t, 178.2, 180.4), bx = 560, by = 850, bw = 800;
+    if (t >= PB) {
+      const p = .002 + .018 * seg(t, PB, S4 - .1), bx = 560, by = 850, bw = 800;
       paint(rrPts(bx - 20, by - 70, bw + 40, 120, 20), { wash: TK.soot, washOp: 220, ink: TK.cream, sw: .8 });
       letter('АНАЛИЗ ФОТО' + '.'.repeat(1 + Math.floor(t * 4) % 3), bx, by - 34, 34, TK.cream, { font: ruFont(34), align: 'left', ink: false });
       letter((p * 100).toFixed(1) + '%', bx + bw, by - 34, 34, TK.yellow, { font: ruFont(34), align: 'right', ink: false });
       paint(rrPts(bx, by, bw, 26, 8), { wash: '#2B2F36', ink: TK.cream, sw: .6 });
       paint(rrPts(bx + 4, by + 4, Math.max(14, bw * p), 18, 6), { wash: TK.green, ink: null });
     }
-    if (t >= 179.3) punkText('ВЕСЬ МИРОВОЙ ПРОГРЕСС', 960, 290, 60, t, 179.3, { step: .025 });
-    flash(.35 * hitK(t, [179.7], .1), '#FFF1C8');
+    if (t >= GP) punkText('ВЕСЬ МИРОВОЙ ПРОГРЕСС', 960, 290, 60, t, GP, { step: .025 });
+    flash(.35 * hitK(t, [179.68], .1), '#FFF1C8');
   }
 
-  // ---------- 180.50 the phone camera on a bun with a fat blob of mayo; AI label on «майонез»; 182.2 dive in ----------
+  // ---------- 180.64 the phone camera on a bun with a fat blob of mayo; AI label on «майонез»; 182.76 dive in ----------
   const DX = 960, DY = 445, DR = 118;                                               // the mayo blob (world)
   const b08_blob = () => { const p = []; for (let q = 0; q < 40; q++) { const a = q / 40 * TAU, up = Math.exp(-Math.pow(Math.atan2(Math.sin(a + Math.PI / 2), Math.cos(a + Math.PI / 2)) / .3, 2)), dn = Math.max(0, Math.sin(a)) * (.25 + .3 * Math.max(0, Math.sin(a * 5 + 1))); p.push([DX + Math.cos(a) * DR * 1.3, DY + Math.sin(a) * DR * .62 - up * DR * .75 + dn * DR]); } return p; };
   function b08_bun(inkS) {
@@ -195,13 +195,13 @@
     paint(ellPts(DX + DR * .05, DY - DR * .85, DR * .07, DR * .1, 8), { wash: '#FFFFFF', ink: null });
   }
   function b08_camBun(t) {
-    const c = kf(t, [[S4, [960, 640, 1.0]], [181.3, [960, 580, 1.3]], [DIVE, [960, 530, 1.5]]], ease);
+    const c = kf(t, [[S4, [960, 640, 1.0]], [181.4, [960, 580, 1.3]], [DIVE, [960, 530, 1.5]]], ease);
     if (t < DIVE) return c;
     const u = t - DIVE, e = ease(seg(t, DIVE, DIVE + .5));
     return [960, lerp(530, DY - 10, e), Math.min(70, 1.5 * Math.exp(Math.pow(u, 1.5) * 6))];
   }
   function shotPlate(t, lt) {
-    const [cx, cy, z] = b08_camBun(t), hk = hitK(t, [181.49, 182.45], .12), [sx, sy] = shakeXY(t, 4 * hk), inkS = Math.min(1, 1.8 / z), dv = seg(t, DIVE, S5);
+    const [cx, cy, z] = b08_camBun(t), hk = hitK(t, [181.463, 182.422], .12), [sx, sy] = shakeXY(t, 4 * hk), inkS = Math.min(1, 1.8 / z), dv = seg(t, DIVE, S5);
     const S2X = (x, y) => [960 + (x - cx) * z, 540 + (y - cy) * z];
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#E9D3B0', ink: null });
     camBegin(cx + sx / z, cy + sy / z, z);
@@ -235,8 +235,8 @@
       letter('AI · трекер калорий', X0 + 40, Y0 + 44, 26, '#FFD60A', { font: ruFont(26), align: 'left', ink: false, alpha: uiK });
       letter('1×', 960, Y1 - 100, 24, '#FFD60A', { font: ruFont(24), ink: false, alpha: uiK });
       // the yellow focus square hunts, then locks on the mayo
-      const lock = ease(seg(t, S4 + .15, 181.2)), [fx, fy] = S2X(DX, DY - 20), hunt = (1 - lock);
-      const qx = fx + Math.sin(t * 9) * 120 * hunt, qy = fy + 140 * hunt + Math.cos(t * 7) * 60 * hunt, qs = lerp(220, DR * z * 1.5, lock) * (1 + .1 * Math.exp(-(t - 181.2) * 10) * (t > 181.2));
+      const lock = ease(seg(t, S4 + .15, 181.3)), [fx, fy] = S2X(DX, DY - 20), hunt = (1 - lock);
+      const qx = fx + Math.sin(t * 9) * 120 * hunt, qy = fy + 140 * hunt + Math.cos(t * 7) * 60 * hunt, qs = lerp(220, DR * z * 1.5, lock) * (1 + .1 * Math.exp(-(t - 181.3) * 10) * (t > 181.3));
       const fc = '#FFD60A';
       for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
         inkLine([[qx + dx * qs, qy + dy * qs * .7 - dy * 40], [qx + dx * qs, qy + dy * qs * .7], [qx + dx * qs - dx * 40, qy + dy * qs * .7]], 2.2 * uiK, fc, 'ink', 0);
@@ -261,8 +261,8 @@
     if (t > DIVE) flushLetters(), flash(ease(seg(t, S5 - .25, S5)), CREAM);
   }
 
-  // ---------- 183.1 inside the mayonnaise: a creamy tunnel, faster on every beat ----------
-  const TUN_B = beatsIn(S5 + .1, END);                                             // 183.43 184.08 184.73 185.38 186.03 186.67
+  // ---------- 183.41 inside the mayonnaise: a creamy tunnel, faster on every beat ----------
+  const TUN_B = beatsIn(S5 + .1, END);                                             // 184.06 184.71 185.35 186.00 186.65
   const b08_phase = t => { const u = t - S5; return 1.2 * u + .35 * u * u + TUN_B.reduce((a, b) => a + .7 * easeOut(clamp((t - b) / .18)), 0); };
   const BANDS = ['#FFFDF6', '#E8CF98', '#FFF6DE', '#DCBF84'];
   function shotTunnel(t, lt) {
@@ -279,7 +279,7 @@
       if (r > 60) inkLine(ellPts(cx, cy, r * 1.25 * .96, r * .96, 14, 0, rot + k * .3).slice(1, 6), clamp(r / 300, .4, 2.2), '#FFFFFF', 'ink', .5);
     }
     // the bright vanishing point, growing to the white-out
-    const out = ease(seg(t, 185.9, END - .05));
+    const out = ease(seg(t, 186.11, END - .05));
     paint(ellPts(960 + sx, 520 + sy, 90 + 900 * out, 70 + 700 * out, 22), { fill: '#FFFFFF', fillOp: 160 + 90 * out, bleed: .3, tex: .2, border: .1, ink: null });
     // cream swirls spiralling in
     for (let arm = 0; arm < 4; arm++) {
@@ -308,7 +308,7 @@
     pop();
     flushLetters();
     if (t < S5 + .3) flash(1 - ease(seg(t, S5, S5 + .3)), CREAM);
-    flash(ease(seg(t, 186.45, END - .06)), CREAM);                                 // full cream by the cut to a09
+    flash(ease(seg(t, 186.66, END - .06)), CREAM);                                 // full cream by the cut to a09
   }
 
   chapter('mayo', S1, END, [[S1, shotHug], [S2, shotApp], [S3, shotGPUs], [S4, shotPlate], [S5, shotTunnel]], { real: true });

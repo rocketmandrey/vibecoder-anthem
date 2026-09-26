@@ -337,7 +337,14 @@
     task: { x: 440, y: 465, label: 'ЗАДАЧИ', a: Math.PI }
   };
   const ORDER = ['gpu', 'tok', 'agt', 'task'];
-  const FH = [
+  // v3 (window.TIME_WARP) sings GPU·токенов | токенов·агентов | агентов·задач | задач·токенов (v2: GPU·ТОКЕНЫ·АГЕНТЫ·АГЕНТЫ·ЗАДАЧИ·ЗАДАЧИ·ТОКЕНЫ·ТОКЕНЫ):
+  // each station punches on its sung noun (truth word onsets, real time → v2 via the warp); the camera whips (CAMK3) stay on the «Больше» beats
+  const V3 = !!window.TIME_WARP;
+  const FH = V3 ? [
+    [149.957, 'gpu', 'БОЛЬШЕ GPU!', 'x2'], [150.898, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', 'x1000'], [152.192, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', 'x10⁶'],
+    [153.484, 'agt', 'БОЛЬШЕ АГЕНТОВ!', '+100'], [154.793, 'agt', 'БОЛЬШЕ АГЕНТОВ!', '+10⁴'], [155.96, 'task', 'БОЛЬШЕ ЗАДАЧ!', '+1000'],
+    [157.248, 'task', 'БОЛЬШЕ ЗАДАЧ!', '+10⁶'], [158.723, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', '∞']
+  ].map(([r, ...h]) => [TIME_WARP(r), ...h]) : [
     [145.60, 'gpu', 'БОЛЬШЕ GPU!', 'x2'], [146.56, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', 'x1000'], [147.80, 'agt', 'БОЛЬШЕ АГЕНТОВ!', '+100'],
     [149.10, 'agt', 'БОЛЬШЕ АГЕНТОВ!', '+10⁴'], [150.36, 'task', 'БОЛЬШЕ ЗАДАЧ!', '+1000'], [151.58, 'task', 'БОЛЬШЕ ЗАДАЧ!', '+10⁶'],
     [152.86, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', 'x10⁹'], [154.0, 'tok', 'БОЛЬШЕ ТОКЕНОВ!', '∞']
@@ -372,7 +379,7 @@
       const q = a + k * TAU / 5;
       paint(rotPts(rectPts(cx, cy - R * .075, R * .8, R * .15), cx, cy, q), { wash: A2.steelLt, fill: A2.steel, fillOp: 80, tex: .5, ink: INK, sw: sw * .7 });
     }
-    token(cx, cy, R * .3, { rot: a, glow: .4 + .5 * pulse2(t, 7) });
+    token(cx, cy, R * .3, { rot: a, glow: V3 ? .6 : .4 + .5 * pulse2(t, 7) });
     const n = Math.min(24, Math.floor(6 + w * 3));                              // sparks thrown tangentially off the rim
     for (let i = 0; i < n; i++) {
       const per = .45, c = Math.floor(t / per + hash(i)), f = frac(t / per + hash(i)), q = hash(i * 3 + c * 7) * TAU;
@@ -465,13 +472,23 @@
   // 9:16 (VERT only): the same whips, but each lands with its pod + multiplier centred (pod x + 150), so vfocus can hold a square window at 960
   const VCAMX = [960, 1110, 1110, 1630, 1615, 1110, 1100, 1110, 1110, 590, 585, 590, 590, 1630, 1620, 960, 960];
   const CAMKV = CAMK.map(([k, [x, y, z, r]], i) => [k, [VCAMX[i], y, z, r]]);
+  // v3: same whip times, targets in the sung order gpu · tok · tok (push-in) · agt · agt (push-in) · task · task (push-in) · wide
+  const CAMK3 = [
+    [145.55, [960, 430, 1.0, 0]], [145.64, [960, 320, 1.45, -.02]], [146.42, [960, 305, 1.55, -.03]], [146.56, [1330, 470, 1.55, .03]],
+    [147.66, [1315, 478, 1.62, .02]], [147.80, [1560, 470, 1.85, .02]], [148.96, [1560, 470, 1.9, .02]], [149.10, [960, 720, 1.5, -.02]],
+    [150.22, [950, 712, 1.56, -.02]], [150.36, [960, 700, 1.85, .02]], [151.44, [960, 700, 1.9, .02]], [151.58, [600, 480, 1.5, .02]],
+    [152.72, [595, 480, 1.56, .02]], [152.86, [540, 470, 1.85, -.02]], [153.86, [540, 470, 1.9, -.02]], [154.0, [960, 428, .86, 0]], [155.0, [960, 428, .92, .02]]
+  ];
+  const VCAMX3 = [960, 1110, 1110, 1630, 1615, 1630, 1630, 1110, 1100, 1110, 1110, 590, 585, 590, 590, 960, 960];
+  const CAMK3V = CAMK3.map(([k, [x, y, z, r]], i) => [k, [VCAMX3[i], y, z, r]]);
   function fwWhip(x) { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
   function wheelShot(t) {
     const heat = seg(t, 147.5, 154.6), last = fwLast(t), hitAge = last ? t - last[0] : 9;
-    const [cx, cy, z, r] = kf(t, window.VERT ? CAMKV : CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * heat * pulse2(t));
-    camBegin(cx + sx, cy + sy, z * (1 + .018 * pulse2(t, 7) + .05 * Math.exp(-hitAge * 9)), r);
+    const bp = V3 ? 0 : 1;                                                         // v3: no eighth-note pulsing (it strobed), only the word punches
+    const [cx, cy, z, r] = kf(t, V3 ? (window.VERT ? CAMK3V : CAMK3) : window.VERT ? CAMKV : CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * bp * heat * pulse2(t));
+    camBegin(cx + sx, cy + sy, z * (1 + .018 * bp * pulse2(t, 7) + .05 * Math.exp(-hitAge * 9)), r);
     a07_hall(t, { heat: .3 + .7 * heat, dark: .1 });
-    glowAt(WC[0], WC[1], 700, TK.orange, 40 + 40 * heat + 25 * pulse2(t, 8));
+    glowAt(WC[0], WC[1], 700, TK.orange, 40 + 40 * heat + 25 * bp * pulse2(t, 8));
     if (heat > .4) for (const fx of [150, 1770]) fire(fx, 910, 300, 300, t, { k: seg(heat, .4, 1), seed: fx });
     fwRing(t, last ? last[1] : null, last ? Math.exp(-hitAge * 1.8) : 0);
     flywheel(WC[0], WC[1], 190, t, heat);

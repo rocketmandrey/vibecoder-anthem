@@ -1,13 +1,13 @@
-// b10_finale.js: «Жги токены» v3, the instrumental climax after the blast, 234.05–240.9 in REAL v3 time.
-// Every cut on a beat, the big accents on the bar downbeats (231.39, 234.05, 236.69, 239.34); no picture-in-picture:
-// 234.05 (downbeat) the blue agents slam into the mosh with Clawd in the burning data centre → 235.37 Clawd stage-dives
-// and crowd-surfs on the agents' hands → 236.69 (downbeat) outside: БУМ, the roof blows off, a pillar of burning tokens
-// → 237.35 orbit: the planet's «НЕДЕЛЬНЫЙ ЛИМИТ» burns to 0% by 238.02, «0%» + the Earth flips into a token → 238.68 Clawd winds up the
-// laptop and SMASHES it on the 239.34 downbeat («0%») → 240.0 fists up → 240.4 white flash → black by 240.72.
+// b10_finale.js: «Жги токены» v3, the instrumental climax after the blast, 234.03–240.64 in REAL v3 time (every cue a truth beat, B below).
+// Every cut on a beat, the big accents on the bar downbeats (231.375, 234.031, 236.678, 239.32); no picture-in-picture:
+// 234.03 (downbeat) the blue agents slam into the mosh with Clawd in the burning data centre → 235.36 Clawd stage-dives
+// and crowd-surfs on the agents' hands → 236.68 (downbeat) outside: БУМ, the roof blows off, a pillar of burning tokens
+// → 237.34 orbit: the planet's «НЕДЕЛЬНЫЙ ЛИМИТ» burns to 0% by 238.00, «0%» + the Earth flips into a token → 238.66 Clawd winds up the
+// laptop and SMASHES it on the 239.32 downbeat («0%») → 239.98 fists up → 240.26 white-out → black from 240.44 → the credit card on the 240.64 beat.
 (() => {
   const INK = PAL.ink, SOOT = '#141012', BLACK = '#060709';
-  const B = Array.from({ length: 12 }, (_, k) => +(233.384 + k * .6617).toFixed(3));   // 233.38 … 240.66; B[1], B[5], B[9] are downbeats
-  const S1 = 234.05, S2 = B[3], S3 = 236.69, S4 = 237.35, MID = 238.02, S5 = B[8], SMASH = 239.34, FLASH = 240.4, END = 240.9;   // downbeats pinned to the frame grid
+  const B = V3_BEATS.filter(x => x > 233 && x < 241);                                  // the true beats 233.367 … 240.641 (b361–b372); B[1], B[5], B[9] are downbeats
+  const S1 = B[1], S2 = B[3], S3 = B[5], S4 = B[6], MID = B[7], S5 = B[8], SMASH = B[9], END = B[11], FLASH = END - .38, TO_BLACK = END - .2;
   const AG = { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0' };
   const bk = (t, d = .15) => hitK(t, B, d);                                         // punch on every beat
   const bgFill = (col, fill, op = 90) => paint(rectPts(-400, -400, W + 800, H + 800), { wash: col, fill: fill || col, fillOp: op, tex: .5, border: .3, ink: null });
@@ -29,7 +29,7 @@
       eyes: o.eyes || ['angry', 'happy', 'normal'][n % 3], mouth: n % 2 ? 'O' : 'grin', noShadow: true, ...o.extra });
   }
 
-  // ---------- 233.4 the mosh in the burning data centre ----------
+  // ---------- 234.03 the mosh in the burning data centre ----------
   function shotMosh(t, lt) {
     const k = bk(t), slam = hitK(t, [S1], .25), [sx, sy] = shakeXY(t, 5 + 18 * slam);
     camBegin(960 + sx + Math.sin(lt * 2) * 40, 560 + sy, 1.08 + .05 * k + .12 * slam + lt * .05, Math.sin(lt * 3) * .015);
@@ -45,7 +45,7 @@
     flash(.18 * k + .6 * hitK(t, [S1], .1), '#FFF3C8');
   }
 
-  // ---------- 234.71 stage dive + crowd-surf on the agents' hands ----------
+  // ---------- 235.36 stage dive + crowd-surf on the agents' hands ----------
   function shotSurf(t, lt) {
     const k = bk(t), [sx, sy] = shakeXY(t, 4 * k), camX = lerp(760, 1500, ease(seg(t, S2, S3)));
     bgFill(SOOT, '#3A1A10', 90);
@@ -64,11 +64,10 @@
     clawd(cx, cy, 26, { rot, eyes: 'happy', mouth: 'grin', aL: 2.8, aR: 2.8, seed: 3, noShadow: true, blush: true });
     camEnd();
     tokenRain(t, { n: 12, seed: 5, r: 22, burn: .2 });
-    const land = t - (S2 + .5); sfx('ПРЫЖОК ВЕРЫ', 960, 200, 76, A2.hazard, land, { life: .9, rot: -.06, font: ruFont(76), stroke: SOOT });
     flash(.18 * k, A2.sodium);
   }
 
-  // ---------- 236.03 outside: the roof blows off, a pillar of burning tokens into the night ----------
+  // ---------- 236.68 outside: the roof blows off, a pillar of burning tokens into the night ----------
   const BOOM = S3;
   function shotRoof(t, lt) {
     const bl = Math.max(0, t - BOOM), k = bk(t), [sx, sy] = shakeXY(t, 16 * Math.exp(-bl * 3) * (t > BOOM) + 4 * k);
@@ -102,7 +101,7 @@
     flash(.6 * hitK(t, [BOOM], .1), '#FFF3C8');
   }
 
-  // ---------- 237.35 orbit: the planet's weekly limit burns to 0%, the Earth flips into a token ----------
+  // ---------- 237.34 orbit: the planet's weekly limit burns to 0%, the Earth flips into a token ----------
   function b10_earth(r, t) {
     paint(ellPts(0, 0, r, r, 32), { wash: '#2E6FCF', fill: '#1B3AB0', fillOp: 90, tex: .4, border: .5, ink: INK, sw: 1.3 });
     for (const [x, y, a, b] of [[-.35, -.25, .32, .22], [.3, .15, .28, .36], [-.1, .45, .2, .12], [.4, -.45, .18, .12]])
@@ -129,7 +128,7 @@
     flash(.4 * hitK(t, [S4], .12) + .35 * hitK(t, [MID], .1), '#FFF3C8');
   }
 
-  // ---------- 238.68 the smash: wind up, SMASH on the beat, tokens + sparks, fists up, white flash → black ----------
+  // ---------- 238.66 the smash: wind up, SMASH on the beat, tokens + sparks, fists up, white flash → black ----------
   function shotSmash(t, lt) {
     const sm = t - SMASH, hit = hitK(t, [SMASH], .25), k = bk(t), [sx, sy] = shakeXY(t, 30 * hit + 6 * k);
     bgFill(SOOT, '#3A1A10', 90);
@@ -167,7 +166,7 @@
     flash(.7 * hitK(t, [SMASH], .1) + .3 * k * (t > B[10]), '#FFF3C8');
     // the end: white flash → black by the cut to the credit
     flushLetters();
-    const wf = seg(t, FLASH, FLASH + .12), bl = seg(t, 240.58, 240.64);   // black straight over the full white-out (no crossfade: the scene must not show through grey)
+    const wf = seg(t, FLASH, FLASH + .12), bl = seg(t, TO_BLACK - .06, TO_BLACK);   // black straight over the full white-out (no crossfade: the scene must not show through grey)
     if (wf > 0) flash(wf, '#FFFDF6');
     if (bl > 0) paint(rectPts(-60, -60, W + 120, H + 120), { wash: BLACK, washOp: 255 * bl, ink: null });
   }

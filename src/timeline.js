@@ -121,7 +121,7 @@ function drawKaraokeText(c) {
   c.font = LY_FONT; c.textBaseline = 'middle'; c.textAlign = 'left';
   const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width);
   const total = ws.reduce((p, q) => p + q, 0) + sp * (words.length - 1);
-  const singDur = Math.min(b - a - .1, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;
+  const singDur = Math.min(b - a - .25, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;   // fully lit before the bar shrinks (b - .12 hides the text)
   let x = 960 - total / 2, done = 0; const y = RU[txt] ? 994 : 1015;       // one line: the middle of the bar
   words.forEach((w, i) => {
     const f = clamp((sung - done) / w.length); done += w.length;

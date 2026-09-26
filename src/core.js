@@ -195,7 +195,10 @@ function draw() {
   if (!window.ready) return;
   LETTERS = []; KARAOKE = null; METER_SHOWN = false; CAM = null;
   push(); translate(-W / 2, -H / 2);
-  randomSeed(1000 + Math.floor(T * BOIL)); noiseSeed(77);
+  // the linework boils at BOIL (12) fps; a song can boil at 24 over near-static stretches (SONG.boil24 = [[a, b], …]),
+  // where a 12-fps boil with no other motion reads as the whole picture running on twos
+  const boil = (SONG.boil24 || []).some(([a, b]) => T >= a && T < b) ? 24 : BOIL;
+  randomSeed(1000 + Math.floor(T * boil)); noiseSeed(77);
   image(paperG, 0, 0);
   drawWorld(T);
   pop();
