@@ -300,7 +300,7 @@
     for (let i = 0; i < 8; i++) {
       const x = -100 + i * 380;
       paint(rectPts(x, 120, 300, 320), { wash: '#AEBBC6', fill: '#8494A4', fillOp: 70, tex: .4, ink: INK, sw: .8 });
-      for (let k = 0; k < 3; k++) paint(rectPts(x + 20 + k * 95, 320 - hash(i * 3 + k) * 150, 70, 200), { wash: A2.steelLt, washOp: 200, ink: null });
+      for (let k = 0; k < 3; k++) { const by = 320 - hash(i * 3 + k) * 150; paint(rectPts(x + 20 + k * 95, by, 70, 436 - by), { wash: A2.steelLt, washOp: 200, ink: null }); }   // stand on the window sill, not below it
       inkLine([[x + 150, 120], [x + 150, 440]], .8, INK, 'inkfine', 0);
     }
     paint(rectPts(-200, 30, 3400, 34), { wash: A2.steel, ink: INK, sw: 1 });

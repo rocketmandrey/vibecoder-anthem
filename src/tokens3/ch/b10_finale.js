@@ -167,8 +167,8 @@
     flash(.7 * hitK(t, [SMASH], .1) + .3 * k * (t > B[10]), '#FFF3C8');
     // the end: white flash → black by the cut to the credit
     flushLetters();
-    const wf = seg(t, FLASH, FLASH + .12), bl = seg(t, 240.58, 240.72);
-    if (wf > 0) flash(wf * (1 - bl), '#FFFDF6');
+    const wf = seg(t, FLASH, FLASH + .12), bl = seg(t, 240.58, 240.64);   // black straight over the full white-out (no crossfade: the scene must not show through grey)
+    if (wf > 0) flash(wf, '#FFFDF6');
     if (bl > 0) paint(rectPts(-60, -60, W + 120, H + 120), { wash: BLACK, washOp: 255 * bl, ink: null });
   }
 

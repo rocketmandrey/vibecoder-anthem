@@ -26,30 +26,42 @@ if (/[?&]vert\b/.test(location.search)) {
     const L = LY.find(l => t >= l[0] && t < l[1]); if (!L) return;
     const [a, b, txt] = L, grow = easeOut(clamp((t - a) / .18)) * (1 - ease(clamp((t - (b - .12)) / .12)));
     if (grow < .02) return;
-    const size = 62, font = `${size}px "Russo One", "Arial Black", sans-serif`;
-    c.font = font; c.textBaseline = 'middle'; c.textAlign = 'left';
-    const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width), maxW = 940;
-    const lines = [[]]; let lw = 0;
-    words.forEach((w, i) => { if (lines[lines.length - 1].length && lw + sp + ws[i] > maxW) { lines.push([]); lw = 0; } lines[lines.length - 1].push(i); lw += (lw ? sp : 0) + ws[i]; });
+    // units: words, with a lone «—»/«–» glued to the word before it (a line never starts with a dash)
+    const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
+    const maxW = 940;
+    let size = 62, sp, ws, lines;
+    // ≤ 2 lines: one line if it fits, else the break that balances the two line widths; shrink the font if no break fits
+    for (;; size -= 4) {
+      c.font = `${size}px "Russo One", "Arial Black", sans-serif`;
+      sp = c.measureText(' ').width; ws = words.map(w => c.measureText(w).width);
+      const wOf = (i, j) => ws.slice(i, j).reduce((s, x) => s + x, 0) + sp * (j - i - 1);
+      const n = words.length, idx = (i, j) => [...Array(j - i).keys()].map(k => k + i);
+      if (wOf(0, n) <= maxW) { lines = [idx(0, n)]; break; }
+      let best = -1, bd = Infinity;
+      for (let k = 1; k < n; k++) { const a = wOf(0, k), b = wOf(k, n); if (a <= maxW && b <= maxW && Math.abs(a - b) < bd) { bd = Math.abs(a - b); best = k; } }
+      if (best > 0) { lines = [idx(0, best), idx(best, n)]; break; }
+      if (size <= 30) { lines = [idx(0, n)]; break; }                           // ponytail: can't happen with this lyric set
+    }
+    c.textBaseline = 'middle'; c.textAlign = 'left';
     const lineW = lines.map(ix => ix.reduce((s, i) => s + ws[i], 0) + sp * (ix.length - 1));
     const bw = Math.max(...lineW) + 90, lh = size * 1.3, bh = lines.length * lh + 44, cy = PY + PS + (VH - PY - PS) / 2 - 20;
+    // box and text scale/fade in and out together (no empty box)
     c.save(); c.globalAlpha = Math.min(1, grow * 1.2);
     c.translate(VW / 2, cy); c.scale(.6 + .4 * grow, .6 + .4 * grow); c.translate(-VW / 2, -cy);
     c.beginPath(); c.roundRect(VW / 2 - bw / 2, cy - bh / 2, bw, bh, 26);
     c.fillStyle = 'rgba(20,16,28,.9)'; c.fill(); c.lineWidth = 4; c.strokeStyle = KP.gold; c.stroke();
-    c.restore();
-    if (grow < .85) return;
     const singDur = Math.min(b - a - .1, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;
     let done = 0;
     lines.forEach((ix, li) => {
       let x = VW / 2 - lineW[li] / 2; const y = cy - bh / 2 + 22 + lh * (li + .5);
       ix.forEach(i => {
-        const w = words[i], f = clamp((sung - done) / w.length); done += w.length;
+        const w = words[i], len = w.replace(/ /g, '').length, f = clamp((sung - done) / len); done += len;
         c.fillStyle = PAL.cream; c.fillText(w, x, y);
         if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - size, ws[i] * f + 2, size * 2); c.clip(); c.fillStyle = KP.goldLt; c.fillText(w, x, y); c.restore(); }
         x += ws[i] + sp;
       });
     });
+    c.restore();
   }
 
   window.vertComposite = (src, t) => {

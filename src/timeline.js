@@ -107,7 +107,7 @@ function karaoke(t) {
   outX.font = LY_FONT;
   let tw = outX.measureText(txt).width;
   outX.font = `30px ${RU_FONT}`; tw = Math.max(tw, outX.measureText(RU[txt] || '').width);
-  const grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
+  const grow = easeOut((t - a) / .14) * (1 - ease((t - (b - .12)) / .12));
   if (grow < .02) return;
   const one = !RU[txt], w = (tw + 150) * grow, x0 = 960 - w / 2, y0 = one ? 972 : 962, h = one ? 86 : 106, jx = one ? 3 : 8, jy = one ? 2 : 4;
   const pts = [[x0 + jit(jx), y0 + jit(jy)], [x0 + w / 2, y0 - 4 + jit(jy)], [x0 + w + jit(jx), y0 + jit(jy)], [x0 + w + 14 + jit(jx), y0 + h / 2], [x0 + w + jit(jx), y0 + h + jit(jy)], [x0 + w / 2, y0 + h + 4 + jit(jy)], [x0 + jit(jx), y0 + h + jit(jy)], [x0 - 14 + jit(jx), y0 + h / 2]];
@@ -116,7 +116,7 @@ function karaoke(t) {
   KARAOKE = { a, b, txt, grow };
 }
 function drawKaraokeText(c) {
-  if (!KARAOKE || KARAOKE.grow < .85) return;
+  if (!KARAOKE || KARAOKE.grow < .999) return;   // only on the fully grown bar: long lines would touch the coin caps mid-grow
   const { a, b, txt } = KARAOKE, t = T;
   c.font = LY_FONT; c.textBaseline = 'middle'; c.textAlign = 'left';
   const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width);
