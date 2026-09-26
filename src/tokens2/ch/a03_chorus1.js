@@ -3,12 +3,12 @@
 // flattened racks spring up as candles: a stock chart → 42.72 the chart (БИРЖА) grows eyes, looks at us, drops its jaw
 // and says «ЖГИ!» → 45.05 chorus: two gangs (hard-hat Clawds left, agents right) feed tokens into the ШРЕДЕР ТОКЕНОВ,
 // call-and-response on every «Жги!» → 47.75 the limit bar burns down → 52.85 the odometer rolls to 1 000 000 →
-// 55.25 agents step off the belt already holding job postings and hire; GPUs pile off the upper belt → 60.35 two presses
-// crush «ЗАЧЕМ?» into tokens: «НЕВАЖНО» ×2 → 63.75 QC stamps the heap of shreds «ПОЛЕЗНО» → 66.4 the edit gap.
+// 55.25 agents step off the belt already holding job postings and hire; GPUs pile off the upper belt → 60.35 CEO-Clawd
+// before the weekly-burn slide: «ЗАЧЕМ?» signs burn on «неважно» ×2, thumbs-up + «ПОЛЕЗНО» stamp → 66.4 the edit gap.
 (() => {
   const INK = PAL.ink;
   const GREEN = '#2FBF71';
-  const CUTS = [39.8, 45.05, 47.75, 49.7, 52.85, 55.25, 60.35, 63.75, 66.4, 67.1];
+  const CUTS = [39.8, 45.05, 47.75, 49.7, 52.85, 55.25, 60.35, 66.4, 67.1];
   // call-and-response: A = the Clawd gang (left), B = the agents (right)
   const ZHGI = [[45.10, 'A'], [46.56, 'B'], [49.74, 'A'], [51.70, 'B']];
   const CHOMPS = ZHGI.map(z => z[0] + .05);
@@ -407,63 +407,67 @@
     a03_end(t);
   }
 
-  // ---------- 60.35–63.75: «Зачем — неважно!» ×2: two presses crush the question into a token ----------
-  function a03_why(t, lt) {
-    const SL = [60.84, 62.14], k = hitK(t, SL, .15), [sx, sy] = shakeXY(t, 16 * k);
-    camBegin(960 + sx + kf(t, [[60.35, -40], [61.5, 40]]), 520 + sy, kf(t, [[60.35, 1.02], [63.75, 1.1]]));
-    a03_hall(t, { lamps: [960] });
-    const PR = [[250, SL[0], 'ПРЕСС 1'], [1210, SL[1], 'ПРЕСС 2']];
-    for (let p = 0; p < 2; p++) {
-      const [px, hitAt, label] = PR[p], py = 170, pw = 460, ph = 580;
-      const r = press(px, py, pw, ph, t, [hitAt], { label, token: false, seed: p * 7 });
-      const bedY = py + ph - ph * .12, ramB = r.ramY + ph * .2, cx = px + pw / 2, age = t - hitAt;
-      if (age < 0) {
-        const hh = Math.min(190, bedY - ramB - 2), cw = 250;
-        paint(rotPts(rectPts(cx - cw / 2, bedY - hh, cw, hh, 1), cx, bedY - hh / 2, (p ? .03 : -.03)), { wash: A2.cream, ink: INK, sw: .7 });
-        if (hh > 60) letter('ЗАЧЕМ?', cx, bedY - hh / 2, Math.min(46, hh * .3), TK.soot, { font: ruFont(Math.min(46, hh * .3)), ink: false });
-      } else {
-        paint(rectPts(cx - 150, bedY - 12, 300, 12), { wash: A2.cream, fill: '#CFC4AA', fillOp: 80, ink: INK, sw: .5 });
-        const b = seg(age, .1, .6), ty = bedY - 30 - Math.sin(b * Math.PI) * 170 * (1 - seg(age, .6, 1)) - (b >= 1 ? 0 : 0);
-        token(cx, Math.min(ty, bedY - 30), 38, { spin: age < .6 ? age * 3 : 0, glow: Math.exp(-age * 2) });
-      }
+  // ---------- 60.35–66.4: «Зачем — неважно!» ×2, «Это полезно!» (ported from v1 t02 useful) ----------
+  // CEO-Clawd before the «СОЖЖЕНО ЗА НЕДЕЛЮ» slide; a small Clawd asks «ЗАЧЕМ?», the sign burns on «неважно»;
+  // he tries again with a bigger sign, it burns too; thumbs-up + «ПОЛЕЗНО» stamp on «полезно».
+  const A03_N1 = 60.84, A03_N2 = 62.14, A03_P = 64.54;
+  const a03_thumbUp = a => (u, sw) => {                     // CEO's left hand: fist + thumb pointing up in world space
+    paint(rrPts(-.2 * u, -.7 * u, 1.4 * u, 1.4 * u, .45 * u), { wash: PAL.clay, ink: INK, sw: sw * .6 });
+    const dx = Math.sin(a), dy = -Math.cos(a), bx = .6 * u + dx * .5 * u, by = dy * .5 * u, L = 1.5 * u, nx = -dy * .28 * u, ny = dx * .28 * u;
+    paint([[bx + nx, by + ny], [bx + dx * L + nx, by + dy * L + ny], [bx + dx * L - nx, by + dy * L - ny], [bx - nx, by - ny]], { wash: PAL.clay, ink: INK, sw: sw * .6, curv: .3 });
+  };
+  // the sign on a stick in the hand hook; sc = sign size, burn 0..1 chars and shrinks it
+  const a03_signHook = (burn, t, ang, sc) => (u, sw) => {
+    push(); rotate(ang);                                  // undo the arm angle: the stick stands upright
+    inkLine([[0, 0], [0, -7 * u]], sw * 1.6, '#8A5A2E', 'ink', 0);
+    if (burn > .98 || sc < .02) { pop(); return; }
+    const w = 9 * u * sc * (1 - burn * .3), h = 4.5 * u * sc * (1 - burn * .5), y0 = -7 * u - h + burn * h * .5;
+    paint(rectPts(-w / 2, y0, w, h, 1), { wash: mixCol(A2.cream, TK.soot, burn), ink: INK, sw: sw * .7 });
+    if (burn > .02) fire(0, y0 + h, w * 1.1, h * 2.2, t, { k: clamp(burn * 2) * (1 - seg(burn, .85, 1)), seed: 3, glow: false });
+    pop();
+  };
+  function a03_useful(t, lt, o = {}) {
+    const k = hitK(t, [A03_N1, A03_N2, A03_P, 64.8], .15), [sx, sy] = shakeXY(t, 12 * k + 2);
+    camBegin(960 + sx, 520 + sy, 1.05 - (t - 60.35) * .01);
+    a03_hall(t, { lamps: [180, 1740], dark: o.dark || 0 });
+    fire(960, 1000, 2200, 330, t, { seed: 44, k: .75 });                               // the floor is still burning
+    for (const cx of [620, 1300]) inkLine([[cx, -400], [cx, 90]], 1, INK, 'inkfine', 0);   // slide hangs on cables
+    slide(520, 90, 880, 480, { title: 'СОЖЖЕНО ЗА НЕДЕЛЮ', graph: 'up', k: seg(t, 60.35, 61.4) });
+    paint(rectPts(-100, 860, W + 200, 60, 1), { wash: A2.gunDk, fill: A2.steel, fillOp: 70, ink: INK, sw: 1 });   // stage lip
+    hazard(-100, 860, W + 200, 14);
+    // the one who asks: sign 1 burns on the first «неважно», a bigger sign 2 comes up for the second «зачем» and burns too
+    const second = t >= 61.55, sc = second ? 1.4 * backOut(seg(t, 61.55, 61.74)) : 1;
+    const burn = second ? seg(t, A03_N2 + .06, A03_N2 + .8) : seg(t, A03_N1 + .06, A03_N1 + .7);
+    const sgX = 380, sgY = 880, su = 24, ang = second ? 1.3 + .08 * Math.sin(t * 16) * (1 - seg(t, 61.74, 62.1)) : 1.25;
+    const scared = burn > .3;
+    clawd(sgX, sgY, su, { aR: ang, armR: a03_signHook(burn, t, ang, sc), eyes: scared ? 'scared' : (second ? 'angry' : 'normal'), mouth: scared ? 'o' : (second ? 'O' : 'flat'), seed: 4,
+      emote: t > 63.1 && t < A03_P ? 'sweat' : undefined, emoteK: 1 });
+    if (burn < .55 && sc > .3) {                                                         // the sign text in world space, until it chars
+      const hx = sgX + 4.9 * su + Math.cos(-ang) * 2.2 * su, hy = sgY - 4.5 * su + Math.sin(-ang) * 2.2 * su, sz = second ? 64 : 46;
+      letter(second ? 'ЗАЧЕМ?!' : 'ЗАЧЕМ?', hx, hy - (7 + 2.25 * sc) * su, sz * Math.min(1, second ? sc / 1.4 : 1), INK, { font: ruFont(sz), ink: false, alpha: 1 - seg(burn, .2, .55) });
     }
-    // the one who asked: a small Clawd between the presses
-    const asked = t < SL[1] + .2;
-    clawd(960, 880, 19, { aR: asked ? 1.5 + .1 * Math.sin(t * 8) : .1, aL: .2, mouth: asked ? 'o' : 'flat', eyes: t < SL[0] ? 'normal' : 'look', lookX: t < SL[1] ? -1 : 1, lookY: -.5, draw: a03_hardhat(), emote: t < SL[0] ? '?' : t > SL[1] + .2 ? 'sweat' : undefined, emoteK: 1 });
+    const up = kf(t, [[60.35, .2], [64.2, .2], [A03_P, 1.35]], backOut), happy = t >= A03_P;
+    ceoClawd(1250, 880, 40, { aL: up, armL: t > 64.2 ? a03_thumbUp(up) : undefined, eyes: happy ? 'happy' : 'narrow', mouth: 'smile', click: pulse(t, 8), aR: .4 + .2 * pulse(t, 5), dy: -Math.abs(Math.sin(t * 4.9)) * .4 });
+    // «неважно.» speech bubble, twice (second louder)
+    for (const [t0, t1, big] of [[A03_N1, 61.6, 0], [A03_N2, 63.4, 1]]) {
+      if (t < t0 || t >= t1) continue;
+      const bw = big ? 380 : 300, bh = big ? 110 : 90, bx = 1480, by = 470 - big * 20;
+      paint(rrPts(bx, by, bw, bh, 30), { wash: A2.cream, ink: INK, sw: 1 });
+      paint([[bx + 20, by + bh - 20], [bx - 10, by + bh + 40], [bx + 60, by + bh - 5]], { wash: A2.cream, ink: null });
+      letter(big ? 'НЕВАЖНО.' : 'неважно.', bx + bw / 2, by + bh / 2, big ? 58 : 48, INK, { font: ruFont(big ? 58 : 48), ink: false, pop: seg(t, t0, t0 + .25) });
+    }
     camEnd();
-    stamp('НЕВАЖНО', 470, 560, 70, t, SL[0], { col: TK.ember, rot: -.1 });
-    stamp('НЕВАЖНО!', 1450, 560, 76, t, SL[1], { col: TK.ember, rot: .08 });
-    a03_end(t);
-  }
-
-  // ---------- 63.75–66.4: «Это полезно!» QC stamps the heap of shreds ----------
-  function a03_qc(t, lt, o = {}) {
-    const S1 = 63.78, S2 = 64.54, k = hitK(t, [S1, S2, 64.8], .15), [sx, sy] = shakeXY(t, 12 * k);
-    camBegin(960 + sx, 520 + sy, kf(t, [[63.75, 1.0], [66.4, 1.1]]));
-    a03_hall(t, { lamps: [560, 1360], dark: o.dark || 0 });
-    siren(1640, 250, t, { col: GREEN, on: t >= S1 ? 1 : 0, r: 32, len: 520 });
-    smoke(960, 470, t, { n: 5, h: 300, r: 60, col: '#3A3336', seed: 4 });
-    a03_cart(960, 900, 820, 260, t);
-    if (t >= S1) paint(rotPts(rrPts(960 - 330, 760 - 75, 660, 150, 20), 960, 760, -.07), { wash: TK.soot, washOp: 235, ink: INK, sw: 1 });
-    stamp('ПОЛЕЗНО', 960, 760, 84, t, S1, { col: TK.yellow, rot: -.07, punch: .03 });
-    // the QC inspector with a clipboard, ticks it on «полезно»
-    const ok = t >= S2;
-    clawd(1600, 890, 19, {
-      flip: true, aL: ok ? 1.3 : .5, aR: .7, mouth: ok ? 'smile' : 'flat', eyes: ok ? 'happy' : 'narrow', dy: ok ? -Math.max(0, Math.sin((t - S2) * 12)) * .8 : 0,
-      draw: a03_hardhat('#F4F1E8'), emote: ok ? 'spark' : undefined, emoteK: seg(t, S2, S2 + .3),
-      armR: (u, sw) => { paint(rectPts(-.4 * u, -1.8 * u, 2.4 * u, 3 * u, .05 * u), { wash: '#C9A26A', ink: INK, sw: sw * .5 }); paint(rectPts(-.1 * u, -1.4 * u, 1.8 * u, 2.4 * u), { wash: A2.cream, ink: null }); }
-    });
-    if (ok) letter('✓', 1600 + 50, 890 - 19 * 12, 90, GREEN, { pop: (t - S2) * 5, rot: -.1 });
-    camEnd();
-    if (t >= 64.8) a03_confetti(t - 64.8, 30, [200, -200, 1520, 1000], 11);
+    stamp('ПОЛЕЗНО', 1260, 330, 150, t, A03_P, { col: GREEN, rot: -.12, punch: .08 });
+    if (t >= A03_P) flash(.35 * Math.exp(-(t - A03_P) * 10), GREEN);
+    if (t >= 64.8 && !o.dark) a03_confetti(t - 64.8, 30, [200, -200, 1520, 1000], 11);
     if (!o.dark) a03_end(t);
   }
   // 66.4–67.1: the edit gap: power cut, the stamp afterimage, tape-stop tear
   function a03_gap(t, lt) {
-    a03_qc(66.4, 2.65, { dark: .8 });
+    a03_useful(66.4, 6.05, { dark: .8 });
     const p = seg(t, 66.4, 66.6);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#050607', washOp: 150 + 90 * p, ink: null });
-    letter('ПОЛЕЗНО', 960, 804, 88, TK.yellow, { font: ruFont(80), alpha: .35 + .25 * Math.sin(t * 40), rot: -.07, ink: false });
+    letter('ПОЛЕЗНО', 1260, 330, 150, GREEN, { font: ruFont(150), alpha: .35 + .25 * Math.sin(t * 40), rot: -.12, ink: false });
     const tear = hitK(t, [66.87], .12);
     if (tear > .05) { paint(rectPts(-60, 380, W + 120, 60), { wash: A2.hazard, washOp: 220 * tear, ink: null }); hazard(-60, 440, W + 120, 40); }
     a03_end(t);
@@ -477,8 +481,7 @@
     [49.7, a03_chorusA],
     [52.85, a03_million],
     [55.25, a03_hire],
-    [60.35, a03_why],
-    [63.75, a03_qc],
+    [60.35, a03_useful],
     [66.4, a03_gap]
   ]);
 })();

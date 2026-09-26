@@ -2,11 +2,11 @@
 // 197.9 the room at «ВС 23:58» → 205.65 laptop close-up, «ноль токенов», the bar goes grey → 207.6 camera tours the useless
 // output (3 games / 7 sites / 42 agents) that go grey at «ни один не нужен» → 213.95 «тишина», Clawd walks to the window →
 // 216.8 «я счастлив» under the moon → 218.45 «полночь», the clock flips to ПН 00:00 → 220.7 «Ваш недельный лимит
-// восстановлен» + the one Matrix glitch, the bar refills → 224.2 «…Сука.» deadpan → 227.2 «Эй! Эй!» two presses →
-// 229.15 the band crashes back: the room blows apart into the furnace → 230.31 the factory reignites, Clawd moshes with the
-// laptop as a guitar → 231.79 punk collage, one taped cutout per hit (shredder, idol, shrink-wrapped report, samsara wheel,
-// CAPEX neon, ✓ «1 шт.», the train off the cliff), the limit burns 100 → 0 → 237.2 «…Сука.»: ash, soot Clawd, deadpan →
-// 237.73 «ЖГИ ТОКЕНЫ» stamp on soot black + credit: AGENT #42 strikes out "rocketmandrey" and writes «Claude Opus 5.5».
+// восстановлен» + the one Matrix glitch, the bar refills → 224.2 «…Сука.» deadpan → 227.28 the first «Эй!» crashes the
+// band back (v1's blast): the room blows apart into the furnace, a flash on the 2nd «Эй!» → 229.15 the data center reignites,
+// Clawd swings the laptop as a guitar → 231.79 punk collage, one taped cutout per hit (shredder, idol, shrink-wrapped report, samsara wheel,
+// CAPEX neon, ✓ «1 шт.», the train off the cliff), the limit burns 100 → 0 → 237.2 «…Сука.»: dead stop, soot Clawd alone on black →
+// 237.85 «ЖГИ ТОКЕНЫ» stamp on soot black + credit: AGENT #42 strikes out "rocketmandrey" and writes «Claude Opus 5.5».
 (() => {
   const NIGHT = '#0E111A', WALL = '#1B2133', WALL2 = '#262F47', FLOOR = '#131722', GREY = '#5A5D65', SCREEN = '#9CC4FF';
   const AG = { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0' };
@@ -236,28 +236,9 @@
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
 
-  function sHey(t) {                                                          // 227.2 «Эй! Эй!»: two presses
-    const HEY = [227.28, 228.8], k = hitK(t, HEY, .15), [sx, sy] = shakeXY(t, 16 * k);
-    camBegin(960 + sx, 540 + sy, 1);
-    bgFill(A2.gunDk, A2.gunmetal);
-    glowAt(960, 420, 900, A2.sodium, 55);
-    for (const px of [120, 1800]) paint(rectPts(px - 26, -60, 52, 1000), { wash: A2.rust, fill: '#6E2E18', fillOp: 80, tex: .5, ink: PAL.ink, sw: .6 });
-    paint(rectPts(-60, 840, W + 120, 300), { wash: '#15181D', ink: null });
-    hazard(-40, 836, W + 80, 26);
-    press(180, 250, 520, 580, t, [HEY[0]], { seed: 11 });
-    press(1220, 250, 520, 580, t, [HEY[1]], { seed: 23 });
-    siren(960, 250, t, { on: .4 + .6 * k, len: 700 });
-    const second = t >= HEY[1];
-    clawd(960, 838, 17, { eyes: second ? 'narrow' : t >= HEY[0] ? 'scared' : 'narrow', mouth: second ? 'flat' : t >= HEY[0] ? 'o' : 'flat', take: -.25 * k, seed: 3 });
-    stamp('ЭЙ!', 440, 150, 96, t, HEY[0], { col: A2.hazard, rot: -.1 });
-    stamp('ЭЙ!', 1480, 150, 96, t, HEY[1], { col: A2.hazard, rot: .08 });
-    camEnd();
-    glitchCut(t, 227.2);
-  }
-
   // ---------- the finish: the room blows apart, the factory reignites, the collage, the ash ----------
-  const CRASH = 229.15, HALL = 230.31, COL0 = 231.79, ASH = 237.2, CARD = 237.73;
-  const BAND = [229.15, 229.81, 230.31, 230.81, 231.79, 232.45, 233.12, 233.78, 234.43, 235.09, 235.75, 236.41, 237.06];
+  const CRASH = 227.28, HEY2 = 228.8, HALL = 229.15, COL0 = 231.79, ASH = 237.2, CARD = 237.85;
+  const BAND = [227.28, 227.83, 228.5, 228.8, 229.15, 229.81, 230.31, 230.81, 231.79, 232.45, 233.12, 233.78, 234.43, 235.09, 235.75, 236.41, 237.06];
   const SOOT = '#141012', EMBER = '#6E2E18';
 
   // Put local (0, 0) at screen (X, Y), zoom z, rotation r; letters follow (it is a camera). Pair with camEnd().
@@ -274,12 +255,12 @@
   }
   const hop = (t) => hitK(t, BAND, .22);                                      // mosh on the band hits, not on bpOf()
 
-  // 229.0 «Эй!» still ringing, 229.15 the band crashes back: the room blows apart into the furnace
+  // 227.2 (v1 staging) the first «Эй!» at 227.28 crashes the band back in: the room blows apart into the furnace;
+  // the second «Эй!» at 228.8 is a big flash + shake inside the blast
   function sBlast(t) {
-    const b = 1 - Math.pow(1 - seg(t, CRASH, CRASH + 1.3), 2), lt = Math.max(0, t - CRASH), [sx, sy] = shakeXY(t, 16 * Math.exp(-lt * 1.6) + 5 * hitK(t, BAND, .12));
+    const b = 1 - Math.pow(1 - seg(t, CRASH, CRASH + 1.4), 2), lt = Math.max(0, t - CRASH), h2 = hitK(t, [HEY2], .25);
+    const [sx, sy] = shakeXY(t, 16 * Math.exp(-lt * 1.6) + 5 * hitK(t, BAND, .12) + 22 * h2);
     furnace(t, .4 + .6 * b);
-    // the presses behind the wall, already slamming
-    if (b > .05) { press(-60, 260, 420, 560, t, [229.81, 230.31], { seed: 3, label: 'ПРЕСС 1' }); press(1560, 260, 420, 560, t, [229.81], { seed: 7, label: 'ПРЕСС 2' }); }
     tokenRain(t, { n: 8, seed: 4, r: 20, burn: .5 });
     // wall + floor shards fly outward from the laptop
     push(); translate(sx, sy);
@@ -320,50 +301,34 @@
       token(1220 + Math.cos(a) * v * p, 620 + Math.sin(a) * v * p + 600 * p * p, 22 + hash(i + 2) * 14, { spin: t * 2 + i, burn: clamp(p * 1.2) });
     }
     if (t >= CRASH) burnBar(t);
-    if (t >= CRASH) flash(.6 * (1 - seg(t, CRASH, CRASH + .18)), '#FFF3C8');
-    glitchCut(t, 229.0, { span: .06, k: .6 });
+    if (t >= CRASH) flash(Math.max(1 - seg(t, CRASH, CRASH + .35), .75 * h2), '#FFF3C8');
+    glitchCut(t, 227.2, { span: .06, k: .6 });
   }
 
-  // 230.31 the factory reignites: presses, chimneys, gears; Clawd moshes and swings the laptop like a guitar
+  // 229.15 the data center reignites (v1 staging): racks catch fire, coolers howl, tokens stream out; Clawd swings the laptop overhead like a guitar
   function sHall(t) {
-    const H2 = [230.31, 230.81, 231.3], k = hitK(t, BAND, .15), [sx, sy] = shakeXY(t, 7 * k), lt = t - HALL;
-    camBegin(960 + sx, 520 + sy, 1.06 + .03 * k + lt * .02);
-    bgFill(A2.gunDk, '#3A1A10');
-    glowAt(960, 500, 1200, A2.sodium, 50 + 40 * seg(t, HALL, HALL + .6));
-    for (const cx of [330, 1590]) {                                          // chimneys breathing fire
-      paint([[cx - 90, 40], [cx + 90, 40], [cx + 120, 820], [cx - 120, 820]], { wash: A2.rust, fill: '#5A2412', fillOp: 110, tex: .7, border: .5, ink: PAL.ink, sw: 1.1 });
-      for (let r = 0; r < 12; r++) inkLine([[cx - 95 - r * 2, 80 + r * 62], [cx + 95 + r * 2, 80 + r * 62]], .5, '#4A1C10', 'inkfine', 0);
-      fire(cx, 50, 260, 300 * (.6 + .6 * k), t, { seed: cx, k: 1 });
-    }
-    gear(120, 130, 150, t, { speed: .5 }); gear(1800, 150, 130, t, { speed: -.6, col: A2.rust });
-    conveyor(-40, 470, W + 80, t, { items: ['token', 'gpu', 'agent', 'task'], speed: 520, gap: 240, legs: 0 });
-    press(430, 190, 400, 470, t, [H2[0], H2[2]], { seed: 11, label: 'ПРЕСС 3' });
-    press(1090, 190, 400, 470, t, [H2[1]], { seed: 13, label: 'ПРЕСС 4' });
-    siren(960, 190, t, { on: .5 + .5 * k, len: 800 });
-    paint(rectPts(-100, 820, W + 200, 400), { wash: '#15181D', ink: null });
-    hazard(-40, 816, W + 80, 24);
-    for (const [fx, fw] of [[160, 520], [960, 700], [1760, 520]]) fire(fx, 1090, fw, 330, t, { seed: fx, k: .7 + .5 * k });
-    // Clawd, laptop overhead, swung like a guitar
-    const sw = Math.sin((t - HALL) * 7.5), h = hop(t);
-    clawd(960, 900, 30, {
-      eyes: 'angry', mouth: 'O', dy: -h * 2, sq: (1 - h) * .12, aL: 1.9 + sw * .25, aR: 1.9 - sw * .25, rot: sw * .09, seed: 3, noShadow: true,
-      draw: (u) => {
-        push(); translate(0, -12.5 * u); rotate(sw * .4);
+    const k = hitK(t, BAND, .15), [sx, sy] = shakeXY(t, 6 * k), lt = t - HALL, heat = lerp(.4, 1, seg(t, HALL, 230.31));
+    camBegin(960 + sx, 540 + sy, 1.04 + .03 * k + lt * .02);
+    dataCenter(t, { heat, fire: seg(t, 229.81, 230.81), vp: [960, 480] });
+    for (const s of [-1, 1]) cooler(960 + s * 820, 200, 90, t, { speed: 9, howl: 1 });
+    tokenRain(t, { n: 10, seed: 7, r: 20, from: [960, 520], to: [300, 250], per: .9 });
+    tokenRain(t, { n: 10, seed: 9, r: 20, from: [960, 520], to: [1620, 250], per: .9 });
+    for (const [fx, fw] of [[160, 520], [1760, 520]]) fire(fx, 1090, fw, 300, t, { seed: fx, k: .6 + .5 * k });
+    const sw = Math.sin(lt * 7.5), h = hop(t);
+    clawd(960, 930, 30, {
+      eyes: 'angry', mouth: 'grin', dy: -h * 2, sq: (1 - h) * .12, aL: 1.9 + sw * .25, aR: 1.9 - sw * .25, rot: sw * .08, seed: 3, noShadow: true,
+      draw: (u) => {                                                          // the laptop held overhead, swinging
+        push(); translate(0, -15 * u); rotate(sw * .35);
         paint(rectPts(-6 * u, -3.6 * u, 12 * u, 7 * u, 1), { wash: '#6B7581', fill: '#2B2F36', fillOp: 90, ink: PAL.ink, sw: 1.2 });
-        paint(rectPts(-5 * u, -2.8 * u, 10 * u, 5.4 * u), { wash: A2.acid, fill: '#3A6A10', fillOp: 60, tex: .5, ink: null });
+        paint(rectPts(-5 * u, -2.8 * u, 10 * u, 5.4 * u), { wash: A2.sodium, fill: '#6E2E18', fillOp: 60, tex: .5, ink: null });
         paint([[-6 * u, 3.4 * u], [6 * u, 3.4 * u], [7.4 * u, 5.6 * u], [-7.4 * u, 5.6 * u]], { wash: '#9AA3AE', ink: PAL.ink, sw: 1 });
         token(0, 0, 1.6 * u, {});
         pop();
       }
     });
-    for (let i = 0; i < 8; i++) {                                            // power chords: sparks off the laptop on the hits
-      const a = hash(i + Math.floor(t * 8)) * TAU, d = 90 + 160 * (1 - k);
-      if (k > .2) paint(ellPts(960 + Math.cos(a) * d, 520 + Math.sin(a) * d * .6, 5, 5, 6), { wash: A2.hazard, washOp: 255 * k, ink: null });
-    }
-    crowdMosh(t, { y: 1120, n: 9, k: .8 });
     camEnd();
     burnBar(t);
-    flash(hitK(t, [HALL], .1) * .5, A2.sodium);
+    flash(k * .12 + hitK(t, [HALL], .1) * .4, A2.sodium);
   }
 
   // ---------- the punk collage: one taped cutout per hit, every motif of the factory ----------
@@ -477,17 +442,16 @@
     glitchCut(t, COL0, { span: .05, k: .5 });
   }
 
-  // 237.2 the band stops on the last «…Сука.»: ashes, a burnt-out bar, Clawd covered in soot, deadpan
+  // 237.2 the band stops dead on the last «…Сука.»: a still frame, soot Clawd alone on black, ash drifting slowly, the word hanging
   function sAsh(t) {
-    const lt = t - ASH;
-    bgFill(SOOT, '#241A1A', 90);
-    glowAt(960, 1100, 700, EMBER, 90 * (1 - seg(lt, 0, .5)));
-    for (let i = 0; i < 5; i++) smoke(260 + i * 350, 1000, t, { seed: i * 3, n: 5, r: 60, h: 600, col: '#3A3336' });
-    for (let i = 0; i < 6; i++) token([180, 360, 520, 1400, 1560, 1740][i], 930 + hash(i + 4) * 12, 22, { burn: 1, rot: hash(i) * 3 });
-    clawd(960, 1010, 58, { col: '#5A4E4C', dk: '#3A3232', lt: '#7A6E6A', eyes: 'narrow', mouth: 'flat', aL: .1, aR: .1, seed: 3, noShadow: true, squint: lt > .3 && lt < .4 ? 1 : 0 });
-    smoke(1060, 480, t, { n: 4, r: 22, h: 200, per: 1.6, seed: 4 });                          // a wisp off his head
-    limitBar(660, 110, 600, 0, { grey: true });
-    glitchCut(t, ASH, { span: .05 });
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
+    glowAt(960, 760, 420, '#2A2224', 70);
+    for (let i = 0; i < 24; i++) {                                           // ash flakes, falling slowly
+      const x = hash(i * 7) * W + Math.sin(t * .7 + i) * 18, y = hash(i * 3) * 900 + (t - ASH) * (30 + 30 * hash(i + 5)), r = 2 + hash(i + 11) * 3.5;
+      paint(ellPts(x, y, r, r * .7, 6, 0, hash(i) * 3), { wash: '#6A6264', washOp: 170, ink: null });
+    }
+    clawd(960, 900, 40, { col: '#5A4E4C', dk: '#3A3232', lt: '#7A6E6A', eyes: 'narrow', mouth: 'flat', aL: -.6, aR: -.6, seed: 3, noShadow: true });
+    letter('…Сука.', 960, 250, 110, '#B8B0A8', { font: ruFont(110), ink: false });
   }
 
   function sCredit(t) {                                                       // 237.73 «ЖГИ ТОКЕНЫ» on soot black + the credit: AGENT #42 takes it
@@ -499,7 +463,7 @@
     }
     stamp('ЖГИ ТОКЕНЫ', 960, 150, 104, t, CARD, { col: A2.sodium, punch: .02, rot: -.05 });
     flushLetters();
-    const T0 = CARD, S0 = 238.02, S1 = 238.2, W0 = 238.28, W1 = 238.68;
+    const T0 = CARD, S0 = 238.08, S1 = 238.24, W0 = 238.3, W1 = 238.66;
     letter('created by', 960, 300, 52, '#9A9488', { ink: false });
     letter('rocketmandrey', 960, 590, 96, A2.cream, { ink: false });
     flushLetters();                                                            // so the red strike lands over the name
@@ -537,6 +501,6 @@
 
   chapter('sunday', 197.9, DUR + 1, [
     [197.9, sRoom], [205.65, sZero], [207.6, sTour], [213.95, sSilence], [216.8, sHappy], [218.45, sMidnight],
-    [220.7, sReset], [224.2, sSuka], [227.2, sHey], [229.0, sBlast], [HALL, sHall], [COL0, sCollage], [ASH, sAsh], [CARD, sCredit]
+    [220.7, sReset], [224.2, sSuka], [227.2, sBlast], [HALL, sHall], [COL0, sCollage], [ASH, sAsh], [CARD, sCredit]
   ]);
 })();

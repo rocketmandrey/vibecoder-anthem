@@ -1,8 +1,8 @@
 // a08_rap.js: «Жги токены» v2, verse 3 (the fast rap), 157.35–180.85.
 // The CEO's AGI keynote gets hijacked by Clawd's toy railway. No train until 169.7 (user: "too much train").
 // 157.35 AGI «ВЕСНА» calendar crossed out year by year (Clawd keeps a tally) → 159.3 loading 99.999% (Clawd pushes
-// the stuck bar) → 162.25 a robot arm writes dissertations and code → 164.6 programmers replaced by «СКОРО ЗАМЕНИМ»
-// signs (they walk off with their cardboard boxes) → 167.25 Clawd walks on stage with the board-game box → 169.7 the
+// the stuck bar) → 162.25 a robot arm writes dissertations and code → 164.6 pan along the programmer desks, a ceiling
+// claw slaps «ВОТ-ВОТ» stickies on each monitor → 167.25 Clawd hugs the board-game box in a lamp-lit room → 169.7 the
 // painted game map Царское Село → Москва → Казань → 172.1 pull back: 100 000 GPUs wired to the little table →
 // 174.85 the payoff: the GPU fans blow the toy train through the watercolour pine forest, faster and faster, the track
 // ends at a gorge («мост — в следующем релизе»), 179.4 launch, cartoon freeze, drop, puff of smoke, «ту-ту…».
@@ -287,53 +287,68 @@
     camEnd();
   }
 
-  // ---------- 164.6 programmers replaced by «СКОРО ЗАМЕНИМ» signs; they leave in the toy wagons ----------
-  const REP = [165.34, 166.18, 166.68];
-  const a08_prog = (x, y, u, t, seed, o = {}) => clawd(x, y, u, { col: '#9AA7B5', dk: '#5E6B78', lt: '#C9D2DC', mouth: 'flat', eyes: 'narrow', seed, noShadow: true, ...o });
+  // ---------- 164.6 «Всех программистов заменит вот-вот»: pan along the desks, a ceiling claw slaps «ВОТ-ВОТ» stickies ----------
+  // (ported from v1 t06 desks) one sticky per word; each programmer glances up at it and keeps typing
+  const REP = [164.64, 165.34, 166.18, 166.68, 166.9];
   function shotReplace(t, lt) {
-    const pk = a08_cam(t, lt);
-    a08_stage(t, (x, y, w, h) => {
-      a08_slideTitle(x, y, w, 'ПЛАН: ЗАМЕНИТЬ ПРОГРАММИСТОВ');
-      const floorY = y + 470;
-      paint(rectPts(x, y + 600, w, h - 600), { wash: '#DAD4C8', ink: null });
-      [x + 250, x + 630, x + 1010].forEach((dx, i) => {
-        // desk + monitor
-        paint(rectPts(dx - 20, floorY - 110, 110, 74, 1), { wash: '#1A1C22', ink: INK, sw: .8 });
-        paint(rectPts(dx + 30, floorY - 36, 10, 30), { wash: '#555', ink: null });
-        paint(rectPts(dx - 140, floorY, 280, 16, 1), { wash: '#A07850', ink: INK, sw: .9 });
-        paint(rectPts(dx - 120, floorY + 16, 12, 70), { wash: '#7A5A3A', ink: null });
-        paint(rectPts(dx + 108, floorY + 16, 12, 70), { wash: '#7A5A3A', ink: null });
-        const tr = REP[i], age = t - tr;
-        if (age < 0) {
-          const ty = Math.abs(Math.sin(t * 22 + i)) * .15;
-          a08_prog(dx - 70, floorY + 8, 13, t, i, { aR: .9 + ty, aL: .7 - ty, flip: false });
-        } else {
-          // the sign stands on the chair
-          const k = backOut(age / .2), s = k;
-          paint(rectPts(dx - 73, floorY - 60 * s, 8, 70 * s), { wash: '#7A5A3A', ink: null });
-          push(); translate(dx - 70, floorY - 120 * s); rotate(-.05 + .04 * i); scale(s);
-          paint(a08_rr(-160, -78, 320, 156, 10), { wash: '#FFFDF6', ink: RED, sw: 2.2 });
-          pop();
-          const lab = i === 2 ? ['ВОТ-', 'ВОТ!'] : ['СКОРО', 'ЗАМЕНИМ'];
-          letter(lab[0], dx - 70, floorY - 120 * s - 34 * s, 62 * s, RED, { font: ruFont(62 * s), rot: -.05 + .04 * i, ink: false });
-          letter(lab[1], dx - 70, floorY - 120 * s + 34 * s, 62 * s, RED, { font: ruFont(62 * s), rot: -.05 + .04 * i, ink: false });
-          if (age < .4) for (let q = 0; q < 7; q++) { const a = q / 7 * TAU, d = 30 + age * 260; paint(ellPts(dx - 70 + Math.cos(a) * d, floorY - 40 + Math.sin(a) * d * .5, 16 * (1 - age / .4) + 2, 14 * (1 - age / .4) + 2, 8), { wash: '#D8D2C4', ink: null }); }
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#C9CDD2', fill: '#9AA2AB', fillOp: 60, tex: .5, ink: null });
+    const [sx, sy] = shakeXY(t, 7 * hitK(t, REP, .1));
+    camBegin(lerp(760, 2000, ease(seg(t, L4, L5 - .1))) + sx, 520 + sy, 1.05);
+    // windows onto a grey factory district, the ceiling rail
+    for (let i = 0; i < 8; i++) {
+      const x = -100 + i * 380;
+      paint(rectPts(x, 120, 300, 320), { wash: '#AEBBC6', fill: '#8494A4', fillOp: 70, tex: .4, ink: INK, sw: .8 });
+      for (let k = 0; k < 3; k++) paint(rectPts(x + 20 + k * 95, 320 - hash(i * 3 + k) * 150, 70, 200), { wash: A2.steelLt, washOp: 200, ink: null });
+      inkLine([[x + 150, 120], [x + 150, 440]], .8, INK, 'inkfine', 0);
+    }
+    paint(rectPts(-200, 30, 3400, 34), { wash: A2.steel, ink: INK, sw: 1 });
+    hazard(-200, 60, 3400, 10);
+    for (const bx of [1040, 2240]) {
+      inkLine([[bx - 320, 70], [bx - 320, 455]], 1, INK, 'inkfine', 0); inkLine([[bx + 320, 70], [bx + 320, 455]], 1, INK, 'inkfine', 0);
+      paint(rectPts(bx - 380, 445, 760, 110, 1), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 60, tex: .5, ink: INK, sw: 1 });
+      paint(rectPts(bx - 380, 445, 760, 8), { wash: A2.hazard, ink: null });
+      letter('ЗАМЕНА ПРОГРАММИСТОВ:', bx, 482, 42, A2.cream, { font: ruFont(42), ink: false });
+      letter('ВОТ-ВОТ', bx, 528, 42, A2.hazard, { font: ruFont(42), ink: false });
+    }
+    paint(rectPts(-200, 800, 3400, 500), { wash: '#7E8690', fill: '#5A626C', fillOp: 70, tex: .5, ink: INK, sw: 1 });
+    for (let i = 0; i < 5; i++) {
+      const dx = 380 + i * 460, landT = REP[i], landed = t >= landT, age = t - landT, seen = landed && age > .12;
+      // the programmer: types on the half-beat, glances up at the sticky, back to work
+      const typ = Math.abs(Math.sin(t * Math.PI * 3.14 + i));
+      clawd(dx + 70, 800, 22, { flip: true, aL: .3 + typ * .5, aR: .3 + (1 - typ) * .5,
+        eyes: seen && age < .5 ? 'look' : 'narrow', lookY: -1, lookX: .3, mouth: seen && age < .5 ? 'flat' : 'smile', seed: i, noShadow: true,
+        emote: seen && age < .6 && i % 2 ? 'sweat' : undefined, emoteK: seg(age, .12, .26), col: i % 3 === 1 ? '#C9825E' : PAL.clay });
+      // monitor
+      paint(rrPts(dx - 230, 590, 220, 150, 10, 1), { wash: '#26232B', ink: INK, sw: 1 });
+      paint(rectPts(dx - 218, 602, 196, 122), { wash: '#12161D', ink: null });
+      for (let k = 0; k < 5; k++) paint(rectPts(dx - 204 + (k % 2) * 20, 614 + k * 22, 60 + hash(i * 5 + k + Math.floor(t * 6.3)) * 90, 10), { wash: ['#48E08A', '#8EC3E6', A2.hazard][k % 3], washOp: 200, ink: null });
+      paint(rectPts(dx - 130, 740, 22, 42), { wash: '#26232B', ink: INK, sw: .7 });
+      // desk + mug
+      paint(rectPts(dx - 250, 780, 470, 36), { wash: A2.steelLt, fill: A2.steel, fillOp: 80, tex: .5, ink: INK, sw: 1 });
+      paint(rectPts(dx - 210, 816, 30, 130), { wash: A2.gunmetal, ink: INK, sw: .7 });
+      paint(rectPts(dx + 160, 816, 30, 130), { wash: A2.gunmetal, ink: INK, sw: .7 });
+      paint(rrPts(dx + 150, 736, 44, 46, 8), { wash: '#F4EDDD', ink: INK, sw: .7 });
+      for (let k = 0; k < 2; k++) inkLine([[dx + 164 + k * 14, 728], [dx + 158 + k * 14 + Math.sin(t * 5 + k) * 6, 700], [dx + 168 + k * 14, 676]], 1, '#FFFFFF', 'inkfine', .6);
+      // the sticky: rides down in the ceiling claw, slaps onto the monitor on the word
+      const drop = seg(t, landT - .2, landT), px = dx - 120 + (hash(i) - .5) * 30, py = lerp(-120, 640, easeIn(drop)), rot = (hash(i + 7) - .5) * .3;
+      if (drop > 0) {
+        const s = landed ? 1 + .25 * Math.exp(-age * 18) : 1;
+        push(); translate(px, py); rotate(rot); scale(s);
+        paint(rectPts(-90, -52, 180, 104), { wash: '#FFE36A', fill: '#F2C94C', fillOp: 70, tex: .5, ink: INK, sw: .8 });
+        pop();
+        letter('ВОТ-ВОТ', px, py, 40 * s, RED, { font: ruFont(40 * s), rot, ink: false });
+        if (!landed || age < .12) {
+          inkLine([[px, 64], [px, py - 64]], 5, A2.steel, 'ink', 0);
+          paint(rrPts(px - 36, 50, 72, 30, 8), { wash: A2.sodium, ink: INK, sw: .8 });
+          for (const e of [-1, 1]) inkLine([[px + e * 10, py - 64], [px + e * 40, py - 54], [px + e * 30, py - 42]], 3, A2.steel, 'ink', .3);
         }
-      });
-      // each replaced programmer trudges off to the right with the classic cardboard box (plant on top)
-      [x + 250, x + 630, x + 1010].forEach((dx, i) => {
-        const age = t - REP[i] - .1; if (age < 0) return;
-        const px = dx - 70 + age * 450, py = y + 600; if (px > x + w + 80) return;
-        a08_prog(px, py, 9, t, i + 5, { walk: age * 2.6, eyes: 'closed', mouth: 'wobble', aL: 1.2, aR: 1.2, noShadow: true });
-        paint(rectPts(px - 42, py - 118, 84, 50, 1), { wash: '#C89B62', fill: '#9C7440', fillOp: 60, tex: .5, ink: INK, sw: .8 });
-        paint(ellPts(px + 18, py - 128, 12, 14, 8), { wash: '#4E8F4E', ink: INK, sw: .5 });
-        paint(rectPts(px - 30, py - 136, 26, 20), { wash: '#1A1C22', ink: null });
-      });
-    }, { big: true, pk, tally: 3, clawdO: { eyes: 'narrow', mouth: 'flat' }, click: hitK(t, REP, .15), ceoMouth: 'grin' });
+        if (landed) sfx('ШЛЁП', px + 100, py - 80, 44, A2.sodium, age, { life: .35, rot: .15, font: ruFont(44) });
+      }
+    }
     camEnd();
   }
 
-  // ---------- 167.25 «а мне от неё нужно только одно»: Clawd walks on with the board-game box ----------
+  // ---------- 167.25 «а мне от неё нужно только одно»: Clawd hugs the board-game box (ported from v1 t06 hug) ----------
   function a08_box(cx, cy, w, h, t, lidK = 0) {
     paint(rectPts(cx - w / 2 + 10, cy - h / 2 + 12, w, h), { wash: '#000', washOp: 90, ink: null });
     paint(rectPts(cx - w / 2, cy - h / 2, w, h, 1), { wash: '#8EC3E6', ink: INK, sw: 1.3 });
@@ -344,25 +359,43 @@
     a08_rails(x + 6, x + w - 6, y + h * .82, w / 600, { bal: '#8A7A6A' });
     paint(rectPts(x, y, w, h * .24), { wash: '#C8324A', ink: INK, sw: 1 });
     letter('ПАРОВОЗИКИ', cx, y + h * .12, h * .14, '#FFF5E2', { font: ruFont(h * .14), ink: false });
-    letter('Царское Село · 1837', cx, y + h * .33, h * .065, '#1E1E24', { font: ruFont(h * .065), ink: false });
+    letter('Царское Село · 1837', cx, y + h * .34, h * .1, '#1E1E24', { font: ruFont(h * .1), stroke: '#FFF5E2', ink: false });
     letter('2–5 игроков · 8+', x + w * .82, y + h * .93, h * .05, '#FFF5E2', { font: ruFont(h * .05), ink: false });
     if (lidK > 0) for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + .2, d = (w * .55 + 60 * lidK); a08_sparkle(cx + Math.cos(a) * d, cy + Math.sin(a) * d * .7, 22, frac(t * 1.5 + i * .1), '#FFE38A'); }
   }
+  const HUG_B = [167.28, 167.52, 167.73, 167.88, 168.16, 168.42, 168.78, 169.14];
   function shotHijack(t, lt) {
-    const walk = seg(t, L5, 168.1), cxw = lerp(-120, 960, easeOut(walk)), lift = seg(t, 168.2, 168.6), one = seg(t, 169.14, 169.3);
-    const z = kf(t, [[L5, 1], [168.2, 1.05], [169.14, 1.28], [169.7, 1.34]]);
-    camBegin(960, lerp(450, 500, seg(t, 168.2, 169.4)), z);
-    a08_stage(t, (x, y, w, h) => {
-      a08_slideTitle(x, y, w, 'AGI ЗАМЕНИТ ВСЕХ');
-      letter('ЭТО ПРОРЫВ', x + w / 2, y + h * .5, 90, '#1E1E24', { font: ruFont(90), ink: false });
-      flushLetters(); if (one > 0) paint(rectPts(x, y, w, h), { wash: '#15171D', washOp: 190 * one, ink: null });                           // the CEO's slide dims
-    }, { clawd: false, click: 0, ceoArm: .3, ceoEyes: 'scared', ceoMouth: 'o', ceoEmote: '?', ceoEmoteK: seg(t, 167.6, 167.9),
-         });
-    if (one > 0) paint([[cxw - 60, -40], [cxw + 60, -40], [cxw + 320, 820], [cxw - 320, 820]], { fill: '#FFF3D0', fillOp: 70 * one, bleed: .2, tex: .2, border: .1, ink: null });
-    const up = .75 + .25 * easeOut(lift), bob = walk < 1 ? Math.abs(Math.sin(t * 14)) * 6 : 0;
-    clawd(cxw, 808, 23, { walk: walk < 1 ? t * 3 : null, dy: -bob / 23, aL: lerp(.3, 1.45, up), aR: lerp(.3, 1.45, up), eyes: one > 0 ? 'spark' : 'happy', mouth: one > 0 ? 'grin' : 'cat' });
-    const boxY = lerp(500, 440, easeOut(lift)) - one * 30, bs = 1 + one * .12;
-    a08_box(cxw, boxY, 360 * bs, 240 * bs, t, one);
+    const sway = Math.sin(t * 2.4) * .045, one = seg(t, 169.14, 169.4);
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#F4C99A', fill: '#E8A878', fillOp: 70, tex: .5, ink: null });
+    camBegin(960, 520 - lt * 8, 1.02 + lt * .05 + .05 * ease(one));
+    for (let i = 0; i < 40; i++) paint(starPts(60 + (i % 10) * 200 + (Math.floor(i / 10) % 2) * 100, 80 + Math.floor(i / 10) * 180, 12, .4), { wash: '#F9DCB8', ink: null });   // wallpaper
+    // evening window, a single star
+    paint(rectPts(1340, 120, 420, 420), { wash: '#6E6AA8', fill: '#E89A8A', fillOp: 90, tex: .5, ink: INK, sw: 1.3 });
+    paint(ellPts(1450, 220, 6, 6, 8), { wash: '#FFF5E2', ink: null });
+    inkLine([[1550, 120], [1550, 540]], 3, '#8A5A36', 'ink', 0); inkLine([[1340, 330], [1760, 330]], 3, '#8A5A36', 'ink', 0);
+    // the lamp and its glow
+    paint(ellPts(420, 300, 520, 520, 18), { fill: '#FFE38A', fillOp: 90, bleed: .3, tex: .2, border: .1, ink: null });
+    paint([[330, 180], [510, 180], [560, 300], [280, 300]], { wash: '#F2E4C4', fill: '#FFC53D', fillOp: 60, ink: INK, sw: 1 });
+    inkLine([[420, 300], [420, 840]], 5, '#6E4A2E', 'ink', 0);
+    paint(rectPts(-200, 840, W + 400, 400), { wash: '#B5835A', fill: '#8A5A36', fillOp: 80, tex: .5, ink: INK, sw: 1 });
+    paint(ellPts(960, 900, 620, 60, 26), { wash: '#C8323A', fill: '#8A1418', fillOp: 60, tex: .6, ink: INK, sw: .8 });           // rug
+    // soft glow behind the pair, blooming on «одно»
+    paint(ellPts(960, 600, 420 + 120 * one, 340 + 90 * one, 22), { fill: '#FFF1C8', fillOp: 70 + 90 * one, bleed: .3, tex: .2, border: .1, ink: null });
+    // Clawd: eyes shut in bliss, leaning his cheek on the box, rocking; the box in his arms
+    const cx = 860, cy = 860, u = 50;
+    clawd(cx, cy, u, { eyes: 'happy', mouth: 'cat', blush: true, rot: .14 + sway, aL: -.5, aR: -.7 });
+    const bw = 500, bh = 300, bx = cx + 210 + Math.sin(t * 2.4) * 12, by = cy - 80 + Math.abs(Math.sin(t * 2.4)) * 6;
+    a08_box(bx, by, bw, bh, t, one);
+    // clay hands wrap the sides; on «одно» the right one strokes the lid
+    const stroke = one > 0 ? Math.sin((t - 169.14) * 11) : 0;
+    for (const [hx, hy] of [[bx - bw / 2 + 6, by - 30], [bx + bw / 2 - 6 - (one > 0 ? 140 + 80 * stroke : 0), one > 0 ? by - bh / 2 + 8 : by - 10]])
+      paint(rrPts(hx - 38, hy - 30, 76, 60, 22), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 60, ink: INK, sw: .9 });
+    // hearts pop on the words
+    for (let k = 0; k < HUG_B.length; k++) {
+      const age = t - HUG_B[k]; if (age < 0 || age > 1.4) continue;
+      const f = age / 1.4, hx = 960 + (hash(k * 3.3) - .5) * 900, hy = 420 - f * 320;
+      paint(heartPts(hx, hy, 44 * (1 - f * .4) * backOut(Math.min(1, age * 4))), { wash: '#E2476E', washOp: 255 * (1 - f), fill: PAL.rose, fillOp: 80, ink: f < .7 ? INK : null, sw: .6 });
+    }
     camEnd();
   }
 

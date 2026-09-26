@@ -1,5 +1,5 @@
 // a01_boot.js: «Жги токены» v2, chapter 1 "boot" (0–20.1), the intro (no vocals).
-// 0–2.93 the dark: Clawd (beanie + scarf) scrapes a long match along a press bed's hazard strip; three scrapes on the three
+// 0–2.93 the dark: Clawd scrapes a long match along a press bed's hazard strip; three scrapes on the three
 // hits (0.2 huge, 0.86, 1.66), each spark shower flashes the silhouette of ЗАВОД ТОКЕНОВ out of the black; the third catches.
 // 2.93 the flame lights a single token on the bed; the camera pulls back: ПРЕСС №1 looms above it. 4.86 the ram slams →
 // «ЖГИ ТОКЕНЫ» over the big burning token with rays and embers; side presses slam on 5.51 / 6.15.
@@ -15,20 +15,6 @@
   const SCRAPES = [0.2, 0.86, 1.66], T_IGN = 2.93, T_T1 = 4.86, T_GO = 10.99, T_T2 = 16.92, END = 20.1;
   const SIL = [12.14, 13.1, 14.07, 14.56, 15.05, 15.53, 16.0, 16.49];                       // build: silhouette presses slam on beats
   const PAIRS = [7.31, 8.27, 9.24, 10.19];                                                   // vigil: pairs light outward
-
-  // ---------- Clawd's going-out outfit (matches a02): acid knit beanie + pompom, magenta scarf ----------
-  const a01_outfit = (flap = 0) => (u, sw) => {
-    paint(rrPts(-5.4 * u, -3.55 * u, 10.8 * u, 1.3 * u, .5 * u), { wash: C.magenta, ink: INK, sw: sw * .6 });
-    for (let i = 0; i < 5; i++) paint(rectPts(-4.7 * u + i * 2.1 * u, -3.5 * u, .8 * u, 1.2 * u), { wash: C.acid, washOp: 230, ink: null });
-    const tx = 2.4 * u, ty = -2.8 * u, a = .12 + flap;
-    paint(rotPts(rectPts(tx - .7 * u, ty, 1.4 * u, 3.1 * u), tx, ty, a), { wash: C.magenta, ink: INK, sw: sw * .5 });
-    paint(rotPts(rectPts(tx - .7 * u, ty + 1.2 * u, 1.4 * u, .7 * u), tx, ty, a), { wash: C.acid, ink: null });
-    const dome = []; for (let i = 0; i <= 12; i++) { const an = Math.PI + i / 12 * Math.PI; dome.push([Math.cos(an) * 4.7 * u, -8.2 * u + Math.sin(an) * 2.8 * u]); }
-    paint(dome, { wash: C.acid, fill: '#7FBF10', fillOp: 80, tex: .5, border: .4, ink: INK, sw: sw * .8 });
-    for (let i = -3; i <= 3; i++) inkLine([[i * 1.2 * u, -8.3 * u], [i * 1.05 * u, -10.4 * u + Math.abs(i) * .35 * u]], sw * .35, '#5E8F0C', 'inkfine', .3);
-    paint(rrPts(-5.1 * u, -8.8 * u, 10.2 * u, 1.35 * u, .5 * u), { wash: C.magenta, fill: '#B0188F', fillOp: 70, tex: .5, ink: INK, sw: sw * .7 });
-    paint(ellPts(0, -11.2 * u, 1.15 * u, 1.05 * u, 12, u * .08), { wash: C.hazard, ink: INK, sw: sw * .6 });
-  };
 
   // ---------- helpers ----------
   // darkness outside a soft ellipse (screen space)
@@ -173,7 +159,6 @@
         paint(rectPts(0, -.16 * u, L, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
         paint(ellPts(L, 0, .55 * u, .45 * u, 10), { wash: t >= SCRAPES[2] ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 });
       },
-      draw: a01_outfit(.08 * Math.sin(t * 5)),
     });
     // sparks off the strip on every scrape; the flame on the head once it catches
     SCRAPES.forEach((s, i) => { a01_sparks(lerp(1010, 730, .6), 905, t - s, 11 + i * 7, i === 0 ? 34 : 22, i === 0 ? 420 : 300, 1); });

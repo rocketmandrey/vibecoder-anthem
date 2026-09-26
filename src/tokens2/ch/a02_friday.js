@@ -1,464 +1,366 @@
-// a02_friday.js: «Жги токены» v2, verse 1 (20.1–39.8). Friday in Clawd's flat as a punk-zine collage that wobbles with the
-// acid squelch. Clawd tries to go out; every action orders another useless product from the factory.
-//   20.1  hallway: every step on the floor is an ORDER button, parcels drop from the factory chute and block the door; «ПЯТНИЦА», дела ✓
-//   22.65 limit bar 100% «ЛИМИТЫ ЦЕЛЫ» → whip down to the week calendar, a tiny Clawd walks to ПТ «ПОЛПУТИ»
-//   25.25 the park calls through the window; the latch orders «ПАРК-БОТ», an agent goes for the walk instead; the ВС sheet slides in
-//   27.8  the weekend is a consumable: СБ / ВС sheets torn off, stamped «СГОРИТ» by a tiny press, fed into the furnace
-//   30.5  site and bot waved off «НЕ НУЖЕН»
-//   32.5  the 100% bar is a rocket «ПОТРАТЬ МЕНЯ», ignition on 33.49, launch «вперёд», «К ЛУНЕ» (fuel = the limit)
-//   35.1  «Сделай игру»: an arcade cabinet nobody plays; an agent plays it so the report shows «1 ПОЛЬЗОВАТЕЛЬ»
-//   37.75 the unread site: 0 visitors, cobwebs, tumbleweed. Hard cut at 39.8.
+// a02_friday.js: «Жги токены» v2, verse 1 (20.1–39.8), ported from v1's verse (t01_friday.js 12.6–32.35), retimed to v2.
+//   20.1  «Пятница, дела позади»: Friday evening room, the calendar flips ЧТ→ПЯТНИЦА, to-dos ticked on the hits, Clawd stretches
+//   22.65 «Лимиты целы, полпути»: the laptop screen, limit bar at 50%, week strip on ПТ, the ½ flag, «ПОЛПУТИ»
+//   25.25 «Парк зовёт»: the window turns into a sunny park; the calendar runs ПЯТНИЦА→СУББОТА→ВОСКРЕСЕНЬЕ
+//   27.8  «но в воскресенье всё сгорит»: the Sunday page burns
+//   30.5  «Сайт не нужен, бот не нужен»: Clawd waves off the site and the bot
+//   32.5  «Но лимиты ждут»: the limit bar's tractor beam hauls him back up
+//   33.98 «вперёд, к луне!»: the bar is a rocket «К ЛУНЕ»
+//   35.1  «Сделай игру»: the empty arcade «0 ИГРОКОВ», cobwebs, a spider
+//   37.75 «Сайт мне сделай»: «0 ПОСЕТИТЕЛЕЙ», tumbleweed, pan to the hot rack → glitchCut at 39.8 into the data center.
+// Clawd wears no hat and no scarf. Palette pulled toward v2's factory: steel wall, sodium lamp light.
 (() => {
   const INK = PAL.ink, C = A2;
+  const WALL = '#A39C93', WALLDK = C.steel;
   const VH = hitsIn(20.1, 39.8);
-  const a02_SQ = t => squelch(t, 19.9, 39.9);
-  const a02_tx = (s, x, y, size, col, o = {}) => letter(s, x, y, size, col, { font: ruFont(size), ink: false, ...o });
+  const pk = t => .5 + .5 * Math.sin(t * 9.8);             // ponytail: soft throb instead of bpOf() (beat phase drifts in v2)
+  const tx = (s, x, y, size, col, o = {}) => letter(s, x, y, size, col, { font: ruFont(size), ink: false, ...o });
 
-  // ---------- camera: a per-shot view + per-panel wobble cameras (letters follow the camera, so text wobbles too) ----------
-  let V = { cx: W / 2, cy: H / 2, z: 1, r: 0 };
-  function a02_view(t, cx = W / 2, cy = H / 2, z = 1, r = 0, shake = 12) {
-    const [sx, sy] = shakeXY(t, shake * hitK(t, VH, .12));
-    V = { cx: cx + sx / z, cy: cy + sy / z, z, r };
+  // ---------- helpers (from v1) ----------
+  const DAYS = { th: ['ЧЕТВЕРГ', 24], fr: ['ПЯТНИЦА', 25], sa: ['СУББОТА', 26], su: ['ВОСКРЕСЕНЬЕ', 27] };
+  function calPage(x, y, w, h, d, o = {}) {
+    paint(rectPts(x, y, w, h, 1), { wash: TK.cream, fill: '#E9DCC4', fillOp: 70, tex: .4, ink: INK, sw: w / 500 });
+    if (o.noText) return;
+    const [day, num] = d, ns = h * .5, ds = Math.max(40, Math.min(h * .12, (w * .86) / Math.max(1, textW(day, ruFont(100)) / 100)));
+    tx(String(num), x + w / 2, y + h * .42, ns, d === DAYS.su ? TK.ember : '#2B2233');
+    tx(day, x + w / 2, y + h * .8, ds, d === DAYS.su ? TK.ember : '#2B2233');
   }
-  function a02_pBegin(px, py, s = 1, r = 0, ox = 0, oy = 0) {
-    const c = Math.cos(V.r), sn = Math.sin(V.r), dx = (px + ox - V.cx) * V.z, dy = (py + oy - V.cy) * V.z;
-    const Sx = W / 2 + dx * c - dy * sn, Sy = H / 2 + dx * sn + dy * c, Z = V.z * s, R = V.r + r;
-    const ex = (Sx - W / 2) / Z, ey = (Sy - H / 2) / Z, cr = Math.cos(-R), sr = Math.sin(-R);
-    camBegin(px - (ex * cr - ey * sr), py - (ex * sr + ey * cr), Z, R);
-  }
-  // a torn zine panel whose content wobbles with the 303 squelch around its centre
-  function a02_panel(t, x, y, w, h, seed, body, o = {}) {
-    if ((o.s ?? 1) < .02) return;
-    const q = a02_SQ(t), cx = x + w / 2, cy = y + h / 2;
-    const s = (o.s ?? 1) * (1 + q * .03 * Math.sin(t * 9 + seed)), r = (o.rot ?? 0) + (q * .05 + .006) * Math.sin(t * 6.3 + seed * 2.1);
-    a02_pBegin(cx, cy, s, r, o.dx || 0, o.dy || 0);
-    const inner = zineCut(x, y, w, h, { seed, rot: 0, col: o.col, dots: o.dots, tape: o.tape });
-    body(inner);
-    camEnd();
-  }
-  function a02_free(t, body) { a02_pBegin(W / 2, H / 2, 1, 0); body(); camEnd(); }
-
-  // ---------- backgrounds ----------
-  function a02_wall(t, base, acc, seed = 0) {
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: base, fill: mixCol(base, '#000000', .35), fillOp: 90, bleed: .1, tex: .5, border: .3, ink: null });
-    const q = a02_SQ(t);
-    for (let i = 0; i < 4; i++) {                                                       // torn xerox strips across the wall
-      const y = 120 + i * 260 + (hash(i + seed) - .5) * 80, a = (hash(i * 3 + seed) - .5) * .25;
-      paint(rotPts(rectPts(-80, y, W + 160, 70 + hash(i + 5 + seed) * 50, 4), W / 2, y, a), { wash: i % 2 ? acc : mixCol(base, C.cream, .25), washOp: 70, ink: null });
+  function calendar(x, y, w, h, cur, next, p = 0) {
+    const hh = h * .2, py = y + hh, ph = h - hh;
+    paint(rectPts(x + 12, y + 16, w, h), { fill: INK, fillOp: 70, bleed: .2, ink: null });
+    if (p > 0 && next) { calPage(x, py, w, ph, next); flushLetters(); } else calPage(x, py, w, ph, cur);
+    if (p > 0 && p < 1) {
+      const s = Math.cos(p * Math.PI);
+      if (s > 0) {
+        paint(rectPts(x, py, w, ph * s), { wash: TK.cream, ink: INK, sw: w / 500 });
+        const fs = Math.min(ph * .12, w * .8 / Math.max(1, textW(cur[0], ruFont(100)) / 100)) * s;
+        if (s > .55) tx(cur[0], x + w / 2, py + ph * s * .75, fs, '#2B2233');
+      } else paint(rectPts(x - w * .03, py - ph * -s * .7, w * 1.06, ph * -s * .7), { wash: '#D9CDB6', fill: '#BFAF94', fillOp: 70, tex: .4, ink: INK, sw: w / 500 });
     }
-    for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < 15; gx++) {                     // halftone dots, bent by the squelch
-      const px = 40 + gx * 135 + (gy % 2) * 67, py = 50 + gy * 130 + Math.sin(px * .008 + t * 6) * q * 36, r = 5 + 13 * hash(gx * 3.1 + gy * 7.7 + seed);
-      paint(ellPts(px, py, r, r, 8), { wash: acc, washOp: 70, ink: null });
+    paint(rectPts(x - 6, y, w + 12, hh, 1), { wash: TK.ember, fill: TK.emberDk, fillOp: 70, tex: .5, ink: INK, sw: w / 450 });
+    tx('СЕНТЯБРЬ', x + w / 2, y + hh * .55, Math.max(40, hh * .42), TK.cream);
+    for (let i = 0; i < 5; i++) paint(ellPts(x + w * (.18 + i * .16), y + 4, w * .018, w * .03, 8), { wash: C.steelLt, ink: INK, sw: .5 });
+  }
+  function windowView(x, y, w, h, t, park = 0) {
+    paint(rectPts(x, y, w, h), { wash: '#F0A460', fill: C.sodium, fillOp: 90, bleed: .15, tex: .5, ink: null });            // sodium dusk
+    paint(ellPts(x + w * .62, y + h * .72, w * .14, w * .14, 20), { wash: '#FFD27A', ink: null });
+    paint([[x, y + h * .8], [x + w * .3, y + h * .74], [x + w * .7, y + h * .78], [x + w, y + h * .72], [x + w, y + h], [x, y + h]], { wash: C.gunmetal, ink: null });
+    for (let i = 0; i < 6; i++) {                                                       // factory skyline with lit windows
+      const bx = x + w * (.02 + i * .165), bh = h * (.22 + hash(i + 3) * .25), bw = w * .13;
+      paint(rectPts(bx, y + h * .8 - bh, bw, bh + 4), { wash: '#3A3E46', ink: null });
+      for (let k = 0; k < 4; k++) if (hash(i * 5 + k) > .45) paint(rectPts(bx + bw * (.2 + (k % 2) * .4), y + h * .8 - bh * (.8 - Math.floor(k / 2) * .3), bw * .2, h * .03), { wash: TK.yellowLt, ink: null });
     }
-  }
-
-  // ---------- props ----------
-  // going-out outfit: acid knit beanie with a pompom + a striped scarf whose tail flaps
-  const a02_outfit = (flap = 0, user) => (u, sw) => {
-    paint(rrPts(-5.4 * u, -3.55 * u, 10.8 * u, 1.3 * u, .5 * u), { wash: C.magenta, ink: INK, sw: sw * .6 });
-    for (let i = 0; i < 5; i++) paint(rectPts(-4.7 * u + i * 2.1 * u, -3.5 * u, .8 * u, 1.2 * u), { wash: C.acid, washOp: 230, ink: null });
-    const tx = 2.4 * u, ty = -2.8 * u, a = .12 + flap;
-    paint(rotPts(rectPts(tx - .7 * u, ty, 1.4 * u, 3.1 * u), tx, ty, a), { wash: C.magenta, ink: INK, sw: sw * .5 });
-    paint(rotPts(rectPts(tx - .7 * u, ty + 1.2 * u, 1.4 * u, .7 * u), tx, ty, a), { wash: C.acid, ink: null });
-    const dome = []; for (let i = 0; i <= 12; i++) { const an = Math.PI + i / 12 * Math.PI; dome.push([Math.cos(an) * 4.7 * u, -8.2 * u + Math.sin(an) * 2.8 * u]); }
-    paint(dome, { wash: C.acid, fill: '#7FBF10', fillOp: 80, tex: .5, border: .4, ink: INK, sw: sw * .8 });
-    for (let i = -3; i <= 3; i++) inkLine([[i * 1.2 * u, -8.3 * u], [i * 1.05 * u, -10.4 * u + Math.abs(i) * .35 * u]], sw * .35, '#5E8F0C', 'inkfine', .3);
-    paint(rrPts(-5.1 * u, -8.8 * u, 10.2 * u, 1.35 * u, .5 * u), { wash: C.magenta, fill: '#B0188F', fillOp: 70, tex: .5, ink: INK, sw: sw * .7 });
-    paint(ellPts(0, -11.2 * u, 1.15 * u, 1.05 * u, 12, u * .08), { wash: C.hazard, ink: INK, sw: sw * .6 });
-    if (user) user(u, sw);
-  };
-  const a02_clawd = (x, y, u, t, o = {}) => clawd(x, y, u, { seed: 2, ...o, draw: a02_outfit(o.flap || .1 * Math.sin(t * 7), o.draw) });
-
-  // cardboard parcel standing on (x, y) bottom-centre, s tall; big one-word label + small type
-  function a02_parcel(x, y, s, label, rot = 0) {
-    const w = s * 1.3, h = s, cx = x, cy = y - h / 2, R = p => rotPts(p, cx, cy, rot);
-    paint(R(rectPts(x - w / 2, y - h, w, h, 1)), { wash: '#C8955A', fill: '#9A6A38', fillOp: 70, tex: .5, border: .4, ink: INK, sw: .7 });
-    paint(R(rectPts(x - w * .08, y - h, w * .16, h)), { wash: '#E3C07A', washOp: 190, ink: null });
-    paint(R(rectPts(x - w * .43, y - h * .72, w * .86, h * .46, 1)), { wash: C.cream, ink: INK, sw: .5 });
-    const [lx, ly] = R([[x, y - h * .5]])[0];
-    if (label) a02_tx(label, lx, ly, Math.max(40, Math.min(h * .3, w * .8 / Math.max(1, label.length * .62))), C.rust, { rot });
-    const [ax, ay] = R([[x + w * .3, y - h * .13]])[0];
-    a02_tx('↑↑', ax, ay, h * .1, INK, { rot });
-  }
-  // pneumatic chute from the factory: a pipe from the frame top down to (x, y)
-  function a02_chute(x, y, top, t, kick = 0) {
-    paint(rectPts(x - 55, top, 110, y - top), { wash: C.steel, fill: C.gunmetal, fillOp: 80, tex: .5, border: .4, ink: INK, sw: .8 });
-    hazard(x - 62, y - 80, 124, 34);
-    paint(rrPts(x - 80 - kick * 10, y - 20, 160 + kick * 20, 40, 14), { wash: C.gunDk, ink: INK, sw: .8 });
-    if (kick > .05) steam(x, y + 10, t, { dir: Math.PI / 2, k: kick, len: 180, n: 4, per: .5, seed: 5 });
-  }
-  // the zine "order" strip that pops in for each product
-  function a02_order(txt, x, y, age, rot = -.05) {
-    if (age < 0 || age > 1.6) return;
-    const k = backOut(age / .14), fs = 50, w = textW(txt, ruFont(fs)) + 80;
-    push(); translate(x, y); rotate(rot); scale(k);
-    paint(rectPts(-w / 2, -44, w, 88, 2), { wash: C.hazard, ink: INK, sw: .8 });
-    pop();
-    a02_tx(txt, x, y + 2, fs * k, INK, { rot });
-  }
-  // week calendar strip (7 cells) with ПН–ЧТ crossed out
-  const DAYS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-
-  // ---------- 20.1 hallway: every step orders a parcel ----------
-  const A_HITS = [20.65, 21.29, 21.77, 22.27];
-  const A_LOOT = [['БОТ', 'БОТ ДЛЯ ШНУРКОВ'], ['САЙТ', 'САЙТ ПРО ШАПКУ'], ['ТУДУ', 'ТУДУ ДЛЯ ТУДУ-ЛИСТОВ'], ['', '']];
-  const A_PILE = [[880, 800, -.05], [1090, 800, .06], [985, 640, .1], [1110, 630, -.12]];
-  function a02_hall(t, lt) {
-    a02_wall(t, C.gunmetal, C.magenta, 1);
-    a02_view(t, W / 2, H / 2, lerp(1, 1.05, lt / 2.55));
-    const nh = A_HITS.filter(h => h <= t).length, last = nh ? A_HITS[nh - 1] : -9;
-    a02_panel(t, 80, 70, 1200, 850, 3, () => {
-      const fy = 700;
-      paint(rectPts(130, 120, 1100, fy - 120), { wash: '#E8D6B0', fill: '#D2B37E', fillOp: 90, bleed: .12, tex: .6, border: .5, ink: null });
-      for (let x = 170; x < 1220; x += 76) paint(rectPts(x, 120, 22, fy - 120), { wash: '#D4B98A', washOp: 110, ink: null });
-      paint(rectPts(130, fy, 1100, 170), { wash: '#7A4E32', fill: '#5A3522', fillOp: 90, tex: .5, ink: null });
-      // floor ORDER buttons: the one under Clawd lights on each hit
-      for (let i = 0; i < 5; i++) {
-        const bx = 230 + i * 120, lit = i < nh ? hitK(t, [A_HITS[i]], .35) : 0;
-        paint(rrPts(bx - 50, fy + 70, 100, 34, 10), { wash: mixCol(C.steel, C.acid, lit), ink: INK, sw: .6 });
-        if (lit > .05) glowAt(bx, fy + 87, 90 * lit, C.acid, 120 * lit);
+    if (park > .01) {
+      const op = 255 * park;
+      paint(rectPts(x, y, w, h), { wash: '#9FD6F2', washOp: op, ink: null });
+      paint(ellPts(x + w * .78, y + h * .2, w * .09, w * .09, 18), { wash: TK.yellowLt, washOp: op, ink: null });
+      paint([[x, y + h * .68], [x + w * .4, y + h * .6], [x + w, y + h * .66], [x + w, y + h], [x, y + h]], { wash: '#8CC66E', washOp: op, ink: null });
+      for (let i = 0; i < 3; i++) {
+        const tx_ = x + w * (.14 + i * .36), ty = y + h * .62;
+        paint(rectPts(tx_ - 6, ty, 12, h * .14), { wash: '#7A5234', washOp: op, ink: null });
+        paint(ellPts(tx_, ty - h * .04, w * .1, h * .12, 16), { wash: '#4E9A58', washOp: op, ink: null });
       }
-      // the door, blocked by the pile
-      paint(rectPts(1040, 290, 170, 410, 1), { wash: '#8C4A2A', fill: '#5E2E18', fillOp: 90, tex: .6, border: .5, ink: INK, sw: .9 });
-      paint(rectPts(1070, 320, 110, 150), { wash: '#6E3A20', ink: INK, sw: .5 });
-      paint(ellPts(1062, 520, 11, 11, 10), { wash: C.hazard, ink: INK, sw: .5 });
-      paint(rectPts(1035, 212, 180, 62, 1), { wash: '#2FBF71', ink: INK, sw: .6 });
-      a02_tx('ВЫХОД', 1125, 245, 40, C.cream);
-      // coat hook (empty: he's already dressed)
-      inkLine([[260, 300], [420, 300]], 3, '#5E2E18', 'ink', 0);
-      a02_chute(975, 250, 120, t, hitK(t, A_HITS, .25));
-      // parcels: fall from the chute onto the pile
-      for (let i = 0; i < nh; i++) {
-        const age = t - A_HITS[i], [px, py, pr] = A_PILE[i], p = clamp(age / .22), sy = 250 + 60;
-        const x = lerp(975, px, p), y = lerp(sy, py, easeIn(p)), sq = age > .22 ? Math.exp(-(age - .22) * 14) * .2 : 0;
-        push(); translate(x, y); scale(1 + sq, 1 - sq); translate(-x, -y); a02_parcel(x, y, 160, A_LOOT[i][0], pr * p); pop();
+      const bx = x + w * .5, by = y + h * .86;                                          // bench
+      paint(rectPts(bx - w * .14, by - h * .08, w * .28, h * .03), { wash: '#A0643A', washOp: op, ink: null });
+      paint(rectPts(bx - w * .14, by - h * .035, w * .28, h * .03), { wash: '#A0643A', washOp: op, ink: null });
+      for (const e of [-1, 1]) paint(rectPts(bx + e * w * .11 - 3, by, 6, h * .05), { wash: '#5A3A22', washOp: op, ink: null });
+      const kx = x + w * .3 + Math.sin(t * 1.7) * w * .05, ky = y + h * .24 + Math.sin(t * 2.3) * h * .03, ks = w * .06;   // kite
+      paint([[kx, ky - ks], [kx + ks * .7, ky], [kx, ky + ks * 1.2], [kx - ks * .7, ky]], { wash: TK.ember, washOp: op, ink: park > .5 ? INK : null, sw: .5 });
+      const tail = []; for (let i = 0; i <= 6; i++) tail.push([kx + i * w * .025 + Math.sin(t * 5 + i) * 6, ky + ks * 1.2 + i * h * .045]);
+      if (park > .5) inkLine(tail, .6, INK, 'inkfine', .5);
+      if (park > .5) inkLine([[kx, ky + ks * 1.2], [x + w * .56, y + h * .82]], .35, INK, 'inkfine', .3);
+    }
+    paint(rectPts(x, y, w, h), { ink: TK.cream, sw: 3.2 });
+    inkLine([[x + w / 2, y], [x + w / 2, y + h]], 3, TK.cream, 'ink', 0);
+    inkLine([[x, y + h * .45], [x + w, y + h * .45]], 3, TK.cream, 'ink', 0);
+    paint(rectPts(x - 18, y - 18, w + 36, h + 36), { ink: INK, sw: 1.2 });
+    paint(rectPts(x - 30, y + h + 10, w + 60, 26), { wash: TK.cream, ink: INK, sw: .9 });
+  }
+  function wall() {
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: WALL, fill: WALLDK, fillOp: 70, bleed: .1, tex: .6, border: .3, ink: null });
+    for (let i = 0; i < 9; i++) inkLine([[i * 240 + 40, -20], [i * 240 + 40, H + 20]], .35, WALLDK, 'inkfine', 0);
+    glowAt(380, 420, 520, C.sodium, 45);
+  }
+  function stickyNote(x, y, n) {
+    paint(rectPts(x, y, 310, 300, 1.5), { wash: '#FFE27A', fill: C.hazard, fillOp: 60, tex: .5, ink: INK, sw: .7 });
+    tx('ДЕЛА:', x + 155, y + 42, 44, '#2B2233');
+    ['отчёт', 'созвон', 'почта'].forEach((s, i) => {
+      const ly = y + 110 + i * 62;
+      tx(s, x + 30, ly, 40, '#2B2233', { align: 'left' });
+      if (n > i) {
+        const k = clamp((n - i) * 3), cx = x + 255, cy = ly;
+        inkLine([[cx - 18, cy], [cx - 18 + 12 * Math.min(1, k * 2), cy + 12 * Math.min(1, k * 2)], ...(k > .5 ? [[cx - 6 + 26 * (k - .5) * 2, cy + 12 - 32 * (k - .5) * 2]] : [])], 2.4, TK.green, 'marker', 0);
       }
-      // Clawd steps from button to button on the hits
-      const gx = kf(t, [[20.1, 150], [20.65, 230], [21.29, 350], [21.77, 470], [22.27, 590], [22.65, 620]], easeOut), walk = t * 2.4;
-      const surprised = nh >= 3;
-      a02_clawd(gx, fy + 60, 19, t, { walk, dy: -Math.abs(Math.sin(walk * Math.PI)) * .6, aL: .3, aR: nh ? .9 : .3,
-        eyes: nh ? 'look' : 'normal', lookX: 1, mouth: surprised ? 'O' : nh ? 'o' : 'smile', emote: nh >= 2 ? '!?' : null, emoteK: clamp((t - A_HITS[1]) / .3) });
     });
-    // «+1 ЗАКАЗ» strips on each drop
-    a02_free(t, () => { if (nh && A_LOOT[nh - 1][1]) a02_order('+1 ЗАКАЗ: ' + A_LOOT[nh - 1][1], 560, 360 + (nh % 2) * 40, t - A_HITS[nh - 1], -.05 + (nh % 2) * .07); });
-    a02_panel(t, 1310, 70, 540, 360, 7, () => {
-      paint(rectPts(1350, 110, 460, 70), { wash: '#D8263A', ink: null });
-      for (let i = 0; i < 7; i++) paint(ellPts(1385 + i * 65, 118, 10, 10, 8), { wash: C.gunDk, ink: null });
-      punkText('ПЯТНИЦА', 1580, 285, 72, t, 20.1, { seed: 3 });
-    }, { rot: .04 });
-    a02_panel(t, 1320, 470, 520, 440, 11, () => {
-      a02_tx('ДЕЛА:', 1440, 540, 46, INK);
-      ['отчёт', 'созвон', 'код'].forEach((s, i) => {
-        const y = 630 + i * 82, tk = t - (20.55 + i * .5);
-        paint(rectPts(1380, y - 26, 52, 52, 1), { wash: '#FFFFFF', ink: INK, sw: .7 });
-        if (tk > 0) inkLine([[1386, y - 2], [1402, y + 18], [1440, y - 40]].map((p, j) => j < 2 || tk > .08 ? p : [lerp(1402, 1440, tk / .08), lerp(y + 18, y - 40, tk / .08)]), 3.2, '#1E8A3C', 'ink', 0);
-        a02_tx(s, 1460, y, 42, tk > .1 ? '#8A8480' : INK, { align: 'left' });
-        if (tk > .1) inkLine([[1455, y + 2], [1455 + textW(s, ruFont(42)) * ease((tk - .1) / .15), y - 2]], 1.6, INK, 'inkfine', 0);
-      });
-      stamp('ПОЗАДИ', 1640, 840, 44, t, 22.1, { col: '#1E8A3C', rot: -.14 });
-    }, { rot: -.05 });
+  }
+  function laptopSide(x, y, k = 1.3) {
+    push(); translate(x, y); scale(k); translate(-x, -y);
+    paint([[x, y], [x + 260, y], [x + 262, y - 14], [x + 2, y - 14]], { wash: C.steelLt, ink: INK, sw: .8 });
+    paint([[x + 250, y - 12], [x + 320, y - 230], [x + 336, y - 226], [x + 266, y - 8]], { wash: C.steel, ink: INK, sw: .8 });
+    glowAt(x + 180, y - 120, 190, '#9FC4FF', 55);
+    token(x + 318, y - 118, 13, { ink: false });
+    pop();
+  }
+  function desk(y) {
+    paint(rectPts(-60, y, W + 120, H - y + 80), { wash: '#6E5A4A', fill: C.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: 1 });
+    inkLine([[-40, y + 22], [W + 40, y + 22]], .6, C.gunDk, 'inkfine', 0);
+  }
+  function room(t, o = {}) {
+    wall();
+    windowView(140, 150, 500, 460, t, o.park || 0);
+    stickyNote(1080, 130, o.checks ?? 3);
+    calendar(1480, 150, 320, 400, o.cur || DAYS.fr, o.next, o.flip || 0);
+  }
+
+  // ---------- 20.1 «Пятница, дела позади» ----------
+  const TICKS = [20.65, 21.29, 21.77], T_STR = 22.27;
+  function friday(t, lt) {
+    camBegin(960 + lt * 10, 540, 1 + lt * .01);
+    const n = TICKS.reduce((a, h) => a + seg(t, h, h + .2), 0);
+    room(t, { cur: DAYS.th, next: DAYS.fr, flip: seg(t, 20.12, 20.45), checks: n });
+    const stretch = seg(t, T_STR, T_STR + .35);
+    clawd(820, 870, 40, {
+      noShadow: true, mouth: stretch > .5 ? 'smile' : 'flat', ...mood(t, [[20.1, 'narrow'], [T_STR, 'happy']]),
+      aL: lerp(-.3, 1.9, stretch) + (stretch > .9 ? .1 * Math.sin(t * 6) : 0), aR: lerp(-.1, 1.9, stretch), dy: -stretch * .4,
+    });
+    laptopSide(1060, 802);
+    desk(800);
+    camEnd();
+    flash(.5 * Math.exp(-lt * 6), C.sodium);
     glitchCut(t, 20.1);
   }
 
-  // ---------- 22.65 limits intact → half-way ----------
-  function a02_limits(t, lt) {
-    a02_wall(t, C.gunDk, C.acid, 4);
-    const cy = kf(t, [[22.65, 380], [23.4, 400], [23.66, 560], [24.02, 660]], easeOut), z = kf(t, [[22.65, 1.14], [23.4, 1.1], [23.66, 1.0], [24.02, 1.02], [25.25, 1.06]]);
-    a02_view(t, W / 2, cy, z, 0, 16);
-    a02_panel(t, 200, 110, 1520, 440, 5, () => {
-      const g = .5 + .5 * hitK(t, [23.23, 23.36], .3);
-      limitBar(300, 290, 1320, 1, { h: 110, glow: g });
-      stamp('ЛИМИТЫ ЦЕЛЫ', 960, 480, 58, t, 23.36, { col: C.acid, rot: -.05 });
-      token(1620, 230, 44, { spin: t * .8, glow: .4 });
-    }, { col: '#26292F', rot: -.02 });
-    a02_panel(t, 150, 600, 1620, 330, 9, () => {
-      const cw = 212, x0 = 230;
-      DAYS.forEach((d, i) => {
-        const x = x0 + i * cw, we = i >= 5;
-        paint(rectPts(x, 650, cw - 16, 240, 1), { wash: we ? '#E6F7B8' : '#FFFFFF', fill: we ? C.acid : '#E9E2D6', fillOp: we ? 60 : 40, tex: .4, ink: INK, sw: .6 });
-        paint(rectPts(x, 650, cw - 16, 50), { wash: we ? C.magenta : C.gunmetal, ink: null });
-        a02_tx(d, x + (cw - 16) / 2, 676, 42, C.cream);
-        if (i < 4) {
-          const k = clamp((t - 23.7 - i * .06) / .08);
-          if (k > 0) { inkLine([[x + 30, 730], [lerp(x + 30, x + cw - 46, k), lerp(730, 860, k)]], 3, '#D8263A', 'ink', 0); inkLine([[x + cw - 46, 730], [lerp(x + cw - 46, x + 30, k), lerp(730, 860, k)]], 3, '#D8263A', 'ink', 0); }
-        }
-      });
-      // a tiny dressed Clawd walks the week and stops on ПТ
-      const wx = kf(t, [[23.7, x0 + 98], [24.02, x0 + 4 * cw + 98]], x => x);
-      a02_clawd(wx, 800, 7, t, { walk: t * 3, mouth: 'smile', noShadow: true });
-      const ck = clamp((t - 24.02) / .2);
-      if (ck > 0) { const pts = ellPts(x0 + 4 * cw + 98, 770, 118, 128, 24).slice(0, Math.max(3, Math.round(24 * ck))); inkLine(pts, 4, '#D8263A', 'ink', .5); }
-      stamp('ПОЛПУТИ', x0 + 4 * cw + 98, 575, 50, t, 24.1, { col: '#D8263A', rot: .06 });
-    }, { s: 1 + .05 * hitK(t, [24.18], .2), rot: .015 });
+  // ---------- 22.65 «Лимиты целы, полпути»: the laptop screen ----------
+  function screen(t, lt) {
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.steel, fillOp: 70, tex: .5, ink: null });
+    camBegin(960, 520, 1 + lt * .035);
+    paint(rrPts(140, 60, 1640, 900, 40), { wash: '#1E232A', ink: INK, sw: 1.4 });
+    paint(rectPts(190, 110, 1540, 800), { wash: '#15181D', fill: '#232A36', fillOp: 90, tex: .4, ink: null });
+    tx('Использование', 260, 190, 48, TK.ash, { align: 'left' });
+    tx('сброс: вс, 23:59', 1660, 190, 40, TK.ash, { align: 'right' });
+    const v = .5, bx = 300, bw = 1320, by = 360;
+    limitBar(bx, by, bw, v, { glow: .4 + .5 * hitK(t, [23.23, 24.18], .3) });
+    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    days.forEach((d, i) => {
+      const x = bx + i * bw / 7, cur = i === 4, past = i < 4;
+      paint(rrPts(x + 8, 600, bw / 7 - 16, 110, 16), { wash: cur ? C.sodium : past ? '#2E3440' : '#232A36', ink: cur ? TK.cream : C.steelLt, sw: .8 });
+      tx(d, x + bw / 14, 655, 46, cur ? TK.soot : past ? TK.ash : TK.cream);
+      if (past) inkLine([[x + 30, 690], [x + bw / 7 - 30, 620]], 1, TK.ash, 'inkfine', 0);
+    });
+    const fk = backOut(seg(t, 24.02, 24.32)), fx = bx + (bw - bw * .085 * .3) * v + 14;   // «по-пути»: the halfway flag
+    if (fk > .02) {
+      inkLine([[fx, by + 10], [fx, by - 220 * fk]], 2.4, TK.cream, 'ink', 0);
+      paint([[fx, by - 220 * fk], [fx + 150 * fk, by - 190 * fk], [fx, by - 160 * fk]], { wash: C.hazard, ink: INK, sw: .8 });
+      tx('½', fx + 52 * fk, by - 190 * fk, 44 * fk, TK.soot);
+    }
+    stamp('ПОЛПУТИ', 1300, 820, 80, t, 24.18, { col: C.hazard, rot: -.07 });
+    camEnd();
   }
 
-  // ---------- 25.25 the park calls; the latch orders a walking agent ----------
-  function a02_park(t, lt) {
-    a02_wall(t, '#3B2A66', C.magenta, 8);
-    a02_view(t, W / 2, H / 2, lerp(1.02, 1.08, lt / 2.55));
-    const q = a02_SQ(t), open = ease((t - 25.8) / .3);
-    a02_panel(t, 120, 70, 1100, 850, 13, () => {
-      // the park outside, wobbling with the squelch
-      paint(rectPts(200, 150, 940, 690), { wash: '#9ED3F0', fill: '#6FB2DE', fillOp: 90, bleed: .15, tex: .5, ink: null });
-      paint(ellPts(980, 260, 60, 60, 20), { wash: '#FFE38A', fill: C.hazard, fillOp: 80, ink: null });
-      const hill = []; for (let i = 0; i <= 20; i++) { const x = 200 + i * 47; hill.push([x, 600 + Math.sin(i * .6 + 1) * 30 + Math.sin(i * .6 + t * 6) * q * 14]); }
-      paint([...hill, [1140, 840], [200, 840]], { wash: '#7FBF5A', fill: '#4E8F3A', fillOp: 90, bleed: .15, tex: .6, ink: null });
-      paint([[560, 840], [640, 600], [700, 600], [860, 840]], { wash: '#E6D3A0', washOp: 200, ink: null });
-      [[330, 580, 1], [470, 560, .8], [1000, 575, 1.1]].forEach(([x, y, s], i) => {
-        const sway = Math.sin(t * 5 + i) * (8 + 30 * q) * s;
-        paint(rectPts(x - 10 * s, y - 20, 20 * s, 90 * s), { wash: '#6E4A2A', ink: INK, sw: .4 });
-        paint(ellPts(x + sway, y - 70 * s, 80 * s, 95 * s, 18, 3), { wash: '#6FAE4A', fill: '#3E7A2E', fillOp: 110, bleed: .2, tex: .7, ink: INK, sw: .5 });
-      });
-      // the beckoning tree waves a branch-hand: «ИДИ СЮДА!»
-      const bk = Math.sin(t * 9) * .35;
-      inkLine([[1000, 520], [1060, 470], [1060 + Math.cos(-1 + bk) * 60, 470 + Math.sin(-1 + bk) * 60]], 5, '#6E4A2A', 'ink', .4);
-      a02_bubble('ИДИ СЮДА!', 880, 380, 44, t - 25.35);
-      // the park-bot takes the walk instead
-      if (t > 26.27) { const ax = lerp(560, 760, clamp((t - 26.27) / 1.5)); agentBot(ax, 770, 10, t, { n: 1, walk: t * 2.4, aR: 1.2 + Math.sin(t * 10) * .4, mouth: 'smile', eyes: 'happy', noShadow: true }); }
-      // window frame + opening sash
-      paint(rectPts(190, 140, 960, 710, 1), { ink: '#F5EFE2', sw: 3 });
-      paint(rectPts(660, 140, 20, 710), { wash: '#F5EFE2', ink: INK, sw: .5 });
-      paint(rectPts(190, 480, 960, 20), { wash: '#F5EFE2', ink: INK, sw: .5 });
-      if (open > .02) paint(rectPts(680, 150, 460 * (1 - open * .7), 690), { wash: '#DDEFF8', washOp: 70, ink: INK, sw: .5 });
-      paint(rectPts(150, 840, 1040, 50, 1), { wash: '#F5EFE2', fill: '#D9CBB0', fillOp: 60, ink: INK, sw: .7 });
-      paint(rrPts(640, 620, 60, 22, 8), { wash: C.hazard, ink: INK, sw: .5 });                        // the latch = a lever
-      if (t > 27.0) {                                                                                   // «но в воскресенье»
-        const k = backOut((t - 27.0) / .25);
-        paint(rotPts(rectPts(840, 170 - (1 - k) * 200, 250, 280, 1), 965, 310, .1), { wash: '#FFFFFF', ink: INK, sw: .7 });
-        paint(rotPts(rectPts(840, 170 - (1 - k) * 200, 250, 70), 965, 310, .1), { wash: C.magenta, ink: null });
-        a02_tx('ВС', 958, 330 - (1 - k) * 200, 110, '#D8263A', { rot: .1 });
-        fire(1070, 450 - (1 - k) * 200, 60, 90, t, { k: .8, seed: 4 });
-      }
-    }, { rot: -.01 });
-    // Clawd at the sill pulls the latch (it's a lever) at 25.8
-    a02_free(t, () => a02_clawd(1090, 905, 22, t, { flip: true, aR: t > 25.7 ? 1.6 : .3, aL: .2, eyes: t > 27 ? 'scared' : 'look', lookX: -1, mouth: t > 27 ? 'o' : t > 26.27 ? 'flat' : 'smile' }));
-    a02_panel(t, 1300, 100, 520, 780, 17, () => {
-      paint(rectPts(1350, 140, 420, 700), { wash: '#4A3A6A', fill: '#2E2248', fillOp: 70, tex: .5, ink: null });
-      a02_chute(1560, 420, 140, t, hitK(t, [25.8], .25));
-      if (t > 25.8) {
-        const age = t - 25.8, p = clamp(age / .2), y = lerp(480, 720, easeIn(p));
-        a02_parcel(1560, y, 220, 'ПАРК-БОТ', p * .08);
-      }
-    }, { rot: .03 });
-    a02_free(t, () => a02_order('+1 ЗАКАЗ: ПАРК-БОТ', 1250, 200, t - 25.8, .04));
+  // ---------- 25.25 «Парк зовёт, но в воскресенье»: the window becomes a park; the calendar runs to Sunday ----------
+  function park(t, lt) {
+    const pkk = ease(seg(t, 25.32, 25.9)), f1 = seg(t, 26.27, 26.57), f2 = seg(t, 26.9, 27.2);
+    camBegin(lerp(700, 1000, ease(seg(t, 25.8, 26.4))), 470, 1.12);
+    const cal = t < 26.9 ? { cur: DAYS.fr, next: DAYS.sa, flip: f1 } : { cur: DAYS.sa, next: DAYS.su, flip: f2 };
+    room(t, { park: pkk, ...cal });
+    if (pkk > .3) for (let k = 0; k < 4; k++) { const f = frac(t * .7 + k / 4); paint(starPts(200 + hash(k) * 380, 220 + hash(k + 3) * 300, 16 * Math.sin(f * Math.PI), .3), { wash: TK.cream, ink: null }); }
+    const turn = t >= 26.27;
+    clawd(820, 870, 40, {
+      noShadow: true, eyes: 'look', lookX: turn ? 1 : -1, lookY: -.5, mouth: turn ? 'o' : 'smile',
+      aL: turn ? .2 : .9 + .15 * Math.sin(t * 5), aR: -.1, ...(t > 26.95 ? { emote: '!', emoteK: seg(t, 26.95, 27.15) } : {}),
+    });
+    laptopSide(1060, 802);
+    desk(800);
+    camEnd();
   }
-  function a02_bubble(txt, x, y, fs, age) {
-    if (age < 0) return;
-    const k = backOut(age / .2), w = textW(txt, ruFont(fs)) + 60, h = fs * 2;
-    push(); translate(x, y); scale(k);
-    paint([...rrPts(-w / 2, -h / 2, w, h, h * .4)], { wash: '#FFFFFF', ink: INK, sw: .8 });
-    paint([[w * .15, h / 2 - 4], [w * .32, h / 2 + 40], [w * .3, h / 2 - 4]], { wash: '#FFFFFF', ink: null });
+
+  // ---------- 27.8 «всё сгорит»: the Sunday page burns ----------
+  function burn(t, lt) {
+    const ig = 28.1, b = ease(seg(t, ig, 30.0)), p = pk(t);
+    const [shx, shy] = shakeXY(t, t > ig ? 4 + 5 * p : 0);
+    wall();
+    camBegin(960 + shx, 470 + shy, 1 + lt * .03);
+    const x = 560, y = 60, w = 800, h = 880, hh = h * .2, py = y + hh, ph = h - hh, yb = y + h - (ph + 30) * b;
+    paint(rectPts(x + 16, y + 20, w, h), { fill: INK, fillOp: 70, bleed: .2, ink: null });
+    if (yb > py + 4) {
+      paint(rectPts(x, py, w, yb - py), { wash: TK.cream, fill: mixCol('#E9DCC4', C.sodium, b * .4), fillOp: 80, tex: .4, ink: INK, sw: 1.6 });
+      if (yb > py + ph * .52) tx('27', x + w / 2, py + ph * .38, ph * .44, TK.ember);
+      if (yb > py + ph * .78) tx('ВОСКРЕСЕНЬЕ', x + w / 2, py + ph * .7, 84, TK.ember);
+      if (yb > py + ph * .92) tx('лимит сгорает в 23:59', x + w / 2, py + ph * .86, 44, '#2B2233');
+    }
+    paint(rectPts(x - 8, y, w + 16, hh, 1), { wash: TK.ember, fill: TK.emberDk, fillOp: 70, tex: .5, ink: INK, sw: 1.6 });
+    tx('СЕНТЯБРЬ', x + w / 2, y + hh * .55, hh * .42, TK.cream);
+    for (let i = 0; i < 5; i++) paint(ellPts(x + w * (.18 + i * .16), y + 6, 14, 22, 8), { wash: C.steelLt, ink: INK, sw: .6 });
+    flushLetters();                                                          // the flames go over the lettering
+    if (t > ig) {
+      const edge = []; for (let i = 0; i <= 16; i++) edge.push([x - 10 + i * (w + 20) / 16, yb + Math.sin(i * 1.9 + t * 3) * 14 + (i % 2) * 10]);
+      paint([...edge, [x + w + 10, yb + 40], [x - 10, yb + 40]], { wash: TK.soot, fill: TK.emberDk, fillOp: 90, tex: .7, ink: null });
+      inkLine(edge, 2, C.sodium, 'marker', .4);
+      const fk = clamp((t - ig) / .4) * (b < .98 ? 1 : 1 - seg(t, 30.0, 30.2));
+      fire(x + w / 2, yb + 20, w * 1.1, 360, t, { k: fk * (1 + .15 * p), seed: 90, n: 8, cols: [C.rust, C.sodium, C.hazard] });
+      smoke(x + w / 2, yb - 200, t, { n: 6, r: 80, h: 500, seed: 3 });
+      for (let i = 0; i < 12; i++) {                                         // falling ash
+        const q = frac(t * .6 + hash(i)), ax = x + hash(i + 5) * w, ay = yb + 40 + q * 500;
+        paint(ellPts(ax + Math.sin(t * 3 + i) * 20, ay, 7, 4, 6, 0, t + i), { wash: q < .3 ? C.sodium : TK.ash, washOp: 255 * (1 - q), ink: null });
+      }
+    }
+    camEnd();
+    flash(.35 * Math.exp(-(t - ig) * 7) * (t > ig), C.hazard);
+  }
+
+  // ---------- 30.5 «Сайт не нужен, бот не нужен» → 32.5 «Но лимиты ждут»: waved off, then the bar's beam hauls him up ----------
+  function siteIcon(x, y, s, rot = 0) {
+    push(); translate(x, y); rotate(rot); scale(s);
+    paint(rrPts(-120, -85, 240, 170, 16), { wash: '#FBF8F2', ink: INK, sw: 1 });
+    paint(rrPts(-120, -85, 240, 36, 12), { wash: C.steel, ink: null });
+    for (let i = 0; i < 3; i++) paint(ellPts(-100 + i * 18, -67, 5, 5, 8), { wash: TK.cream, ink: null });
+    for (let i = 0; i < 3; i++) paint(rectPts(-90, 20 + i * 18, 180 - i * 40, 8), { wash: '#C9C4BC', ink: null });
     pop();
-    a02_tx(txt, x, y, fs * k, INK, { rot: Math.sin(age * 12) * .04 });
+    tx('www', x + Math.sin(rot) * 10, y - 12 * s, 48 * s, TK.blue, { rot });
+  }
+  const hover = (t, s, x, y) => [x + Math.sin(t * 1.3 + s) * 16, y + Math.sin(t * 2 + s) * 18];
+  const T_BEAM = 32.5;
+  function wave(t, lt) {
+    wall();
+    const beam = t >= T_BEAM, bk = seg(t, T_BEAM, 33.0), lift = ease(seg(t, 32.96, 33.98));
+    camBegin(960, 520 - (beam ? 40 * lift : 0), beam ? 1.08 + lt * .03 : 1.02 + lt * .015);
+    windowView(80, 190, 380, 360, t, 0);
+    paint(rectPts(-100, 880, W + 200, 400), { wash: '#6E6258', fill: C.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: .8 });   // floor
+    const p = pk(t);
+    limitBar(440, 150, 1040, .5, { glow: beam ? .8 + .4 * p : .3 + .3 * p });
+    if (beam) {
+      const cy = 880 - lift * 360;
+      paint([[840, 250], [1080, 250], [1200, cy], [720, cy]], { wash: C.hazard, washOp: 130 * bk, ink: null });
+      paint([[900, 250], [1020, 250], [1080, cy], [840, cy]], { wash: TK.yellowLt, washOp: 150 * bk, ink: null });
+      for (let i = 0; i < 6; i++) { const f = frac(t * 1.5 + i / 6); token(lerp(800, 1120, hash(i)), lerp(cy - 60, 290, f), 14, { spin: t + i, ink: false }); }
+      stamp('ЛИМИТЫ ЖДУТ', 960, 690, 72, t, 33.44, { col: C.hazard, rot: -.06 });
+    }
+    const off1 = seg(t, 30.9, 31.45), off2 = seg(t, 31.58, 32.1);
+    let [ax, ay] = hover(t, 0, 440, 600); ax -= easeIn(off1) * 900; ay -= easeIn(off1) * 300;
+    if (off1 < 1) siteIcon(ax, ay, 1.5 - off1 * .5, -off1 * 3);
+    let [bx, by] = hover(t, 2, 1480, 640); bx += easeIn(off2) * 900; by -= easeIn(off2) * 300;
+    if (off2 < 1) { push(); translate(bx, by); rotate(off2 * 3); agentBot(0, 60, 22, t, { n: 1, noShadow: true, eyes: 'scared', mouth: 'o', aL: 1.2, aR: 1.2 }); pop(); }
+    if (off1 > 0 && off1 < .5) sfx('НЕ НУЖЕН', 420, 360, 60, TK.soot, off1 * .55, { font: ruFont(60), life: .5 });
+    if (off2 > 0 && off2 < .5) sfx('НЕ НУЖЕН', 1500, 440, 60, TK.soot, off2 * .52, { font: ruFont(60), life: .5 });
+    const wL = t > 30.55 && t < 31.2 ? Math.sin((t - 30.55) * 18) : 0, wR = t > 31.3 && t < 31.95 ? Math.sin((t - 31.3) * 18) : 0;
+    clawd(960, 900 - lift * 360, 34, {
+      noShadow: lift > .05, rot: beam ? Math.sin(t * 7) * .06 * lift - .04 * bk : 0, sq: beam ? -.08 * lift : 0,
+      eyes: beam ? 'spark' : 'narrow', mouth: beam ? 'O' : 'flat',
+      aL: beam ? 1.9 : .3 + wL * .7 + (wL ? .8 : 0), aR: beam ? 1.9 : .3 + wR * .7 + (wR ? .8 : 0),
+    });
+    camEnd();
+    if (beam) flash(.3 * Math.exp(-(t - T_BEAM) * 8), C.hazard);
   }
 
-  // ---------- 27.8 the weekend is a consumable ----------
-  const D_SHEETS = [['СБ', 27.85], ['ВС', 28.45]], D_SPD = 620, D_PRESS = 960, D_FURN = 1480;
-  function a02_furnace(t, lt) {
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: C.gunDk, fill: C.gunmetal, fillOp: 90, bleed: .1, tex: .5, ink: null });
-    a02_view(t, 1000, 540, lerp(1.1, 1.18, lt / 2.7), 0, 14);
-    const fed = D_SHEETS.map(([, ts]) => ts + (D_FURN - 640) / D_SPD), flare = hitK(t, fed, .45);
-    a02_free(t, () => {
-      glowAt(D_FURN + 130, 560, 520, C.sodium, 60 + 90 * flare);
-      // the furnace
-      paint(rectPts(D_FURN - 40, 250, 420, 560, 2), { wash: '#3A3336', fill: C.rust, fillOp: 60, tex: .6, border: .5, ink: INK, sw: 1 });
-      paint(rrPts(D_FURN - 10, 480, 300, 250, 30), { wash: '#1A1011', ink: INK, sw: .8 });
-      fire(D_FURN + 140, 730, 280, 200 + 140 * flare, t, { k: .9 + flare, seed: 12 });
-      paint(rectPts(D_FURN - 20, 280, 380, 150, 1), { wash: C.rust, ink: INK, sw: .7 });
-      a02_tx('ТОПКА', D_FURN + 170, 355, 64, C.hazard);
-      smoke(D_FURN + 300, 250, t, { n: 5, h: 240, r: 40, col: '#4A4448', seed: 3 });
-      hazard(-40, 880, W + 80, 40);
-      // belt + the tiny press
-      conveyor(560, 700, D_FURN - 560, t, { items: [() => {}], speed: D_SPD, legs: 150, h: 40 });
-      // the sheets ride from the calendar through the press into the fire
-      D_SHEETS.forEach(([d, ts], i) => {
-        if (t < ts) return;
-        const age = t - ts, x = 640 + age * D_SPD - (age < .15 ? (1 - age / .15) * 200 : 0), y = age < .15 ? lerp(420, 700, ease(age / .15)) : 700;
-        if (x > D_FURN + 120) return;
-        const squash = hitK(t, [ts + (D_PRESS - 640) / D_SPD], .12) * .4, burn = clamp((x - D_FURN + 60) / 160);
-        push(); translate(x, y); scale(1, 1 - squash); translate(-x, -y);
-        paint(rectPts(x - 80, y - 190, 160, 190, 1), { wash: mixCol('#FFFFFF', '#3A2A20', burn), ink: INK, sw: .6 });
-        paint(rectPts(x - 80, y - 190, 160, 40), { wash: C.magenta, ink: null });
-        pop();
-        a02_tx(d, x, y - 95 * (1 - squash), 80 * (1 - burn * .5), '#D8263A');
-        if (t > ts + (D_PRESS - 640) / D_SPD) a02_tx('СГОРИТ', x, y - 40, 40, C.rust, { rot: -.15, stroke: C.cream });
-        if (burn > .05) fire(x, y, 170, 200 * burn, t, { k: burn, seed: 20 + i });
-      });
-      press(D_PRESS - 110, 300, 220, 400, t, D_SHEETS.map(([, ts]) => ts + (D_PRESS - 640) / D_SPD), { token: false, label: 'ШТАМП', seed: 4 });
-    });
-    // the tear-off calendar block
-    a02_panel(t, 110, 150, 470, 620, 21, () => {
-      const top = t < 27.85 ? 'СБ' : t < 28.45 ? 'ВС' : 'ПН', nx = top === 'ПН';
-      paint(rectPts(170, 210, 350, 420, 1), { wash: '#FFFFFF', fill: '#E9E2D6', fillOp: 40, ink: INK, sw: .8 });
-      paint(rectPts(170, 210, 350, 80), { wash: nx ? C.gunmetal : C.magenta, ink: null });
-      for (let i = 0; i < 8; i++) paint(ellPts(195 + i * 43, 215, 9, 9, 8), { wash: C.gunDk, ink: null });
-      a02_tx(nx ? 'НЕДЕЛЯ 40' : 'ВЫХОДНЫЕ', 345, 252, 44, C.cream);
-      a02_tx(top, 345, 440, 170, nx ? INK : '#D8263A');
-      for (const [, ts] of D_SHEETS) { const a = t - ts; if (a > 0 && a < .15) paint([[170, 300], [520, 300], [520 - a * 900, 640], [170, 630]], { wash: '#FFFFFF', washOp: 200 * (1 - a / .15), ink: INK, sw: .5 }); }
-    }, { rot: -.03 });
-    a02_free(t, () => {
-      a02_clawd(560, 860, 14, t, { flip: false, aL: 1.4, aR: 1.4, eyes: 'scared', mouth: 'O', lookX: 1 });
-      stamp('ВОЗВРАТУ НЕ ПОДЛЕЖИТ', 1020, 230, 56, t, 29.3, { col: '#D8263A', rot: -.04 });
-    });
+  // ---------- 33.98 «вперёд, к луне!»: the bar is a rocket ----------
+  function rocket(t, lt) {
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: '#2A3448', fillOp: 90, bleed: .1, tex: .5, ink: null });
+    for (let i = 0; i < 40; i++) { const tw = .5 + .5 * Math.sin(t * 3 + i * 2.1); paint(starPts(hash(i) * W, hash(i + 50) * 800, 4 + 6 * tw * hash(i + 9), .35), { wash: TK.cream, washOp: 150 + 100 * tw, ink: null }); }
+    const mx = 1560, my = 240, mk = backOut(seg(t, 34.6, 34.9));
+    glowAt(mx, my, 260, TK.cream, 30 + 30 * mk);
+    paint(ellPts(mx, my, 150, 150, 30), { wash: '#F4ECD2', fill: '#CFC3A2', fillOp: 90, tex: .6, ink: INK, sw: 1.2 });
+    for (const [cx, cy, r] of [[-50, -30, 30], [40, 40, 22], [60, -60, 14], [-20, 70, 18]]) paint(ellPts(mx + cx, my + cy, r, r * .85, 12), { wash: '#BDB08E', ink: INK, sw: .4 });
+    inkLine([[mx - 60, my + 50], [mx - 10, my + 68], [mx + 40, my + 50]], 1.2, INK, 'ink', .5);                             // the moon smiles, deadpan
+    const pr = ease(seg(t, 33.98, 35.05)), sx = lerp(420, 1180, pr), sy = lerp(900, 420, pr), rot = -.45;
+    const ww = 760, hb = ww * .085, c = Math.cos(rot), s = Math.sin(rot);
+    const Wx = (sx - W / 2) * c + (sy - H / 2) * s, Wy = -(sx - W / 2) * s + (sy - H / 2) * c;
+    for (let i = 0; i < 7; i++) { const q = i / 7; paint(ellPts(sx - c * (ww * .55 + q * 420), sy - s * (ww * .55 + q * 420) + q * 40, 40 + q * 60, 34 + q * 50, 14), { fill: TK.sootLt, fillOp: 160 * (1 - q), bleed: .3, ink: null }); }
+    camBegin(W / 2, H / 2, 1, rot);
+    const x0 = Wx - ww / 2 + W / 2, y0 = Wy - hb / 2 + H / 2;
+    push(); translate(x0, y0 + hb / 2); rotate(-Math.PI / 2);
+    fire(0, 0, hb * 1.4, 300 * (1 + .2 * pk(t * 2)), t, { seed: 13, n: 4, cols: [C.rust, C.sodium, C.hazard] });
+    pop();
+    paint([[x0 - 10, y0 - 40], [x0 + 110, y0], [x0 + 110, y0 + hb], [x0 - 10, y0 + hb + 40]], { wash: C.rust, ink: INK, sw: .9 });   // fins
+    paint([[x0 + ww - 20, y0 - 6], [x0 + ww + 150, y0 + hb / 2], [x0 + ww - 20, y0 + hb + 6]], { wash: TK.cream, fill: C.hazard, fillOp: 60, ink: INK, sw: .9, curv: .3 });   // nose
+    limitBar(x0, y0, ww, .5, { glow: .6, label: 'К ЛУНЕ' });
+    clawd(x0 + ww * .55, y0 + 4, 14, { noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.8 + .2 * Math.sin(t * 12), aR: 1.6, rot: .05 });
+    camEnd();
+    flash(.3 * Math.exp(-lt * 8), TK.cream);
   }
 
-  // ---------- 30.5 site and bot waved off ----------
-  function a02_waveoff(t, lt) {
-    a02_wall(t, '#5A1E4E', C.acid, 13);
-    a02_view(t, W / 2, H / 2, lerp(1.0, 1.06, lt / 2));
-    const slapS = 30.95, slapB = 31.58;
-    a02_free(t, () => {
-      // САЙТ flies in from the left, is slapped away up-left
-      a02_icon(t, 'site', slapS, 30.5, [-300, 380], [700, 500], [-500, -300]);
-      a02_icon(t, 'bot', slapB, 31.1, [W + 300, 380], [1220, 500], [W + 500, -300]);
-      const swL = hitK(t, [slapS], .2), swR = hitK(t, [slapB], .2), smug = t > 32.0;
-      a02_clawd(960, 900, 30, t, { aL: smug ? 1.2 : .3 + swL * 2.4, aR: smug ? 1.2 : .3 + swR * 2.4, eyes: smug ? 'closed' : 'narrow', mouth: smug ? 'smile' : 'flat', rot: (swL - swR) * .08 });
-      if (t > slapS) stamp('НЕ НУЖЕН', 560, 400, 76, t, slapS + .04, { col: '#D8263A', rot: -.12 });
-      if (t > slapB) stamp('НЕ НУЖЕН', 1360, 400, 76, t, slapB + .04, { col: '#D8263A', rot: .1 });
-      if (smug) punkText('МНЕ', 960, 180, 110, t, 32.0, { seed: 6 });
-    });
+  // ---------- 35.1 «Сделай игру, чтоб никто не играл»: the empty arcade ----------
+  function web(x, y, r, sx, sy) {
+    const col = '#CFC8D8';
+    for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2; inkLine([[x, y], [x + sx * Math.cos(a) * r, y + sy * Math.sin(a) * r]], .5, col, 'inkfine', 0); }
+    for (let k = 1; k <= 3; k++) { const pts = []; for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2, rr = r * k / 3.4 * (i % 4 ? .88 : 1); pts.push([x + sx * Math.cos(a) * rr, y + sy * Math.sin(a) * rr]); } inkLine(pts, .45, col, 'inkfine', .5); }
   }
-  function a02_icon(t, kind, tSlap, tIn, from, at, away) {
-    if (t < tIn) return;
-    let x, y, rot = 0, s = 1;
-    if (t < tSlap) { const p = easeOut((t - tIn) / (tSlap - tIn - .08)); x = lerp(from[0], at[0], p); y = lerp(from[1], at[1], p) + Math.sin(t * 8) * 10; rot = (1 - p) * .4 * Math.sign(from[0] - at[0]); }
-    else { const p = (t - tSlap) / .45; if (p > 1) return; x = lerp(at[0], away[0], easeIn(p) * .9 + p * .1); y = lerp(at[1], away[1], p); rot = p * 5 * Math.sign(away[0] - at[0]); s = 1 - p * .4; }
-    const w = 300 * s, h = 230 * s, R = p => rotPts(p, x, y, rot);
-    paint(R(rectPts(x - w / 2, y - h / 2, w, h, 2)), { wash: C.cream, ink: INK, sw: .9 });
-    if (kind === 'site') {
-      paint(R(rectPts(x - w / 2, y - h / 2, w, h * .16)), { wash: C.steel, ink: null });
-      for (let i = 0; i < 3; i++) { const [cx, cy] = R([[x - w * .42 + i * w * .07, y - h * .42]])[0]; paint(ellPts(cx, cy, 6 * s, 6 * s, 8), { wash: ['#FF5F57', '#FEBC2E', '#28C840'][i], ink: null }); }
-      for (let i = 0; i < 4; i++) paint(R(rectPts(x - w * .38, y - h * .15 + i * h * .15, w * (.76 - (i % 2) * .2), h * .06)), { wash: '#B8B0A0', ink: null });
-      const [lx, ly] = R([[x, y + h * .62]])[0]; a02_tx('САЙТ', lx, ly, 56 * s, C.cream, { rot, stroke: INK });
-    } else {
-      agentBot(x, y + h * .35, 13 * s, t, { n: 404, rot, noShadow: true, eyes: 'happy', mouth: 'grin', aR: 1.4 });
-      const [lx, ly] = R([[x, y + h * .62]])[0]; a02_tx('БОТ', lx, ly, 56 * s, C.cream, { rot, stroke: INK });
+  function arcade(t, lt) {
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.gunmetal, fillOp: 90, bleed: .1, tex: .6, ink: null });
+    camBegin(960, 520 - lt * 10, 1.02 + lt * .04);
+    paint(rectPts(-100, 880, W + 200, 400), { wash: '#2A2D33', fill: C.steel, fillOp: 70, tex: .6, ink: INK, sw: .7 });
+    paint([[820, -60], [1100, -60], [1380, 900], [540, 900]], { wash: C.sodium, washOp: 34, ink: null });       // sodium spotlight
+    for (let i = 0; i < 16; i++) { const f = frac(t * .08 + hash(i)); paint(ellPts(700 + hash(i + 2) * 520 + Math.sin(t + i) * 20, 60 + f * 800, 2.5, 2.5, 5), { wash: TK.cream, washOp: 160, ink: null }); }
+    const cx = 960;
+    paint([[cx - 230, 170], [cx + 230, 170], [cx + 250, 900], [cx - 250, 900]], { wash: C.steel, fill: C.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: 1.3 });
+    paint(rectPts(cx - 240, 150, 480, 120), { wash: C.rust, fill: TK.emberDk, fillOp: 60, tex: .5, ink: INK, sw: 1.1 });   // marquee
+    tx('МОЯ ИГРА', cx, 212, 66, C.hazard);
+    paint(rectPts(cx - 190, 300, 380, 290), { wash: '#0E1410', ink: INK, sw: 1 });
+    tx('ТОКЕН-РАННЕР', cx, 375, 44, TK.green);
+    if (frac(t * 1.66) < .6) tx('ВСТАВЬТЕ ТОКЕН', cx, 460, 40, C.hazard);
+    tx('РЕКОРД: —', cx, 540, 40, TK.led);
+    paint([[cx - 230, 620], [cx + 230, 620], [cx + 270, 700], [cx - 270, 700]], { wash: C.steelLt, ink: INK, sw: 1 });       // control deck
+    inkLine([[cx - 120, 660], [cx - 120, 600]], 3, TK.soot, 'ink', 0);
+    paint(ellPts(cx - 120, 596, 18, 18, 10), { wash: TK.ember, ink: INK, sw: .6 });
+    for (let i = 0; i < 3; i++) paint(ellPts(cx + 40 + i * 60, 660, 18, 10, 10), { wash: [C.hazard, TK.green, C.sodium][i], ink: INK, sw: .6 });
+    paint(rectPts(cx - 60, 760, 120, 70), { wash: C.gunDk, ink: INK, sw: .8 });
+    token(cx - 20, 795, 18, { ink: false });
+    paint(rectPts(cx + 10, 775, 8, 40), { wash: TK.soot, ink: null });
+    web(cx - 230, 170, 150, 1, 1); web(cx + 230, 170, 130, -1, 1); web(cx + 250, 900, 120, -1, -1);
+    const spy = 360 + 60 * Math.sin(t * 1.4);                                          // spider on its thread
+    inkLine([[cx + 330, -40], [cx + 330, spy]], .5, '#CFC8D8', 'inkfine', 0);
+    paint(ellPts(cx + 330, spy + 14, 13, 16, 10), { wash: TK.soot, ink: INK, sw: .5 });
+    for (const e of [-1, 1]) for (let k = 0; k < 3; k++) inkLine([[cx + 330, spy + 10 + k * 6], [cx + 330 + e * 22, spy + k * 8], [cx + 330 + e * 30, spy + 18 + k * 8]], .6, TK.soot, 'inkfine', .3);
+    paint(rectPts(1330, 460, 330, 170), { wash: TK.soot, ink: INK, sw: 1 });            // the players counter
+    tx('ИГРОКОВ', 1495, 505, 40, TK.ash);
+    counter(1495, 575, 70, 0, { col: TK.ember });
+    inkLine([[1495, 630], [1495, 880]], 3, C.steelLt, 'ink', 0);
+    camEnd();
+    stamp('0 ИГРОКОВ', 460, 780, 84, t, 36.7, { col: TK.ember, rot: -.1 });
+  }
+
+  // ---------- 37.75 «Сайт мне сделай, чтоб никто не читал»: tumbleweed, then pan to the hot rack ----------
+  function tumbleweed(x, y, r, rot) {
+    paint(ellPts(x, y, r, r * .92, 16), { wash: '#C9A46A', washOp: 160, fill: '#8A6A3A', fillOp: 110, bleed: .2, tex: .5, ink: null });
+    for (let i = 0; i < 7; i++) {
+      const a0 = rot + i * .9, pts = [];
+      for (let q = 0; q <= 6; q++) { const a = a0 + q * .9, rr = r * (.35 + .6 * hash(i * 7 + q)); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]); }
+      inkLine(pts, .7, '#6E5230', 'inkfine', .6);
     }
   }
-
-  // ---------- 32.5 the 100% bar is a rocket → to the moon ----------
-  function a02_rocket(t, lt) {
-    const lift = t < 33.98 ? 0 : Math.pow(t - 33.98, 2) * 900 + (t - 33.98) * 200, camY = H / 2 - Math.min(lift, 1400) * .85;
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#1A0E3E', fill: C.uv, fillOp: 90 + 60 * clamp(lift / 900), bleed: .2, tex: .5, ink: null });
-    a02_view(t, W / 2, camY, lerp(1.0, .92, clamp((t - 34) / 1)), 0, 20);
-    const q = a02_SQ(t);
-    a02_free(t, () => {
-      for (let i = 0; i < 60; i++) { const x = hash(i) * W * 1.2 - W * .1, y = 1000 - hash(i + 7) * 2800, r = 2 + hash(i + 3) * 5; paint(starPts(x, y, r * (1 + .5 * Math.sin(t * 6 + i)), .35), { wash: i % 3 ? C.cream : C.acid, ink: null }); }
-      // moon rises into view «к луне»
-      const mk = backOut((t - 34.55) / .3), my = camY - 260;
-      if (mk > .02) {
-        paint(ellPts(1450, my, 190 * mk, 190 * mk, 30), { wash: '#F4EBC8', fill: '#D9CFA0', fillOp: 90, tex: .6, ink: INK, sw: 1 });
-        [[-60, -40, 40], [50, 50, 30], [20, -90, 22]].forEach(([dx, dy, r]) => paint(ellPts(1450 + dx * mk, my + dy * mk, r * mk, r * mk, 14), { fill: '#BFB48A', fillOp: 120, ink: null }));
-      }
-      // launch pad
-      hazard(640, 920, 640, 40);
-      paint(rectPts(700, 960, 520, 140), { wash: C.gunmetal, ink: INK, sw: .8 });
-      // the bar-rocket
-      const rx = 960, ry = 880 - lift + Math.sin(t * 40) * (t > 33.49 ? 3 : 0), v = t < 33.98 ? 1 : Math.max(.6, 1 - (t - 33.98) * .3);
-      const bw = 170, bh = 600, wob = q * .06 * Math.sin(t * 7);
-      if (t > 33.49) {
-        const ig = clamp((t - 33.49) / .3);
-        fire(rx, ry + 90, 200, 260 * ig + 120 * hitK(t, [33.49, 33.98], .3), t, { k: 1.1, seed: 31 });
-        smoke(rx, ry + 60, t, { n: 7, h: -300, r: 70, col: '#8A8480', seed: 2 });
-        for (let i = 0; i < 6; i++) { const p = frac(t * 2.2 + i / 6), tx2 = rx + (hash(i) - .5) * 160 * p; token(tx2, ry + 80 + p * 420, 20 * (1 - p * .5), { burn: p }); }
-      }
-      push(); translate(rx, ry); rotate(wob); translate(-rx, -ry);
-      paint([[rx - bw / 2, ry - bh + 40], [rx - bw * .8, ry], [rx - bw / 2, ry]], { wash: '#D8263A', ink: INK, sw: .8 });
-      paint([[rx + bw / 2, ry - bh + 40], [rx + bw * .8, ry], [rx + bw / 2, ry]], { wash: '#D8263A', ink: INK, sw: .8 });
-      paint(rrPts(rx - bw / 2, ry - bh, bw, bh, 40, 1), { wash: TK.soot, ink: C.cream, sw: 1.4 });
-      const fh = (bh - 40) * v;
-      paint(rrPts(rx - bw / 2 + 20, ry - 20 - fh, bw - 40, fh, 26), { wash: mixCol(TK.orange, TK.green, clamp((v - .5) * 2)), fill: TK.greenDk, fillOp: 70, tex: .5, ink: null });
-      paint([[rx - bw / 2, ry - bh + 30], [rx, ry - bh - 150], [rx + bw / 2, ry - bh + 30]], { wash: C.hazard, ink: INK, sw: .9 });
-      pop();
-      a02_tx(Math.round(v * 100) + '%', rx, ry - bh * .8, 64, C.cream, { stroke: INK, rot: wob });
-      a02_tx('НЕДЕЛЬНЫЙ ЛИМИТ', rx - 20, ry - bh * .33, 42, C.cream, { rot: -Math.PI / 2 + wob, stroke: INK });
-      // Clawd clings to the side, scarf flapping
-      const up = t > 33.98;
-      a02_clawd(rx + 150, ry - 90, 13, t, { flap: up ? .9 + Math.sin(t * 30) * .3 : .1, aL: 1.6, aR: up ? 2.2 : .5, eyes: up ? 'spark' : 'look', lookX: -1, mouth: up ? 'grin' : 'smile', noShadow: up, rot: up ? -.2 : 0 });
-      if (t < 33.98) a02_bubble('ПОТРАТЬ МЕНЯ', rx - 360, ry - bh + 60, 46, t - 32.6);
-      if (t > 33.9) punkText('ВПЕРЁД', 560, camY - 250, 70, t, 33.98, { seed: 8 });
-      if (t > 34.6) punkText('К ЛУНЕ!', 1450, my + 260, 84, t, 34.62, { seed: 5 });
-    });
-  }
-
-  // ---------- 35.1 a game nobody plays → an agent plays it for the report ----------
-  function a02_game(t, lt) {
-    a02_wall(t, '#20243A', C.uv, 17);
-    a02_view(t, W / 2, H / 2, lerp(1.0, 1.06, lt / 2.65));
-    const dk = backOut((t - 35.1) / .22);
-    if (dk > .01) a02_panel(t, 520, 230, 720, 700, 23, () => {
-      const cx = 880;
-      paint([[cx - 190, 330], [cx + 190, 330], [cx + 220, 900], [cx - 220, 900]], { wash: C.magenta, fill: '#9A1A80', fillOp: 90, tex: .6, ink: INK, sw: 1 });
-      paint(rectPts(cx - 200, 280, 400, 90, 1), { wash: C.hazard, ink: INK, sw: .8 });
-      a02_tx('ТОКЕН-МЭН', cx, 325, 44, INK);
-      paint(rectPts(cx - 150, 400, 300, 240, 1), { wash: '#0A1420', ink: INK, sw: .8 });
-      // the game: a token chomping tokens on the screen
-      for (let i = 0; i < 5; i++) paint(ellPts(cx - 110 + i * 50, 540, 7, 7, 8), { wash: C.hazard, ink: null });
-      const px = cx - 120 + frac(t * .6) * 240; acidSmiley(px, 540, 26, t, {});
-      const playing = t > 36.48;
-      a02_tx('ИГРОКОВ: ' + (playing ? 1 : 0), cx, 450, 40, playing ? C.acid : '#FF5A5A');
-      paint(rectPts(cx - 200, 680, 400, 60, 1), { wash: C.gunmetal, ink: INK, sw: .7 });
-      const js = playing ? Math.sin(t * 22) * .5 : 0;
-      inkLine([[cx - 60, 700], [cx - 60 + Math.sin(js) * 40, 660]], 6, INK, 'ink', 0);
-      paint(ellPts(cx - 60 + Math.sin(js) * 40, 655, 16, 16, 10), { wash: '#D8263A', ink: INK, sw: .5 });
-      paint(ellPts(cx + 60, 712, 18, 12, 10), { wash: C.acid, ink: INK, sw: .5 });
-      // nobody... then AGENT #7 walks in and plays
-      if (t > 36.2) {
-        const ax = lerp(1220, cx + 90, easeOut((t - 36.2) / .3));
-        agentBot(ax, 895, 16, t, { n: 7, aL: playing ? 1.3 + Math.sin(t * 22) * .3 : .3, aR: .3, walk: t < 36.5 ? t * 3 : null, eyes: 'look', lookX: -1, mouth: 'flat', flip: false });
-      }
-      if (t < 36.3 && t > 35.8) a02_tx('…', cx + 260, 800, 80, C.cream);
-    }, { dy: -(1 - dk) * 900 });
-    // the report: «1 ПОЛЬЗОВАТЕЛЬ», +∞%
-    if (t > 36.7) a02_panel(t, 1300, 170, 540, 520, 29, () => {
-      a02_tx('ОТЧЁТ', 1570, 260, 56, INK);
-      const k = ease((t - 36.7) / .25);
-      counter(1540, 400, 80, 1, { col: C.acid });
-      a02_tx('ПОЛЬЗОВАТЕЛЬ', 1570, 480, 42, INK);
-      inkLine([[1380, 640], [1380, 540], [1380, 640], [1760, 640]], 1.4, INK, 'inkfine', 0);
-      inkLine([[1390, 630], [1390 + 360 * k, 630 - 70 * Math.pow(k, 4)]], 4, '#1E8A3C', 'ink', .3);
-      stamp('РОСТ +∞%', 1600, 575, 40, t, 37.28, { col: '#1E8A3C', rot: -.12 });
-    }, { s: backOut((t - 36.7) / .2), rot: .05 });
-  }
-
-  // ---------- 37.75 the unread site ----------
-  function a02_site(t, lt) {
-    a02_wall(t, C.gunDk, C.acid, 21);
-    a02_view(t, W / 2, H / 2, lerp(1.0, 1.1, lt / 2.05), 0, 14);
-    a02_panel(t, 150, 70, 1320, 860, 31, () => {
-      paint(rectPts(200, 120, 1220, 760), { wash: '#FBF8F2', ink: INK, sw: .8 });
-      paint(rectPts(200, 120, 1220, 60), { wash: '#D9D4CA', ink: INK, sw: .6 });
-      for (let i = 0; i < 3; i++) paint(ellPts(235 + i * 32, 150, 10, 10, 8), { wash: ['#FF5F57', '#FEBC2E', '#28C840'][i], ink: null });
-      paint(rrPts(360, 132, 700, 36, 16), { wash: '#FFFFFF', ink: INK, sw: .4 });
-      a02_tx('СЕРВИС ДЛЯ СЕРВИСОВ', 640, 265, 66, INK);
-      for (let i = 0; i < 9; i++) paint(rectPts(260, 360 + i * 44, 560 - (i % 3) * 90, 14), { wash: '#C9C3B8', ink: null });
-      paint(rectPts(880, 350, 480, 330, 1), { wash: '#E6E0D4', ink: INK, sw: .5 });
-      inkLine([[880, 350], [1360, 680]], .8, '#B8B0A0', 'inkfine', 0); inkLine([[1360, 350], [880, 680]], .8, '#B8B0A0', 'inkfine', 0);
-      paint(rrPts(260, 780, 260, 64, 20), { wash: C.magenta, ink: INK, sw: .6 });
-      a02_tx('КУПИТЬ', 390, 812, 40, C.cream);
-      // cobweb in the top-left corner of the page, dust bunnies
-      const wc = [205, 185];
-      for (let i = 0; i < 6; i++) { const a = i / 5 * Math.PI / 2; inkLine([wc, [wc[0] + Math.cos(a) * 220, wc[1] + Math.sin(a) * 220]], .6, '#6A6A72', 'inkfine', 0); }
-      for (let r = 50; r < 220; r += 45) { const pts = []; for (let i = 0; i <= 5; i++) { const a = i / 5 * Math.PI / 2; pts.push([wc[0] + Math.cos(a) * r * (i % 2 ? .9 : 1), wc[1] + Math.sin(a) * r * (i % 2 ? .9 : 1)]); } inkLine(pts, .6, '#6A6A72', 'inkfine', .5); }
-      // tumbleweed rolls across the page
-      const tw = lerp(1500, 150, (t - 37.75) / 2.05), ta = -(t - 37.75) * 8, ty = 740 - Math.abs(Math.sin((t - 37.75) * 5)) * 60;
-      for (let i = 0; i < 7; i++) inkLine(ellPts(tw, ty, 50 - i * 4, 46 - i * 3, 10, 0, ta + i * .9).slice(0, 8), 2.2, '#8C6A3A', 'ink', .6);
-      // visitor counter: 0
-      paint(rrPts(1060, 700, 350, 160, 14), { wash: C.gunDk, ink: INK, sw: .7 });
-      a02_tx('ПОСЕТИТЕЛЕЙ', 1235, 740, 40, C.cream);
-      counter(1235, 805, 64, 0, { col: '#FF5A5A' });
-      if (t > 38.32) glowAt(1235, 800, 150, '#FF3A3A', 110 * hitK(t, [38.32], .3));
-    });
-    a02_panel(t, 1500, 160, 360, 420, 37, () => {
-      a02_tx('ПРОЧИТАНО:', 1680, 270, 44, INK);
-      a02_tx('0 раз', 1680, 390, 96, '#D8263A');
-    }, { rot: .06, s: t < 38.32 ? 0 : backOut((t - 38.32) / .2) });
-    a02_free(t, () => stamp('НИКТО НЕ ЧИТАЛ', 820, 520, 76, t, 38.96, { col: '#D8263A', rot: -.1 }));
+  function website(t, lt) {
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: '#C9C6BE', fill: C.steelLt, fillOp: 70, tex: .5, ink: null });
+    const pan = ease(seg(t, 39.05, 39.8));
+    camBegin(lerp(960, 1700, pan), lerp(510, 560, pan), lerp(1, .92, pan));
+    glowAt(2150, 500, 600, C.sodium, 60 + 60 * pan);                                    // the hot rack: hand-off to the data center
+    serverRack(1960, 60, 380, 860, t, { heat: .7 + .3 * pan, seed: 4, fire: pan * .8 });
+    cooler(2150, 780, 110, t, { speed: 6, howl: .4 + .6 * pan });
+    paint(rrPts(150, 60, 1640, 860, 20), { wash: '#FBF8F2', ink: INK, sw: 1.3 });
+    paint(rrPts(150, 60, 1640, 70, 16), { wash: '#C9C4BC', ink: null });
+    for (let i = 0; i < 3; i++) paint(ellPts(190 + i * 34, 95, 10, 10, 8), { wash: [TK.ember, C.hazard, TK.green][i], ink: null });
+    paint(rrPts(320, 72, 900, 48, 18), { wash: '#FFFFFF', ink: INK, sw: .5 });
+    tx('мой-сайт.рф', 350, 97, 40, '#55555F', { align: 'left' });
+    tx('МОЙ САЙТ', 960, 230, 96, C.steel);
+    tx('сделан за 4 000 000 токенов', 960, 320, 44, '#55555F');
+    for (let i = 0; i < 5; i++) paint(rectPts(300, 400 + i * 40, 780 - (i % 3) * 120, 14), { wash: '#DDD8CF', ink: null });
+    paint(rectPts(1200, 390, 460, 200), { wash: '#E9E4DA', ink: INK, sw: .6 });
+    tx('ПОСЕТИТЕЛЕЙ', 1430, 440, 40, '#55555F');
+    counter(1430, 525, 72, 0, { col: TK.ember });
+    // cobweb in the page corner
+    const wc = [158, 136];
+    for (let i = 0; i < 6; i++) { const a = i / 5 * Math.PI / 2; inkLine([wc, [wc[0] + Math.cos(a) * 200, wc[1] + Math.sin(a) * 200]], .6, '#6A6A72', 'inkfine', 0); }
+    for (let r = 50; r < 200; r += 45) { const pts = []; for (let i = 0; i <= 5; i++) { const a = i / 5 * Math.PI / 2; pts.push([wc[0] + Math.cos(a) * r * (i % 2 ? .9 : 1), wc[1] + Math.sin(a) * r * (i % 2 ? .9 : 1)]); } inkLine(pts, .6, '#6A6A72', 'inkfine', .5); }
+    paint(rectPts(150, 790, 1640, 4), { wash: '#DDD8CF', ink: null });
+    const tp = seg(t, 37.8, 39.3), txx = lerp(-60, 1950, tp), ty = 705 - Math.abs(Math.sin((t - 37.8) * 5.9)) * 110;
+    for (let i = 1; i < 4; i++) paint(ellPts(txx - i * 70, 790 - i * 4, 40 - i * 8, 12, 10), { fill: '#C9B48A', fillOp: 90 / i, bleed: .3, ink: null });
+    for (let i = 0; i < 3; i++) inkLine([[txx - 160 - i * 60, 700 + i * 30], [txx - 90 - i * 60, 698 + i * 30]], .6, '#9A8A70', 'inkfine', 0);
+    if (tp > 0 && tp < 1) tumbleweed(txx, ty, 85, t * 6);
+    camEnd();
+    stamp('0 ПОСЕТИТЕЛЕЙ', 700, 840 - pan * 60, 76, t, 38.32, { col: TK.ember, rot: -.06 });
     glitchCut(t, 39.8);
   }
 
   chapter('friday', 20.1, 39.8, [
-    [20.1, a02_hall], [22.65, a02_limits], [25.25, a02_park], [27.8, a02_furnace],
-    [30.5, a02_waveoff], [32.5, a02_rocket], [35.1, a02_game], [37.75, a02_site]
+    [20.1, friday], [22.65, screen], [25.25, park], [27.8, burn],
+    [30.5, wave], [32.5, wave], [33.98, rocket], [35.1, arcade], [37.75, website],
   ]);
 })();

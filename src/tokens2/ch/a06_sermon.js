@@ -1,5 +1,5 @@
 // a06_sermon.js: «Жги токены» v2 chapter 6, the CEO bridge + angelic choir (116.3–132.55).
-// A cathedral of servers: rack pillars, three stained-glass lancets (pylon / copper coil / water drop), CEO-Clawd
+// A cathedral of servers: rack pillars, stained glass (pylon lancet left, token rose over the pulpit, copper coil + water drop lancets right), CEO-Clawd
 // preaching from a GPU pulpit, a choir of agents with token halos answering in light beams on the choir stabs.
 // 116.3 dark nave, one spotlight → 118.26 the windows blaze → 120.8 the CEO sips, the next town's reservoir dries up
 // (choir: «больше меди / больше воды») → 123.7 the choir asks «Зачем?» → 125.15 the lone madman shouts, the price tag
@@ -14,7 +14,8 @@
     coil: ['#1E7A5A', '#2FA86B', '#15606A', '#3A9C98'],
     drop: ['#B4302A', '#D8622A', '#8A1F3A', '#E8AA38']
   };
-  const a06_WIN = { pylon: [400, 130, 240, 430], coil: [960, 90, 250, 420], drop: [1520, 130, 240, 430] };   // cx, top, w, h
+  const a06_WIN = { pylon: [400, 130, 240, 430], coil: [1410, 130, 190, 430], drop: [1630, 130, 190, 430] };   // cx, top, w, h
+  const a06_ROSE = [960, 215, 118];                                   // cx, cy, r: high round window over the CEO, clear of his head (top ≈ 428)
   const a06_PILLARS = [20, 660, 1160, 1800];
   const a06_CEO = [960, 700, 32];                                    // ground x, y, u (legs hidden by the pulpit)
   const a06_BILL = [1190, 390];                                      // scroll hangs at world x .. x + w
@@ -99,6 +100,23 @@
     else a06_drop(...ib, L, t, zap);
     paint(a06_arch(cx, top, w, h), { ink: '#15131C', sw: 1.4 });
     if (L > .5) paint(ellPts(cx - hw * .4, top + h * .45, w * .08, h * .3, 10, 0, .2), { wash: '#FFFFFF', washOp: 50 * L, ink: null });   // sheen
+  }
+
+  // the middle rose: a token sun in amber glass, lit with the coil
+  function a06_rose(t, L) {
+    const [cx, cy, r] = a06_ROSE, pal = ['#E8AA38', '#B4502A', '#FFD21F', '#8A1F3A'];
+    if (L > .25) glowAt(cx, cy, r * 1.6, '#FFB43A', 70 * L);
+    paint(ellPts(cx, cy, r + 16, r + 16, 36), { wash: '#3B3F4A', fill: '#1C1F24', fillOp: 90, tex: .5, ink: INK, sw: .8 });
+    paint(ellPts(cx, cy, r, r, 36), { wash: a06_dim('#7A2E1E', L), ink: null });
+    for (let i = 0; i < 12; i++) {                                                    // sun-ray petals
+      const a = i / 12 * TAU + t * .08, a0 = a - .2, a1 = a + .2;
+      paint([[cx + Math.cos(a0) * r * .42, cy + Math.sin(a0) * r * .42], [cx + Math.cos(a) * r * .95, cy + Math.sin(a) * r * .95], [cx + Math.cos(a1) * r * .42, cy + Math.sin(a1) * r * .42]],
+        { wash: a06_dim(pal[i % pal.length], L), ink: '#15131C', sw: .5 });
+    }
+    paint(ellPts(cx, cy, r * .42, r * .42, 24), { wash: a06_dim('#F2B632', L), fill: a06_dim('#A8741A', L), fillOp: 70, tex: .4, ink: '#15131C', sw: .8 });   // the token
+    paint(ellPts(cx, cy, r * .3, r * .3, 20), { ink: a06_dim('#7A4A0A', L), sw: .5 });
+    letter('₮', cx, cy + 2, r * .42, a06_dim('#7A4A0A', L), { ink: false });
+    paint(ellPts(cx, cy, r, r, 36), { ink: '#15131C', sw: 1.4 });
   }
 
   // ---------- the choir ----------
@@ -193,6 +211,7 @@
       inkLine([[b, 110], [lerp(b, m, .35), -10], [m, -60]], 1.6, '#59636E', 'ink', .6);
     }
     for (const k of ['pylon', 'coil', 'drop']) a06_window(k, t, L * (WL[k] ?? 1), (o.zap || {})[k] || 0);
+    a06_rose(t, L * (WL.coil ?? 1));
     // server-rack pillars with capitals
     a06_PILLARS.forEach((px, i) => {
       serverRack(px, 120, 100, 700, t, { units: 8, seed: i * 5 + 2, heat: o.heat || 0 });
