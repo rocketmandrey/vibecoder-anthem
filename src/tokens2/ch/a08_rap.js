@@ -128,22 +128,24 @@
       if (hash(i * 7) > .6) { paint(rectPts(hx + 30, hy - 90, 30, 50, 1), { wash: '#DDE8FF', ink: '#0B0C10', sw: .8 }); glowAt(hx + 45, hy - 65, 50, '#9FBFFF', 50); }
     }
   }
+  // 9:16 (VERT only): Clawd (x 200) and the CEO (x 1720) step in so the 1300-wide vfocus window holds slide + both
+  const A08_VCX = window.VERT ? 480 : 200, A08_VDX = window.VERT ? -250 : 0;
   // big foreground cast for the fast rap slides: the CEO (right) and Clawd with his tally card (left), ~1/3+ frame
   // tall, feet hidden behind the frame bottom; both bob on the beat (o.pk = punch 0..1)
   function a08_bigCast(t, o) {
-    const pk = o.pk || 0, n = o.tally || 0;
-    paint(ellPts(1720, 1010, 300, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
-    ceoClawd(1720, 1000, 47, { click: o.click || 0, aR: (o.ceoArm ?? 1.1) + pk * .25, aL: .35, dy: -pk * .15, eyes: o.ceoEyes, mouth: o.ceoMouth || 'smile', emote: o.ceoEmote, emoteK: o.ceoEmoteK, noShadow: true });
-    paint(ellPts(200, 1010, 280, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
+    const pk = o.pk || 0, n = o.tally || 0, cX = A08_VCX, eX = 1720 + A08_VDX;   // VERT pulls both in toward the slide
+    paint(ellPts(eX, 1010, 300, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
+    ceoClawd(eX, 1000, 47, { click: o.click || 0, aR: (o.ceoArm ?? 1.1) + pk * .25, aL: .35, dy: -pk * .15, eyes: o.ceoEyes, mouth: o.ceoMouth || 'smile', emote: o.ceoEmote, emoteK: o.ceoEmoteK, noShadow: true });
+    paint(ellPts(cX, 1010, 280, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
     const cy = 1000 - pk * 6;
     // the tally card of broken «весна» promises, on a stick in Clawd's raised right hand
-    inkLine([[450, cy - 170], [520, cy - 230]], 7, '#7A5A3A', 'ink', 0);
-    push(); translate(560, cy - 250 + pk * 10); rotate(.08 - pk * .1);
+    inkLine([[cX + 250, cy - 170], [cX + 320, cy - 230]], 7, '#7A5A3A', 'ink', 0);
+    push(); translate(cX + 360, cy - 250 + pk * 10); rotate(.08 - pk * .1);
     paint(rectPts(-110, -64, 220, 128, 1), { wash: '#FFFDF6', fill: '#E4DCCB', fillOp: 40, tex: .4, ink: INK, sw: 1.2 });
     for (let k = 0; k < n; k++) inkLine([[-66 + k * 48, -44], [-54 + k * 48, 44]], 6, RED, 'ink', 0);
     if (n >= 3) inkLine([[-86, 30], [80, -30]], 6, RED, 'ink', 0);
     pop();
-    clawd(200, cy, 44, { mouth: 'cat', eyes: 'happy', aR: 1.0, aL: .25, noShadow: true, ...o.clawdO });
+    clawd(cX, cy, 44, { mouth: 'cat', eyes: 'happy', aR: 1.0, aL: .25, noShadow: true, ...o.clawdO });
   }
   // camera punch on every sung word / strong hit of the fast verse
   const a08_BEATS = [157.47, 158.42, 159.02, 159.08, 159.32, 159.8, 160.34, 160.68, 160.86, 161.36, 162.28, 162.6, 162.88, 163.62, 164.2, 164.64, 165.34, 166.18, 166.68, 166.9];
@@ -202,7 +204,7 @@
       });
       stamp('ОПЯТЬ', x + w * .82, y + h * .62, 64, t, 159.02, { col: RED, rot: .12 });
     }, { big: true, pk, tally: CAL.filter(c => t >= c[1] + .1).length, clawdO: { eyes: t > 159.02 ? 'narrow' : 'happy', mouth: t > 159.02 ? 'flat' : 'cat' }, click: hitK(t, [157.47, 158.42, 159.02], .15), ceoMouth: 'grin' });
-    if (t > 159.02) emote('!', 330, 560, 30, seg(t, 159.02, 159.2));
+    if (t > 159.02) emote('!', A08_VCX + 130, 560, 30, seg(t, 159.02, 159.2));
     camEnd();
     glitchCut(t, L1, { k: 1.2 });
   }
@@ -342,7 +344,7 @@
           paint(rrPts(px - 36, 50, 72, 30, 8), { wash: A2.sodium, ink: INK, sw: .8 });
           for (const e of [-1, 1]) inkLine([[px + e * 10, py - 64], [px + e * 40, py - 54], [px + e * 30, py - 42]], 3, A2.steel, 'ink', .3);
         }
-        if (landed) sfx('ШЛЁП', px + 100, py - 80, 44, A2.sodium, age, { life: .35, rot: .15, font: ruFont(44) });
+        if (landed) sfx('ШЛЁП', px - 160, py - 40, 44, A2.sodium, age, { life: .35, rot: -.15, font: ruFont(44) });   // left of the sticky, clear of the «ВОТ-ВОТ» sign
       }
     }
     camEnd();

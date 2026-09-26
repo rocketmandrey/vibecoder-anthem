@@ -57,7 +57,8 @@
     inkLine(R(pts), 2.2, col, 'ink', .3);
     for (let i = 0; i < 3; i++) inkLine(R([[x + w * .1, y + h * (.42 + i * .1)], [x + w * .5, y + h * (.42 + i * .1)]]), .6, A2.steel, 'inkfine', 0);
     const [lx, ly] = R([[cx, y + h * .13]])[0];
-    letter(title, lx, ly, h * .17, A2.cream, { font: ruFont(h * .17), rot, ink: false });
+    const fs = h * .17 * Math.min(1, w * .86 / textW(title, ruFont(h * .17)));   // «ПРИБЫЛЬ» fits the card's header band
+    letter(title, lx, ly, fs, A2.cream, { font: ruFont(fs), rot, ink: false });
   }
 
   // ---------- 180.85 «Жги токены!» ×2: on top of the biggest press ----------

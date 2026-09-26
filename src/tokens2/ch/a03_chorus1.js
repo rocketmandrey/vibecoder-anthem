@@ -219,8 +219,9 @@
     for (const lx of [790, 1100]) paint(rectPts(lx, 740, 30, 90), { wash: A2.gunmetal, ink: INK, sw: .6 });
     paint(rectPts(760, 600, 400, 160, 1.5), { wash: A2.steel, fill: A2.gunDk, fillOp: 100, tex: .6, border: .4, ink: INK, sw: 1 });
     hazard(760, 600, 400, 30);
-    paint(rectPts(800, 660, 320, 56, 1), { wash: A2.rust, fill: '#6E2E18', fillOp: 70, tex: .5, ink: INK, sw: .7 });
-    letter('ШРЕДЕР ТОКЕНОВ', 960, 688, 34, A2.hazard, { font: ruFont(34) });
+    paint(rectPts(775, 636, 370, 50, 1), { wash: A2.rust, fill: '#6E2E18', fillOp: 70, tex: .5, ink: INK, sw: .7 });   // plate sits above the cart's heap
+    const sfs = Math.min(34, 340 / (textW('ШРЕДЕР ТОКЕНОВ', ruFont(100)) / 100));                                      // label fits its plate
+    letter('ШРЕДЕР ТОКЕНОВ', 960, 661, sfs, A2.hazard, { font: ruFont(sfs) });
     // roller housing with the open slot and interlocking teeth
     paint(rectPts(780, 460, 360, 145, 1.5), { wash: A2.gunmetal, fill: A2.steel, fillOp: 60, tex: .6, ink: INK, sw: 1 });
     paint(rectPts(810, 480, 300, 105), { wash: '#0A0B0D', ink: INK, sw: .6 });
@@ -457,7 +458,7 @@
       letter(big ? 'НЕВАЖНО.' : 'неважно.', bx + bw / 2, by + bh / 2, big ? 58 : 48, INK, { font: ruFont(big ? 58 : 48), ink: false, pop: seg(t, t0, t0 + .25) });
     }
     camEnd();
-    stamp('ПОЛЕЗНО', 1260, 330, 150, t, A03_P, { col: GREEN, rot: -.12, punch: .08 });
+    stamp('ПОЛЕЗНО', 965, 360, 115, t, A03_P, { col: GREEN, rot: -.12, punch: .08 });   // centred on the weekly-burn card and sized to stay on it
     if (t >= A03_P) flash(.35 * Math.exp(-(t - A03_P) * 10), GREEN);
     if (t >= 64.8 && !o.dark) a03_confetti(t - 64.8, 30, [200, -200, 1520, 1000], 11);
     if (!o.dark) a03_end(t);
@@ -467,7 +468,7 @@
     a03_useful(66.4, 6.05, { dark: .8 });
     const p = seg(t, 66.4, 66.6);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#050607', washOp: 150 + 90 * p, ink: null });
-    letter('ПОЛЕЗНО', 1260, 330, 150, GREEN, { font: ruFont(150), alpha: .35 + .25 * Math.sin(t * 40), rot: -.12, ink: false });
+    letter('ПОЛЕЗНО', 965, 360, 115, GREEN, { font: ruFont(115), alpha: .35 + .25 * Math.sin(t * 40), rot: -.12, ink: false });
     const tear = hitK(t, [66.87], .12);
     if (tear > .05) { paint(rectPts(-60, 380, W + 120, 60), { wash: A2.hazard, washOp: 220 * tear, ink: null }); hazard(-60, 440, W + 120, 40); }
     a03_end(t);

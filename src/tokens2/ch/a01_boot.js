@@ -221,12 +221,12 @@
     paint(rectPts(-800, 900, XP + 2600, 600), { wash: C.gunmetal, fill: C.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });
     hazard(-800, 900, XP + 2600, 18);
     for (let j = 0; j < 12; j++) { const lx = 100 + j * 480; if (Math.abs(lx - cx) < 1500 / z + 400) a01_lamp(lx, 110, lampOn(j), 690); }
-    if (Math.abs(2000 - cx) < 1900) {
+    if (Math.abs(2600 - cx) < 1900) {   // hung low and clear of the siren at 1850, so the z≈1.45 ride frames the whole sign (it used to be cut by the top edge)
       const on = lampOn(3), fl = on > .5 ? 1 : on;
-      paint(rectPts(1540, 190, 900, 130, 3), { wash: '#15171C', ink: INK, sw: 1 });
-      for (const sxp of [1600, 2380]) inkLine([[sxp, -300], [sxp, 190]], 1, INK, 'inkfine', 0);
-      if (fl > .2) glowAt(1990, 255, 480, C.sodium, 70 * fl);
-      letter('ЗАВОД ТОКЕНОВ', 1990, 257, 84, fl > .2 ? C.hazard : '#3A3A3A', { font: ruFont(84), ink: false });
+      paint(rectPts(2190, 305, 820, 115, 3), { wash: '#15171C', ink: INK, sw: 1 });
+      for (const sxp of [2250, 2950]) inkLine([[sxp, -300], [sxp, 305]], 1, INK, 'inkfine', 0);
+      if (fl > .2) glowAt(2600, 362, 440, C.sodium, 70 * fl);
+      letter('ЗАВОД ТОКЕНОВ', 2600, 364, 76, fl > .2 ? C.hazard : '#3A3A3A', { font: ruFont(76), ink: false });
     }
     for (const px of [1850, 3350]) if (Math.abs(px - cx) < 1800) {
       paint(rectPts(px - 18, 360, 36, 540), { wash: C.steel, fill: C.gunDk, fillOp: 80, tex: .4, ink: INK, sw: .7 });
@@ -275,7 +275,9 @@
       const lit = PAIRS.filter(p => t >= p).length;
       a01_vig(W / 2, 640, 260 + lit * 200, 110 - lit * 12, 2);
     }
-    stamp('ЖГИ ТОКЕНЫ', 960, 205, 196, t, T_T2, { col: C.hazard, rot: -.04, punch: .03 });
+    // stamp() slams in from 2.3×; cap the peak at 1.2× (the settled sign is ~1450 px wide) so the whole sign stays inside the frame
+    const sa = t - T_T2, sk = sa < .12 ? lerp(2.3, 1, easeOut(sa / .12)) : 1;
+    stamp('ЖГИ ТОКЕНЫ', 960, 205, 196 * Math.min(1, 1.2 / sk), t, T_T2, { col: C.hazard, rot: -.04, punch: .03 });
     flushLetters();
     flash(.75 * Math.exp(-(t - T_T2) * 6) * crushed, '#FFF1C8'); flash(.3 * Math.exp(-(t - T_GO) * 8) * go, '#FFB060');
     const inF = easeIn(seg(t, 18.6, 19.9));                                                            // into the flame: the tongues fill the frame

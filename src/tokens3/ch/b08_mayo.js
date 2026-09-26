@@ -84,7 +84,7 @@
       const gx = x + w / 2, gy = y + 250;
       paint(ellPts(gx, gy, 88, 88, 26), { ink: '#DDD5C5', sw: 3 });
       letter('0', gx, gy - 12, 60, INK, { font: ruFont(60), ink: false });
-      letter('из 2000 ккал', gx, gy + 38, 22, '#8A8480', { font: ruFont(22), ink: false });
+      letter('из 2000 ккал', gx, gy + 32, 18, '#8A8480', { font: ruFont(18), ink: false });   // inside the 88-px ring
       ['Завтрак', 'Обед', 'Ужин'].forEach((m, i) => {
         const ry = y + 380 + i * 82;
         paint(rrPts(x + 30, ry, w - 60, 64, 14), { wash: '#F1EBDF', ink: '#CFC6B4', sw: .5 });
@@ -102,6 +102,7 @@
         letter('подключаем 100 000 GPU' + dots, bx, by + 104, 22, APP_DK, { font: ruFont(22), ink: false, pop: (age - .12) * 6 });
       }
     });
+    flushLetters();                                                                // the phone's lettering goes under the finger
     // the clay finger: drifts in, hovers, pokes on «давно»
     const hover = Math.sin(t * 7) * 10, press = kf(t, [[TAP - .2, 0], [TAP, 1], [TAP + .16, .85], [TAP + .4, 0]], ease);
     const come = easeOut(seg(t, S2, 176.4)), fx = lerp(1450, 1030, come) - press * 50, fy = lerp(1250, 800, come) - press * 110 + (1 - press) * hover;
@@ -111,7 +112,7 @@
     inkLine([[-30, 90], [30, 96]], .8, PAL.clayDk, 'inkfine', .3); inkLine([[-30, 200], [30, 206]], .8, PAL.clayDk, 'inkfine', .3);
     pop();
     camEnd();
-    sfx('ТЫК!', 1180, 560, 90, PLUS, t - TAP, { life: .45, rot: .12, font: ruFont(90), stroke: '#FFFFFF' });
+    sfx('ТЫК!', 1370, 640, 90, PLUS, t - TAP, { life: .45, rot: .12, font: ruFont(90), stroke: '#FFFFFF' });
   }
 
   // ---------- 177.44 pull back: a whole data centre wired into the phone ----------
@@ -242,7 +243,8 @@
       // on «майонез»: the tracker box around the whole bun and the big deadpan label
       const ck = (t >= MAYO ? backOut((t - MAYO) / .22) : 0) * uiK;
       if (ck > .02) {
-        const [ax, ay] = S2X(680, 330), [bx2, by2] = S2X(1240, 740);
+        const [ax, ay0] = S2X(680, 330), [bx2, by0] = S2X(1240, 740);
+        const ay = Math.max(ay0, 180 + 95 * ck + 14), by2 = Math.min(by0, Y1 - 125);   // clear of the label plate and the «1×»/modes row
         paint(rectPts(ax, ay, bx2 - ax, by2 - ay), { ink: fc, sw: 2 * ck });
         push(); translate(960, 180); scale(ck); rotate(-.02);
         paint(rrPts(-470, -95, 940, 190, 26), { wash: fc, ink: INK, sw: 1.3 });

@@ -253,7 +253,7 @@
     camBegin(ox - (dx * c + dy * s), oy - (-dx * s + dy * c), z, r);
   }
   // the fresh 100% limit burns to 0 across the whole blast
-  const burnBar = (t) => limitBar(560, 34, 800, 1 - seg(t, CRASH, CARD - .15), { h: 54, burn: 1, glow: .4 });
+  const burnBar = (t) => limitBar(560, 62, 800, 1 - seg(t, CRASH, CARD - .15), { h: 54, burn: 1, glow: .4 });
   function furnace(t, k = 1) {
     bgFill(SOOT, '#3A1A10', 90 * k);
     glowAt(960, 900, 1100, A2.sodium, 90 * k);

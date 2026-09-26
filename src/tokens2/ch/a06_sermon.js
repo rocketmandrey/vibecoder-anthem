@@ -391,7 +391,8 @@
     letter('$20', x, y - 45 * s, 52 * s, '#59636E', { font: ruFont(52 * s), ink: false });
     if (price < 19.5) {
       inkLine([[x - 55 * s, y - 40 * s], [x + 55 * s, y - 52 * s]], 3 * s, '#D8262A', 'ink', 0);   // struck out
-      letter(fmt, x, y + 40 * s, 64 * s, '#D8262A', { font: ruFont(64 * s), ink: false });
+      const fs = 64 * s * Math.min(1, 220 * s / textW(fmt, ruFont(64 * s)));   // «$0,002» fits inside the 260-wide tag
+      letter(fmt, x, y + 40 * s, fs, '#D8262A', { font: ruFont(fs), ink: false });
     }
   }
   function a06_madman(t, x, y, u) {
@@ -404,7 +405,7 @@
   }
   function prophecy(t, lt) {
     const pe = ease(seg(t, 125.25, 127.05)), price = 20 * Math.pow(10, -4 * pe), stab = hitK(t, [125.48, 126.34], .45);
-    camBegin(700, 540, 1 + lt * .02);
+    camBegin(740, 540, 1 + lt * .02);
     a06_nave(t, { choirO: { eyes: 'look', lookX: -1, lookY: -.3, mouth: () => 'o' } });
     a06_pulpit(t, { eyes: 'look', lookX: -1, mouth: 'flat', aR: .3, aL: .2 });
     a06_bill(t, easeOut(seg(t, 125.3, 127.1)));
@@ -419,9 +420,10 @@
 
   // ---------- 127.15 «А когда он станет дешевле — нам понадобится…»: push-in, lights out, shades on ----------
   function shades(t, lt) {
-    const z = kf(t, [[127.15, 1.02], [131.4, 2.35], [132.3, 2.6]], ease), cy = kf(t, [[127.15, 520], [131.4, 548], [132.3, 545]]);
+    // the push-in holds back and leans right while the bill's total is up (world x 590..1600: tag + whole bill in frame), then centres on the CEO
+    const z = kf(t, [[127.15, 1.02], [129.8, 1.45], [131.4, 2.35], [132.3, 2.6]], ease), cy = kf(t, [[127.15, 520], [131.4, 548], [132.3, 545]]);
     const offs = [129.8, 130.56, 131.25], out = offs.map(o => seg(t, o, o + .08)), clicks = hitK(t, offs, .2);
-    camBegin(960, cy, z);
+    camBegin(lerp(1095, 960, ease(seg(t, 129.8, 130.6))), cy, z);
     a06_nave(t, { L: 1 - .25 * seg(t, 131.25, 131.4), win: { pylon: 1 - out[0] * .92, drop: 1 - out[1] * .92, coil: 1 - out[2] * .92 }, choirO: { eyes: 'normal', mouth: () => 'flat' } });
     a06_bill(t, 1, 1 - seg(t, 129.8, 130.3));                                          // the total fades with the lights
     a06_tag(t, 700, 440 - 900 * easeIn(seg(t, 129.8, 130.5)), .002, .85);   // reeled up out of the push-in

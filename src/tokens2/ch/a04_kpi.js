@@ -84,7 +84,8 @@ function a04_report(x, y, s, stage, o = {}) {
   for (let q = 1; q < 4; q++) inkLine([[x - w / 2 + 4, y - h * .25 + q * h * .06], [x + w / 2 - 4, y - h * .25 + q * h * .06]], sw * .3, A2.steelLt, 'inkfine', 0);
   paint(rectPts(x - w / 2 - 4 * s, y - h, w + 8 * s, h * .76), { wash: '#1E3A6E', fill: '#0F2146', fillOp: 90, tex: .5, ink: PAL.ink, sw });
   paint(rectPts(x - w / 2 - 4 * s, y - h, w * .08, h * .76), { wash: A2.hazard, ink: null });                  // binding tape
-  if (s > .35) letter('КАК СОКРАТИТЬ РАСХОДЫ НА AI', x + w * .04, y - h * .62, 17 * s, A2.cream, { font: ruFont(17 * s), ink: false });
+  const rfs = Math.min(17, 255 / (textW('КАК СОКРАТИТЬ РАСХОДЫ НА AI', ruFont(100)) / 100)) * s;   // fits the cover right of the tape
+  if (s > .35) letter('КАК СОКРАТИТЬ РАСХОДЫ НА AI', x + w * .04, y - h * .62, rfs, A2.cream, { font: ruFont(rfs), ink: false });
   if (stage >= 3) {
     a04_cup(x + w * .3, y - h, 1.3 * s, sw);                                        // a trophy cup on top of the report
   }
@@ -223,8 +224,10 @@ function a04_extinguisher(t, lt) {
     paint(rectPts(-170, -110, 340, 220), { wash: '#FFFDF6', ink: PAL.ink, sw: .8 });
     paint(rectPts(-40, -126, 80, 30), { wash: '#E8DDA8', washOp: 200, ink: null });
     pop();
-    letter('ВЫГОВОР', 965, 425, 56 * k, TK.ember, { font: ruFont(56 * k), rot: -.12, ink: false });
-    letter('ЗА ЭКОНОМИЮ', 972, 495, 42 * k, PAL.ink, { font: ruFont(42 * k), rot: -.12, ink: false });
+    const zs = Math.min(42, 290 / (textW('ЗА ЭКОНОМИЮ', ruFont(100)) / 100)) * k;   // both lines fit the 340-wide notice
+    const dr = (x, y) => [ex + (x - ex) * Math.cos(droop) - (y - ey) * Math.sin(droop), ey + (x - ex) * Math.sin(droop) + (y - ey) * Math.cos(droop)];   // letter() ignores push(): apply the droop by hand
+    letter('ВЫГОВОР', ...dr(965, 425), 52 * k, TK.ember, { font: ruFont(52 * k), rot: -.12 + droop, ink: false });
+    letter('ЗА ЭКОНОМИЮ', ...dr(972, 495), zs, PAL.ink, { font: ruFont(zs), rot: -.12 + droop, ink: false });
   }
   pop();
   // foam jet
@@ -254,7 +257,8 @@ function a04_god(t, lt) {
   // pedestal of GPUs
   for (let r = 0; r < 3; r++) for (let c = 0; c <= r; c++) gpuCard(960 + (c - r / 2) * 190, 560 + r * 70, .5, t, { glow: .3 });
   paint(rectPts(700, 760, 520, 90), { wash: A2.steel, fill: A2.gunmetal, fillOp: 90, tex: .5, ink: PAL.ink, sw: 1 });
-  letter('ЧЕМПИОН ПО ТОКЕНАМ', 960, 805, 42, A2.hazard, { font: ruFont(42), ink: false });
+  const cfs = Math.min(42, 460 / (textW('ЧЕМПИОН ПО ТОКЕНАМ', ruFont(100)) / 100));   // fits the 520-wide plinth plate
+  letter('ЧЕМПИОН ПО ТОКЕНАМ', 960, 805, cfs, A2.hazard, { font: ruFont(cfs), ink: false });
   // the golden idol (the high-chair champion, cast in gold)
   clawd(960, 525, 26, { col: '#F2C53D', dk: '#A88A10', lt: '#FFE38A', hat: 'crown', eyes: t > 77.02 ? 'spark' : 'happy', mouth: 'grin', aL: 1.4, aR: 1.4, noShadow: true,
     armR: (u, sw) => token(1.2 * u, 0, 1.4 * u, { burn: .6 }) });
@@ -466,6 +470,7 @@ function a04_break(t, lt) {
   // the report under the rams
   if (stage < 4) a04_report(x, 720, 1, stage);
   else a04_report(x, 720, 1, 4, { fall: seg(t, h4, h4 + .9) });
+  flushLetters();   // the cover title goes under the press columns, not on top of them
   const labels = ['ПЕЧАТЬ', 'ПЕРЕПЛЁТ', 'НАГРАДА', 'ШРЕДЕР'];
   for (let i = 0; i < 4; i++) press(PX[i], 200, PW, 580, t, [a04_BREAK[i]], { label: labels[i], token: false, seed: i * 7 });
   // stage captions punched on the hits

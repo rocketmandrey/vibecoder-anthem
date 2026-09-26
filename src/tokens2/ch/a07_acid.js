@@ -451,19 +451,22 @@
       const rr = 120 + age * 520;
       if (age < .5) paint(ellPts(x, y, rr, rr * .7, 30), { ink: A2.hazard, sw: 3 * (1 - age * 2) + .3 });
       fwBurst(st, x, y, age, t, h[0]);
-      if (focus) sfx(h[3], x + 190, y - 150, 90, A2.hazard, age, { life: .9, rot: .12, stroke: TK.soot });
+      if (focus) sfx(h[3], x + pw / 2 + 25, y - 10, 90, A2.hazard, age, { life: .9, rot: .12, stroke: TK.soot, align: 'left' });   // beside the pod, clear of its label and the header
     }
   }
   const CAMK = [
     [145.55, [960, 430, 1.0, 0]], [145.64, [960, 320, 1.45, -.02]], [146.42, [960, 305, 1.55, -.03]], [146.56, [1330, 470, 1.55, .03]],
     [147.66, [1315, 478, 1.62, .02]], [147.80, [960, 720, 1.5, -.02]], [148.96, [950, 712, 1.56, -.02]], [149.10, [960, 700, 1.85, .02]],
     [150.22, [960, 700, 1.9, .02]], [150.36, [600, 480, 1.5, .02]], [151.44, [595, 480, 1.56, .02]], [151.58, [540, 470, 1.85, -.02]],
-    [152.72, [540, 470, 1.9, -.02]], [152.86, [1330, 470, 1.55, .03]], [153.86, [1320, 475, 1.62, .03]], [154.0, [960, 455, .86, 0]], [155.0, [960, 455, .92, .02]]
+    [152.72, [540, 470, 1.9, -.02]], [152.86, [1330, 470, 1.55, .03]], [153.86, [1320, 475, 1.62, .03]], [154.0, [960, 428, .86, 0]], [155.0, [960, 428, .92, .02]]
   ];
+  // 9:16 (VERT only): the same whips, but each lands with its pod + multiplier centred (pod x + 150), so vfocus can hold a square window at 960
+  const VCAMX = [960, 1110, 1110, 1630, 1615, 1110, 1100, 1110, 1110, 590, 585, 590, 590, 1630, 1620, 960, 960];
+  const CAMKV = CAMK.map(([k, [x, y, z, r]], i) => [k, [VCAMX[i], y, z, r]]);
   function fwWhip(x) { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
   function wheelShot(t) {
     const heat = seg(t, 147.5, 154.6), last = fwLast(t), hitAge = last ? t - last[0] : 9;
-    const [cx, cy, z, r] = kf(t, CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * heat * pulse2(t));
+    const [cx, cy, z, r] = kf(t, window.VERT ? CAMKV : CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * heat * pulse2(t));
     camBegin(cx + sx, cy + sy, z * (1 + .018 * pulse2(t, 7) + .05 * Math.exp(-hitAge * 9)), r);
     a07_hall(t, { heat: .3 + .7 * heat, dark: .1 });
     glowAt(WC[0], WC[1], 700, TK.orange, 40 + 40 * heat + 25 * pulse2(t, 8));
@@ -475,10 +478,11 @@
     counter(ST.tok.x, ST.tok.y + 130, 28, 1e6 * Math.pow(10, Math.max(0, t - 145.5) / 2));
     counter(ST.task.x, ST.task.y + 130, 28, Math.pow(2, 6 + Math.max(0, t - 145.5) * 2.6));
     camEnd();
-    if (last) punkText(last[2], 960, 96, 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
-    paint(rrPts(34, 168, 470, 118, 10), { wash: A2.gunDk, washOp: 220, ink: INK, sw: .8 });
-    letter('МАХОВИК ЭКОНОМИКИ', 50, 200, 42, A2.hazard, { font: ruFont(42), align: 'left', stroke: INK, rot: -.03 });
-    letter('КРУГ ' + (Math.floor(fwAng(t) / TAU) + 1), 50, 256, 40, A2.cream, { font: ruFont(40), align: 'left', stroke: INK, rot: -.03 });
+    if (last) punkText(last[2], 960, 96, window.VERT ? 68 : 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
+    const [bx, by] = window.VERT ? [446, 930] : [34, 168];                          // VERT: bottom-left of the square window
+    paint(rrPts(bx, by, 470, 118, 10), { wash: A2.gunDk, washOp: 220, ink: INK, sw: .8 });
+    letter('МАХОВИК ЭКОНОМИКИ', bx + 16, by + 32, 42, A2.hazard, { font: ruFont(42), align: 'left', stroke: INK, rot: -.03 });
+    letter('КРУГ ' + (Math.floor(fwAng(t) / TAU) + 1), bx + 16, by + 88, 40, A2.cream, { font: ruFont(40), align: 'left', stroke: INK, rot: -.03 });
     flash(Math.exp(-hitAge * 14) * .35, TK.yellowLt);
   }
 

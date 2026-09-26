@@ -44,7 +44,7 @@ function drawWorld(t) {
   flushLetters();
   if (!METER_SHOWN) { cornerMeter(t); flushLetters(); }
   WIPES.forEach((b, j) => { if (Math.abs(t - b) < WIPE_TR) wipe((t - (b - WIPE_TR)) / (2 * WIPE_TR), j); });
-  karaoke(tr);
+  if (!window.VERT) karaoke(tr);                                             // vertical sets its own karaoke
 }
 
 function placeholder(t) {
@@ -109,7 +109,7 @@ function karaoke(t) {
   outX.font = `30px ${RU_FONT}`; tw = Math.max(tw, outX.measureText(RU[txt] || '').width);
   const grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
   if (grow < .02) return;
-  const one = !RU[txt], w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = one ? 972 : 962, h = one ? 86 : 106, jx = one ? 3 : 8, jy = one ? 2 : 4;
+  const one = !RU[txt], w = (tw + 150) * grow, x0 = 960 - w / 2, y0 = one ? 972 : 962, h = one ? 86 : 106, jx = one ? 3 : 8, jy = one ? 2 : 4;
   const pts = [[x0 + jit(jx), y0 + jit(jy)], [x0 + w / 2, y0 - 4 + jit(jy)], [x0 + w + jit(jx), y0 + jit(jy)], [x0 + w + 14 + jit(jx), y0 + h / 2], [x0 + w + jit(jx), y0 + h + jit(jy)], [x0 + w / 2, y0 + h + 4 + jit(jy)], [x0 + jit(jx), y0 + h + jit(jy)], [x0 - 14 + jit(jx), y0 + h / 2]];
   paint(pts, { wash: KP.night, washOp: 232, fill: KP.ruby, fillOp: 70, tex: .7, border: .4, ink: KP.gold, sw: .7 });
   for (const sd of [-1, 1]) if (grow > .6) (window.KARAOKE_ICON || rubyStar)(960 + sd * (w / 2 - 6), y0 + h / 2, 22 * grow);   // a song kit may set window.KARAOKE_ICON

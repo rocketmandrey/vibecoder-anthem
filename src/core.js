@@ -208,16 +208,18 @@ function composite(t) {
   c.globalCompositeOperation = 'multiply'; c.drawImage(grainC, 0, 0);
   c.globalCompositeOperation = 'source-over';
   drawKaraokeText(c);
+  if (window.VERT) vertComposite(outC, t);                                 // 9:16 reframe (src/vertical.js)
 }
-window.renderAt = async (t, type = 'image/png', q = .92) => { T = t; await redraw(); composite(t); return outC.toDataURL(type, q); };
+const finalC = () => window.VERT_C || outC;
+window.renderAt = async (t, type = 'image/png', q = .92) => { T = t; await redraw(); composite(t); return finalC().toDataURL(type, q); };
 // Contact sheet of several times, for quick visual checks: returns { url, ms[] }.
 window.renderSheet = async (times, cols = 3, w = 640) => {
-  const h = Math.round(w * 9 / 16), rows = Math.ceil(times.length / cols), sc = document.createElement('canvas');
+  const F = finalC(), h = Math.round(w * F.height / F.width), rows = Math.ceil(times.length / cols), sc = document.createElement('canvas');
   sc.width = cols * w; sc.height = rows * h; const c = sc.getContext('2d'), ms = [];
   for (let i = 0; i < times.length; i++) {
     const t0 = performance.now(); T = times[i]; await redraw(); composite(times[i]); ms.push(Math.round(performance.now() - t0));
     const x = (i % cols) * w, y = Math.floor(i / cols) * h;
-    c.drawImage(outC, x, y, w, h); c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x, y, 96, 26); c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.fillText(times[i].toFixed(2) + 's', x + 6, y + 18);
+    c.drawImage(F, x, y, w, h); c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x, y, 96, 26); c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.fillText(times[i].toFixed(2) + 's', x + 6, y + 18);
   }
   return { url: sc.toDataURL('image/jpeg', .88), ms };
 };

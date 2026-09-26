@@ -240,8 +240,8 @@
     if (off1 < 1) siteIcon(ax, ay, 1.5 - off1 * .5, -off1 * 3);
     let [bx, by] = hover(t, 2, 1480, 640); bx += easeIn(off2) * 900; by -= easeIn(off2) * 300;
     if (off2 < 1) { push(); translate(bx, by); rotate(off2 * 3); agentBot(0, 60, 22, t, { n: 1, noShadow: true, eyes: 'scared', mouth: 'o', aL: 1.2, aR: 1.2 }); pop(); }
-    if (off1 > 0 && off1 < .5) sfx('НЕ НУЖЕН', 420, 360, 60, TK.soot, off1 * .55, { font: ruFont(60), life: .5 });
-    if (off2 > 0 && off2 < .5) sfx('НЕ НУЖЕН', 1500, 440, 60, TK.soot, off2 * .52, { font: ruFont(60), life: .5 });
+    if (off1 > 0 && off1 < .5) sfx('НЕ НУЖЕН', 680, 340, 60, TK.soot, off1 * .55, { font: ruFont(60), life: .5, stroke: '#F2E6CF' });   // off the dark window, cream rim
+    if (off2 > 0 && off2 < .5) sfx('НЕ НУЖЕН', 1500, 440, 60, TK.soot, off2 * .52, { font: ruFont(60), life: .5, stroke: '#F2E6CF' });
     const wL = t > 30.55 && t < 31.2 ? Math.sin((t - 30.55) * 18) : 0, wR = t > 31.3 && t < 31.95 ? Math.sin((t - 31.3) * 18) : 0;
     clawd(960, 900 - lift * 360, 34, {
       noShadow: lift > .05, rot: beam ? Math.sin(t * 7) * .06 * lift - .04 * bk : 0, sq: beam ? -.08 * lift : 0,
