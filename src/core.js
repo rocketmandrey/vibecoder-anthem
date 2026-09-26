@@ -16,7 +16,7 @@ const ease = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
 const backOut = x => { x = clamp(x); const s = 1.9; return 1 + (s + 1) * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); };
 const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-const bpOf = t => (t - OFF) / BEAT;
+const bpOf = t => window.BEAT_OF ? BEAT_OF(t) : (t - OFF) / BEAT;   // a song may swap in a tracked beat map
 // Seeded by the boil frame, so linework "boils" at BOIL fps like hand-drawn animation.
 const jit = a => (random() * 2 - 1) * a;
 

@@ -10,7 +10,7 @@
 // cufflinks, cigar). The puppets jerk on 194.34 / 194.66 / 194.97 / 195.62 → pull back further: the shareholders are
 // puppets of an even bigger hand, which hangs from a tiny grey tag «+1% к бенчмарку» («ради этого»).
 // 196.0 the picture turns out to be an old tube TV (scanlines, flicker) → 196.28 switch-off: collapse to a bright line,
-// a shrinking dot, black; the grey afterimage «0 токенов» on the dead glass → hard cut at 197.9 to the outro.
+// a shrinking dot, black (no «0 токенов» here: that belongs to the outro line) → hard cut at 197.9 to the outro.
 (() => {
   const INK = PAL.ink;
   // word stresses + strong hits of the final chorus (camera punches, character bounces)
@@ -446,7 +446,7 @@
     if (t >= 196.0) a09_crt(t, seg(t, 196.0, 196.12));
   }
 
-  // ---------- 196.28 the TV switches off: line → dot → black, the «0 токенов» afterimage ----------
+  // ---------- 196.28 the TV switches off: line → dot → black ----------
   function tvOff(t) {
     const p = t - T_OFF, fr = Math.floor(t * 24);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#060708', ink: null });
@@ -471,11 +471,6 @@
         glowAt(960, 540, 20 + r * 7, '#CFE2FF', 130 * a);
         paint(ellPts(960, 540, r, r, 16), { wash: '#FFFFFF', washOp: 255 * a, ink: null });
       }
-    }
-    if (t > 197.05) {                                                                       // the dying afterimage
-      const k = seg(t, 197.05, 197.5) * (.82 + .18 * hash(fr * 3.1)) + .3 * hitK(t, [196.94, 197.6], .1);
-      letter('0 токенов', 966, 546, 76, '#2A2E2A', { font: ruFont(76), ink: false, alpha: .55 * k });
-      letter('0 токенов', 960, 540, 76, '#8C908A', { font: ruFont(76), ink: false, alpha: .75 * k });
     }
     a09_crt(t, p < .2 ? 1 : .55);
   }

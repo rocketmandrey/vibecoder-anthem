@@ -5,7 +5,8 @@
 // (backgrounds included) and must be a pure function of t: frames render in parallel and out of order.
 
 const CH = [];
-function chapter(name, start, end, shots) { CH.push({ name, start, end, shots }); CH.sort((a, b) => a.start - b.start); }
+// o.real: the chapter is timed in real song time even when the song plays other chapters through window.TIME_WARP
+function chapter(name, start, end, shots, o = {}) { CH.push({ name, start, end, shots, real: !!o.real }); CH.sort((a, b) => a.start - b.start); }
 
 // Chapter breaks that get a brush wipe (cover by the boundary, reveal after it).
 const WIPES = SONG.wipes ?? [1.5, 38.5, 73.0, 109.4];
@@ -28,7 +29,11 @@ function pdoomAt(t) {
 const LOOPS = {};
 function drawWorld(t) {
   if (window.LOOP) { window.LOOP(t); flushLetters(); return; }
-  const ch = CH.find(c => t >= c.start && t < c.end);
+  const tr = t;                                                              // karaoke stays on real time
+  let ch = CH.find(c => c.real && t >= c.start && t < c.end);
+  window.REAL_CH = !!ch;
+  if (!ch && window.TIME_WARP) t = TIME_WARP(t);
+  ch = ch || CH.find(c => !c.real && t >= c.start && t < c.end);
   if (!ch) placeholder(t);
   else {
     let i = 0; while (i + 1 < ch.shots.length && t >= ch.shots[i + 1][0]) i++;
@@ -39,7 +44,7 @@ function drawWorld(t) {
   flushLetters();
   if (!METER_SHOWN) { cornerMeter(t); flushLetters(); }
   WIPES.forEach((b, j) => { if (Math.abs(t - b) < WIPE_TR) wipe((t - (b - WIPE_TR)) / (2 * WIPE_TR), j); });
-  karaoke(t);
+  karaoke(tr);
 }
 
 function placeholder(t) {
@@ -104,8 +109,8 @@ function karaoke(t) {
   outX.font = `30px ${RU_FONT}`; tw = Math.max(tw, outX.measureText(RU[txt] || '').width);
   const grow = easeOut((t - a) / .18) * (1 - ease((t - (b - .12)) / .12));
   if (grow < .02) return;
-  const w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = 962, h = 106;
-  const pts = [[x0 + jit(8), y0 + jit(4)], [x0 + w / 2, y0 - 4 + jit(4)], [x0 + w + jit(8), y0 + jit(4)], [x0 + w + 14 + jit(8), y0 + h / 2], [x0 + w + jit(8), y0 + h + jit(4)], [x0 + w / 2, y0 + h + 4 + jit(4)], [x0 + jit(8), y0 + h + jit(4)], [x0 - 14 + jit(8), y0 + h / 2]];
+  const one = !RU[txt], w = (tw + 110) * grow, x0 = 960 - w / 2, y0 = one ? 972 : 962, h = one ? 86 : 106, jx = one ? 3 : 8, jy = one ? 2 : 4;
+  const pts = [[x0 + jit(jx), y0 + jit(jy)], [x0 + w / 2, y0 - 4 + jit(jy)], [x0 + w + jit(jx), y0 + jit(jy)], [x0 + w + 14 + jit(jx), y0 + h / 2], [x0 + w + jit(jx), y0 + h + jit(jy)], [x0 + w / 2, y0 + h + 4 + jit(jy)], [x0 + jit(jx), y0 + h + jit(jy)], [x0 - 14 + jit(jx), y0 + h / 2]];
   paint(pts, { wash: KP.night, washOp: 232, fill: KP.ruby, fillOp: 70, tex: .7, border: .4, ink: KP.gold, sw: .7 });
   for (const sd of [-1, 1]) if (grow > .6) (window.KARAOKE_ICON || rubyStar)(960 + sd * (w / 2 - 6), y0 + h / 2, 22 * grow);   // a song kit may set window.KARAOKE_ICON
   KARAOKE = { a, b, txt, grow };
@@ -117,7 +122,7 @@ function drawKaraokeText(c) {
   const words = txt.split(' '), sp = c.measureText(' ').width, ws = words.map(w => c.measureText(w).width);
   const total = ws.reduce((p, q) => p + q, 0) + sp * (words.length - 1);
   const singDur = Math.min(b - a - .1, .45 + txt.length * .075), sung = clamp((t - a) / singDur) * txt.replace(/ /g, '').length;
-  let x = 960 - total / 2, done = 0; const y = 994;
+  let x = 960 - total / 2, done = 0; const y = RU[txt] ? 994 : 1015;       // one line: the middle of the bar
   words.forEach((w, i) => {
     const f = clamp((sung - done) / w.length); done += w.length;
     c.fillStyle = PAL.cream; c.fillText(w, x, y);

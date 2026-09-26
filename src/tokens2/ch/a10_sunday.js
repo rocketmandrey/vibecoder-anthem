@@ -236,9 +236,9 @@
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
 
-  // ---------- the finish: the room blows apart, the factory reignites, the collage, the ash ----------
-  const CRASH = 227.28, HEY2 = 228.8, HALL = 229.15, COL0 = 231.79, ASH = 237.2, CARD = 237.85;
-  const BAND = [227.28, 227.83, 228.5, 228.8, 229.15, 229.81, 230.31, 230.81, 231.79, 232.45, 233.12, 233.78, 234.43, 235.09, 235.75, 236.41, 237.06];
+  // ---------- the finish: the room blows apart, the factory reignites, the card ----------
+  const CRASH = 227.28, HEY2 = 228.8, HALL = 229.15, CARD = 237.85;
+  const BAND = window.TIME_WARP ? V3_HITS.filter(h => h[0] > 228.4).map(h => TIME_WARP(h[0])) : [227.28, 227.83, 228.5, 228.8, 229.15, 229.81, 230.31, 230.81, 231.79, 232.45, 233.12, 233.78, 234.43, 235.09, 235.75, 236.41, 237.06];
   const SOOT = '#141012', EMBER = '#6E2E18';
 
   // Put local (0, 0) at screen (X, Y), zoom z, rotation r; letters follow (it is a camera). Pair with camEnd().
@@ -247,7 +247,7 @@
     camBegin(ox - (dx * c + dy * s), oy - (-dx * s + dy * c), z, r);
   }
   // the fresh 100% limit burns to 0 across the whole blast
-  const burnBar = (t) => limitBar(560, 34, 800, 1 - seg(t, CRASH, ASH - .15), { h: 54, burn: 1, glow: .4 });
+  const burnBar = (t) => limitBar(560, 34, 800, 1 - seg(t, CRASH, CARD - .15), { h: 54, burn: 1, glow: .4 });
   function furnace(t, k = 1) {
     bgFill(SOOT, '#3A1A10', 90 * k);
     glowAt(960, 900, 1100, A2.sodium, 90 * k);
@@ -331,129 +331,6 @@
     flash(k * .12 + hitK(t, [HALL], .1) * .4, A2.sodium);
   }
 
-  // ---------- the punk collage: one taped cutout per hit, every motif of the factory ----------
-  const TOY = { red: '#D8323E', redDk: '#8E1A24', gold: '#F2B632' };
-  function cutShredder(t, age) {                                              // «ДОХОДЫ» fed into the shredder
-    const feed = clamp(age * .8) * .45;
-    paint(rectPts(-110, -120 + feed * 90, 150, 110, 1), { wash: A2.cream, ink: PAL.ink, sw: .6 });
-    letter('ДОХОДЫ', -35, -85 + feed * 90, 26, TK.ember, { font: ruFont(26), ink: false });
-    paint(rrPts(-170, -20, 280, 120, 12, 1), { wash: A2.steel, fill: A2.gunmetal, fillOp: 90, tex: .5, ink: PAL.ink, sw: 1 });
-    paint(rectPts(-130, -24, 200, 10), { wash: '#101114', ink: null });
-    letter('ШРЕДЕР', -30, 50, 28, A2.hazard, { font: ruFont(28), ink: false });
-    for (let i = 0; i < 9; i++) {
-      const x = -140 + i * 26, l = 30 + 30 * frac(age * 2 + hash(i));
-      inkLine([[x, 100], [x + Math.sin(age * 9 + i) * 6, 100 + l]], 3, A2.hazard, 'ink', .6);
-    }
-  }
-  function cutIdol(t) {                                                       // the golden idol on its GPU pedestal
-    for (let i = 0; i < 12; i++) {
-      const a = i / 12 * TAU + t * .4;
-      paint([[0, -30], [Math.cos(a - .1) * 260, -30 + Math.sin(a - .1) * 260], [Math.cos(a + .1) * 260, -30 + Math.sin(a + .1) * 260]], { wash: i % 2 ? A2.sodium : A2.hazard, washOp: 90, ink: null });
-    }
-    gpuCard(0, 120, .45, t, { glow: .4 });
-    clawd(0, 90, 15, { col: '#F2C53D', dk: '#A88A10', lt: '#FFE38A', hat: 'crown', eyes: 'happy', mouth: 'grin', aL: 1.4, aR: 1.4, noShadow: true, seed: 5 });
-    letter('ЧЕМПИОН', 0, -150, 30, A2.gunDk, { font: ruFont(30), ink: false });
-  }
-  function cutReport(t) {                                                     // the report, shrink-wrapped, sealed
-    paint(rectPts(-150, -115, 300, 230, 1), { wash: '#1E3A6E', fill: '#0F2146', fillOp: 90, tex: .6, ink: PAL.ink, sw: 1 });
-    paint(rectPts(-150, -115, 34, 230), { wash: A2.hazard, ink: PAL.ink, sw: .6 });
-    letter('ДОКЛАД', 10, -70, 34, A2.cream, { font: ruFont(34), ink: false });
-    letter('1 400 стр.', 10, -30, 20, A2.steelLt, { font: ruFont(20), ink: false });
-    paint(rectPts(-165, -130, 330, 260), { fill: '#DDEEFF', fillOp: 60, bleed: .1, tex: .2, ink: '#BFD3E6', sw: .8 });
-    for (let i = 0; i < 3; i++) inkLine([[-120 + i * 100, -125], [-80 + i * 100, 125]], 1.4, '#FFFFFF', 'inkfine', .3);
-    paint(ellPts(60, 50, 82, 82, 26), { wash: A2.hazard, ink: PAL.ink, sw: 1 });
-    letter('ПРОЧТЕНИЕ', 60, 36, 21, TK.ember, { font: ruFont(21), rot: -.15, ink: false });
-    letter('НЕ ВХОДИТ', 60, 64, 21, TK.ember, { font: ruFont(21), rot: -.15, ink: false });
-  }
-  function cutWheel(t) {                                                      // the samsara wheel of the token economy
-    const a0 = t * 1.2, R = 115, labs = ['GPU', 'ТОКЕНЫ', 'АГЕНТЫ', 'ЗАДАЧИ'];
-    paint(ellPts(0, 0, R, R, 36), { ink: '#7A4A10', sw: 2.2 });
-    paint(ellPts(0, 0, R - 14, R - 14, 36), { wash: '#F2C53D', washOp: 60, ink: '#A88A10', sw: .9 });
-    for (let i = 0; i < 8; i++) { const a = a0 + i / 8 * TAU; inkLine([[0, 0], [Math.cos(a) * R, Math.sin(a) * R]], 1.6, '#7A4A10', 'ink', 0); }
-    token(0, 0, 26, { spin: t * 2 });
-    labs.forEach((l, i) => { const a = a0 + i / 4 * TAU; letter(l, Math.cos(a) * (R + 4), Math.sin(a) * (R + 4), 22, TK.ember, { font: ruFont(22), stroke: A2.cream, ink: false }); });
-  }
-  function cutCapex(t, age) {                                                 // the CAPEX neon
-    const fl = age < .25 && frac(age * 20) < .5 ? .35 : 1;
-    glowAt(0, -20, 220, A2.magenta, 90 * fl);
-    letter('CAPEX', 0, -30, 104, fl > .5 ? '#FFD0F6' : '#5A2A50', { stroke: A2.magenta, ink: false });
-    paint(rrPts(-120, 40, 240, 62, 14), { wash: '#10140A', ink: A2.acid, sw: 1.2 });
-    letter('СЕЙЧАС!', 0, 72, 40, '#EFFFC8', { font: ruFont(40), stroke: A2.acid, ink: false });
-  }
-  function cutTick(t) {                                                       // the whole factory's product: one tiny ✓
-    paint(ellPts(0, 70, 120, 42, 22), { wash: '#8A1E32', fill: '#5A0E1E', fillOp: 90, tex: .5, ink: PAL.ink, sw: .8 });
-    for (const s of [-1, 1]) paint(ellPts(s * 114, 70, 12, 12, 8), { wash: A2.hazard, ink: null });
-    glowAt(0, 30, 60, '#7DFFAE', 90);
-    const P = [[-.55, -.02], [-.22, .28], [.42, -.52], [.6, -.36], [-.2, .52], [-.7, .12]].map(([a, b]) => [a * 34, 30 + b * 34]);
-    paint(P, { wash: '#2FBF71', fill: '#1A7A44', fillOp: 60, ink: PAL.ink, sw: .6 });
-    paint(rotPts(rrPts(-95, -115, 190, 76, 8), 0, -77, .05), { wash: '#FFFFFF', ink: PAL.ink, sw: .6 });
-    letter('ПРОДУКЦИЯ', 0, -95, 26, PAL.ink, { font: ruFont(26), ink: false, rot: .05 });
-    letter('1 шт.', 0, -60, 32, '#E0302A', { font: ruFont(32), ink: false, rot: .05 });
-  }
-  function cutTrain(t, age) {                                                 // the toy train rides off the cliff
-    paint(rectPts(-180, -130, 360, 260), { wash: '#8FB4E0', fill: '#C9DDF2', fillOp: 70, tex: .4, ink: null });                              // sky
-    paint([[-180, 0], [-10, 0], [0, 40], [-20, 130], [-180, 130]], { wash: '#6B4A2E', fill: '#3A2618', fillOp: 90, tex: .6, ink: PAL.ink, sw: .8 });  // the cliff
-    inkLine([[-180, -4], [-8, -4]], 2.4, '#3A3530', 'ink', 0);                  // the rail just ends
-    paint(rectPts(-150, -86, 8, 84), { wash: '#6B4A2E', ink: null });
-    paint(rotPts(rectPts(-176, -110, 96, 38, 1), -128, -91, -.06), { wash: A2.cream, ink: PAL.ink, sw: .5 });
-    letter('AGI →', -128, -90, 26, PAL.ink, { font: ruFont(26), ink: false, rot: -.06 });
-    const f = easeIn(clamp(age * 1.1)), tx = 30 + f * 70, ty = -8 + f * 120, rot = .35 + f * .9;
-    push(); translate(tx, ty); rotate(rot);                                   // loco pivoting over the edge, nose first
-    paint(rectPts(-40, -46, 100, 38, 1), { wash: TOY.red, fill: TOY.redDk, fillOp: 50, ink: PAL.ink, sw: .8 });
-    paint(rectPts(-78, -84, 44, 76, 1), { wash: TOY.redDk, ink: PAL.ink, sw: .8 });
-    paint(rectPts(30, -76, 16, 30), { wash: '#2B2F36', ink: PAL.ink, sw: .5 });
-    for (const wx of [-56, -14, 34]) paint(ellPts(wx, -4, 15, 15, 12), { wash: TOY.gold, ink: PAL.ink, sw: .7 });
-    pop();
-    for (let i = 0; i < 3; i++) { const p = frac(age * 1.5 + i / 3); paint(ellPts(tx + 40 - p * 40, ty - 100 - p * 60, 12 + p * 16, 10 + p * 12, 10), { wash: '#FFFFFF', washOp: 200 * (1 - p), ink: null }); }
-    if (age > .35) letter('!', tx + 110, ty - 60, 60, TK.ember, { ink: false });
-  }
-  const CUTS = [
-    { t0: 231.79, x: 340, y: 320, w: 400, h: 360, r: -.08, col: A2.cream, draw: cutShredder },
-    { t0: 232.45, x: 1590, y: 330, w: 380, h: 380, r: .07, col: '#EFD9A0', draw: cutIdol },
-    { t0: 233.12, x: 965, y: 300, w: 400, h: 320, r: -.03, col: '#CFE0FF', draw: cutReport },
-    { t0: 233.78, x: 330, y: 720, w: 360, h: 340, r: .06, col: A2.cream, draw: cutWheel },
-    { t0: 234.43, x: 1590, y: 720, w: 420, h: 300, r: -.06, col: '#2A1030', draw: cutCapex },
-    { t0: 235.09, x: 740, y: 640, w: 300, h: 290, r: -.1, col: A2.cream, draw: cutTick },
-    { t0: 235.75, x: 1180, y: 660, w: 400, h: 300, r: .09, col: '#DDE6F2', draw: cutTrain }
-  ];
-  function cutout(c, i, t) {
-    const age = t - c.t0; if (age < 0) return;
-    const z = age < .1 ? lerp(1.9, 1, easeOut(age / .1)) : 1 + .03 * hitK(t, BAND, .15), r = c.r + (hash(i * 13 + Math.floor(t * 3)) - .5) * .04;
-    place(c.x, c.y, z * 1.25, r);
-    zineCut(-c.w / 2, -c.h / 2, c.w, c.h, { rot: 0, col: c.col, seed: i + 3 });
-    c.draw(t, age);
-    flushLetters();                                                            // so the next cutout lands on top of this one's text
-    camEnd();
-    if (age < .12) paint(rectPts(c.x - c.w * .75, c.y - c.h * .75, c.w * 1.5, c.h * 1.5), { fill: '#FFF3C8', fillOp: 140 * (1 - age / .12), bleed: .3, ink: null });
-  }
-  function sCollage(t) {
-    const k = hitK(t, BAND, .15), [sx, sy] = shakeXY(t, 6 * k), h = hop(t);
-    furnace(t);
-    tokenRain(t, { n: 14, seed: 12, r: 22 });
-    push(); translate(sx, sy);
-    clawd(960, 930, 30, { eyes: 'angry', mouth: 'O', dy: -h * 3, sq: (1 - h) * .15, seed: 3, noShadow: true,
-      aL: 1.7 + .4 * h, aR: 1.7 - .4 * h, armL: fist(PAL.clay), armR: fist(PAL.clay), rot: (hash(Math.floor(t * 3) + 3) - .5) * .2 });
-    pop();
-    flushLetters();
-    CUTS.forEach((c, i) => cutout(c, i, t));
-    punkText('ЭКОНОМИКА РАБОТАЕТ!', 960, 500, 88, t, 236.41, { seed: 3, step: .018 });   // one line: two did not read in .8 s
-    burnBar(t);
-    flash(k * .12, '#FFF3C8');
-    glitchCut(t, COL0, { span: .05, k: .5 });
-  }
-
-  // 237.2 the band stops dead on the last «…Сука.»: a still frame, soot Clawd alone on black, ash drifting slowly, the word hanging
-  function sAsh(t) {
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
-    glowAt(960, 760, 420, '#2A2224', 70);
-    for (let i = 0; i < 24; i++) {                                           // ash flakes, falling slowly
-      const x = hash(i * 7) * W + Math.sin(t * .7 + i) * 18, y = hash(i * 3) * 900 + (t - ASH) * (30 + 30 * hash(i + 5)), r = 2 + hash(i + 11) * 3.5;
-      paint(ellPts(x, y, r, r * .7, 6, 0, hash(i) * 3), { wash: '#6A6264', washOp: 170, ink: null });
-    }
-    clawd(960, 900, 40, { col: '#5A4E4C', dk: '#3A3232', lt: '#7A6E6A', eyes: 'narrow', mouth: 'flat', aL: -.6, aR: -.6, seed: 3, noShadow: true });
-    letter('…Сука.', 960, 250, 110, '#B8B0A8', { font: ruFont(110), ink: false });
-  }
-
   function sCredit(t) {                                                       // 237.73 «ЖГИ ТОКЕНЫ» on soot black + the credit: AGENT #42 takes it
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
     glowAt(960, 150, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
@@ -501,6 +378,6 @@
 
   chapter('sunday', 197.9, DUR + 1, [
     [197.9, sRoom], [205.65, sZero], [207.6, sTour], [213.95, sSilence], [216.8, sHappy], [218.45, sMidnight],
-    [220.7, sReset], [224.2, sSuka], [227.2, sBlast], [HALL, sHall], [COL0, sCollage], [ASH, sAsh], [CARD, sCredit]
+    [220.7, sReset], [224.2, sSuka], [227.2, sBlast], [HALL, sHall], [CARD, sCredit]   // no collage, no second «Сука»: the band plays through to the card
   ]);
 })();
