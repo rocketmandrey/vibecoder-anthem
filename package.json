@@ -1,5 +1,5 @@
 {
-  "name": "pdoomvideo",
+  "name": "vibecoder-anthem",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "ЖГИ ТОКЕНЫ — гимн вайбкодеров: акварельный клип на p5.js, написанный Claude",
   "dependencies": {
     "p5": "^2.3.3",
     "p5.brush": "^2.2.3",
