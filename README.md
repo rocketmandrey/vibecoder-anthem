@@ -4,7 +4,7 @@
 
 [![Смотреть «ЖГИ ТОКЕНЫ» на YouTube](docs/poster.jpg)](https://www.youtube.com/watch?v=XCfsXR0rG8w)
 
-<p align="center"><b><a href="https://www.youtube.com/watch?v=XCfsXR0rG8w">▶ Смотреть на YouTube</a></b> · автор — Андрей Овчаренко · <a href="https://t.me/Amovcharenko">tg @Amovcharenko</a></p>
+<p align="center"><b><a href="https://www.youtube.com/watch?v=XCfsXR0rG8w">▶ Смотреть на YouTube</a></b> · автор — Андрей Овчаренко · <a href="https://t.me/Amovcharenko">tg @Amovcharenko</a> · <b><a href="https://t.me/andreydraft">📣 канал @andreydraft</a></b></p>
 
 ---
 
@@ -65,3 +65,7 @@ node render.mjs --song=tokens3 --sheet=12,60,120 --out=out/check.jpg   # быс�
 ## Откуда движок
 
 Форк [JohnHeibel/PDoomVideo](https://github.com/JohnHeibel/PDoomVideo) — открытый движок клипа *I'm Upping My P(doom)*, который Claude Opus 5.5 нарисовал целиком. Оттуда персонаж Clawd, таймлайн и рендер-пайплайн; исходный клип всё ещё собирается из [`studio.html`](studio.html) и [`src/ch/`](src/ch/).
+
+---
+
+⭐ Понравилось — поставь звезду репе, это лучший способ сказать спасибо. Больше таких экспериментов с Claude — в телеграм-канале **[@andreydraft](https://t.me/andreydraft)**.
