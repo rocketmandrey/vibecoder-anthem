@@ -1,4 +1,4 @@
-// b07_samsara.js: «Жги токены» v3, the chant «Больше GPU — больше токенов…», 148.84–160.048 in REAL v3 time. VERSION B of an A/B test:
+// b07_samsara.js: «Жги токены» v3, the chant «Больше GPU — больше токенов…», 149.58–160.048 in REAL v3 time. VERSION B of an A/B test:
 // only registered when the page URL has `hamster` (render song tokens3h); without it the v2 a07 flywheel plays through the warp (version A).
 // «КОЛЕСО САНСАРЫ»: Clawd runs in a giant hamster wheel; around it GPU feeds the loop ТОКЕНОВ → АГЕНТОВ → ЗАДАЧ → ТОКЕНОВ.
 // Every sung noun lights exactly its plate (and only it) on its truth word onset; each «— больше Y» sends a coin stream from X,
@@ -8,11 +8,11 @@
   if (!/[?&]hamster\b/.test(location.search)) return;
   const INK = PAL.ink;
   // truth.json word onsets (checked against the vocal-stem onsets): the four line starts «Больше», the mid-line «больше», the nouns
-  const S0 = 148.84, END = 160.048;
-  const BOL = [148.84, 150.68, 151.52, 152.866, 154.12, 155.452, 156.74, 158.055];
+  const S0 = 149.58, END = 160.048;
+  const BOL = [149.58, 150.56, 151.88, 152.866, 154.12, 155.452, 156.74, 158.055];
   const NOUN = [[149.957, 'gpu'], [150.898, 'tok'], [152.192, 'tok'], [153.484, 'agt'], [154.793, 'agt'], [155.96, 'task'], [157.248, 'task'], [158.723, 'tok']];
-  const FLOW = [[150.68, 150.898, 'gpu', 'tok'], [152.866, 153.484, 'tok', 'agt'], [155.452, 155.96, 'agt', 'task'], [158.055, 158.723, 'task', 'tok']];
-  const LINES = [148.84, 151.52, 154.12, 156.74], CLOSE = 158.723, WHIP = 159.395;   // WHIP: the beat before the cut
+  const FLOW = [[150.56, 150.898, 'gpu', 'tok'], [152.866, 153.484, 'tok', 'agt'], [155.452, 155.96, 'agt', 'task'], [158.055, 158.723, 'task', 'tok']];
+  const LINES = [149.58, 151.88, 154.12, 156.74], CLOSE = 158.723, WHIP = 159.395;   // WHIP: the beat before the cut
 
   const WC = [960, 600], R = 255, RI = R - 24;                                        // the wheel
   const ST = {

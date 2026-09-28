@@ -44,7 +44,8 @@
 | [`src/tokens2/`](src/tokens2/) | v2: десять глав (завод / acid / индастриал) — основа v3 |
 | [`src/tokens/`](src/tokens/) | v1: общий кит — огонь, дата-центр, CEO, токены |
 | [`tokens.html`](tokens.html), [`tokens2.html`](tokens2.html) | Ранние версии клипа, для истории |
-| [`assets/tokens3/`](assets/tokens3/) | Трек, тайминги Whisper, карта битов и ударов |
+| [`assets/tokens3/`](assets/tokens3/) | Трек, тайминги Whisper и ElevenLabs Scribe, карта битов и ударов |
+| [`scripts/`](scripts/) | Сверка мастеров, Scribe, сетка битов и аудит синка ([`SYNC_AUDIT.md`](SYNC_AUDIT.md)) |
 | [`src/`](src/) | Движок: персонажи, реквизит, таймлайн, караоке, вертикальный режим |
 | [`render.mjs`](render.mjs) | Рендер кадров в headless Chrome и сборка MP4 через ffmpeg |
 
@@ -55,9 +56,9 @@
 ```bash
 npm install
 python3 -m http.server 8000                                  # и открыть http://localhost:8000/tokens3.html (скраббер)
-node render.mjs --song=tokens3 --frames=0:242.6 --workers=4    # все кадры 16:9 в out/frames_tokens3 (можно докачивать)
+node render.mjs --song=tokens3 --frames=0:242.23 --workers=4    # все кадры 16:9 в out/frames_tokens3 (можно докачивать)
 node render.mjs --song=tokens3 --encode --out=out/zhgi_tokeny.mp4
-node render.mjs --song=tokens3v --frames=0:242.6 --workers=4   # вертикальная 9:16-версия
+node render.mjs --song=tokens3v --frames=0:242.23 --workers=4   # вертикальная 9:16-версия
 node render.mjs --song=tokens3v --encode --out=out/zhgi_tokeny_vertical.mp4
 node render.mjs --song=tokens3 --sheet=12,60,120 --out=out/check.jpg   # быстрый контактный лист
 ```
