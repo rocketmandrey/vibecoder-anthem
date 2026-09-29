@@ -61,6 +61,8 @@ node render.mjs --song=tokens3 --encode --out=out/zhgi_tokeny.mp4
 node render.mjs --song=tokens3v --frames=0:242.23 --workers=4   # вертикальная 9:16-версия
 node render.mjs --song=tokens3v --encode --out=out/zhgi_tokeny_vertical.mp4
 node render.mjs --song=tokens3 --sheet=12,60,120 --out=out/check.jpg   # быстрый контактный лист
+node render.mjs --song=tokens3r --frames=0:242.23 --workers=4   # Reels/Shorts 1080×1920: квадрат 1:1 + субтитры под ним
+node render.mjs --song=tokens3r --encode --from=25.083 --to=242.2 --out=out/reels/nointro.mp4   # версии — отрезки тех же кадров
 ```
 
 ## Откуда движок
