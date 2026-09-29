@@ -4,6 +4,7 @@
 //   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio
 //   node render.mjs --frames=0:156.6 --workers=4                                full-res JPEG frames → out/frames (resumable)
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
+//   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
 //   node render.mjs --loop=recursion [--out=out/loop_recursion]                 one cycle of a standalone loop (PNGs)
 //   (--loop also works with --sheet, where the times are loop time)
 import puppeteer from 'puppeteer-core';
@@ -13,7 +14,8 @@ import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
-const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3h: { page: 'tokens3.html', q: '&hamster', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 } };
+const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3h: { page: 'tokens3.html', q: '&hamster', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
+  tokens3sq: { page: 'tokens3.html', q: '&square', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3r: { page: 'tokens3.html', q: '&reels', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 } };
 const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);
@@ -23,10 +25,17 @@ const run = (cmd, a) => new Promise((ok, bad) => { const p = spawn(cmd, a, { std
 
 if (args.encode) {
   const out = args.out || 'out/pdoom.mp4', n = readdirSync(FRAMES_DIR).filter(f => f.endsWith('.jpg')).length;
-  console.log(`encoding ${n} frames → ${out}`);
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-i', `${FRAMES_DIR}/f%05d.jpg`, '-i', S.audio,
-    '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
-    '-movflags', '+faststart', '-shortest', out]);
+  // --from/--to (seconds): frame i is clip time i/fps, so the cut starts on frame round(from*fps) and the audio is seeked to the same instant
+  const f0 = args.from ? Math.round(+args.from * fps) : 0, nf = args.to ? Math.round(+args.to * fps) - f0 : n, a0 = f0 / fps, len = nf / fps;
+  for (let i = f0; i < f0 + nf; i++) if (!existsSync(`${FRAMES_DIR}/f${String(i).padStart(5, '0')}.jpg`)) throw new Error('missing frame ' + i);
+  const fin = args.from ? .06 : 0, fout = args.to ? .35 : 0;
+  console.log(`encoding ${nf} frames (${a0.toFixed(3)}–${(a0 + len).toFixed(3)} s) → ${out}`);
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-start_number', String(f0), '-i', `${FRAMES_DIR}/f%05d.jpg`,
+    '-ss', a0.toFixed(4), '-t', len.toFixed(4), '-i', S.audio, '-frames:v', String(nf),
+    '-map', '0:v', '-map', '1:a', '-vf', 'scale=out_range=tv:out_color_matrix=bt709,format=yuv420p',
+    '-af', `afade=t=in:d=${fin}:curve=tri,afade=t=out:st=${(len - fout).toFixed(3)}:d=${fout}`,
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+    '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest', out]);
   console.log('wrote ' + out);
   process.exit(0);
 }
