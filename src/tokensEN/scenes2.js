@@ -172,7 +172,7 @@
   // its station, a stream of stuff runs along the rim to the next one. Every line the ring spins faster; on the last «tokens» it blurs, sparks
   // and coins fly off the rim. Clawd is strapped to the hub, spinning with it, dizzier every lap.
   // «The economy is WORKING!» (the RU a07 move): the whole ring gets yanked up and rockets off the top on a fire trail; one empty wrapper floats down.
-  const RG = { x: 960, y: 600, R: 320, lines: [137.06, 139.62, 142.18, 144.78], eco: 148.56, wrap: 150.24,
+  const RG = { x: 960, y: 600, R: 280, lines: [137.06, 139.62, 142.18, 144.78], eco: 148.56, wrap: 150.24,
     words: [[137.38, 0], [138.64, 1], [139.94, 1], [141.34, 2], [142.62, 2], [143.84, 3], [145.14, 3], [146.40, 1]] };
   const STA = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];                  // station angles: GPU, tokens, agents, tasks
   const spinOf = t => {                                                   // integrated ring angle (rev/s grows per line, blur after the last noun)
@@ -239,7 +239,7 @@
     if (t > RG.eco) for (let i = 0; i < 14; i++) { const u = frac((t - RG.eco) * .5 + hash(i)); token(460 + hash(i + 2) * 1000, lerp(-200, 1060, u), 16, { spin: t * 3 + i }); }
   }
   scene('e23_loop', 137.0, 152.04, ringScene, [
-    [137.0, 960, 620, 1000], [RG.eco, 960, 620, 1000, 1], [RG.eco + 1.0, 960, 520, 1060, 1], [RG.wrap + .4, 960, 900, 560, 1], [152.039, 960, 920, 520, 1],
+    [137.0, 960, 620, 1060], [RG.eco, 960, 620, 1060, 1], [RG.eco + 1.0, 960, 520, 1060, 1], [RG.wrap + .4, 960, 900, 560, 1], [152.039, 960, 920, 520, 1],
   ], [...RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]), [RG.eco, 14]]);
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
@@ -408,7 +408,7 @@
     const up = easeOut(seg(t, BN.lift - .2, BN.lift + .2)) * 8, bh = 520, bx = 960, by = 1060, boom = t >= BN.boom;
     if (!boom || t < BN.boom + .3) {
       [[640, 470, '#8A95A1'], [760, 490, '#8A95A1'], [860, 505, '#8A95A1']].forEach(([x, h, c]) => paint(rectPts(x - 45, by - h, 90, h, 1), { wash: c, fill: mixCol(c, INK, .3), fillOp: 50, tex: .4, ink: INK, sw: 1 }));
-      ceoClawd(1240, 1058, 16, { noShadow: true, flip: true, eyes: t > BN.lift ? 'spark' : 'normal', mouth: t > BN.lift ? 'grin' : 'smile', aR: 1.3, aL: t > BN.lift ? 1.6 : .4 });
+      ceoClawd(1190, 1058, 24, { noShadow: true, flip: true, eyes: t > BN.lift ? 'spark' : 'normal', mouth: t > BN.lift ? 'grin' : 'smile', aR: 1.3, aL: t > BN.lift ? 1.6 : .4 });
       paint(rectPts(bx - 70, by - bh, 140, bh, 1), { wash: PAL.teal, fill: mixCol(PAL.teal, INK, .3), fillOp: 60, tex: .5, ink: INK, sw: 1.2 });
       paint(rectPts(bx - 70, by - bh - up - 12, 140, 12 + up), { wash: TK.led, ink: INK, sw: .8 });
       inkLine([[bx, -400], [bx, by - bh - up - 50]], 2, INK, 'inkfine', 0);
@@ -456,7 +456,7 @@
     }
   }
   scene('e31_bench', 189.06, 210.0, bench, [
-    [189.06, 940, 760, 820], [BN.lift - .4, 1060, 620, 620, 1], [BN.lift + .5, 1060, 620, 620, 1], [BN.boom, 960, 700, 1000],
+    [189.06, 960, 860, 820], [BN.lift - .4, 1060, 800, 720, 1], [BN.lift + .5, 1060, 800, 720, 1], [BN.boom, 960, 700, 1000],
     [BN.hold, 960, 560, 1000, 1], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
   ], [[BN.lift, 6], [BN.boom, 20]]);
 

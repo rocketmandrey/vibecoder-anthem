@@ -417,8 +417,8 @@
       for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const x = mx + sx * r, y = my + sy * r * .8;
         paint(rectPts(Math.min(x, x - sx * L), y - T / 2, L, T), { wash: '#FF2F4A', ink: null }); paint(rectPts(x - T / 2, Math.min(y, y - sy * L), T, L), { wash: '#FF2F4A', ink: null }); }
     }
-    const cx = 640;
-    clawd(cx, 1060, 10, { eyes: t > MY.lock ? 'heart' : 'look', lookX: 1, mouth: t > MY.lock ? 'grin' : 'smile', aL: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8) : .4, aR: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8 + 1) : .4, noShadow: true });
+    const cx = 660;
+    clawd(cx, 1060, 16, { eyes: t > MY.lock ? 'heart' : 'look', lookX: 1, mouth: t > MY.lock ? 'grin' : 'smile', aL: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8) : .4, aR: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8 + 1) : .4, noShadow: true });
     if (t > MY.out) flash(kick(t, [MY.out], .5) * .4, TK.orange);
   }
   scene('rap_mayo', 167.58, 178.58, mayo, [
