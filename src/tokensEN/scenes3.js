@@ -3,7 +3,7 @@
 // EN song time; loaded after scenes2.js (ENK / EN2 helpers), before tokens3/square.js.
 (() => {
   const INK = PAL.ink;
-  const { kick, NOTXT, rubble, native, back, gauge, bull, s2, s3 } = ENK;
+  const { kick, NOTXT, rubble, native, back, gauge, bull, s2, s3, layer } = ENK;
   const { eased, CHOIR, ROOM, roomWall, cuckoo, laptop, jar, armchair, desk, nightRoom } = EN2;
   const scene = (name, a, b, fn, keys, punch = []) => {
     chapter('en_' + name, a, b, [[a, native(fn)]], { real: true });
@@ -31,28 +31,33 @@
     for (let k = 0; k < 4; k++) paint(rectPts(x + w * .06, y + h * (.55 + k * .09), w * (.8 - k * .12), h * .035), { wash: '#B8AE9E', ink: null });
   };
 
-  // ======== INTRO NEW (0–18.16, instrumental): the furnace hall wakes up, the title slams down on the first big hit ========
+  // ======== INTRO NEW (0–18.16, instrumental) ========
+  // Dark hall; one coin rolls into frame (0) → lights bang on (2.30, 5.11) → Clawd rolls a giant coin like a wheel towards the press, heaves it
+  // onto the bed (12.6) → 13.40 the press SLAMS it flat, the title slams with it; the press keeps hammering on every hit, sparks, fire behind.
+  const INH = [13.40, 14.07, 15.44, 16.46, 17.16];
   function intro(t) {
     back(A2.gunDk);
-    const dark = t < 2.3 ? 1 : t < 5.11 ? .55 : .15;
-    A03.hall(t, { lamps: [560, 1360], floor: 1060, dark });
-    const k = t < 5.11 ? .15 : lerp(.35, 1, eased(t, 12.6, 13.4));
-    A03.furnace(t, k + .25 * kick(t, [14.07, 15.44, 16.46, 17.16], .3));
-    // a single token rolls in along the floor, then a steady file of them, into the furnace mouth
-    for (let i = 0; i < 9; i++) {
-      const st = 2.3 + (i === 0 ? 0 : 5 + i * .9), u = (t - st) / 2.4; if (u < 0 || u > 1) continue;
-      const x = lerp(440, 900, u), y = 1040 - Math.abs(Math.sin(u * 9)) * 12;
-      token(x, y, 22, { spin: t * 2 + i, burn: seg(u, .75, 1) });
-    }
-    // Clawd walks in on the right and looks up at it
-    const cx = lerp(1560, 1280, eased(t, 6, 8.5));
-    clawd(cx, 1058, 9, { walk: t < 8.5 ? t * 2 : null, flip: true, eyes: t > 13.4 ? 'spark' : 'look', lookX: -1, lookY: -.5, mouth: t > 13.4 ? 'O' : 'flat', noShadow: true });
-    if (t >= 13.4) { stamp('BURN THE TOKENS', 960, 150, 78, t, 13.4, { col: TK.yellow, rot: -.04 }); for (const h of [13.4, 14.07, 15.44, 16.46, 17.16]) sparks(960, 600, t - h, h * 3, 14, 320); }
-    flash(kick(t, [13.4], .25) * .5, TK.yellowLt);
+    const dark = t < 2.3 ? .9 : .1;                                      // ponytail: a half-dark hall reads as grey fog, so the lamps come on one by one instead
+    A03.hall(t, { lamps: t < 5.11 ? [700] : [700, 1220], floor: 1060, dark });
+    fire(960, 1060, 1300, 260 * eased(t, 12.8, 13.4) + 60 * kick(t, INH, .3), t, { k: .3 + .7 * eased(t, 12.8, 13.4), seed: 11 });
+    // the press (idle until the first slam)
+    press(800, 420, 340, 640, t, t < 13.2 ? [99] : INH, { seed: 3 });
+    // the giant coin: rolled in by Clawd from the left, then flattened
+    const roll = eased(t, 5.4, 12.2), gx = lerp(420, 970, roll), lift = eased(t, 12.2, 12.9), sq = t >= INH[0] ? .2 : 1;
+    const gy = lerp(1060 - 110, 890 - 110 * sq, lift);
+    if (t > 2.3) { push(); translate(gx, gy); scale(1 + (1 - sq) * .5, sq); token(0, 0, 110, { spin: t < 12.2 ? roll * 6 : .02, burn: t > 14 ? seg(t, 14, 17) * .6 : 0 }); pop(); }
+    if (t < 2.3) token(lerp(440, 700, t / 2.3), 1030, 24, { spin: t * 2 });
+    const cx = t < 12.2 ? gx - 170 : lerp(gx - 170, 700, eased(t, 12.9, 13.3)), pushing = t > 5.4 && t < 12.2;
+    if (t > 2.3) clawd(cx, 1058, 11, { walk: pushing ? t * 2.2 : null, rot: pushing ? .12 : 0, eyes: t > 13.4 ? 'spark' : pushing ? 'narrow' : 'look', lookX: 1,
+      mouth: t > 13.4 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing || (t > 12.2 && t < 12.9) ? 1.2 : .3, aR: pushing || (t > 12.2 && t < 12.9) ? 1.2 : .3, emote: pushing && t > 10 ? 'sweat' : null, noShadow: true });
+    for (const h of INH) { sparks(970, 900, t - h, h * 3, 16, 360); rubble(970, 1060, 500, t - h, h); }
+    if (t >= INH[0]) stamp('BURN THE TOKENS', 960, 250, 78, t, INH[0], { col: TK.yellow, rot: -.04 });
+    flash(Math.min(.35, kick(t, [INH[0]], .2) * .35), TK.yellowLt);
   }
   scene('intro', 0, 18.16, intro, [
-    [0, 960, 620, 760], [5.1, 960, 600, 900, 1], [12.9, 960, 560, 1000, 1], [13.4, 960, 520, 1080], [18.159, 960, 540, 1060, 1],
-  ], [[13.4, 16]]);
+    [0, 580, 850, 560], [2.3, 640, 820, 620, 1], [5.4, 620, 810, 700, 1], [9.0, 760, 790, 760, 1], [12.2, 900, 760, 820, 1], [13.39, 960, 700, 900, 1],
+    [13.4, 960, 620, 960], [18.159, 960, 640, 900, 1],
+  ], [[13.4, 18]]);
 
   // ======== VERSE 1 NEW (18.16–39.78) in the room at dusk ========
   // «Friday night, I'm off the clock» — the cuckoo pops at six, laptop slams shut, Clawd hops off, stretches.
@@ -143,9 +148,9 @@
     clawd(cx, cy, 13, o);
   }
   scene('v1_room', 18.16, 39.78, verse1, [
-    [18.16, 760, 760, 640], [19.9, 860, 740, 760, 1], [20.8, 1060, 720, 800, 1], [22.3, 1230, 740, 640, 1], [V1.grass, 1140, 760, 700, 1], [V1.sunday, 1180, 600, 900, 1],
-    [V1.die, 1300, 720, 560], [28.9, 1280, 740, 620, 1], [V1.app, 1000, 740, 820], [V1.why, 1180, 740, 700, 1], [33.9, 1120, 720, 820, 1],
-    [V1.game, 820, 700, 900], [V1.site, 1020, 580, 1000, 1], [39.779, 1020, 580, 980, 1],
+    [18.16, 760, 820, 520], [19.9, 820, 820, 600, 1], [20.8, 1000, 800, 640, 1], [22.3, 1240, 800, 560, 1], [V1.grass, 1130, 830, 600, 1], [V1.sunday, 1180, 720, 760, 1],
+    [V1.die, 1320, 760, 480], [28.9, 1300, 780, 520, 1], [V1.app, 1060, 820, 640], [V1.why, 1200, 820, 600, 1], [33.9, 1160, 800, 640, 1],
+    [V1.game, 760, 800, 700], [V1.site, 1000, 640, 820, 1], [39.779, 1040, 660, 800, 1],
   ], [[V1.shut, 6], [V1.kickT, 8], [V1.cab, 8]]);
 
   // ======== VERSE 2 NEW (65.18–76.72) in the hall ========
@@ -174,7 +179,7 @@
     if (v > .9) glowAt(x, y - r / 2, r * 1.2, TK.ember, 90 * (v - .9) * 10);
     pop();
   }
-  const ROW = [620, 760, 900, 1040];
+  const ROW = [600, 750, 900, 1050];
   function verse2(t) {
     back(A2.gunDk);
     A03.hall(t, { lamps: [560, 1360], floor: 1060 });
@@ -209,7 +214,7 @@
       if (top && t > V2.bonus) { y = 1058 - 160 * easeOut(seg(t, V2.bonus, V2.bonus + .4)); o.eyes = t > V2.medal ? 'spark' : 'happy'; o.sy = t > V2.medal ? 1 - .12 * Math.exp(-(t - V2.medal) * 4) : 1; }
       if (t > V2.why) { o.aL = o.aR = 1.6; o.eyes = top ? 'happy' : 'flat'; o.mouth = 'flat'; }
       if (top && t > V2.bonus) { const py = y; paint(rectPts(x - 80, py, 160, 1060 - py, 1), { wash: TK.gold, fill: TK.goldDk, fillOp: 60, tex: .5, ink: INK, sw: 1 }); }
-      agentBot(x, y, 10, t, o);
+      agentBot(x, y, 13, t, o);
       if (sooty > .1) smoke(x, y - 110, t, { k: sooty });
       if (!(top && t > V2.bonus) && !(low && t > 72.0)) {                  // the bucket at his feet (the low spender holds one coin)
         if (low && t > V2.burn) token(x + 50, y - 60, 12, {});
@@ -227,8 +232,8 @@
     }
   }
   scene('v2_kpi', 65.18, 76.72, verse2, [
-    [65.18, 1000, 660, 860], [V2.kpi, 1000, 650, 840, 1], [V2.burn, 980, 680, 1000, 1], [V2.low, 900, 820, 700, 1], [73.0, 940, 780, 820, 1],
-    [V2.bonus, 840, 700, 900, 1], [V2.why, 960, 660, 1000, 1], [76.719, 960, 660, 1000, 1],
+    [65.18, 880, 720, 680], [V2.kpi, 900, 720, 680, 1], [V2.burn, 1000, 800, 800, 1], [V2.low, 900, 900, 540, 1], [73.0, 920, 880, 620, 1],
+    [V2.bonus, 780, 840, 680, 1], [V2.why, 940, 800, 800, 1], [76.719, 940, 800, 800, 1],
   ], [[V2.hop + .3, 8], [V2.medal, 12]]);
 
   // ======== CHORUS 2 = chorus 1 again, word for word 47.42 s later (the shredder, the trucks, the hiring hall) ========
@@ -236,9 +241,12 @@
   replay('c2_hall', 103.06, 112.60, s3, 47.42);
 
   // ======== BRIDGE NEW (112.60–124.48) «We're gonna need more electricity. More copper. More water. More copper. More water…» ========
-  // The CEO at his pulpit. A giant plug drops from the vault and rams into the pulpit (lights surge). Then on every «copper» a coil of
-  // copper cable crashes onto a heap on the left, on every «water» a water jug onto a heap on the right; the choir half on that side sings.
-  const BR = { plug: 114.12, in: 115.25, copper: [116.44, 119.42, 121.90], water: [117.78, 120.66, 123.14] };
+  // One focal at a time. The CEO at his pulpit; a giant plug drops from the vault and rams in (lights surge). «copper»: three singers on the
+  // left, copper coils crash onto their heap. «water»: pan right to the next town's reservoir by the houses (the RU a06 image, the user
+  // liked it) — on every «water» its level drops a step; by 124.36 it is cracked mud with a stranded boat and a flapping fish.
+  const BR = { plug: 114.12, in: 115.25, copper: [116.44, 119.42, 121.90], water: [117.78, 120.66, 123.14], dry: 124.36 };
+  const LAKE = [1200, 300, 700, 520];
+  const lakeLvl = t => Math.max(0, 1 - BR.water.reduce((l, w) => l + .3 * eased(t, w, w + .45), 0) - .1 * eased(t, 123.8, BR.dry));
   function heap(list, t, x, draw) {
     let n = 0; for (const h of list) { const a = t - h; if (a < 0) continue; for (let k = 0; k < 4; k++) {
       const i = n++, px = x + ((i % 4) - 1.5) * 90 + (Math.floor(i / 4) % 2) * 40, py = 1110 - Math.floor(i / 4) * 80, fall = clamp((a - k * .07) / .3);
@@ -246,33 +254,29 @@
     } }
   }
   const coil = (x, y, i, spin) => { push(); translate(x, y); rotate(spin + i); scale(1.5); paint(ellPts(0, 0, 40, 30, 18), { wash: '#C8743A', fill: '#8A4A22', fillOp: 70, tex: .5, ink: INK, sw: 1 }); paint(ellPts(0, 0, 18, 12, 12), { wash: '#1A1726', ink: INK, sw: .6 }); for (let k = 1; k < 4; k++) paint(ellPts(0, 0, 18 + k * 6, 12 + k * 5, 14), { ink: '#E8A060', sw: .5 }); pop(); };
-  const jug = (x, y, i, spin) => { push(); translate(x, y); rotate(spin * .5); scale(1.4); paint(rrPts(-28, -44, 56, 80, 14), { wash: '#7ACBEF', washOp: 220, ink: INK, sw: 1 }); paint(rectPts(-12, -58, 24, 16), { wash: TK.blue, ink: INK, sw: .7 }); paint(rectPts(-20, -10, 40, 30), { wash: '#4A9BD8', washOp: 200, ink: null }); pop(); };
-  function choirSings(t, sideK) {                                         // sideK(x) → 0..1 how hard that singer sings right now
-    CHOIR.forEach(([x, y], i) => { const k = sideK(x); A06.angel(x, y, 11, t, { n: i + 3, k, eyes: k > .3 ? 'happy' : 'closed', mouth: k > .3 ? 'O' : 'smile', aL: .3 + k * 1.4, aR: .3 + k * 1.4 }); });
-  }
   function bridge(t) {
     back('#1A1726');
     const surge = kick(t, [BR.in], .6);
-    A06.nave(t, { choir: false, L: (t < BR.in ? .55 : .9) + surge * .5 });
+    A06.nave(t, { choir: false, L: Math.min(1, (t < BR.in ? .55 : .85) + surge * .15) });
     A06.pulpit(t, { eyes: t > BR.in ? 'happy' : 'narrow', mouth: t > BR.plug ? 'grin' : 'smile', click: kick(t, EN_GRID, .15), aL: t > BR.plug && t < BR.in ? 1.4 : .5 });
-    // the plug: from the vault into the pulpit's side
     if (t > BR.plug) {
       const k = eased(t, BR.plug + .2, BR.in), px = 1210, py = lerp(-300, 690, k);
       inkLine([[px, -500], [px, py - 70]], 16, INK, 'ink', 0); inkLine([[px, -500], [px, py - 70]], 10, '#3A3F4A', 'ink', 0);
       paint(rrPts(px - 40, py - 80, 80, 90, 12), { wash: '#E8E0D0', ink: INK, sw: 1.2 });
       for (const d of [-16, 16]) paint(rectPts(px + d - 5, py + 10, 10, 30), { wash: A2.steelLt, ink: INK, sw: .6 });
-      if (t > BR.in) { sparks(px, py + 30, t - BR.in, 5, 16, 260); flash(surge * .5, '#FFF3C8'); }
+      if (t > BR.in) { sparks(px, py + 30, t - BR.in, 5, 16, 260); flash(surge * .2, '#FFF3C8'); }
     }
-    const kOf = list => x => Math.max(...list.map(h => { const a = t - h; return a > 0 && a < 1.2 ? Math.exp(-a * 2) : 0; }));
-    const cop = kOf(BR.copper), wat = kOf(BR.water);
-    choirSings(t, x => x < 960 ? cop(x) : x > 960 ? wat(x) : Math.max(cop(x), wat(x)));
-    heap(BR.copper, t, 600, coil);
-    heap(BR.water, t, 1320, jug);
+    const cop = Math.max(...BR.copper.map(h => { const a = t - h; return a > 0 && a < 1.2 ? Math.exp(-a * 2) : 0; }));
+    [520, 640, 760].forEach((x, i) => A06.angel(x, 990, 12, t, { n: i + 3, k: cop, eyes: cop > .3 ? 'happy' : 'closed', mouth: cop > .3 ? 'O' : 'smile', aL: .3 + cop * 1.4, aR: .3 + cop * 1.4 }));
+    heap(BR.copper, t, 620, coil);
+    A06.reservoir(t, ...LAKE, lakeLvl(t));
   }
+  const toLake = w => [[w - .25, 700, 860, 700, 1], [w + .1, 1550, 600, 760, 1], [w + .8, 1550, 600, 760, 1]];
+  const toCopper = c => [[c - .25, 1550, 600, 760, 1], [c + .1, 700, 860, 700, 1], [c + .8, 700, 860, 700, 1]];
   scene('bridge_needs', 112.60, 124.48, bridge, [
-    [112.60, 960, 560, 1000], [BR.plug, 1080, 520, 880, 1], [BR.in, 960, 600, 1080, 1], [BR.copper[0], 760, 800, 860], [117.7, 760, 800, 860, 1],
-    [BR.water[0], 1160, 800, 860], [119.3, 1160, 800, 860, 1], [BR.copper[1], 960, 740, 1080], [124.479, 960, 720, 1060, 1],
-  ], [[BR.in, 12]]);
+    [112.60, 960, 700, 900], [BR.plug, 1060, 640, 760, 1], [BR.in, 960, 720, 900, 1], [BR.copper[0] - .2, 960, 720, 900, 1], [BR.copper[0] + .1, 700, 860, 700, 1],
+    ...toLake(BR.water[0]), ...toCopper(BR.copper[1]), ...toLake(BR.water[1]), ...toCopper(BR.copper[2]), ...toLake(BR.water[2]), [124.479, 1550, 620, 740, 1],
+  ], [[BR.in, 12], ...BR.water.map(w => [w + .1, 8])]);
 
   // ======== BRIDGE NEW (129.02–137.00) «And when intelligence gets cheaper… we're gonna need… MORE GPUs!» ========
   // The lights go down to one spot on the CEO; he leans in and whispers, slowly lifts both arms — and the vault cracks open: GPUs rain on the choir.
@@ -288,8 +292,8 @@
     const g = t - CH.gpus;
     CHOIR.forEach(([x, y], i) => A06.angel(x, y, 11, t, { n: i + 3, k: g > 0 ? .9 : 0, eyes: g > 0 ? 'scared' : t > CH.arms ? 'normal' : 'closed', lookY: -.6, mouth: g > 0 ? 'O' : 'smile', aL: g > 0 ? 1.8 : .3, aR: g > 0 ? 1.8 : .3 }));
     if (g > 0) {
-      flash(Math.max(0, .6 - g * 2), '#FFFFFF');
-      for (let i = 0; i < 18; i++) { const st = hash(i) * 1.2, a = g - st; if (a < 0) continue; const x = 460 + hash(i + 3) * 1000, y = Math.min(1080 - (i % 3) * 30, -200 + a * a * 2600); gpuCard(x, y, .3, t, { rot: y < 1000 ? a * 6 + i : (hash(i) - .5) * .6 }); }
+      flash(Math.max(0, .3 - g * 1.5), '#FFFFFF');
+      for (let i = 0; i < 10; i++) { const st = hash(i) * 1.2, a = g - st; if (a < 0) continue; const x = 460 + hash(i + 3) * 1000, y = Math.min(1080 - (i % 3) * 30, -200 + a * a * 2600); gpuCard(x, y, .3, t, { rot: y < 1000 ? a * 6 + i : (hash(i) - .5) * .6 }); }
       rubble(960, 120, 900, g, 5);
     }
   }
@@ -353,32 +357,22 @@
   // A giant glowing brain enthroned on server racks, halo, lightning, cables everywhere. Far below, tiny Clawd holds up his phone.
   // On «calorie tracker» a thin ray from the brain lights the phone: an apple with a little flame. «Let me explain» — he points at his lunch.
   const BRN = { cal: 165.12, expl: 166.6 };
-  function brainArt(x, y, s, t) {                                         // TODO(codex): layer this brain via the approved recipe if it reads weak
-    const pulse = 1 + .03 * Math.sin(t * 4);
-    push(); translate(x, y); scale(s * pulse);
-    glowAt(0, 0, 420, '#E27A92', 90);
-    for (const [dx, dy, rx, ry] of [[-120, -30, 170, 140], [120, -30, 170, 140], [0, -90, 200, 110], [-60, 60, 150, 90], [70, 60, 150, 90]]) paint(ellPts(dx, dy, rx, ry, 26), { wash: '#F2A2B0', fill: '#D97787', fillOp: 70, tex: .5, ink: INK, sw: 1.4 });
-    for (let k = 0; k < 9; k++) { const a = k * .7, r = 60 + (k % 3) * 60; inkLine([[Math.cos(a) * r * .5, Math.sin(a) * r * .3 - 20], [Math.cos(a + .5) * r, Math.sin(a + .5) * r * .5 - 30], [Math.cos(a + 1) * r * .8, Math.sin(a + 1) * r * .45]], 3, '#A84D5A', 'ink', .6); }
-    inkLine([[0, -200], [0, 150]], 3, '#A84D5A', 'ink', .2);
-    paint(ellPts(0, -290, 170, 30, 24), { ink: TK.yellow, sw: 7 }); glowAt(0, -290, 180, TK.yellow, 60);
-    pop();
-  }
   function brain(t) {
     back(TK.soot);
     dataCenter(t, { heat: .25, vp: [960, 420], n: 8 });
-    // the throne of racks + cables
-    for (const d of [-1, 1]) serverRack(960 + d * 260 - 70, 420, 140, 640, t, { units: 9, seed: d + 3, heat: .3 });
-    paint(rectPts(700, 640, 520, 60, 1), { wash: A2.gunmetal, ink: INK, sw: 1 });
-    for (let i = 0; i < 6; i++) inkLine([[720 + i * 90, 700], [700 + i * 100 + Math.sin(i) * 60, 900], [640 + i * 130, 1070]], 5, [TK.blue, TK.ember, TK.green, TK.yellow, PAL.violet, TK.orange][i], 'ink', .6);
-    brainArt(960, 380, 1, t);
-    if (kick(t, EN_GRID, .15) > .5) inkLine([[800, 260], [740, 330], [780, 340], [700, 430]], 4, TK.yellowLt, 'ink', 0);
+    // the Codex brain on its server throne (halo + lightning are in the drawing); cables run from the throne down to the floor
+    for (let i = 0; i < 6; i++) inkLine([[800 + i * 64, 820], [760 + i * 80 + Math.sin(i) * 50, 940], [640 + i * 130, 1070]], 6, [TK.blue, TK.ember, TK.green, TK.yellow, PAL.violet, TK.orange][i], 'ink', .6);
+    glowAt(960, 330, 480, '#E27A92', 70 + 40 * kick(t, EN_GRID, .3));
+    const bp = 1 + .025 * Math.sin(t * 4) + .04 * kick(t, EN_GRID, .15);
+    layer('brain', 960, 440, 720, { sx: bp, sy: bp });
+    if (kick(t, EN_GRID, .15) > .5) inkLine([[640, 200], [580, 280], [620, 290], [540, 390]], 4, TK.yellowLt, 'ink', 0);
     // tiny Clawd with his phone; the ray on «calorie tracker»
-    const cx = 960, cy = 1060, ph = [cx + 80, cy - 190];
-    clawd(cx, cy, 9, { eyes: t > BRN.cal ? 'happy' : 'look', lookY: -1, mouth: t > BRN.cal ? 'grin' : 'o', aR: 1.7, aL: t > BRN.expl ? 1.6 : .3, noShadow: true });
+    const cx = 960, cy = 1060, ph = [cx + 105, cy - 250];
+    clawd(cx, cy, 12, { eyes: t > BRN.cal ? 'happy' : 'look', lookY: -1, mouth: t > BRN.cal ? 'grin' : 'o', aR: 1.7, aL: t > BRN.expl ? 1.6 : .3, noShadow: true });
     paint(rrPts(ph[0] - 27, ph[1] - 45, 54, 90, 8), { wash: '#1A1F26', ink: INK, sw: 1 });
     const ray = eased(t, BRN.cal, BRN.cal + .2);
     if (ray > 0) {
-      paint([[955, 520], [965, 520], [ph[0] + 12, ph[1]], [ph[0] - 12, ph[1]]], { wash: '#FFF3C8', washOp: 160 * ray, ink: null });
+      paint([[950, 330], [970, 330], [ph[0] + 12, ph[1]], [ph[0] - 12, ph[1]]], { wash: '#FFF3C8', washOp: 160 * ray, ink: null });
       paint(rrPts(ph[0] - 21, ph[1] - 37, 42, 75, 6), { wash: '#FFFFFF', ink: null });
       paint(ellPts(ph[0], ph[1] + 2, 14, 14, 12), { wash: TK.ember, ink: INK, sw: .5 }); inkLine([[ph[0], ph[1] - 7], [ph[0] + 3, ph[1] - 13]], 1.5, TK.greenDk, 'inkfine', 0);
       fire(ph[0] + 9, ph[1] - 6, 10, 14, t, { k: 1, seed: 2 });
@@ -386,28 +380,22 @@
     if (t > BRN.expl) {                                                      // the lunch: a sandwich on a plate on a little table
       const k = backOut(seg(t, BRN.expl, BRN.expl + .3)), x = 1110, y = 1060;
       paint(rectPts(x - 60, y - 70, 120, 12, 1), { wash: '#7A4A2E', ink: INK, sw: .7 }); paint(rectPts(x - 6, y - 58, 12, 58), { wash: '#4A2A1E', ink: INK, sw: .5 });
-      push(); translate(x, y - 76); scale(k * .5); sandwich(0, 0, t, 0); pop();
+      if (k > .01) sandwich(x, y - 125, t, 0, 200 * k);
     }
   }
   scene('rap_brain', 162.86, 167.58, brain, [
-    [162.86, 960, 460, 1000], [164.6, 960, 560, 1080, 1], [BRN.cal, 990, 860, 700, 1], [BRN.expl, 1030, 880, 660, 1], [167.579, 1060, 900, 620, 1],
+    [162.86, 960, 460, 1000], [164.6, 960, 560, 1080, 1], [BRN.cal, 980, 700, 860, 1], [BRN.expl, 1030, 840, 720, 1], [167.579, 1060, 860, 680, 1],
   ]);
 
   // ======== RAP NEW (167.58–178.58) «A hundred thousand G-P-Us, the whole AI craze — just to scan my lunch and find the mayonnaise. …mayonnaise» ========
   // Close on a sandwich under a scanner. Pull back: the scanner hangs off a fat bundle of cables that runs into an endless server hall,
   // every rack blinking. «scan my lunch»: a red scan line sweeps the sandwich. «mayonnaise»: a lock-on frame snaps onto the one white blob;
   // the long «…mayonnaise»: the frame pulses, the whole hall heats up and catches fire; Clawd beams.
-  function sandwich(x, y, t, mayoK) {                                      // (x, y) = plate centre
-    paint(ellPts(x, y + 30, 220, 40, 30), { wash: '#FBF8F2', ink: INK, sw: 1.2 });
-    paint(rrPts(x - 170, y - 10, 340, 40, 16), { wash: '#E8B878', fill: '#C8904A', fillOp: 60, tex: .5, ink: INK, sw: 1.2 });
-    paint([[x - 180, y - 10], [x - 140, y - 30], [x - 90, y - 12], [x - 40, y - 34], [x + 20, y - 12], [x + 80, y - 32], [x + 140, y - 14], [x + 185, y - 26], [x + 175, y - 4], [x - 175, y - 2]], { wash: TK.green, ink: INK, sw: .8 });
-    for (const d of [-90, 0, 90]) paint(ellPts(x + d, y - 36, 48, 12, 14), { wash: TK.ember, ink: INK, sw: .7 });
-    paint(rrPts(x - 175, y - 110, 350, 70, 30), { wash: '#E8B878', fill: '#C8904A', fillOp: 60, tex: .5, ink: INK, sw: 1.3 });
-    for (let i = 0; i < 7; i++) paint(ellPts(x - 120 + i * 40, y - 90 + (i % 2) * 14, 5, 3, 6), { wash: '#FFF5E2', ink: null });
-    const mx = x + 120, my = y - 42;                                       // the mayonnaise: one drip on the edge
-    paint([[mx - 26, my - 4], [mx + 22, my - 6], [mx + 14, my + 16], [mx + 4, my + 34], [mx - 6, my + 16]], { wash: '#FFFDF2', ink: INK, sw: .8 });
-    if (mayoK > 0) glowAt(mx, my + 10, 60, '#FFFDF2', 120 * mayoK);
-    return [mx, my + 10];
+  function sandwich(x, y, t, mayoK, w = 420) {                            // (x, y) = centre of the Codex sandwich-on-plate; returns the mayo drip
+    layer('sandwich', x, y, w);
+    const mx = x + .45 * w, my = y - .03 * w * 321 / 532;
+    if (mayoK > 0) glowAt(mx, my, 60, '#FFFDF2', 120 * mayoK);
+    return [mx, my];
   }
   const MY = { scan: 170.30, lock: 171.70, hold: 172.14, burn: 174.0, out: 175.88 };
   function mayo(t) {
@@ -418,14 +406,16 @@
     for (let i = 0; i < 7; i++) inkLine([[960 + (i - 3) * 10, 470], [960 + (i - 3) * 40, 250], [1000 + (i - 3) * 14, 560]], 6, [TK.blue, TK.ember, TK.green, TK.yellow, PAL.violet, TK.orange, TK.blueDk][i], 'ink', .7);
     // table + sandwich + scanner
     paint(rectPts(740, 880, 520, 26, 1), { wash: '#7A4A2E', ink: INK, sw: 1 }); for (const lx of [770, 1210]) paint(rectPts(lx, 906, 20, 160), { wash: '#4A2A1E', ink: INK, sw: .6 });
-    const [mx, my] = sandwich(1000, 840, t, eased(t, MY.lock, MY.lock + .3));
+    const [mx, my] = sandwich(1000, 770, t, eased(t, MY.lock, MY.lock + .3));
     paint([[940, 560], [1060, 560], [1090, 640], [910, 640]], { wash: A2.steel, fill: A2.gunDk, fillOp: 60, tex: .4, ink: INK, sw: 1.2 });
     paint(rectPts(930, 636, 140, 14), { wash: '#FF2F4A', ink: INK, sw: .6 });
     const sc = seg(t, MY.scan, MY.lock);
     if (sc > 0 && sc < 1) { const sx = lerp(820, 1180, (Math.sin(sc * Math.PI * 3 - Math.PI / 2) + 1) / 2); paint([[990, 650], [1010, 650], [sx + 4, 800], [sx - 4, 800]], { wash: '#FF2F4A', washOp: 110, ink: null }); inkLine([[sx, 700], [sx, 800]], 3, '#FF2F4A', 'ink', 0); }
     if (t > MY.lock) {                                                       // lock-on frame: four corners snapping in, then pulsing
-      const k = eased(t, MY.lock, MY.lock + .2), p = 1 + .08 * Math.sin(t * 12) * (t > MY.hold ? 1 : 0), r = lerp(300, 46, k) * p;
-      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) inkLine([[mx + sx * r, my + sy * r * .6], [mx + sx * r, my + sy * r], [mx + sx * r * .6, my + sy * r]], 5, '#FF2F4A', 'ink', 0);
+      const k = eased(t, MY.lock, MY.lock + .2), p = 1 + .08 * Math.sin(t * 12) * (t > MY.hold ? 1 : 0), r = lerp(300, 80, k) * p;
+      const L = r * .45, T = 9;                                             // brackets as polygons (a thick inkLine blobs into discs)
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const x = mx + sx * r, y = my + sy * r * .8;
+        paint(rectPts(Math.min(x, x - sx * L), y - T / 2, L, T), { wash: '#FF2F4A', ink: null }); paint(rectPts(x - T / 2, Math.min(y, y - sy * L), T, L), { wash: '#FF2F4A', ink: null }); }
     }
     const cx = 640;
     clawd(cx, 1060, 10, { eyes: t > MY.lock ? 'heart' : 'look', lookX: 1, mouth: t > MY.lock ? 'grin' : 'smile', aL: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8) : .4, aR: t > MY.hold ? 1.5 + .3 * Math.sin(t * 8 + 1) : .4, noShadow: true });
@@ -445,12 +435,12 @@
   function sunday(t) {
     const tick = EN_HITS.filter(([h]) => h > 210 && h <= t).length;
     const last = t < SU.zero ? 1 : 1 - eased(t, SU.zero + .2, SU.zero + .8);
-    nightRoom(t, { min: -.21 + tick * .012, hour: -.02, lid: 1, glow: '#3A6AE0', fill: last > .5 ? 1 / 14 : 0, gauge: t < SU.zero ? .08 : .08 * (1 - eased(t, SU.zero, SU.zero + .6)), eyes: t > SU.zero + .6 ? 'closed' : 'narrow', mouth: 'flat' });
+    nightRoom(t, { min: -.21 + tick * .012, hour: -.02, lid: 1, glow: '#3A6AE0', fill: last > .5 ? 1 / 14 : 0, eyes: t > SU.zero + .6 ? 'closed' : 'narrow', mouth: 'flat' });
     if (t > SU.zero + .2 && t < SU.zero + 1.4) smoke(ROOM.jar[0], ROOM.jar[1] - 60, t, { k: 1 - seg(t, SU.zero + .8, SU.zero + 1.4) });
     if (last > 0 && last < 1) fire(ROOM.jar[0], ROOM.jar[1] - 14, 30, 40 * last, t, { k: last, seed: 5 });
   }
   scene('out_sunday', 210.0, 216.68, sunday, [
-    [210.0, 920, 560, 900], [213.4, 1060, 620, 1000, 1], [SU.zero, 1380, 780, 480, 1], [216.679, 1360, 760, 520, 1],
+    [210.0, 920, 600, 820], [213.4, 1100, 760, 760, 1], [SU.zero, 1380, 860, 460, 1], [216.679, 1360, 860, 500, 1],
   ]);
 
   // ======== OUTRO NEW (224.72–228.76) «Silence. / I'm at peace.» — Clawd in the armchair, eyes shut, smiling; only the pendulum moves ========
@@ -496,12 +486,14 @@
     stamp('BURN THE TOKENS', 960, 500, 76, t, FN.card + .2, { col: TK.yellow, rot: -.04 });
     const cr = eased(t, FN.card + 1.2, FN.card + 1.8);
     if (cr > 0) letter('created by rocketmandrey', 960, 640, 30, PAL.cream, { font: ruFont(30), ink: false, alpha: cr });
-    token(960, 780, 34, { spin: t * .8, burn: .6 + .4 * Math.sin(t * 3) });
+    glowAt(960, 1000, 520, TK.orange, 90);                              // the card sits over a low fire, one token burning in it
+    fire(960, 1080, 900, 240 + 40 * kick(t, EN_GRID, .3), t, { k: .8, seed: 13 });
+    token(960, 860, 64, { spin: t * .8, burn: .6 + .4 * Math.sin(t * 3) });
   }
   const FACE = [ROOM.chair[0], ROOM.chair[1] - 100 - 6 * 12];
   scene('out_finale', 236.02, 249.216, finale, [
     [236.02, FACE[0], FACE[1], 300], [FN.brk, 960, 620, 1080], [FN.brk + 2.5, 960, 600, 1120, 1], [FN.f2 - .01, 960, 600, 1120, 1], [FN.f2, FACE[0], FACE[1], 300], [FN.card - .01, FACE[0], FACE[1], 290, 1],
-    [FN.card, 960, 560, 1080], [249.215, 960, 560, 1080, 1],
+    [FN.card, 960, 700, 900], [249.215, 960, 690, 860, 1],
   ], [[FN.brk, 26]]);
 })();
 

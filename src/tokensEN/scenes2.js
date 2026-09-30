@@ -15,7 +15,7 @@
   // An upside-down pyramid of agents grows up out of one: every row wider than the one under it, the whole thing swaying; tokens rain down it
   // and burn at the base. On «for?» the one at the very top holds up what it all made: one thin, empty folder. Tiny Clawd looks up from the floor.
   const TW = { floor: 1060, rowH: 84, rows: 9, top: 81.42 };   // floor < 1104: hazard() strips below that get stretched by square mode
-  const rowT = r => r === 0 ? 76.80 : r === 1 ? 77.66 : 78.22 + (r - 2) * .26;
+  const rowT = r => r === 0 ? 76.80 : r === 1 ? 77.30 : 77.66 + (r - 2) * .3;
   const rowN = r => 1 + Math.floor(r / 2);
   function tower(t) {
     back(A2.gunDk);
@@ -56,7 +56,7 @@
     clawd(1290, TW.floor + 2, 9, { eyes: 'look', lookY: -1, mouth: t > TW.top ? 'o' : 'flat', emote: t > TW.top ? 'sweat' : null, aL: .2, aR: .2 });
   }
   scene('e12_tower', 76.72, 81.98, tower, [
-    [76.72, 960, 860, 560], [77.7, 960, 820, 640, 1], [78.6, 960, 640, 960, 1], [80.4, 960, 520, 1080, 1], [81.3, 970, 430, 860, 1], [81.979, 975, 410, 820, 1],
+    [76.72, 960, 880, 520], [77.7, 960, 840, 600, 1], [78.6, 960, 800, 640, 1], [79.6, 960, 640, 900, 1], [80.4, 960, 520, 1080, 1], [81.3, 970, 430, 860, 1], [81.979, 975, 410, 820, 1],
   ], [[81.42, 10]]);
 
   // ======== E13 NEW (81.98–87.60) «A report: how to cut our AI spend. Nobody read it in the end.» ========
@@ -124,7 +124,7 @@
   // ======== E19+E20 NEW (124.48–129.02) «Why?» — the choir turns its heads; «So intelligence gets cheaper»: the tag shrinks, the bill unrolls ========
   const WY = { why: 124.74, turn: 125.37, turned: 125.76, cheap: 126.88 };
   const CHOIR = [];                                                        // [x, y, row] in 3 risers, the asker in the front row
-  for (const [row, y, n] of [[0, 950, 5], [1, 1025, 4], [2, 1100, 5]]) for (let i = 0; i < n; i++) CHOIR.push([960 + (i - (n - 1) / 2) * 180, y, row]);
+  for (const [row, y, n] of [[0, 990, 4], [1, 1080, 4]]) for (let i = 0; i < n; i++) CHOIR.push([960 + (i - (n - 1) / 2) * 200 + row * 40, y, row]);
   const ASK = CHOIR.length - 2;
   function why(t) {
     back('#1A1726');
@@ -167,78 +167,80 @@
   ], [[WY.why, 8]]);
 
 
-  // ======== E23+E24 NEW (139.38–152.04) «MORE TOKENS — MORE AGENTS — MORE TASKS — MORE TOKENS! The economy is WORKING!» ========
-  // One machine that feeds itself: GPUs drop into the press → tokens ride the belt into the dispenser → agents pop out and walk to the ticket
-  // printer → the tickets ride a glass pipe back up. Its loose end dangles by the press until the last «MORE TOKENS» (146.40): it plugs in,
-  // flash, everything runs ×3. Clawd runs a hamster wheel in the middle, faster every line. «The economy is WORKING!»: the CEO applauds
-  // on the roof, the camera drops to the output tray, and exactly one empty wrapper falls in.
-  const LP = { pairs: [137.06, 139.62, 142.18, 144.78, 146.40], plug: 146.40, econ: 148.56, wrap: 150.24 };
-  const lpSpeed = t => .6 + LP.pairs.filter(p => t >= p).length * .45 + (t >= LP.plug ? 1.5 : 0);
-  const PIPE = [[1120, 1000], [1470, 1000], [1500, 900], [1500, 180], [1460, 120], [760, 120], [700, 170]];   // printer → up the right → over → press
-  function pipePt(u) {                                                     // point u∈[0,1] along PIPE
-    const L = []; let tot = 0; for (let i = 1; i < PIPE.length; i++) { const d = Math.hypot(PIPE[i][0] - PIPE[i - 1][0], PIPE[i][1] - PIPE[i - 1][1]); L.push(d); tot += d; }
-    let d = u * tot; for (let i = 0; i < L.length; i++) { if (d <= L[i]) { const k = d / L[i]; return [lerp(PIPE[i][0], PIPE[i + 1][0], k), lerp(PIPE[i][1], PIPE[i + 1][1], k)]; } d -= L[i]; } return PIPE[PIPE.length - 1];
+  // ======== E23+E24 NEW (137.00–152.04) «MORE GPUs — MORE TOKENS! MORE TOKENS — MORE AGENTS! MORE AGENTS — MORE TASKS! MORE TASKS — MORE TOKENS!» ========
+  // One big ring, four stations round it: GPU (top) → tokens (right) → agents (bottom) → tasks (left) → back to tokens. Each sung noun slams
+  // its station, a stream of stuff runs along the rim to the next one. Every line the ring spins faster; on the last «tokens» it blurs, sparks
+  // and coins fly off the rim. Clawd is strapped to the hub, spinning with it, dizzier every lap.
+  // «The economy is WORKING!» (the RU a07 move): the whole ring gets yanked up and rockets off the top on a fire trail; one empty wrapper floats down.
+  const RG = { x: 960, y: 600, R: 320, lines: [137.06, 139.62, 142.18, 144.78], eco: 148.56, wrap: 150.24,
+    words: [[137.38, 0], [138.64, 1], [139.94, 1], [141.34, 2], [142.62, 2], [143.84, 3], [145.14, 3], [146.40, 1]] };
+  const STA = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];                  // station angles: GPU, tokens, agents, tasks
+  const spinOf = t => {                                                   // integrated ring angle (rev/s grows per line, blur after the last noun)
+    const rates = [.25, .5, .9, 1.5, 3], edges = [137.0, ...RG.lines.slice(1), 146.4, 1e9];
+    let a = 0; for (let i = 0; i < rates.length; i++) { const s0 = edges[i], s1 = i + 1 < edges.length ? edges[i + 1] : 1e9; if (t <= s0) break; a += (Math.min(t, s1) - s0) * rates[i] * TAU; }
+    return Math.min(a, spinFreeze(t));
+  };
+  let FREEZE = null; const spinFreeze = t => t < RG.eco ? 1e12 : (FREEZE ??= spinOf(RG.eco - 1e-6));
+  function station(i, x, y, k, t) {                                       // k = slam 0..1
+    push(); translate(x, y); scale(1 + .4 * k); translate(-x, -y);
+    if (k > .05) glowAt(x, y, 150, [TK.green, TK.yellow, '#6F8BE0', TK.yellowLt][i], 120 * k);
+    if (i === 0) gpuCard(x, y, .85, t, { fans: t * 8, glow: k });
+    else if (i === 1) for (let j = 0; j < 9; j++) token(x - 90 + (j % 4) * 60 + (Math.floor(j / 4) % 2) * 30, y + 60 - Math.floor(j / 4) * 50, 44, { spin: .1 * j });
+    else if (i === 2) for (let j = 0; j < 5; j++) agentBot(x - 150 + j * 75, y + 80 - (j % 2) * 36, 8, t, { n: j + 1, rot: NOTXT, noShadow: true, eyes: 'happy', mouth: 'grin', aL: .6 + k * 1.2, aR: .6 + k * 1.2 });
+    else for (let j = 0; j < 4; j++) { push(); translate(x - 30 + j * 16, y + 30 - j * 22); rotate((hash(j) - .5) * .4); scale(1.4); paint(rectPts(-55, -55, 110, 110), { wash: [TK.yellow, '#9FE3A0', '#FFB8C8', '#8EC3E6'][j], ink: INK, sw: 1 }); for (let q = 0; q < 3; q++) inkLine([[-38, -25 + q * 22], [30 - q * 12, -25 + q * 22]], 2, INK, 'inkfine', 0); pop(); }
+    pop();
   }
-  function loop(t) {
+  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .16, t, { rot: r }) : i === 1 ? token(x, y, 16, { spin: r }) : i === 2 ? A06.mini(x, y + 20, 3, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : paint(rectPts(x - 16, y - 16, 32, 32), { wash: TK.yellow, ink: INK, sw: .7 });
+  function ringScene(t) {
     back(A2.gunDk);
-    A03.hall(t, { lamps: [700, 1300], floor: 1060 });
-    const sp = lpSpeed(t), plugK = kick(t, [LP.plug], .5), ph = t * sp;
-    // the press, fed by a chute of GPUs from the ceiling
-    const hits = []; for (let x = Math.ceil(t * sp * 1.5) - 3; x <= Math.ceil(t * sp * 1.5) + 1; x++) hits.push(x / (sp * 1.5));
-    paint([[590, -300], [690, -300], [690, 200], [590, 200]], { wash: A2.steel, fill: A2.gunDk, fillOp: 80, tex: .5, ink: INK, sw: 1 });
-    for (let i = 0; i < 3; i++) { const y = lerp(-200, 230, frac(ph * .4 + i / 3)); gpuCard(640, y, .22, t, { rot: Math.PI / 2 }); }
-    press(500, 200, 280, 520, t, hits, { seed: 2 });
-    // the belt: press → dispenser
-    conveyor(560, 700, 560, t, { items: ['token'], speed: 140 * sp, gap: 110, legs: 330, h: 34 });
-    dispenser(1240, 760, t, .5 + .5 * kick(t, hits.map(h => h + .1), .3));
-    // agents: out of the dispenser, walk left to the printer, get turned into a ticket
+    A03.hall(t, { lamps: [560, 1360], floor: 1060 });
+    const up = easeIn(seg(t, RG.eco, RG.eco + 1.1)), dy = -up * 1700, cx = RG.x, cy = RG.y + dy, ang = spinOf(t), blur = seg(t, 146.4, 146.9) * (t < RG.eco ? 1 : 0);
+    if (up > 0) { fire(cx, cy + RG.R + 150, 360, 420 * (.4 + up), t, { k: 1, seed: 7 }); smoke(cx, cy + RG.R + 380, t, { k: up }); }
+    // the ring: thick rim with bolts and lights, spokes to the hub
+    paint(ellPts(cx, cy, RG.R + 36, RG.R + 36, 48), { wash: A2.gunmetal, fill: '#15171B', fillOp: 70, tex: .5, ink: INK, sw: 2 });
+    paint(ellPts(cx, cy, RG.R - 36, RG.R - 36, 48), { wash: '#1C1F24', ink: INK, sw: 2 });
+    for (let k = 0; k < 16; k++) { const a = ang + k * TAU / 16; paint(ellPts(cx + Math.cos(a) * RG.R, cy + Math.sin(a) * RG.R, 11, 11, 8), { wash: k % 2 ? TK.yellow : TK.ember, ink: INK, sw: .6 }); }
+    for (let k = 0; k < 6; k++) { const a = ang * 1 + k * TAU / 6; inkLine([[cx, cy], [cx + Math.cos(a) * (RG.R - 40), cy + Math.sin(a) * (RG.R - 40)]], 6, A2.steel, 'ink', 0); }
+    if (blur > 0) for (let k = 0; k < 5; k++) paint(ellPts(cx, cy, RG.R - 20 + k * 10, RG.R - 20 + k * 10, 48), { ink: [TK.yellow, TK.orange, TK.ember, TK.yellowLt, TK.orange][k], sw: 3 * blur });
+    // the stream: after each noun, stuff runs clockwise along the rim to the next station
+    for (const [w, i] of RG.words) {
+      const a = t - w; if (a < 0 || a > 1.1 || t > RG.eco) continue;
+      for (let q = 0; q < 7; q++) { const u = clamp((a - q * .06) / .9); if (u <= 0 || u >= 1) continue; const th = STA[i] + u * Math.PI / 2, r = RG.R + 90;
+        itemOf(i, cx + Math.cos(th) * r, cy + Math.sin(th) * r, t, th); }
+      const tipA = STA[i] + clamp(a / .9) * Math.PI / 2;                     // the arrow head leading the stream
+      if (a < .9) { const x = cx + Math.cos(tipA) * (RG.R + 90), y = cy + Math.sin(tipA) * (RG.R + 90); push(); translate(x, y); rotate(tipA + Math.PI); paint([[-26, 0], [10, -22], [10, 22]], { wash: TK.ember, ink: INK, sw: 1 }); pop(); }
+    }
+    // the four stations, slamming on their words
     for (let i = 0; i < 4; i++) {
-      const u = frac(ph * .22 + i / 4), x = lerp(1180, 820, u), m = move('walk', t * sp, i);
-      agentBot(x, 1052, 7.5, t, { n: 50 + i, rot: NOTXT, walk: m.walk, flip: true, eyes: 'happy', mouth: 'smile', noShadow: true, aL: .3, aR: 1.2 });
+      const k = Math.max(0, ...RG.words.filter(([, j]) => j === i).map(([w]) => { const a = t - w; return a >= 0 && a < .35 ? Math.exp(-a * 9) : 0; }));
+      station(i, cx + Math.cos(STA[i]) * (RG.R + 90), cy + Math.sin(STA[i]) * (RG.R + 90), k, t);
     }
-    // the ticket printer
-    paint(rectPts(700, 900, 180, 160, 1), { wash: PAL.teal, fill: mixCol(PAL.teal, INK, .3), fillOp: 70, tex: .5, ink: INK, sw: 1 });
-    paint(rectPts(730, 920, 120, 22), { wash: '#0A0B0D', ink: INK, sw: .6 });
-    for (let i = 0; i < 3; i++) paint(ellPts(740 + i * 22, 990, 7, 7, 8), { wash: [TK.led, TK.yellow, TK.ember][i], ink: null });
-    const tk = frac(ph * .9); paint(rectPts(760, 920 - tk * 50, 60, 50 * tk + 4), { wash: PAL.cream, ink: INK, sw: .5 });
-    inkLine([[880, 1000], [1120, 1000]], 26, '#BFE3E6', 'ink', 0);                                // glass pipe from the printer
-    // the glass pipe back to the press: loose end dangles, plugs in on the last «MORE TOKENS»
-    const plugged = t >= LP.plug, dang = plugged ? 0 : 1, swing = Math.sin(t * 3.1) * 40 * dang;
-    const P = PIPE.map((q, i) => i === PIPE.length - 1 ? [q[0] + swing + 60 * dang, q[1] + 80 * dang] : q);
-    inkLine(P, 30, INK, 'ink', 0); inkLine(P, 24, '#BFE3E6', 'ink', 0); inkLine(P.map(([x, y]) => [x - 5, y - 5]), 4, '#FFFFFF', 'inkfine', 0);
-    for (let i = 0; i < 9; i++) { const [x, y] = pipePt(frac(ph * .18 + i / 9)); paint(rectPts(x - 10, y - 7, 20, 14), { wash: PAL.cream, ink: INK, sw: .4 }); }
-    if (plugK > 0) { flash(plugK * .6, '#FFFFFF'); sparks(700, 170, t - LP.plug, 5, 14, 200); }
-    // hamster wheel in the middle, Clawd running, faster each line
-    const wx = 1000, wy = 430, R = 170, spin = t * sp * 1.6;
-    paint(ellPts(wx, wy, R, R, 40), { ink: INK, sw: 2 });
-    paint(ellPts(wx, wy, R - 14, R - 14, 40), { ink: A2.steelLt, sw: 1.2 });
-    for (let i = 0; i < 12; i++) { const a = spin + i * TAU / 12; inkLine([[wx + Math.cos(a) * (R - 14), wy + Math.sin(a) * (R - 14)], [wx + Math.cos(a) * R, wy + Math.sin(a) * R]], 1.2, A2.steelLt, 'inkfine', 0); }
-    inkLine([[wx, wy], [wx - 60, 690]], 5, A2.gunmetal, 'ink', 0); inkLine([[wx, wy], [wx + 60, 690]], 5, A2.gunmetal, 'ink', 0);
-    clawd(wx, wy + R - 16, 10, { walk: spin * 1.3, dy: -Math.abs(Math.sin(spin * 4)) * .8, eyes: sp > 3 ? 'swirl' : 'normal', mouth: sp > 2 ? 'O' : 'flat', emote: sp > 2 ? 'sweat' : null, aL: .6 + .4 * Math.sin(spin * 8), aR: .6 - .4 * Math.sin(spin * 8), noShadow: true });
-    // E24: the CEO on the roof of the machine, applauding; the output tray and the one wrapper
-    const econ = t - LP.econ;
-    if (econ > -.4) {
-      const up = easeOut(clamp((econ + .4) / .4)), clap = Math.abs(Math.sin(t * 14));
-      ceoClawd(1000, 250 - 260 * up + 260, 15, { noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1 + clap * .6, aR: 1 + clap * .6 });
-      if (econ > 0) A03.confetti(econ, 30, [560, -100, 880, 700], 5);
-    }
-    const tx = 1500, ty = 1050;                                                 // the output tray, under the dispenser's far side
-    paint([[tx - 120, ty - 70], [tx + 120, ty - 70], [tx + 100, ty], [tx - 100, ty]], { wash: A2.steel, fill: A2.gunDk, fillOp: 60, tex: .4, ink: INK, sw: 1.2 });
-    paint([[tx - 100, ty - 60], [tx + 100, ty - 60], [tx + 85, ty - 10], [tx - 85, ty - 10]], { wash: '#15171B', ink: null });
-    paint(rectPts(tx - 30, ty - 250, 60, 180), { wash: A2.gunmetal, ink: INK, sw: .8 });              // the spout
-    const wk = t - LP.wrap;
-    if (wk > -.5) {                                                             // one empty, crumpled wrapper flutters down into the tray
-      const k = clamp((wk + .5) / .5), y = lerp(ty - 250, ty - 40, easeIn(k)), r = Math.sin(t * 9) * .6 * (1 - k);
-      push(); translate(tx + Math.sin(t * 6) * 20 * (1 - k), y); rotate(r);
+    // sparks and coins flung off the rim once it blurs
+    if (blur > 0) for (let q = 0; q < 10; q++) { const a0 = hash(q) * TAU, age = frac(t * 1.6 + hash(q + 3)), th = a0 + ang, r = RG.R + age * 500;
+      token(cx + Math.cos(th) * r - Math.sin(th) * age * 200, cy + Math.sin(th) * r + Math.cos(th) * age * 200, 14, { spin: t * 5 + q, burn: age }); }
+    if (blur > 0) sparks(cx + Math.cos(ang) * RG.R, cy + Math.sin(ang) * RG.R, frac(t * 3) * .35, Math.floor(t * 3), 12, 200);
+    // Clawd strapped to the hub, spinning with the ring
+    const dz = seg(t, 137.0, 146.6);
+    paint(ellPts(cx, cy, 130, 130, 24), { wash: A2.steel, ink: INK, sw: 1.4 });
+    push(); translate(cx, cy); rotate(ang); translate(-cx, -cy);
+    clawd(cx, cy + 70, 13, { eyes: dz > .7 ? 'swirl' : dz > .35 ? 'scared' : 'normal', mouth: dz > .5 ? 'O' : 'flat', aL: 2.2, aR: 2.2, noShadow: true, emote: dz > .6 ? 'sweat' : null });
+    for (const d of [-1, 1]) inkLine([[cx - 90, cy + 16 * d - 30], [cx + 90, cy + 16 * d - 30]], 7, '#7A4A2E', 'ink', 0);
+    pop();
+    // one lone empty wrapper floats down where the machine was
+    const wk = t - RG.wrap;
+    if (wk > -1.2) {
+      const sp = clamp((wk + 1.2) / .6);                                  // a work lamp finds the wrapper
+      paint([[900, -200], [1020, -200], [1180, 1060], [740, 1060]], { wash: '#FFF3C8', washOp: 50 * sp, ink: null });
+      const k = clamp((wk + 1.2) / 1.6), y = lerp(-300, 1040, easeOut(k)), r = Math.sin(t * 5) * .7 * (1 - k);
+      push(); translate(960 + Math.sin(t * 3) * 60 * (1 - k), y); rotate(r); scale(4);
       paint([[-22, -8], [-8, -16], [6, -10], [24, -14], [18, 6], [4, 14], [-16, 10]], { wash: TK.gold, fill: TK.goldDk, fillOp: 60, ink: INK, sw: .7 });
       inkLine([[-12, -4], [10, 4]], .6, TK.goldDk, 'inkfine', .4); pop();
-      if (wk > 0 && wk < .4) sparks(tx, ty - 40, wk, 9, 5, 60);
     }
+    if (t > RG.eco) for (let i = 0; i < 14; i++) { const u = frac((t - RG.eco) * .5 + hash(i)); token(460 + hash(i + 2) * 1000, lerp(-200, 1060, u), 16, { spin: t * 3 + i }); }
   }
-  scene('e23_loop', 137.0, 152.04, loop, [
-    [137.0, 1000, 600, 1080], [139.38, 1000, 600, 1080, 1], [144.7, 960, 600, 1080, 1], [LP.plug, 900, 500, 900], [147.6, 1000, 560, 1080, 1],
-    [LP.econ, 1000, 460, 1000, 1], [149.5, 1360, 820, 760, 1], [150.1, 1440, 900, 620, 1], [152.039, 1440, 890, 600, 1],
-  ], [[LP.plug, 16], [LP.wrap, 8]]);
+  scene('e23_loop', 137.0, 152.04, ringScene, [
+    [137.0, 960, 620, 1000], [RG.eco, 960, 620, 1000, 1], [RG.eco + 1.0, 960, 520, 1060, 1], [RG.wrap + .4, 960, 900, 560, 1], [152.039, 960, 920, 520, 1],
+  ], [...RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]), [RG.eco, 14]]);
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
   // A robot arm scribbles a paper stack, slams a red tick on it, crowns it with a mortarboard. Around it: agents asleep at their desks.
@@ -248,7 +250,7 @@
     const dx = tx - bx, dy = ty - by, d = clamp(Math.hypot(dx, dy), 1, L1 + L2 - 1), a = Math.atan2(dy, dx), c = clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1);
     return [bx + Math.cos(a - bend * Math.acos(c)) * L1, by + Math.sin(a - bend * Math.acos(c)) * L1];
   }
-  function desk(x, y, w) {
+  function tdesk(x, y, w) {
     paint(rectPts(x - w / 2, y, w, 22, 1), { wash: '#7A4A2E', ink: INK, sw: .9 });
     for (const lx of [x - w / 2 + 14, x + w / 2 - 30]) paint(rectPts(lx, y + 22, 16, 150), { wash: '#4A2A1E', ink: INK, sw: .6 });
   }
@@ -256,7 +258,7 @@
     back('#1C1F24');
     A03.hall(t, { lamps: [960], floor: 1060, dark: .2 });
     // the paper stack on the centre desk
-    desk(960, 560, 360);
+    tdesk(960, 560, 360);
     const px = 960, py = 560;
     for (let i = 0; i < 9; i++) paint(rectPts(px - 110 + hash(i) * 6, py - 14 - i * 13, 220, 13), { wash: i % 2 ? PAL.cream : '#F3EBDC', ink: INK, sw: .4 });
     const topY = py - 14 - 9 * 13;
@@ -293,18 +295,20 @@
     }
     // everybody asleep at their desks
     for (const [x, y, n] of [[600, 860, 1], [1010, 860, 2], [720, 1030, 3]]) {
-      desk(x, y, 250);
-      agentBot(x, y + 2, 8, t, { n: 60 + n, rot: NOTXT, eyes: 'closed', mouth: 'flat', noShadow: true, dy: .3 * Math.sin(t * 1.3 + n), aL: -.4, aR: -.4 });
-      emote('zzz', x + 55, y - 90, 14, clamp(seg(t, TH.nobody - .6 + n * .15, TH.nobody + n * .15)));
+      tdesk(x, y, 320);
+      agentBot(x, y + 2, 11, t, { n: 60 + n, rot: NOTXT, eyes: 'closed', mouth: 'flat', noShadow: true, dy: .3 * Math.sin(t * 1.3 + n), aL: -.4, aR: -.4 });
+      emote('zzz', x + 75, y - 125, 20, clamp(seg(t, TH.nobody - .6 + n * .15, TH.nobody + n * .15)));
     }
     // Clawd in the striped deck chair (front right). On «you.» it turns to the lens.
     const cx = 1290, cy = 1050, turn = eased(t, TH.you - .5, TH.you);
+    push(); translate(cx, cy); scale(1.4); translate(-cx, -cy);
     for (let i = 0; i < 6; i++) paint([[cx - 110 + i * 38, cy - 170 + i * 12], [cx - 72 + i * 38, cy - 158 + i * 12], [cx - 72 + i * 38 + 30, cy - 30], [cx - 110 + i * 38 + 30, cy - 30]], { wash: i % 2 ? PAL.cream : TK.ember, ink: INK, sw: .5 });
     inkLine([[cx - 110, cy - 170], [cx - 50, cy]], 4, '#7A4A2E', 'ink', 0); inkLine([[cx + 118, cy - 100], [cx + 80, cy]], 4, '#7A4A2E', 'ink', 0);
     clawd(cx, cy - 30, 9, { rot: -.25 * (1 - turn), eyes: t < TH.you - .5 ? 'shades' : 'look', lookX: 0, lookY: .2, mouth: turn > .9 ? 'flat' : 'smile', aL: 1.6 * (1 - turn) + .2, aR: 1.6 * (1 - turn) + .2, noShadow: true });
+    pop();
   }
   scene('e26_thesis', 157.46, 162.86, thesis, [
-    [157.46, 960, 400, 820], [TH.cap, 960, 360, 760, 1], [TH.nobody, 960, 600, 1080, 1], [161.4, 1100, 740, 960, 1], [TH.you, 1290, 930, 520], [162.859, 1290, 935, 480, 1],
+    [157.46, 960, 400, 820], [TH.cap, 960, 360, 760, 1], [TH.nobody, 820, 860, 820, 1], [161.4, 1180, 880, 780, 1], [TH.you, 1290, 900, 620], [162.859, 1290, 900, 580, 1],
   ], [[TH.you, 10]]);
 
   // ======== E30 NEW (183.82–189.06) «REVENUE? LATER! PROFIT? HOW?! A-G-I? SOON! CAPEX? NOW!» ========
@@ -403,6 +407,8 @@
     // the benchmark: one tall bar; a crane hook lifts its top a hair; a magnifier shows the gap
     const up = easeOut(seg(t, BN.lift - .2, BN.lift + .2)) * 8, bh = 520, bx = 960, by = 1060, boom = t >= BN.boom;
     if (!boom || t < BN.boom + .3) {
+      [[640, 470, '#8A95A1'], [760, 490, '#8A95A1'], [860, 505, '#8A95A1']].forEach(([x, h, c]) => paint(rectPts(x - 45, by - h, 90, h, 1), { wash: c, fill: mixCol(c, INK, .3), fillOp: 50, tex: .4, ink: INK, sw: 1 }));
+      ceoClawd(1240, 1058, 16, { noShadow: true, flip: true, eyes: t > BN.lift ? 'spark' : 'normal', mouth: t > BN.lift ? 'grin' : 'smile', aR: 1.3, aL: t > BN.lift ? 1.6 : .4 });
       paint(rectPts(bx - 70, by - bh, 140, bh, 1), { wash: PAL.teal, fill: mixCol(PAL.teal, INK, .3), fillOp: 60, tex: .5, ink: INK, sw: 1.2 });
       paint(rectPts(bx - 70, by - bh - up - 12, 140, 12 + up), { wash: TK.led, ink: INK, sw: .8 });
       inkLine([[bx, -400], [bx, by - bh - up - 50]], 2, INK, 'inkfine', 0);
@@ -450,7 +456,7 @@
     }
   }
   scene('e31_bench', 189.06, 210.0, bench, [
-    [189.06, 960, 560, 1000], [BN.lift - .4, 1080, 520, 700, 1], [BN.lift + .5, 1080, 520, 700, 1], [BN.boom, 960, 600, 1080],
+    [189.06, 940, 760, 820], [BN.lift - .4, 1060, 620, 620, 1], [BN.lift + .5, 1060, 620, 620, 1], [BN.boom, 960, 700, 1000],
     [BN.hold, 960, 560, 1000, 1], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
   ], [[BN.lift, 6], [BN.boom, 20]]);
 

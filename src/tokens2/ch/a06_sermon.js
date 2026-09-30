@@ -271,10 +271,10 @@
 
   // ---------- 120.8 the CEO sips water; the next town's reservoir dries up. Choir: «Больше меди. Больше воды.» ----------
   const a06_GULPS = [121.0, 121.55, 122.1, 122.65, 123.2];
-  function a06_reservoir(t, x, y, w, h) {
+  function a06_reservoir(t, x, y, w, h, lvlO = null) {
     const [ix, iy, iw, ih] = zineCut(x, y, w, h, { seed: 61, rot: -.03 });
     let lvl = 1; for (const g of a06_GULPS) lvl -= .2 * ease(seg(t, g, g + .35));
-    lvl = Math.max(0, lvl);
+    lvl = Math.max(0, lvlO ?? lvl);
     const sky = [ix, iy, iw, ih * .62];
     paint(rectPts(...sky), { wash: '#BFD9E8', fill: '#8EC3E6', fillOp: 60, tex: .4, ink: null });
     // the little town on the hill
@@ -447,6 +447,6 @@
     glitchCut(t, 132.55);
   }
 
-  window.A06 = { mini: a06_mini, nave: a06_nave, angel: a06_angel, beam: a06_beam, pulpit: a06_pulpit, dark: a06_dark };   // for tokensEN/scenes2.js
+  window.A06 = { reservoir: a06_reservoir, mini: a06_mini, nave: a06_nave, angel: a06_angel, beam: a06_beam, pulpit: a06_pulpit, dark: a06_dark };   // for tokensEN/scenes2.js
   chapter('bridge', 116.3, 132.55, [[116.3, preach], [120.8, sip], [123.7, why], [125.15, prophecy], [127.15, shades]]);
 })();

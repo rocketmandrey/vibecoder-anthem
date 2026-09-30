@@ -66,7 +66,7 @@
   // body, head (roaring / shut), two fists, steam puffs. Each layer is painted from its paths once into an offscreen 2D canvas at load.
   const ART = {};
   window.preloadAssets = async () => {
-    for (const [k, [w, h, paths]] of Object.entries(BULL_ART)) {
+    for (const [k, [w, h, paths]] of Object.entries({ ...BULL_ART, ...(typeof PROP_ART !== 'undefined' ? PROP_ART : {}) })) {
       const q = 1.5, g = createGraphics(Math.ceil(w * q), Math.ceil(h * q)); g.pixelDensity(1);
       const c = g.drawingContext; c.scale(q, q);
       for (const [fill, tx, ty, d] of paths) {
@@ -337,8 +337,8 @@
     [54.05, 1180, 580, 1120, 1],                                         //   holds through the pour
     [54.85, 740, 580, 1140, 1],                                          //   swings left for the bigger one
     [55.639, 750, 600, 1140, 1],
-    [55.64, 900, 640, 1000],                                              // S3: the hiring machine and the belt
-    [58.48, 960, 760, 940, 1],                                            //   drift to the asker and the CEO
+    [55.64, 900, 720, 860],                                              // S3: the hiring machine and the belt
+    [58.48, 960, 820, 820, 1],                                            //   drift to the asker and the CEO
     [60.3, 980, 860, 820, 1],                                            //   push in on the spoon
     [65.179, 960, 800, 900, 1],
   ];
@@ -349,5 +349,5 @@
     ...RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]).filter(([t]) => !inNew(t)),
     ...EN_KEYS,
   ].sort((a, b) => a[0] - b[0]);
-  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3 };   // for tokensEN/scenes2.js
+  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3, layer };   // for tokensEN/scenes2.js
 })();
