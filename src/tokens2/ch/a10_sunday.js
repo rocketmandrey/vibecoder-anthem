@@ -24,9 +24,11 @@
       paint(ellPts(sx, sy, r, r, 6), { wash: '#F4EFD8', washOp: 200, ink: null });
     }
     const mx = x + w * .62, my = y + h * .33, mr = 58;
+    if (!window.NO_MOON) {                                                   // (BURN THE TOKENS: no moon, the stars only)
     glowAt(mx, my, mr * (2.2 + mk * .9), '#DDE6F2', 45 + 70 * mk);
     paint(ellPts(mx, my, mr, mr, 26), { wash: '#F2EEDC', fill: '#D8D2B8', fillOp: 70, tex: .5, border: .5, ink: '#8A8468', sw: .6 });
     for (const [cx, cy, r] of [[-.3, -.2, .18], [.25, .15, .13], [-.05, .4, .1], [.35, -.35, .08]]) paint(ellPts(mx + cx * mr, my + cy * mr, r * mr, r * mr, 10), { wash: '#CFC7A6', washOp: 170, ink: null });
+    }
     // city silhouette with a few lit windows
     const base = y + h;
     for (let i = 0; i < 7; i++) {

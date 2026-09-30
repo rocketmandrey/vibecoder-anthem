@@ -24,7 +24,11 @@
     // E01 intro 0–18.16: the v3 opening squeezed onto the EN 18 s (drops 2.30 / 5.11, first slam 13.40 = title slam)
     [0, 0], [2.299, 2.86], [5.108, 5.564], [13.398, 17.45], [18.16, 24.95],
     // E02–E05 verse 1: line starts ↔ v3 line starts (the v2 shots cut on them)
-    [18.36, 25.249], [20.80, 27.658], [23.54, 30.36], [26.38, 32.94], [29.08, 35.614], [31.76, 37.73], [34.52, 40.342], [36.78, 42.82], [39.52, 44.936],
+    // (a02 v2 shots: friday 20.1, screen 22.65, park 25.25, burn 27.8, wave 30.5 / 32.5, rocket 33.98, arcade 35.1, website 37.75) — the app/bot wave,
+    // the moon rocket and the website are skipped: the sparkle under the limit bar plays slow under «Don't need an app … why the hell not?»,
+    // the arcade holds «game» + «website»
+    [18.2, null, 20.2], [20.799, null, 22.6], [20.8, null, 22.7], [23.539, null, 25.2], [23.54, null, 25.3], [26.379, null, 27.75], [26.38, null, 27.85],
+    [29.079, null, 30.45], [29.08, null, 32.55], [34.519, null, 33.95], [34.52, null, 35.15], [39.779, null, 37.7],
     ...PRE.map(([d, v2]) => [39.78 + d, null, v2]),
     // E07 45.46–50.72: one shredder take (a03 chorusA; the limit close-up and the re-entry are dropped in scenes.js)
     [45.46, null, 45.05], [45.47, null, 45.10],                    // gang A shouts on «Burn» (the cut sits on the 45.46 downbeat)
@@ -39,7 +43,7 @@
     [58.60, null, 60.35], [58.76, null, 60.84], [59.45, null, 61.5], [59.46, null, 63.8], [60.46, null, 64.54], [61.6, null, 64.9],
     [64.21, null, 66.3], [64.22, null, 66.4], [65.179, null, 67.09], [65.18, null, 67.1],
     // E10–E13 verse 2 (EN order differs from RU after «hired an agent»: the report shot comes before the 40M price here)
-    [68.90, 74.82], [71.34, 77.44], [74.00, 79.66], [76.80, 82.14], [81.94, 84.753], [85.02, 86.973], [87.599, 89.6],
+    [68.90, 74.82], [71.34, 77.44], [74.00, 79.87], [76.80, 82.14], [81.94, 84.753], [85.02, 86.973], [87.599, 89.6],
     // E14 87.60–92.86: the pre-chorus replays a03 crush → talk (+47.43 s, same cues)
     [87.60, null, 40.11, 1], ...PRE.map(([d, v2]) => [87.21 + d, null, v2, 1]).filter(a => a[0] > 87.6), [92.859, null, 45.049, 1],   // 40.11 = the crush at the same point of «Fans» as E06
     // E15–E17 chorus 2 (a05 night factory) + break: ЩЁЛК on the 109.90 downbeat, the four «click»s on the next ones
@@ -53,7 +57,7 @@
     // E23 139.38: the flywheel, one whip per sung half-phrase (EN has 6 left in this shot, v3 whips 3–8)
     [139.38, 151.6], [139.62, 151.89], [140.88, 152.869], [142.18, 154.175], [143.38, 155.48], [144.78, 156.788], [146.06, 158.092], [147.53, 159.94],
     // E24 THE ECONOMY IS WORKING (148.70 / 149.60), rap on the 152.04 slam
-    [148.70, 160.048], [149.60, 161.483], [152.04, 162.545], [154.46, 164.734], [157.46, 167.819], [160.10, 170.252],
+    [148.56, 160.4], [149.60, 161.483], [152.04, 162.545], [154.46, 164.734], [157.46, 167.819], [160.10, 170.252],
     // E27–E28 mayo (v3 real chapter 172.66–186.95), the held «mayonnaise» 172.14–175.88 rides the tunnel
     [162.86, 172.66], [165.12, 175.552], [167.58, 177.876], [170.30, 180.637], [175.88, 186.12],
     // E29–E31 final chorus (a09)

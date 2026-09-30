@@ -81,7 +81,7 @@
   const AT = [
     ['ЖГИ!', 'IS THAT ALL\nYOU GOT?!', 43.5, 45.5, { fit: 1250 }],       // E06: Wall Street's shout (a03 talk)
   ];
-  const FIT = { 'BURN THE TOKENS!': 1000, 'BURN THE TOKENS': 860 };                            // explicit max widths (world px) for the 4:5 window
+  const FIT = { 'BURN THE TOKENS!': 1000, 'BURN THE TOKENS': 860, 'MON 12:00 AM': 300, 'SUN 11:59 PM': 300, 'SUN 11:58 PM': 300 };   // the a10 clock box is 340 wide                            // explicit max widths (world px) for the 4:5 window
   const SLACK = 1.25;
   const CYR = /[А-Яа-яЁё]/;
   window.I18N_MISS = new Set();
@@ -114,7 +114,7 @@
   const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
   const LABEL_OK = [[81.9, 87.6]];                                     // the reused a04 report shot: its small EN labels may stay (cover, sticky note)
   const bigAt = () => LABEL_OK.some(([a, b]) => T >= a && T < b) ? 100 : BIG;
-  const quiet = (en, size) => CYR.test(en) || (!titleOk() && size >= bigAt() && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay
+  const quiet = (en, size) => CYR.test(en) || (!titleOk() && !/^(SUN|MON) \d/.test(en) && size >= bigAt() && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay; the a10 clock readout (SUN 11:59 PM) is a prop, it stays
   const _counter = counter;
   counter = (...a) => { if (titleOk()) _counter(...a); };
   const _letter = letter;

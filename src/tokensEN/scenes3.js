@@ -31,221 +31,139 @@
     for (let k = 0; k < 4; k++) paint(rectPts(x + w * .06, y + h * (.55 + k * .09), w * (.8 - k * .12), h * .035), { wash: '#B8AE9E', ink: null });
   };
 
-  // ======== INTRO NEW (0–18.16, instrumental) ========
-  // Dark hall; one coin rolls into frame (0) → lights bang on (2.30, 5.11) → Clawd rolls a giant coin like a wheel towards the press, heaves it
-  // onto the bed (12.6) → 13.40 the press SLAMS it flat, the title slams with it; the press keeps hammering on every hit, sparks, fire behind.
+  // ======== INTRO NEW (0–18.16, instrumental): Sisyphus ========
+  // A long 45° slope fills the frame corner to corner. Clawd pushes one giant token up it, straining; on the drops (2.30, 5.11) the token
+  // slips back a little and he digs in again; the camera climbs with him. On top a HUGE press waits. He rolls the token under it, heaves it
+  // onto the bed (12.4–12.9) → 13.40 the press SLAMS it flat, the title slams with it; the press keeps hammering on every hit. No fire.
   const INH = [13.40, 14.07, 15.44, 16.46, 17.16];
+  const SL = { A: [180, 1700], B: [1150, 730], r: 110, px: 1440, top: 11.0, lift: [12.4, 12.9] };
+  const SLD = [.7071, -.7071], SLN = [-.7071, -.7071], SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]);
+  const climb = t => clamp(t / SL.top) - [2.30, 5.11].reduce((a, d) => { const g = t - d; return a + (g < 0 ? 0 : g < .3 ? .07 * easeOut(g / .3) : .07 * Math.max(0, 1 - (g - .3) / 1.4)); }, 0);
+  // the token's contact point on the ground at time t (slope, then the plateau to the press)
+  const slopeAt = t => { const u = climb(t); if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
+    const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
   function intro(t) {
-    back(A2.gunDk);
-    const dark = t < 2.3 ? .9 : .1;                                      // ponytail: a half-dark hall reads as grey fog, so the lamps come on one by one instead
-    A03.hall(t, { lamps: t < 5.11 ? [700] : [700, 1220], floor: 1060, dark });
-    fire(960, 1060, 1300, 260 * eased(t, 12.8, 13.4) + 60 * kick(t, INH, .3), t, { k: .3 + .7 * eased(t, 12.8, 13.4), seed: 11 });
-    // the press (idle until the first slam)
-    press(800, 420, 340, 640, t, t < 13.2 ? [99] : INH, { seed: 3 });
-    // the giant coin: rolled in by Clawd from the left, then flattened
-    const roll = eased(t, 5.4, 12.2), gx = lerp(420, 970, roll), lift = eased(t, 12.2, 12.9), sq = t >= INH[0] ? .2 : 1;
-    const gy = lerp(1060 - 110, 890 - 110 * sq, lift);
-    if (t > 2.3) { push(); translate(gx, gy); scale(1 + (1 - sq) * .5, sq); token(0, 0, 110, { spin: t < 12.2 ? roll * 6 : .02, burn: t > 14 ? seg(t, 14, 17) * .6 : 0 }); pop(); }
-    if (t < 2.3) token(lerp(440, 700, t / 2.3), 1030, 24, { spin: t * 2 });
-    const cx = t < 12.2 ? gx - 170 : lerp(gx - 170, 700, eased(t, 12.9, 13.3)), pushing = t > 5.4 && t < 12.2;
-    if (t > 2.3) clawd(cx, 1058, 11, { walk: pushing ? t * 2.2 : null, rot: pushing ? .12 : 0, eyes: t > 13.4 ? 'spark' : pushing ? 'narrow' : 'look', lookX: 1,
-      mouth: t > 13.4 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing || (t > 12.2 && t < 12.9) ? 1.2 : .3, aR: pushing || (t > 12.2 && t < 12.9) ? 1.2 : .3, emote: pushing && t > 10 ? 'sweat' : null, noShadow: true });
-    for (const h of INH) { sparks(970, 900, t - h, h * 3, 16, 360); rubble(970, 1060, 500, t - h, h); }
-    if (t >= INH[0]) stamp('BURN THE TOKENS', 960, 250, 78, t, INH[0], { col: TK.yellow, rot: -.04 });
-    flash(Math.min(.35, kick(t, [INH[0]], .2) * .35), TK.yellowLt);
+    back('#16181D');
+    for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);            // the wall of the pit
+    for (const [lx, ly, on] of [[520, 700, 2.3], [980, 250, 5.11], [1440, -520, 5.11]]) {                                  // hanging lamps bang on with the drops
+      inkLine([[lx, -1400], [lx, ly - 30]], .8, INK, 'inkfine', 0); paint([[lx - 30, ly - 30], [lx + 30, ly - 30], [lx + 70, ly + 20], [lx - 70, ly + 20]], { wash: A2.gunDk, ink: INK, sw: .6 });
+      if (t > on) paint([[lx - 60, ly + 20], [lx + 60, ly + 20], [lx + 260, ly + 700], [lx - 260, ly + 700]], { wash: '#FFE2A8', washOp: 40, ink: null });
+    }
+    // the hill: slope + plateau, a hazard edge along the top
+    const edge = []; for (let x = -600; x <= 2400; x += 50) edge.push([x, x < SL.B[0] ? SL.A[1] + (SL.A[0] - x) : SL.B[1]]);   // dense: brush clamps far vertices
+    paint([...edge, [2400, 2800], [-600, 2800]], { wash: '#6A5A4A', fill: '#3A3028', fillOp: 90, tex: .6, ink: INK, sw: 2 });
+    inkLine(edge.filter(([x]) => x > -300 && x < 2200), 7, '#D8B880', 'ink', 0);
+    for (let k = 0; k < 9; k++) { const u = hash(k + 4), x = lerp(-300, SL.B[0], u), y = SL.A[1] + (SL.A[0] - x) + 40 + hash(k) * 120; paint(ellPts(x, y, 26 + hash(k + 1) * 30, 14 + hash(k + 2) * 12, 8, 4, k), { wash: '#3A3F48', ink: INK, sw: .6 }); }
+    // the huge press on top (bed bottom on the plateau), idle until the first slam
+    const PW = 520, PH = 1000, PX = SL.px - PW / 2, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
+    press(PX, PY, PW, PH, t, t < 13.2 ? [99] : INH, { seed: 3, token: false });
+    // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
+    const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= INH[0] ? .2 : 1;
+    const bx = gx0 + SLN[0] * SL.r * (t < SL.top ? 1 : 0), by = t < SL.top ? gy0 + SLN[1] * SL.r + SL.r : lerp(gy0, bedY, lift);   // bottom-centre of the token
+    push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
+    token(0, 0, SL.r, { spin: .02, burn: t > 14 ? seg(t, 14, 17) * .6 : 0 }); pop();
+    // Clawd right behind it, leaning in; after the lift he stands back and stares up
+    const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], 13.3);
+    const [fx, fy] = t < SL.top ? [gx0 - SLD[0] * (SL.r + 80), gy0 - SLD[1] * (SL.r + 80)] : [bx - SL.r - 80 - 140 * back2, SL.B[1]];
+    const slip = [2.30, 5.11].some(d => t > d && t < d + .5);
+    clawd(fx, fy, 12, { walk: pushing && !slip ? t * 2 : null, rot: t < SL.top ? .3 : pushing ? .2 : 0, eyes: t > 13.4 ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > 12.9 ? -1 : 0,
+      mouth: t > 13.4 ? 'O' : slip ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 7 ? 'sweat' : null, noShadow: true });
+    for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
+    if (t >= INH[0]) stamp('BURN THE TOKENS', 1380, 930, 78, t, INH[0], { col: TK.yellow, rot: -.04 });
+    flash(Math.min(.3, kick(t, [INH[0]], .2) * .3), TK.yellowLt);
   }
-  scene('intro', 0, 18.16, intro, [
-    [0, 580, 850, 560], [2.3, 640, 820, 620, 1], [5.4, 620, 810, 700, 1], [9.0, 760, 790, 760, 1], [12.2, 900, 760, 820, 1], [13.39, 960, 700, 900, 1],
-    [13.4, 960, 620, 960], [18.159, 960, 640, 900, 1],
-  ], [[13.4, 18]]);
+  // the camera climbs with the token (keys sampled off its path), then pulls back to the whole press for the slam
+  const IK = [0, 1.2, 2.3, 2.8, 4, 5.11, 5.6, 7, 8.5, 10, 11, 12.4].map((k, i) => { const [x, y] = slopeAt(k); return [k, x - 20, y - 150, 760, i ? 1 : 0]; });
+  scene('intro', 0, 18.16, intro, [...IK, [12.9, 1320, 420, 960, 1], [13.39, 1380, 330, 1080, 1], [18.159, 1380, 360, 1040, 1]], [[13.4, 18], [2.30, 8], [5.11, 8]]);
 
-  // ======== VERSE 1 NEW (18.16–39.78) in the room at dusk ========
-  // «Friday night, I'm off the clock» — the cuckoo pops at six, laptop slams shut, Clawd hops off, stretches.
-  // «Half my weekly tokens still in stock» — the token jar, filled exactly to the half mark.
-  // «Could touch grass — but Sunday night» — Clawd reaches for the pot of grass; the window snaps to night, the clock hands race.
-  // «Every last token has to die» — the coins in the jar get x-eyes and catch fire.
-  // «Don't need an app, don't need a bot» — Clawd swats away an app tile; kicks away a little agent bot.
-  // «Still got tokens — so why the hell not?» — eyes on the jar, sparkle, grin, shrug.
-  // «Build me a game that nobody will play» — coins arc into the laptop, an arcade cabinet pops up; nobody comes; tumbleweed, cobweb.
-  // «Build me a website no one needs anyway!» — more coins, a big web page pops up on the wall; a tumbleweed rolls across it, a spider.
-  const V1 = { pop: 18.9, shut: 19.3, hop: 19.7, walk: 20.8, grass: 23.54, sunday: 24.8, die: 26.38, app: 29.08, swat: 29.8, bot: 30.3, kickT: 30.7,
-    why: 31.76, shrug: 33.3, game: 34.52, cab: 35.0, site: 36.78, page: 37.4 };
-  const JAR = [1330, 880];
-  function verse1(t) {
-    back('#2A2230');
-    const night = t < V1.sunday ? 0 : eased(t, V1.sunday, V1.sunday + .4);
-    roomWall(t, night);
-    // the clock: six o'clock on Friday, then racing to Sunday night
-    const race = eased(t, V1.sunday, V1.sunday + 1.2), min = -.05 * (1 - seg(t, 18.16, V1.pop)) + race * TAU * 6, hour = Math.PI + race * TAU * .5 * 1.97;
-    cuckoo(t, 640, 430, .55, min, hour, t >= V1.pop ? t - V1.pop : null);
-    // desk + laptop (left of the jar), stool
-    desk(820, 1160, 880);
-    const lid = t < V1.shut ? 1 : t < V1.game ? 1 - eased(t, V1.shut, V1.shut + .12) : eased(t, V1.game, V1.game + .3);
-    const built = t >= V1.game;
-    laptop(1000, 880, lid, t < V1.shut ? '#6FA8FF' : built ? TK.yellow : null, .9);
-    paint(rectPts(700, 940, 90, 16, 1), { wash: '#7A4A2E', ink: INK, sw: .8 }); paint(rectPts(736, 956, 18, 104), { wash: '#4A2A1E', ink: INK, sw: .6 });
-    // the jar on its stool
-    paint(rectPts(JAR[0] - 90, JAR[1], 180, 18, 1), { wash: '#7A4A2E', ink: INK, sw: .8 });
-    for (const d of [-60, 44]) paint(rectPts(JAR[0] + d, JAR[1] + 18, 16, ROOM.floor - JAR[1] - 18), { wash: '#4A2A1E', ink: INK, sw: .6 });
-    const spent = seg(t, V1.game, V1.game + .7) * .5 + seg(t, V1.site, V1.site + .7) * .45;
-    const dead = t < V1.why ? eased(t, V1.die, V1.die + .6) : 1 - eased(t, V1.why + .4, V1.why + .9);
-    jar(t, JAR[0], JAR[1], .5 - spent, { w: 190, h: 250, dead, spin: t > V1.why + .4 && t < V1.game });
-    if (t > V1.sunday && t < V1.die) glowAt(JAR[0], JAR[1] - 120, 200, TK.ember, 80 * eased(t, V1.sunday, V1.sunday + .5));
-    // the pot of grass by the wall
-    const gx = 1080;
-    paint([[gx - 50, 1060], [gx + 50, 1060], [gx + 62, 990], [gx - 62, 990]], { wash: A2.rust, ink: INK, sw: 1 });
-    for (let k = 0; k < 9; k++) { const x = gx - 48 + k * 12, sw = Math.sin(t * 2 + k) * 6; paint([[x - 5, 992], [x + 5, 992], [x + 2 + sw, 930 - hash(k) * 30]], { wash: k % 2 ? TK.green : TK.greenDk, ink: INK, sw: .4 }); }
-    // the arcade cabinet (the game) and the web page (the website)
-    if (t > V1.cab) {
-      const up = easeOut(seg(t, V1.cab, V1.cab + .35)), x = 560, y = 1060 + (1 - up) * 420;
-      paint([[x - 90, y], [x - 90, y - 380], [x - 60, y - 420], [x + 90, y - 420], [x + 90, y]], { wash: TK.blue, fill: TK.blueDk, fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
-      paint(rectPts(x - 70, y - 360, 140, 110), { wash: '#0A0B0D', ink: INK, sw: .8 });
-      const blink = Math.floor(t * 3) % 2;
-      for (const [px, py] of [[-2, 0], [2, 0], [-3, 1], [-1, 1], [1, 1], [3, 1], [-3, 2], [3, 2], [-1, -1], [1, -1]]) paint(rectPts(x + px * 12 - 6, y - 305 + py * 12 - 6 + blink * 4, 12, 12), { wash: TK.led, ink: null });
-      paint(rectPts(x - 90, y - 230, 180, 60), { wash: TK.blueDk, ink: INK, sw: .8 });
-      inkLine([[x - 30, y - 200], [x - 30, y - 235]], 4, INK, 'ink', 0); paint(ellPts(x - 30, y - 238, 10, 10, 8), { wash: TK.ember, ink: INK, sw: .5 });
-      for (let k = 0; k < 2; k++) paint(ellPts(x + 20 + k * 30, y - 205, 9, 9, 8), { wash: TK.yellow, ink: INK, sw: .5 });
-      paint(rectPts(x - 30, y - 60, 60, 40), { wash: '#0A0B0D', ink: null });                                      // coin slot, dark: nobody
-      paint(rectPts(x + 110, 1000, 60, 14, 1), { wash: '#7A4A2E', ink: INK, sw: .7 }); paint(rectPts(x + 132, 1014, 14, 46), { wash: '#4A2A1E', ink: INK, sw: .5 });   // the empty stool
-      const web = eased(t, V1.cab + 1, V1.cab + 2.2);
-      if (web > 0) for (let i = 0; i < 5; i++) { const a = Math.PI * (.5 + i / 8); inkLine([[x + 90, y - 420], [x + 90 + Math.cos(a) * 110 * web, y - 420 + Math.sin(a) * 110 * web]], .8, '#E8ECEF', 'inkfine', 0); }
-      const tw = seg(t, V1.cab + .9, V1.cab + 2.3); if (tw > 0 && tw < 1) tumbleweed(lerp(900, 380, tw), 1030 - Math.abs(Math.sin(tw * 12)) * 30, 28, t);
-    }
-    if (t > V1.page) {
-      const k = backOut(seg(t, V1.page, V1.page + .3)), x = 880, y = 160, w = 520, h = 400;
-      push(); translate(x + w / 2, y + h / 2); scale(k); translate(-(x + w / 2), -(y + h / 2));
-      browser(x, y, w, h, { col: PAL.violet });
-      const tw = seg(t, V1.page + .5, V1.page + 1.8); if (tw > 0 && tw < 1) tumbleweed(lerp(x + w - 40, x + 40, tw), y + h * .9 - Math.abs(Math.sin(tw * 10)) * 26, 22, t);
-      if (t > V1.page + 1) spiderAt(x + w * .75, lerp(y + 40, y + h * .62, eased(t, V1.page + 1, V1.page + 1.8)));
-      pop();
-    }
-    // coins arcing from the jar into the laptop on «Build me…»
-    for (const b of [V1.game, V1.site]) for (let i = 0; i < 7; i++) { const u = (t - b - i * .08) / .5; if (u > 0 && u < 1) { const [x, y] = arc(JAR[0], JAR[1] - 200, 1000, 800, 180, u); token(x, y, 16, { spin: t * 4 + i }); } }
-    // flying away: the app tile and the bot
-    if (t > V1.app && t < V1.swat + 1) {
-      const fly = seg(t, V1.swat, V1.swat + .8), x = lerp(1060, 300, easeIn(fly)), y = 700 - Math.sin(fly * Math.PI) * 300 + (1 - backOut(seg(t, V1.app, V1.app + .3))) * 200;
-      push(); translate(x, y); rotate(fly * 8);
-      paint(rrPts(-60, -60, 120, 120, 28), { wash: TK.green, fill: TK.greenDk, fillOp: 60, ink: INK, sw: 1.2 });
-      paint(ellPts(0, 0, 26, 26, 16), { wash: PAL.cream, ink: INK, sw: .8 }); paint(rectPts(-6, -34, 12, 20), { wash: PAL.cream, ink: INK, sw: .6 });
-      pop();
-    }
-    if (t > V1.app + .8 && t < V1.why + .4) {
-      const tumble = seg(t, V1.kickT, V1.kickT + .7), x = t < V1.kickT ? lerp(420, 900, eased(t, V1.app + .8, V1.kickT)) : lerp(900, 300, tumble);
-      agentBot(x, 1058 - Math.sin(tumble * Math.PI) * 220, 7.5, t, { n: 7, rot: NOTXT + tumble * 9, walk: t < V1.kickT ? t * 3 : null, eyes: tumble > 0 ? 'x' : 'happy', mouth: tumble > 0 ? 'O' : 'smile', aL: 1.2, aR: 1.2, noShadow: true });
-    }
-    // Clawd
-    let cx, cy = 1058, o = { eyes: 'normal', mouth: 'flat', aL: .3, aR: .3, noShadow: true };
-    if (t < V1.hop) { cx = 745; cy = 940; o.eyes = t > V1.pop ? 'happy' : 'narrow'; o.aR = t < V1.shut ? .9 + .3 * Math.sin(t * 20) : .3; }
-    else if (t < V1.walk) { cx = 745 + (t - V1.hop) * 40; const k = eased(t, V1.hop + .2, V1.walk); o.aL = o.aR = 1.8 * Math.sin(k * Math.PI); o.eyes = 'happy'; o.mouth = 'o'; }
-    else if (t < V1.grass) { cx = lerp(785, 1180, eased(t, V1.walk, V1.walk + 1)); o.walk = t < V1.walk + 1 ? t * 2 : null; o.eyes = 'look'; o.lookX = 1; o.mouth = 'smile'; }
-    else if (t < V1.die) { cx = lerp(1180, 1160, eased(t, V1.grass, V1.grass + .4)); o.flip = t < V1.sunday + .2; o.aR = t < V1.sunday ? 1.2 : .2; o.rot = t < V1.sunday ? -.12 : 0; o.eyes = t < V1.sunday ? 'happy' : 'scared'; o.lookX = 1; o.mouth = t < V1.sunday ? 'smile' : 'O'; }
-    else if (t < V1.app) { cx = 1160; o.eyes = 'scared'; o.lookX = 1; o.mouth = 'O'; o.emote = 'sweat'; o.aL = o.aR = 1.5; }
-    else if (t < V1.why) { cx = lerp(1160, 1000, eased(t, V1.app, V1.app + .4)); o.flip = true; o.eyes = 'narrow'; o.mouth = 'flat';
-      o.aR = t > V1.swat - .15 && t < V1.swat + .25 ? 2 : .3; o.rot = kick(t, [V1.kickT], .3) * .25; }
-    else if (t < V1.game) { cx = lerp(1000, 1150, eased(t, V1.why, V1.why + .4)); o.eyes = t > V1.why + .4 ? 'spark' : 'look'; o.lookX = 1; o.mouth = 'grin';
-      const sh = seg(t, V1.shrug, V1.shrug + .6); o.aL = o.aR = .3 + 1.4 * Math.sin(sh * Math.PI); }
-    else { cx = 1150; o.eyes = 'happy'; o.mouth = 'grin'; o.aL = o.aR = 1.2 + .4 * Math.sin(t * 8); }
-    clawd(cx, cy, 13, o);
-  }
-  scene('v1_room', 18.16, 39.78, verse1, [
-    [18.16, 760, 820, 520], [19.9, 820, 820, 600, 1], [20.8, 1000, 800, 640, 1], [22.3, 1240, 800, 560, 1], [V1.grass, 1130, 830, 600, 1], [V1.sunday, 1180, 720, 760, 1],
-    [V1.die, 1320, 760, 480], [28.9, 1300, 780, 520, 1], [V1.app, 1060, 820, 640], [V1.why, 1200, 820, 600, 1], [33.9, 1160, 800, 640, 1],
-    [V1.game, 760, 800, 700], [V1.site, 1000, 640, 820, 1], [39.779, 1040, 660, 800, 1],
-  ], [[V1.shut, 6], [V1.kickT, 8], [V1.cab, 8]]);
+  // ======== RU scenes brought back (cued in tokensEN/warp.js), each with its own 3:4 framing ========
+  const RUK = [
+    // verse 1, a02 office: Friday desk → the usage panel → Clawd at the park window → Sunday page burns → sparkle under the limit bar → the arcade
+    [18.16, 1200, 520, 1240], [20.8, 960, 560, 1650], [23.54, 680, 520, 1200], [26.38, 973, 440, 1000], [29.079, 973, 440, 940, 1],
+    [29.08, 960, 440, 1200], [34.519, 960, 460, 1100, 1], [34.52, 1080, 560, 1100], [39.779, 1000, 600, 900, 1],
+    // «Top burner gets a bonus»: the a04 golden idol on the TOP BURNER pedestal
+    [74.0, 960, 560, 1000], [76.719, 960, 520, 900, 1],
+    // chorus 2, a05 night factory: wide → the limit-gauge chimney → the city → the public counter → agents march in → wide → the billboard → 0% → blackout
+    [92.86, 960, 470, 1000], [95.68, 960, 380, 1100], [98.0, 940, 420, 1080], [100.64, 980, 460, 1500], [102.88, 960, 520, 1100],
+    [105.84, 960, 450, 1080], [108.18, 960, 440, 1500], [109.9, 900, 560, 1000], [110.55, 960, 540, 1300],
+    // a06 sermon: price tag + the bill (still, slow), the push-in as the shades come down; a07 «MORE GPUs!» drop: DJ in shades, Matrix burst
+    [129.02, 1150, 500, 1300], [131.0, 1050, 480, 1250, 1], [133.299, 1000, 470, 1200, 1], [133.3, 960, 640, 1000], [135.219, 960, 620, 960, 1],
+    [135.22, 960, 600, 1000], [136.999, 960, 560, 960, 1],
+    // a07 «The economy is WORKING!»: the token index grows, then is yanked up out of frame (the camera rises with it); a08 AGI by spring → loading
+    [148.56, 940, 480, 1200], [150.3, 960, 420, 1220, 1], [152.039, 1020, 250, 1250, 1],
+    [152.04, 820, 560, 1200], [154.2, 820, 560, 1180, 1], [155.2, 1150, 580, 1200, 1], [157.459, 1150, 580, 1140, 1],
+  ];
+  EN_KEYS.push(...RUK);
 
-  // ======== VERSE 2 NEW (65.18–76.72) in the hall ========
-  // «Brand-new K-P-I up on the wall» — the CEO on a ladder hammers up a big dial: green → red, a flame at the top of the scale.
-  // «You get the tokens — you burn 'em all» — agents in a row, a bucket of coins each, all thrown into the furnace; the needle climbs.
-  // «Low spend? Bro, you didn't even try» — one agent throws one coin; the needle doesn't move; the CEO turns and points; spotlight, sweat.
-  // «Top burner gets a bonus. Don't ask why» — the sootiest agent rises on a podium, a huge gold medal-coin drops on him; everyone shrugs.
-  const V2 = { kpi: 65.74, hop: 68.6, burn: 68.9, low: 71.34, point: 72.2, bonus: 74.0, medal: 74.6, why: 75.6 };
-  const DIAL = [960, 640, 220];
-  function dial(t, v) {
-    const [x, y, r] = DIAL, ham = kick(t, EN_GRID.filter(g => g > V2.kpi && g < V2.hop), .15), rot = t < 68.3 ? .12 * (1 - seg(t, V2.kpi, 68.3)) + ham * .03 : 0;
-    push(); translate(x, y - r); rotate(rot); translate(-x, -(y - r));
-    paint(rectPts(x - r - 40, y - r - 40, 2 * r + 80, r + 150, 2), { wash: '#232A33', fill: '#1A1718', fillOp: 90, tex: .6, border: .4, ink: INK, sw: 1.6 });
-    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) paint(ellPts(x + sx * (r + 22), y - r * .5 + sy * (r * .5 + 60) - 20, 8, 8, 8), { wash: A2.steelLt, ink: INK, sw: .5 });
-    const N = 10;                                                         // the scale: ten wedges from green to red
-    for (let i = 0; i < N; i++) {
-      const a0 = Math.PI + i / N * Math.PI, a1 = Math.PI + (i + 1) / N * Math.PI, c = mixCol(TK.green, TK.ember, i / (N - 1));
-      paint([[x + Math.cos(a0) * r, y + Math.sin(a0) * r], [x + Math.cos(a1) * r, y + Math.sin(a1) * r], [x + Math.cos(a1) * r * .7, y + Math.sin(a1) * r * .7], [x + Math.cos(a0) * r * .7, y + Math.sin(a0) * r * .7]], { wash: c, ink: INK, sw: .8 });
-    }
-    const fx = x + r * .78, fy = y - r * .82;                              // the flame icon at the red end
-    fire(fx, fy + 40, 70, 90, t, { k: .6 + .4 * v, seed: 12 });
-    const a = Math.PI + clamp(v) * Math.PI;
-    inkLine([[x, y], [x + Math.cos(a) * r * .9, y + Math.sin(a) * r * .9]], 7, INK, 'ink', 0);
-    inkLine([[x, y], [x + Math.cos(a) * r * .9, y + Math.sin(a) * r * .9]], 3, TK.ember, 'ink', 0);
-    paint(ellPts(x, y, 22, 22, 14), { wash: A2.steel, ink: INK, sw: .9 });
-    if (v > .9) glowAt(x, y - r / 2, r * 1.2, TK.ember, 90 * (v - .9) * 10);
-    pop();
-  }
-  const ROW = [600, 750, 900, 1050];
+  // ======== VERSE 2 NEW (65.18–74.0) the office, a projector ========
+  // «Brand-new K-P-I up on the wall» — the CEO pulls a screen down, clicks the projector on: a bar chart, one bar per agent at the desks.
+  // «You get the tokens — you burn 'em all» — the agents feed coins into their laptops as fast as they can; their bars shoot up.
+  // «Low spend? Bro, you didn't even try» — one bar stays a stub; the CEO's laser dot slides from the stub to the agent; he sweats.
+  // (74.0 «Top burner gets a bonus» = the RU golden idol on its TOP BURNER pedestal, a04)
+  const V2 = { pull: 65.18, on: 65.74, burn: 68.9, low: 71.34, laser: 72.0, end: 74.0 };
+  const DESK = [720, 880, 1040, 1200], LOWI = 2, SCR = [600, 170, 720, 430];
   function verse2(t) {
-    back(A2.gunDk);
-    A03.hall(t, { lamps: [560, 1360], floor: 1060 });
-    // the furnace mouth on the right
-    const FX = 1320;
-    paint(rectPts(FX - 140, 700, 280, 360, 2), { wash: '#6A2E1C', fill: '#3A160C', fillOp: 90, tex: .7, border: .4, ink: INK, sw: 1.4 });
-    for (let y = 730; y < 1060; y += 40) inkLine([[FX - 136, y], [FX + 136, y]], .5, '#3A160C', 'inkfine', 0);
-    paint(rrPts(FX - 90, 820, 180, 160, 30), { wash: '#FF7A1A', fill: TK.ember, fillOp: 100, bleed: .3, tex: .4, ink: INK, sw: 1 });
-    const feed = t > V2.burn && t < V2.low ? 1 : .5;
-    fire(FX, 990, 170, 150 * feed + 30 * kick(t, EN_GRID, .2), t, { k: 1, seed: 4 });
-    // the needle: idle, climbs with every bucket, twitches at the single coin
-    const v = t < V2.burn ? .08 + .02 * Math.sin(t * 3) : t < V2.low ? lerp(.1, .95, eased(t, V2.burn, V2.low - .2)) : .95 - .02 * kick(t, [72.0], .5) + .015 * Math.sin(t * 20);
-    dial(t, v);
-    // the CEO: on the ladder hammering, then down, pointing at the low spender, then handing out the bonus
-    const LX = 640;
-    if (t < V2.hop + .3) {
-      for (const d of [-40, 40]) inkLine([[LX + d, 1060], [LX + d * .6, 700]], 5, A2.steelLt, 'ink', 0);
-      for (let y = 1000; y > 720; y -= 70) inkLine([[LX - 38 + (1000 - y) * .026, y], [LX + 38 - (1000 - y) * .026, y]], 3, A2.steelLt, 'ink', 0);
+    back('#2E3440');
+    paint(rectPts(-400, -600, 2720, 1660), { wash: '#C9C2B4', fill: '#A9A294', fillOp: 60, tex: .5, ink: null });            // office wall
+    for (let x = 0; x < 1920; x += 240) inkLine([[x, -600], [x, 1060]], .6, '#B4AC9C', 'inkfine', 0);
+    paint(rectPts(-400, 1060, 2720, 600), { wash: '#5A5F6A', fill: '#3E434C', fillOp: 70, tex: .5, ink: null });            // carpet
+    // the pull-down screen and what the projector throws on it
+    const [sx, sy, sw, sh] = SCR, down = eased(t, V2.pull, V2.on - .1), on = t > V2.on;
+    paint(rrPts(sx - 20, sy - 30, sw + 40, 30, 12), { wash: A2.steel, ink: INK, sw: 1 });
+    paint(rectPts(sx, sy, sw, sh * down), { wash: '#F4F1EA', ink: INK, sw: 1 });
+    if (down < 1) inkLine([[sx + sw / 2, sy + sh * down], [sx + sw / 2, sy + sh * down + 40]], 2, INK, 'inkfine', 0);
+    if (on) {
+      const [lx, ly] = [575, 690];
+      paint([[lx, ly - 10], [sx + sw, sy], [sx + sw, sy + sh], [lx, ly + 10]], { wash: '#FFF3C8', washOp: 70, ink: null });
+      paint([[lx, ly - 10], [sx, sy], [sx, sy + sh]], { wash: '#FFF3C8', washOp: 70, ink: null });
+      // the bar chart: one bar per desk, a little head under each, the leader gets a crown
+      const grow = i => i === LOWI ? .06 : (.25 + .1 * i % .3) * eased(t, V2.on, V2.on + .8) + (i === 0 ? .72 : .5 - i * .08) * eased(t, V2.burn, V2.low - .3);
+      DESK.forEach((_, i) => {
+        const bw = 90, bx = sx + 90 + i * 150, base = sy + sh - 70, h = (sh - 130) * Math.min(1, grow(i));
+        paint(rectPts(bx, base - h, bw, h), { wash: i === LOWI ? TK.ember : [TK.green, '#6F8BE0', null, TK.orange][i], ink: INK, sw: .8 });
+        paint(rrPts(bx + 20, base + 12, 50, 36, 8), { wash: '#6F8BE0', ink: INK, sw: .6 });
+        for (const d of [-1, 1]) paint(ellPts(bx + 45 + d * 11, base + 28, 4, 5, 6), { wash: INK, ink: null });
+        if (i === 0 && t > V2.low - .3) paint(starPts(bx + 45, base - h - 30, 22), { wash: TK.yellow, ink: INK, sw: .6 });
+      });
+      inkLine([[sx + 60, sy + sh - 70], [sx + sw - 40, sy + sh - 70]], 2, INK, 'inkfine', 0);
     }
-    const onL = t < V2.hop, cxp = onL ? LX : lerp(LX, 500, eased(t, V2.hop, V2.hop + .3)), cyp = onL ? 740 : lerp(740, 1058, easeIn(seg(t, V2.hop, V2.hop + .3)));
-    const hammer = onL ? kick(t, EN_GRID, .18) : 0, pointing = t > V2.point && t < V2.bonus;
-    ceoClawd(cxp, cyp, 13, { noShadow: true, eyes: pointing ? 'narrow' : t > V2.medal ? 'happy' : 'normal', mouth: pointing ? 'flat' : 'grin',
-      aR: onL ? .8 + 1.1 * (1 - hammer) : pointing ? 1.2 : t > V2.why ? 1.6 : .4, aL: t > V2.why ? 1.6 : .3 });
-    if (onL) { const a = -.6 - 1.1 * (1 - hammer); push(); translate(cxp + 60, cyp - 50); rotate(-a); paint(rectPts(-4, -60, 8, 60), { wash: '#7A4A2E', ink: INK, sw: .5 }); paint(rectPts(-18, -72, 36, 16), { wash: A2.steel, ink: INK, sw: .6 }); pop(); }
-    // the line of agents with buckets
-    ROW.forEach((x, i) => {
-      const low = i === 2, top = i === 0, beat = (t - V2.burn) * 1.5 - i * .25, ph = frac(beat), throwK = t > V2.burn && t < V2.low && !low ? Math.sin(clamp(ph / .4) * Math.PI) : 0;
-      const sooty = top ? eased(t, V2.burn, V2.bonus) : 0, col = sooty > 0 ? mixCol('#6F8BE0', '#2A2A30', sooty) : undefined;
-      let y = 1058, o = { n: 20 + i, rot: NOTXT, noShadow: true, eyes: 'happy', mouth: 'grin', aL: .4 + throwK * 1.4, aR: .4 + throwK * 1.4, col, dk: col && mixCol(col, INK, .3) };
-      if (low && t > V2.low) { o.eyes = t > V2.point ? 'scared' : 'normal'; o.mouth = t > V2.point ? 'o' : 'smile'; o.emote = t > V2.point ? 'sweat' : null; o.sy = t > V2.point ? .85 : 1; o.aR = t < 72.0 ? 1.3 : .3; }
-      if (!low && t > V2.low && t < V2.bonus) { o.eyes = 'look'; o.lookX = x < 900 ? 1 : -1; o.mouth = 'flat'; }
-      if (top && t > V2.bonus) { y = 1058 - 160 * easeOut(seg(t, V2.bonus, V2.bonus + .4)); o.eyes = t > V2.medal ? 'spark' : 'happy'; o.sy = t > V2.medal ? 1 - .12 * Math.exp(-(t - V2.medal) * 4) : 1; }
-      if (t > V2.why) { o.aL = o.aR = 1.6; o.eyes = top ? 'happy' : 'flat'; o.mouth = 'flat'; }
-      if (top && t > V2.bonus) { const py = y; paint(rectPts(x - 80, py, 160, 1060 - py, 1), { wash: TK.gold, fill: TK.goldDk, fillOp: 60, tex: .5, ink: INK, sw: 1 }); }
-      agentBot(x, y, 13, t, o);
-      if (sooty > .1) smoke(x, y - 110, t, { k: sooty });
-      if (!(top && t > V2.bonus) && !(low && t > 72.0)) {                  // the bucket at his feet (the low spender holds one coin)
-        if (low && t > V2.burn) token(x + 50, y - 60, 12, {});
-        else { paint([[x + 30, y - 10], [x + 80, y - 10], [x + 74, y - 60], [x + 36, y - 60]], { wash: A2.steel, ink: INK, sw: .8 }); for (let k = 0; k < 3; k++) token(x + 44 + k * 13, y - 62, 10, {}); }
-      }
-      if (throwK > .5) { const u = (ph - .2) / .8; if (u > 0) for (let k = 0; k < 4; k++) { const [cx, cy] = arc(x + 50, y - 80, FX, 880, 200, clamp(u + k * .05)); token(cx, cy, 13, { spin: t * 5 + k, burn: u }); } }
-      if (low && t > 71.6 && t < 72.1) { const [cx, cy] = arc(x + 50, y - 80, FX, 880, 160, seg(t, 71.6, 72.05)); token(cx, cy, 13, { spin: t * 5 }); }
+    // the projector on its cart (left)
+    paint(rectPts(460, 730, 110, 330), { wash: A2.steel, ink: INK, sw: 1 }); paint(rrPts(430, 650, 170, 80, 14), { wash: '#3A3F48', ink: INK, sw: 1 });
+    paint(ellPts(575, 690, 28, 28, 14), { wash: on ? '#FFF3C8' : '#1A1D22', ink: INK, sw: .8 }); if (on) glowAt(575, 690, 90, '#FFF3C8', 120);
+    // the agents at their desks, laptops back-to-camera, coins going in
+    DESK.forEach((x, i) => {
+      const low = i === LOWI, busy = t > V2.burn && t < V2.low && !low, ph = frac((t - V2.burn) * 1.6 + i * .3);
+      const caught = low && t > V2.laser;
+      agentBot(x, 995, 14, t, { n: 30 + i, rot: NOTXT, noShadow: true, eyes: caught ? 'scared' : busy ? 'narrow' : t > V2.low && !low ? 'look' : 'happy', lookX: x < 960 ? 1 : -1,
+        mouth: caught ? 'o' : busy ? 'grin' : 'smile', emote: caught ? 'sweat' : null, aL: busy ? .6 + Math.sin(ph * TAU) * .8 : .3, aR: busy ? .6 + Math.cos(ph * TAU) * .8 : .3 });
+      if (busy) for (let k = 0; k < 2; k++) { const u = frac(ph + k * .5); const [cx, cy] = arc(x - 60, 900, x, 960, 70, u); token(cx, cy, 11, { spin: t * 6 + k }); }
+      if (low && t > V2.burn) token(x + 60, 900, 11, {});                                                                  // his one coin, still in his hand
     });
-    if (t > V2.point && t < V2.bonus) A06.beam(900, 900, 50, 150, 1066, eased(t, V2.point, V2.point + .2));
-    if (t > V2.medal - .4) {                                                // the bonus: a medal-coin bigger than the agent
-      const x = ROW[0], y0 = 1058 - 160, k = clamp((t - V2.medal + .4) / .4), y = lerp(-200, y0 - 50, easeIn(k));
-      inkLine([[x - 40, y - 60], [x, y - 110], [x + 40, y - 60]], 6, TK.ember, 'ink', 0);
-      token(x, y, 70, { glow: 1 });
-      if (t > V2.medal) A03.confetti(t - V2.medal, 30, [460, -100, 1000, 800], 9);
+    paint(rectPts(620, 990, 680, 80, 1), { wash: '#8A6446', fill: '#5E4230', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });       // the long desk
+    for (const x of DESK) { paint(rectPts(x - 36, 948, 72, 44, 1), { wash: '#3A3F48', ink: INK, sw: .8 }); token(x, 970, 10, { spin: .02 }); }
+    // the CEO (right): pulls the screen, clicks, then the laser pointer
+    const cx = 1370, pointing = t > V2.low;
+    ceoClawd(cx, 1058, 16, { noShadow: true, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: t < V2.on ? 2.2 : pointing ? 1.2 : .5, aR: .4 });
+    if (pointing) {
+      const [bx, by] = [SCR[0] + 90 + LOWI * 150 + 45, SCR[1] + SCR[3] - 90], k = eased(t, V2.laser, V2.laser + .5);
+      const [dx, dy] = [lerp(bx, DESK[LOWI], k), lerp(by, 900, k)];
+      inkLine([[cx - 110, 880], [dx, dy]], 2, '#FF2F4A', 'inkfine', 0); glowAt(dx, dy, 30, '#FF2F4A', 200);
+      paint(ellPts(dx, dy, 9, 9, 8), { wash: '#FF2F4A', ink: null });
     }
   }
-  scene('v2_kpi', 65.18, 76.72, verse2, [
-    [65.18, 880, 720, 680], [V2.kpi, 900, 720, 680, 1], [V2.burn, 1000, 800, 800, 1], [V2.low, 900, 900, 540, 1], [73.0, 920, 880, 620, 1],
-    [V2.bonus, 780, 840, 680, 1], [V2.why, 940, 800, 800, 1], [76.719, 940, 800, 800, 1],
-  ], [[V2.hop + .3, 8], [V2.medal, 12]]);
+  scene('v2_kpi', 65.18, 74.0, verse2, [
+    [65.18, 980, 600, 1000], [V2.burn, 990, 620, 980, 1], [V2.low, 1030, 640, 940, 1], [73.999, 1030, 650, 900, 1],
+  ], [[V2.on, 6], [V2.laser, 8]]);
 
   // ======== CHORUS 2 = chorus 1 again, word for word 47.42 s later (the shredder, the trucks, the hiring hall) ========
-  replay('c2_shredder', 92.86, 103.06, s2, 47.42);
-  replay('c2_hall', 103.06, 112.60, s3, 47.42);
+  // chorus 2 (92.86–112.60) is the RU a05 night factory again, not a repeat of chorus 1 (keys in RUK)
 
   // ======== BRIDGE NEW (112.60–124.48) «We're gonna need more electricity. More copper. More water. More copper. More water…» ========
   // One focal at a time. The CEO at his pulpit; a giant plug drops from the vault and rams in (lights surge). «copper»: three singers on the
   // left, copper coils crash onto their heap. «water»: pan right to the next town's reservoir by the houses (the RU a06 image, the user
   // liked it) — on every «water» its level drops a step; by 124.36 it is cracked mud with a stranded boat and a flapping fish.
   const BR = { plug: 114.12, in: 115.25, copper: [116.44, 119.42, 121.90], water: [117.78, 120.66, 123.14], dry: 124.36 };
-  const LAKE = [1200, 300, 700, 520];
+  const LAKE = [1140, 330, 500, 380];                                     // on the right wall, in the same still frame as the pulpit
   const lakeLvl = t => Math.max(0, 1 - BR.water.reduce((l, w) => l + .3 * eased(t, w, w + .45), 0) - .1 * eased(t, 123.8, BR.dry));
   function heap(list, t, x, draw) {
     let n = 0; for (const h of list) { const a = t - h; if (a < 0) continue; for (let k = 0; k < 4; k++) {
@@ -271,87 +189,13 @@
     heap(BR.copper, t, 620, coil);
     A06.reservoir(t, ...LAKE, lakeLvl(t));
   }
-  const toLake = w => [[w - .25, 700, 860, 700, 1], [w + .1, 1550, 600, 760, 1], [w + .8, 1550, 600, 760, 1]];
-  const toCopper = c => [[c - .25, 1550, 600, 760, 1], [c + .1, 700, 860, 700, 1], [c + .8, 700, 860, 700, 1]];
-  scene('bridge_needs', 112.60, 124.48, bridge, [
-    [112.60, 960, 700, 900], [BR.plug, 1060, 640, 760, 1], [BR.in, 960, 720, 900, 1], [BR.copper[0] - .2, 960, 720, 900, 1], [BR.copper[0] + .1, 700, 860, 700, 1],
-    ...toLake(BR.water[0]), ...toCopper(BR.copper[1]), ...toLake(BR.water[1]), ...toCopper(BR.copper[2]), ...toLake(BR.water[2]), [124.479, 1550, 620, 740, 1],
-  ], [[BR.in, 12], ...BR.water.map(w => [w + .1, 8])]);
+  // one calm, still frame (the user: the camera kept jerking between copper and lake): pulpit centre, copper + angels left, the lake right
+  scene('bridge_needs', 112.60, 124.48, bridge, [[112.60, 1060, 580, 1260], [124.479, 1040, 600, 1200, 1]]);
 
-  // ======== BRIDGE NEW (129.02–137.00) «And when intelligence gets cheaper… we're gonna need… MORE GPUs!» ========
-  // The lights go down to one spot on the CEO; he leans in and whispers, slowly lifts both arms — and the vault cracks open: GPUs rain on the choir.
-  const CH = { dim: 129.98, arms: 133.30, gpus: 135.22 };
-  function cheaper(t) {
-    back('#141218');
-    const dim = eased(t, CH.dim, CH.dim + .6) * (1 - eased(t, CH.gpus, CH.gpus + .1));
-    A06.nave(t, { choir: false, L: .8 - .65 * dim });
-    if (dim > 0) paint(rectPts(-500, -300, W + 1000, H + 600), { wash: '#000000', washOp: 140 * dim, ink: null });
-    A06.beam(960, 960, 60, 260, 900, dim);
-    const up = eased(t, CH.arms, CH.gpus);
-    A06.pulpit(t, { eyes: t > CH.gpus ? 'spark' : 'narrow', mouth: t > CH.gpus ? 'O' : t > CH.dim ? 'o' : 'smile', aL: .3 + 1.5 * up, aR: .3 + 1.5 * up, click: 0 });
-    const g = t - CH.gpus;
-    CHOIR.forEach(([x, y], i) => A06.angel(x, y, 11, t, { n: i + 3, k: g > 0 ? .9 : 0, eyes: g > 0 ? 'scared' : t > CH.arms ? 'normal' : 'closed', lookY: -.6, mouth: g > 0 ? 'O' : 'smile', aL: g > 0 ? 1.8 : .3, aR: g > 0 ? 1.8 : .3 }));
-    if (g > 0) {
-      flash(Math.max(0, .3 - g * 1.5), '#FFFFFF');
-      for (let i = 0; i < 10; i++) { const st = hash(i) * 1.2, a = g - st; if (a < 0) continue; const x = 460 + hash(i + 3) * 1000, y = Math.min(1080 - (i % 3) * 30, -200 + a * a * 2600); gpuCard(x, y, .3, t, { rot: y < 1000 ? a * 6 + i : (hash(i) - .5) * .6 }); }
-      rubble(960, 120, 900, g, 5);
-    }
-  }
-  scene('bridge_cheaper', 129.02, 137.0, cheaper, [
-    [129.02, 960, 620, 1000], [CH.dim, 960, 540, 800, 1], [CH.arms, 960, 480, 660, 1], [CH.gpus, 960, 600, 1080], [136.99, 960, 620, 1080, 1],
-  ], [[CH.gpus, 20]]);
+  // 129.02–137.0 «And when intelligence gets cheaper… we're gonna need… MORE GPUs!» is the RU sermon again: push-in, the shades come down,
+  // then the a07 drop — the preacher turned DJ in shades, the Matrix burst, a GPU grows out of his head (keys in RUK)
 
-  // ======== RAP NEW (152.04–157.46) «A-G-I by spring — they say it every year. Every release: "guys, it's almost here."» ========
-  // A stage. The CEO beside a pot with a tiny glowing sprout. Out of the window the seasons spin round and round; every spring he points
-  // at the sprout, which never grows. Then «release»: a gift box lands, he opens it — a smaller box — a smaller — a tiny one he holds up.
-  const SP = { rel: 154.46, box: [154.9, 155.45, 156.0, 156.55] };
-  function spring(t) {
-    back(A2.gunDk);
-    A03.hall(t, { lamps: [560, 1360], floor: 1060 });
-    // window with the tree, seasons cycling (period 0.8 s)
-    const wx = 1000, wy = 300, ww = 480, wh = 400, ph = frac((t - 152.04) / .8), season = Math.floor(ph * 4);
-    const sky = ['#C8D8E8', '#BFE3F2', '#8EC3E6', '#E8B878'][season];
-    paint(rectPts(wx - ww / 2, wy, ww, wh, 1), { wash: sky, ink: INK, sw: 2 });
-    paint(rectPts(wx - ww / 2, wy + wh - 70, ww, 70), { wash: season === 0 ? '#F4F2EE' : '#6E9F58', ink: null });
-    inkLine([[wx, wy + wh - 70], [wx, wy + 170]], 12, '#5A3A28', 'ink', 0);
-    for (const [dx, dy] of [[-80, -60], [70, -80], [-40, -130], [40, -150]]) inkLine([[wx, wy + 220], [wx + dx, wy + 170 + dy]], 5, '#5A3A28', 'ink', .3);
-    const leaf = [null, '#F2A2B0', '#2FBF71', '#E8742A'][season];
-    if (leaf) for (let i = 0; i < 16; i++) paint(ellPts(wx - 110 + hash(i) * 220, wy + 50 + hash(i + 4) * 150, 22, 18, 10), { wash: leaf, ink: INK, sw: .4 });
-    if (season === 3) for (let i = 0; i < 5; i++) paint(ellPts(wx - 150 + hash(i + 9) * 300, wy + 120 + frac(t * 2 + hash(i)) * 200, 8, 6, 8), { wash: leaf, ink: null });
-    if (season === 0) for (let i = 0; i < 20; i++) paint(ellPts(wx - 250 + hash(i) * 500, wy + frac(t * .7 + hash(i + 2)) * wh, 3, 3, 6), { wash: '#FFFFFF', ink: null });
-    inkLine([[wx, wy], [wx, wy + wh]], 4, INK, 'ink', 0); inkLine([[wx - ww / 2, wy + wh / 2], [wx + ww / 2, wy + wh / 2]], 4, INK, 'ink', 0);
-    // the stage
-    paint(rectPts(480, 980, 960, 80, 1), { wash: '#7A4A2E', fill: '#4A2A1E', fillOp: 60, tex: .5, ink: INK, sw: 1 });
-    // the pot with the sprout on a pedestal
-    const px = 1220, py = 860;
-    paint(rectPts(px - 60, py, 120, 120, 1), { wash: A2.steel, ink: INK, sw: .9 });
-    paint([[px - 55, py], [px + 55, py], [px + 42, py - 80], [px - 42, py - 80]].map(([x, y]) => [x, y]), { wash: A2.rust, ink: INK, sw: 1 });
-    paint([[px - 44, py - 80], [px + 44, py - 80], [px + 48, py - 92], [px - 48, py - 92]], { wash: '#8A4A22', ink: INK, sw: .8 });
-    inkLine([[px, py - 92], [px, py - 118]], 3, TK.green, 'ink', 0);
-    for (const d of [-1, 1]) paint(ellPts(px + d * 12, py - 118, 12, 6, 8, 0, d * .5), { wash: TK.led, ink: INK, sw: .5 });
-    glowAt(px, py - 115, 50, TK.led, 70 + 40 * Math.sin(t * 6));
-    // the CEO: points at the sprout every spring; then opens the nesting boxes
-    const spr = t < SP.rel && season === 1;
-    const opened = SP.box.filter(b => t >= b).length, cxp = t < SP.rel ? 880 : lerp(880, 760, eased(t, SP.rel, SP.rel + .3));
-    ceoClawd(cxp, 976, 19, { noShadow: true, eyes: spr ? 'spark' : t > SP.rel ? 'happy' : 'normal', mouth: spr ? 'O' : 'grin', aR: spr ? 1.7 : t > SP.rel ? .9 + opened * .2 : .4, aL: spr ? 1.2 : .4 });
-    if (t > SP.rel) {
-      const land = eased(t, SP.rel, SP.rel + .3), bx = 1000, by = lerp(-200, 976, land);
-      const sizes = [220, 150, 100, 60, 34];
-      for (let i = 0; i < 5; i++) {
-        const s = sizes[i], open = i < opened, show = i <= opened; if (!show) continue;
-        const pk = i === 0 ? 0 : backOut(seg(t, SP.box[i - 1], SP.box[i - 1] + .25)), x = i === 0 ? bx : bx - 40 + i * 70, y = i === 0 ? by : 976 - (i === 4 && t > 156.8 ? 150 * eased(t, 156.8, 157.1) : 0);
-        push(); translate(x, y); scale(i === 0 ? 1 : pk);
-        paint(rectPts(-s / 2, -s * .8, s, s * .8, 1), { wash: [TK.ember, TK.blue, TK.green, PAL.violet, TK.yellow][i], ink: INK, sw: 1 });
-        paint(rectPts(-s * .08, -s * .8, s * .16, s * .8), { wash: TK.yellowLt, ink: null });
-        if (!open) paint(rectPts(-s / 2 - 6, -s * .8 - s * .16, s + 12, s * .16, 1), { wash: [TK.ember, TK.blue, TK.green, PAL.violet, TK.yellow][i], ink: INK, sw: 1 });
-        else { push(); translate(s / 2, -s * .8); rotate(.9); paint(rectPts(0, -s * .16, s + 12, s * .16, 1), { wash: [TK.ember, TK.blue, TK.green, PAL.violet, TK.yellow][i], ink: INK, sw: 1 }); pop(); }
-        pop();
-      }
-    }
-  }
-  scene('rap_spring', 152.04, 157.46, spring, [
-    [152.04, 1020, 660, 860], [153.9, 1040, 680, 840, 1], [SP.rel, 940, 740, 820, 1], [156.4, 920, 820, 640, 1], [157.459, 920, 820, 620, 1],
-  ], [[SP.rel + .3, 8]]);
+  // 148.56–157.46 is RU again: the a07 green graph yanked up on «The economy is WORKING!», the a08 AGI-by-spring calendar / loading bar (keys in RUK)
 
   // ======== RAP NEW (162.86–167.58) «All I want from that god-tier brain / Is a calorie tracker. Let me explain:» ========
   // A giant glowing brain enthroned on server racks, halo, lightning, cables everywhere. Far below, tiny Clawd holds up his phone.
@@ -497,6 +341,56 @@
   ], [[FN.brk, 26]]);
 })();
 
-// Every second of the song now has an EN chapter, so the old RU chapters (b07 samsara, b08 mayo, b10 finale were registered as
-// real and would win the lookup) are dropped outright: nothing Russian can leak back in.
-for (let i = CH.length - 1; i >= 0; i--) if (CH[i].real && !CH[i].name.startsWith('en_')) CH.splice(i, 1);
+// The RU real chapters would win the lookup over the warped v2 ones: b07 samsara is dropped (the EN ring replaces it), b08 / b10 stay.
+// ?ru (debug): the other way round, only the warped RU chapters, to pick which of them to bring back
+if (/[?&]ru\b/.test(location.search)) { for (let i = CH.length - 1; i >= 0; i--) if (CH[i].name.startsWith('en_')) CH.splice(i, 1); }
+else {
+  // the RU real chapters kept: b08 mayo (phone close-up, GPU hall, flying into the mayo; after the EN brain, from 165.12) and b10 finale (the break)
+  for (let i = CH.length - 1; i >= 0; i--) if (CH[i].real && !CH[i].name.startsWith('en_') && !['mayo', 'finale'].includes(CH[i].name)) CH.splice(i, 1);
+  const m = CH.find(c => c.name === 'mayo'); m.start = Math.max(m.start, 165.12);
+  // user notes on draft 2: from the mayo on, the RU scenes play under the RU camera (RU_CAM): b08 mayo, a09 chorus 3 / revenue / AGI / the
+  // benchmark puppeteers (the EN coin-mountain hold takes over at 199), a10 office outro + b10 break; the EN scenes there are dropped
+  const DROP = ['rap_mayo', 'c3_shredder', 'e30_board', 'out_sunday', 'e33_shelf', 'out_peace', 'e34_midnight', 'out_reset', 'out_finale'];
+  for (let i = CH.length - 1; i >= 0; i--) if (DROP.includes(CH[i].name.slice(3)) && CH[i].name.startsWith('en_')) CH.splice(i, 1);
+  RU_CAM.push([165.12, 194.32], [210.0, 241.5], [243.0, 1e9]);
+  RU_FIX.push([210.0, 1260, 520, 1300], [216.26, 900, 540, 1500], [219.6, 930, 700, 1000]);     // the a10 wall clock: whole in frame at 210, out of frame at 219.6 (not cut by the edge)
+  CH.find(c => c.name === 'en_rap_brain').end = 165.12;              // the RU phone close-up takes «Is a calorie tracker»
+  for (let i = EN_PUNCH.length - 1; i >= 0; i--) if (RU_CAM.some(([a, b]) => EN_PUNCH[i][0] >= a && EN_PUNCH[i][0] < b)) EN_PUNCH.splice(i, 1);
+  // the second «Fuck.» (241.92): back to the a10 close-up, the calm shut-eyed face, and on the word the eyes snap open, red (a10 sSnap, v2 225.0,
+  // which the b10 break skips in the RU cut); it also covers b10's white-out. The RU credits resume at 243.0.
+  CH.find(c => c.name === 'finale').end = 241.5;
+  const sun = CH.find(c => c.name === 'sunday');
+  const ruAt = v => { let i = 0; while (i + 1 < sun.shots.length && v >= sun.shots[i + 1][0]) i++; const t0 = sun.shots[i][0], e = sun.shots[i + 1] ? sun.shots[i + 1][0] : sun.end; sun.shots[i][1](v, v - t0, e - t0); };
+  chapter('en_fuck2', 241.5, 243.0, [[241.5, t => { const r = window.REAL_CH; window.REAL_CH = false; try { ruAt(t < 241.92 ? 224.95 : 225.0 + (t - 241.92)); } finally { window.REAL_CH = r; } }]], { real: true });
+  EN_KEYS.push([194.32, 960, 540, 800], [241.5, 960, 540, 1500], [241.92, 960, 540, 1800]);
+}
+
+// BURN THE TOKENS keeps the moon out of every reused RU sky (a05 factory, a10 office window)
+window.NO_MOON = true;
+// «Don't ask why — it's good for you!»: the a05 LED billboard tells it with a picture, no slogan: the grinning stock-photo Clawd with the
+// thumbs-up is spoon-fed a glowing token like medicine, a big heart pops over him, five stars under it.
+a05_billboard = function (x, y, w, h, t, lit) {
+  const s = Math.min(w / 1400, h / 780), X = u => x + u * w, Y = v => y + v * h, dk = '#070A14', C = c => mixCol(c, dk, 1 - lit);
+  paint(rectPts(x - 14 * s, y - 14 * s, w + 28 * s, h + 28 * s, 1), { wash: A2.gunDk, fill: A2.steel, fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.2 });
+  paint(rectPts(x, y, w, h), { wash: C('#2F6FE8'), ink: null });
+  paint(rectPts(x, y + h * .45, w, h * .55), { wash: C('#6FB2FF'), washOp: 200, ink: null });
+  paint(rectPts(x, y + h * .75, w, h * .25), { wash: C('#CFE8FF'), washOp: 190, ink: null });
+  const u = h * .062, cx = X(.34), cy = Y(.96), thumb = (uu, sw) => {
+    rotate(.95);
+    paint(rrPts(-.3 * uu, -.8 * uu, 1.5 * uu, 1.5 * uu, .4 * uu), { wash: C(PAL.clay), ink: PAL.ink, sw: sw * .8 });
+    paint(rrPts(.15 * uu, -2.2 * uu, .6 * uu, 1.6 * uu, .3 * uu), { wash: C(PAL.clay), ink: PAL.ink, sw: sw * .8 });
+  };
+  if (lit > .3) paint(ellPts(cx, cy - 4.5 * u, 9 * u, 6 * u, 20), { wash: '#FFFFFF', washOp: 70 * lit, ink: null });
+  clawd(cx, cy, u, { eyes: lit > .3 ? 'happy' : 'narrow', mouth: 'O', aL: .95, armL: thumb, aR: -.1, noShadow: true, col: C(PAL.clay), dk: C(PAL.clayDk), lt: C('#F5B394') });
+  // the spoon from the right, a burning-bright token in it, bobbing towards the open mouth
+  const bob = Math.sin(t * 3) * .02, sx0 = X(.47 + bob), sy0 = Y(.6);
+  paint([[sx0 + 60 * s, sy0 - 10 * s], [X(1.02), Y(.5)], [X(1.02), Y(.56)], [sx0 + 60 * s, sy0 + 12 * s]], { wash: C('#D9DEE6'), ink: PAL.ink, sw: .9 });
+  paint(ellPts(sx0, sy0, 90 * s, 44 * s, 20), { wash: C('#E8ECF2'), fill: C('#AEB6C2'), fillOp: 70, ink: PAL.ink, sw: 1 });
+  if (lit > .3) glowAt(sx0, sy0 - 30 * s, 120 * s, '#FFD27A', 120 * lit);
+  token(sx0, sy0 - 26 * s, 42 * s, { spin: .02, glow: lit });
+  // the heart and the stars
+  const hp = 1 + .08 * Math.sin(t * 6), hx = X(.74), hy = Y(.26), hr = 95 * s * hp;
+  paint([[hx, hy + hr * .9], [hx - hr, hy - hr * .05], [hx - hr * .95, hy - hr * .6], [hx - hr * .5, hy - hr * .85], [hx, hy - hr * .45], [hx + hr * .5, hy - hr * .85], [hx + hr * .95, hy - hr * .6], [hx + hr, hy - hr * .05]],
+    { wash: C('#FF4F6A'), fill: C('#C8203A'), fillOp: 60, ink: PAL.ink, sw: 1 });
+  for (let i = 0; i < 5; i++) paint(starPts(X(.6 + i * .075), Y(.84), 34 * s, .45, 5), { wash: C(TK.yellow), ink: PAL.ink, sw: .8 });
+};

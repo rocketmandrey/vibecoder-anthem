@@ -17,7 +17,9 @@
   };
   const PUNCH = window.EN_PUNCH = [[43.68, 24], [49.30, 20], [53.90, 14], [55.20, 16], [60.46, 9]];   // picture punches [EN t, px]; scenes2.js adds its own
   let HITPX = null;                                                        // built on first use, after scenes2.js has added its punches
+  const CALM = [[112.6, 135.22], [210, 237.0], [241.6, 1e9]];              // the preacher and the deadpan outro: a still camera
   window.CAM_SHAKE = t => {
+    if (CALM.some(([a, b]) => t >= a && t < b)) return [0, 0];
     HITPX = HITPX || [...EN_HITS.map(([t, s]) => [t, s * 1.3]).filter(([t]) => secPx(t) > 0), ...PUNCH].sort((a, b) => a[0] - b[0]);
     let a = 0; const px = secPx(t), g = lastLE(EN_GRID, t);
     if (px && g != null) a = px * Math.exp(-(t - g) / .09);               // a kick on every quarter of the tracked grid (~0.66 s)
@@ -326,7 +328,7 @@
   chapter('en_s2_shredder', 45.46, 55.64, [[45.46, native(s2)]], { real: true });
   chapter('en_s3_hall', 55.64, 65.18, [[55.64, native(s3)]], { real: true });
 
-  // ---------- the 4:5 reels camera: [EN t, cx, cy, width, glide] (width 1080 = full scale; picture height = 1.25 × width) ----------
+  // ---------- the 3:4 reels camera: [EN t, cx, cy, width, glide] (width 1080 = full scale; picture height = 4/3 × width) ----------
   const H1 = [
     [39.78, 960, 560, 1080],                                              // S1: the burning server hall, the coolers up top
     [42.68, 960, 640, 960, 1],                                            //   slow push in to the vibecoder while the floor splits
@@ -344,10 +346,22 @@
   ];
   // everything else: the RU reels keys (v3 time) moved onto the EN track, minus the ones inside the NEW EN chapters (scenes2.js adds its keys to EN_KEYS)
   window.EN_KEYS = [...H1];
-  const inNew = t => CH.some(c => c.real && c.name.startsWith('en_') && t >= c.start && t < c.end);
-  window.SQSHOTS_X = RU => [
-    ...RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]).filter(([t]) => !inNew(t)),
-    ...EN_KEYS,
-  ].sort((a, b) => a[0] - b[0]);
+  // RU scenes brought back are re-framed for the 3:4 picture with their own EN keys (scenes3.js RUK), except the RU_CAM spans
+  // (set in scenes3.js): there the RU square keys already frame the scene well, the EN keys inside are ignored, with a cut to the RU key in force at the span start.
+  // ?ru&wide (debug): one fixed full-width 16:9 view, to read world coordinates off a sheet
+  window.RU_CAM = [], window.RU_FIX = [];                            // RU_FIX: [t, cx, cy, w] re-frames the RU key at t (a prop cut by the frame edge)
+  window.SQSHOTS_X = RU => {
+    if (/[?&]wide\b/.test(location.search)) return [[0, 960, 540, 1920]];
+    const ru = RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]);
+    if (/[?&]ru\b/.test(location.search)) return ru;
+    const out = EN_KEYS.filter(([k]) => !RU_CAM.some(([a, b]) => k >= a && k < b));
+    for (const [a, b] of RU_CAM) {
+      const prev = ru.filter(([k]) => k <= a).pop();
+      if (prev) out.push([a, ...prev.slice(1, 4)]);
+      out.push(...ru.filter(([k]) => k > a && k < b));
+    }
+    for (const [t, ...k] of RU_FIX) { const q = out.find(([u]) => Math.abs(u - t) < .02); if (q) q.splice(1, 3, ...k); }
+    return out.sort((x, y) => x[0] - y[0]);
+  };
   window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3, layer };   // for tokensEN/scenes2.js
 })();

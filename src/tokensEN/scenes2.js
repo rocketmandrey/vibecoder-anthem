@@ -18,8 +18,9 @@
   const rowT = r => r === 0 ? 76.80 : r === 1 ? 77.30 : 77.66 + (r - 2) * .3;
   const rowN = r => 1 + Math.floor(r / 2);
   function tower(t) {
-    back(A2.gunDk);
-    A03.hall(t, { lamps: [560, 1360], floor: TW.floor });
+    back('#EDE8DF');                                                          // a clean paper-white void, just a floor line (not the factory)
+    paint(rectPts(-400, TW.floor, 2720, 700), { wash: '#D6CFC2', fill: '#C4BCAE', fillOp: 50, tex: .4, ink: null });
+    inkLine([[-400, TW.floor], [2320, TW.floor]], 3, INK, 'ink', 0);
     const sway = r => Math.sin(t * 2.1) * r * r * .35 + Math.sin(t * 5.3 + r) * r * .6;
     // tokens rain down past the tower, catch fire on the way, heap and burn at its foot
     const rain = seg(t, 79.58, 79.9);
@@ -112,7 +113,7 @@
   // RU «доклад» 80.58 ↔ EN «report» 82.30; after 84.3 its last 2.2 s are stretched over «Nobody read it in the end!» (to 87.60).
   const ruRep = t => t <= 84.3 ? t - 1.72 : 82.58 + (t - 84.3) * (84.75 - 82.58) / (87.60 - 84.3);
   scene('e13_report', 81.98, 87.60, t => a04_rep(ruRep(t), 0), [
-    [81.98, 850, 600, 1240], [84.0, 860, 600, 1220, 1], [87.599, 880, 600, 1200, 1],
+    [81.98, 790, 560, 1180], [87.599, 1130, 520, 1180, 1],                // a slow pan: «READS: 0» + the binder → cobweb, spider, clock
   ]);
 
   // ======== E14 NEW (87.60–92.86) pre-chorus 2 = S1 again, word for word 47.42 s later: the server hall, the floor splits, the bull ========
@@ -163,8 +164,8 @@
     A06.beam(ax, ax, 40, 160, ay + 10, eased(t, WY.why, WY.why + .1) * (1 - eased(t, WY.cheap, WY.cheap + .5)));
   }
   scene('e19_why', 124.48, 129.02, why, [
-    [124.48, 960, 700, 960], [WY.why, 960, 700, 960], [WY.turned, 960, 760, 860, 1], [WY.cheap, 1000, 680, 960], [128.2, 1060, 560, 1080, 1], [129.019, 1060, 540, 1100, 1],
-  ], [[WY.why, 8]]);
+    [124.48, 980, 620, 1040], [129.019, 980, 600, 1000, 1],
+  ]);
 
 
   // ======== E23+E24 NEW (137.00–152.04) «MORE GPUs — MORE TOKENS! MORE TOKENS — MORE AGENTS! MORE AGENTS — MORE TASKS! MORE TASKS — MORE TOKENS!» ========
@@ -238,78 +239,80 @@
     }
     if (t > RG.eco) for (let i = 0; i < 14; i++) { const u = frac((t - RG.eco) * .5 + hash(i)); token(460 + hash(i + 2) * 1000, lerp(-200, 1060, u), 16, { spin: t * 3 + i }); }
   }
-  scene('e23_loop', 137.0, 152.04, ringScene, [
-    [137.0, 960, 620, 1060], [RG.eco, 960, 620, 1060, 1], [RG.eco + 1.0, 960, 520, 1060, 1], [RG.wrap + .4, 960, 900, 560, 1], [152.039, 960, 920, 520, 1],
-  ], [...RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]), [RG.eco, 14]]);
+  // ends on «The economy is WORKING!» (148.56): from there the RU a07 green graph grows and is yanked upward
+  scene('e23_loop', 137.0, RG.eco, ringScene, [[137.0, 960, 620, 1060], [148.559, 960, 620, 1060, 1]], RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]));
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
-  // A robot arm scribbles a paper stack, slams a red tick on it, crowns it with a mortarboard. Around it: agents asleep at their desks.
-  // On «Including you» the camera finds our Clawd in a striped deck chair, who slowly turns to look into the lens.
+  // A classroom where everybody is asleep: the students (agents) face-down on their desks, the teacher asleep at his desk with his glasses
+  // on his forehead. Only the chalk is awake: it writes the thesis on the blackboard all by itself, ticks it, slaps a gold star on it.
+  // «No one's working» — the camera drifts right to a hammock slung in the corner: Clawd snoring in it. «Including you.» — the rope snaps,
+  // he drops to the floor and sleeps on right there, a newspaper for a blanket, like a bum.
   const TH = { tick: 158.66, cap: 159.46, nobody: 160.10, you: 162.12 };
-  function ik(bx, by, tx, ty, L1, L2, bend = 1) {                         // 2-bone IK → elbow point
-    const dx = tx - bx, dy = ty - by, d = clamp(Math.hypot(dx, dy), 1, L1 + L2 - 1), a = Math.atan2(dy, dx), c = clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1);
-    return [bx + Math.cos(a - bend * Math.acos(c)) * L1, by + Math.sin(a - bend * Math.acos(c)) * L1];
-  }
   function tdesk(x, y, w) {
     paint(rectPts(x - w / 2, y, w, 22, 1), { wash: '#7A4A2E', ink: INK, sw: .9 });
-    for (const lx of [x - w / 2 + 14, x + w / 2 - 30]) paint(rectPts(lx, y + 22, 16, 150), { wash: '#4A2A1E', ink: INK, sw: .6 });
+    for (const lx of [x - w / 2 + 14, x + w / 2 - 30]) paint(rectPts(lx, y + 22, 16, 1060 - y - 22), { wash: '#4A2A1E', ink: INK, sw: .6 });
   }
+  const BB = [520, 170, 820, 440];                                           // the blackboard
+  const HM = { a: [1470, 700], b: [1860, 700] };                             // the hammock hooks
   function thesis(t) {
-    back('#1C1F24');
-    A03.hall(t, { lamps: [960], floor: 1060, dark: .2 });
-    // the paper stack on the centre desk
-    tdesk(960, 560, 360);
-    const px = 960, py = 560;
-    for (let i = 0; i < 9; i++) paint(rectPts(px - 110 + hash(i) * 6, py - 14 - i * 13, 220, 13), { wash: i % 2 ? PAL.cream : '#F3EBDC', ink: INK, sw: .4 });
-    const topY = py - 14 - 9 * 13;
-    // the arm: base on the ceiling, pen scribbling → stamp → cap
-    const bx = 960, by = 60, L1 = 260, L2 = 250;
-    let tgt;
-    if (t < TH.tick - .3) tgt = [px - 70 + 140 * frac(t * 1.3) + 10 * Math.sin(t * 40), topY - 4 + 6 * Math.sin(t * 33)];
-    else if (t < TH.tick) tgt = [px, topY - 110 * (1 - seg(t, TH.tick - .3, TH.tick - .05))];
-    else if (t < TH.cap - .35) tgt = [px, topY - 90 * seg(t, TH.tick + .1, TH.tick + .4)];
-    else tgt = [px + 30 * (1 - seg(t, TH.cap - .35, TH.cap)), topY - 70 + 60 * seg(t, TH.cap - .35, TH.cap) - 70 * seg(t, TH.cap + .2, TH.cap + .6)];
-    const el = ik(bx, by, tgt[0], tgt[1], L1, L2, -1);
-    paint(rectPts(bx - 60, by - 400, 120, 400), { wash: A2.gunmetal, ink: INK, sw: 1 });
-    for (const [a, b] of [[[bx, by], el], [el, tgt]]) { inkLine([a, b], 26, INK, 'ink', 0); inkLine([a, b], 20, TK.orange, 'ink', 0); }
-    for (const [x, y] of [[bx, by], el]) { paint(ellPts(x, y, 22, 22, 14), { wash: A2.steel, ink: INK, sw: .8 }); }
-    // the tool on the end: pen, then the stamp
-    const stamping = t >= TH.tick - .3 && t < TH.cap - .35;
-    if (stamping) { paint(rectPts(tgt[0] - 26, tgt[1] - 40, 52, 30), { wash: TK.ember, ink: INK, sw: .8 }); paint(rectPts(tgt[0] - 36, tgt[1] - 12, 72, 12), { wash: TK.emberDk, ink: INK, sw: .7 }); }
-    else if (t < TH.tick) inkLine([[tgt[0], tgt[1] - 60], [tgt[0], tgt[1]]], 7, TK.soot, 'ink', 0);
-    // the scribble on the top page (lines grow) and the red tick
-    const lines = Math.min(6, Math.floor((t - 157.46) * 4));
-    for (let i = 0; i < lines; i++) inkLine([[px - 80, topY + 3], [px - 80 + 150 * (i === lines - 1 ? frac(t * 4) : 1), topY + 3]], .5, '#8A8480', 'inkfine', 0);
-    if (t >= TH.tick) {
-      const k = backOut(seg(t, TH.tick, TH.tick + .2));
-      push(); translate(px + 60, topY - 30); scale(k); inkLine([[-40, 0], [-12, 28], [44, -40]], 9, TK.ember, 'ink', .2); pop();
-      if (t - TH.tick < .3) sparks(px, topY, t - TH.tick, 4, 10, 140);
+    back('#2A2F2A');
+    paint(rectPts(-400, -600, 2720, 1660), { wash: '#B9CDB0', fill: '#9DB594', fillOp: 60, tex: .5, ink: null });             // classroom wall
+    paint(rectPts(-400, 1060, 2720, 600), { wash: '#8A5E3C', fill: '#6A4430', fillOp: 70, tex: .6, ink: INK, sw: 1 });         // wooden floor
+    for (let x = -400; x < 2320; x += 120) inkLine([[x, 1060], [x - 60, 1660]], .6, '#5A3A26', 'inkfine', 0);
+    // the blackboard; the chalk writes by itself: wavy lines of "handwriting", then a big tick, then a gold star
+    const [bx, by, bw, bh] = BB;
+    paint(rectPts(bx - 18, by - 18, bw + 36, bh + 36, 1), { wash: '#8A5E3C', ink: INK, sw: 1.2 });
+    paint(rectPts(bx, by, bw, bh), { wash: '#24463A', fill: '#1A3A2E', fillOp: 80, tex: .6, ink: null });
+    paint(rectPts(bx - 10, by + bh + 14, bw + 20, 16), { wash: '#8A5E3C', ink: INK, sw: .8 });
+    const lines = clamp((t - 157.46) / (TH.tick - 157.46)) * 7, L = Math.floor(lines);
+    let chalk = [bx + 60, by + 60];
+    for (let i = 0; i <= Math.min(6, L); i++) {
+      const y = by + 60 + i * 48, len = (i < L ? 1 : lines - L) * (bw - 140 - (i % 3) * 60), pts = [];
+      for (let x = 0; x <= len; x += 14) pts.push([bx + 60 + x, y + Math.sin(x * .09 + i) * 7 + Math.sin(x * .31) * 3]);
+      if (pts.length > 1) inkLine(pts, 3, '#EDEDE4', 'inkfine', .3);
+      if (i === Math.min(6, L) && pts.length) chalk = pts[pts.length - 1];
     }
-    // the mortarboard, carried in and set on the stack
-    if (t > TH.cap - .35) {
-      const on = t >= TH.cap, cx = on ? px : tgt[0], cy = on ? topY - 12 : tgt[1] + 18;
-      paint([[cx - 120, cy - 30], [cx, cy - 60], [cx + 120, cy - 30], [cx, cy]], { wash: TK.soot, ink: INK, sw: 1 });
-      paint(rectPts(cx - 55, cy - 20, 110, 30), { wash: TK.soot, ink: INK, sw: .8 });
-      const sw = Math.sin(t * 5) * 14; inkLine([[cx, cy - 30], [cx + 90, cy - 20], [cx + 96 + sw * .3, cy + 40]], 2, TK.yellow, 'inkfine', .5);
-      paint(ellPts(cx + 96 + sw * .3, cy + 46, 8, 12, 8), { wash: TK.yellow, ink: INK, sw: .5 });
+    if (t >= TH.tick) { const k = backOut(seg(t, TH.tick, TH.tick + .2)); push(); translate(bx + bw - 150, by + 150); scale(k); paint([[-56, -6], [-40, -20], [-14, 12], [50, -66], [66, -52], [-14, 44]], { wash: '#FF6A5A', ink: INK, sw: .8 }); pop(); chalk = [bx + bw - 90, by + 90]; }
+    if (t >= TH.cap) { const k = backOut(seg(t, TH.cap, TH.cap + .25)); push(); translate(bx + bw - 110, by + bh - 110); scale(k); rotate(.2); paint(starPts(0, 0, 70, .45, 5), { wash: TK.yellow, fill: TK.gold, fillOp: 60, ink: INK, sw: 1 }); pop(); }
+    if (t < TH.cap + .4) { push(); translate(chalk[0], chalk[1]); rotate(-.7 + .15 * Math.sin(t * 30)); paint(rectPts(-6, -34, 12, 34), { wash: '#F4F4EE', ink: INK, sw: .6 }); pop(); }
+    // the teacher's desk (left), the teacher asleep on it, glasses pushed up
+    tdesk(400, 900, 240);
+    clawd(400, 905, 12, { eyes: 'closed', mouth: 'flat', rot: .25, aL: -.4, aR: -.4, noShadow: true, dy: .3 * Math.sin(t * 1.3) });
+    paint(rectPts(345, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 }); paint(rectPts(410, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 });
+    emote('zzz', 480, 750, 22, 1);
+    // the students: two rows, asleep face-down
+    for (const [x, y, n] of [[720, 930, 1], [960, 930, 2], [1200, 930, 3], [600, 1040, 4], [840, 1040, 5], [1080, 1040, 6]]) {
+      agentBot(x, y + 4, 12, t, { n: 60 + n, rot: NOTXT, eyes: 'closed', mouth: 'flat', noShadow: true, dy: .3 * Math.sin(t * 1.3 + n), aL: -.5, aR: -.5 });
+      tdesk(x, y, 200);
+      if (n % 2) emote('zzz', x + 60, y - 110, 16, 1);
     }
-    // everybody asleep at their desks
-    for (const [x, y, n] of [[600, 860, 1], [1010, 860, 2], [720, 1030, 3]]) {
-      tdesk(x, y, 320);
-      agentBot(x, y + 2, 11, t, { n: 60 + n, rot: NOTXT, eyes: 'closed', mouth: 'flat', noShadow: true, dy: .3 * Math.sin(t * 1.3 + n), aL: -.4, aR: -.4 });
-      emote('zzz', x + 75, y - 125, 20, clamp(seg(t, TH.nobody - .6 + n * .15, TH.nobody + n * .15)));
+    // the hammock in the corner; snaps on «Including you»
+    const [ax, ay] = HM.a, [hx, hy] = HM.b, snap = t >= TH.you, fall = seg(t, TH.you, TH.you + .35);
+    for (const [x, y] of [HM.a, HM.b]) paint(ellPts(x, y, 10, 10, 8), { wash: A2.steel, ink: INK, sw: .6 });
+    const sag = 140, mid = [(ax + hx) / 2, ay + sag];
+    if (!snap) {
+      const sw = Math.sin(t * 1.4) * 10, net = []; for (let i = 0; i <= 10; i++) { const u = i / 10; net.push([lerp(ax, hx, u) + sw * Math.sin(u * Math.PI), ay + sag * Math.sin(u * Math.PI) + 10]); }
+      inkLine(net, 10, '#C8A060', 'ink', .4);
+      clawd(mid[0] + sw, mid[1] - 6, 12, { rot: -.15, eyes: 'closed', mouth: 'smile', aL: 1.5, aR: 1.5, noShadow: true });
+      paint(net.concat(net.slice().reverse().map(([x, y]) => [x, y + 30])), { wash: '#E0B870', fill: '#B88A40', fillOp: 60, ink: INK, sw: .8 });
+      emote('zzz', mid[0] + 80, mid[1] - 150, 20, 1);
+    } else {
+      inkLine([[ax, ay], [ax + 30, ay + 180 * fall + 40], [ax + 50, ay + 280 * fall + 60]], 4, '#C8A060', 'ink', .4);   // the torn hammock hangs from one hook
+      inkLine([[hx, ay], [hx - 10, ay + 60]], 4, '#C8A060', 'ink', .3);
+      const fx = lerp(mid[0], 1580, fall), fy = lerp(mid[1] - 6, 1060, easeIn(fall));
+      if (fall >= 1) { paint(rectPts(1520, 1036, 300, 28, 1), { wash: '#B08A5A', ink: INK, sw: .8 }); }                   // flattened cardboard under him
+      clawd(fx, fy, 12, { rot: fall >= 1 ? 1.45 : -.15 + 1.6 * fall, eyes: 'closed', mouth: fall >= 1 ? 'flat' : 'O', aL: .2, aR: .2, noShadow: true });
+      if (fall >= 1) {                                                                                                  // a newspaper for a blanket
+        paint(rotPts(rectPts(1610, 975, 170, 70), 1695, 1010, .06), { wash: '#E8E2D2', ink: INK, sw: .8 });
+        for (let q = 0; q < 3; q++) inkLine([[1625, 995 + q * 16], [1765, 1003 + q * 16]], 1.5, '#8A8480', 'inkfine', 0);
+        emote('zzz', 1620, 930, 22, clamp((t - TH.you - .5) * 2));
+      }
     }
-    // Clawd in the striped deck chair (front right). On «you.» it turns to the lens.
-    const cx = 1290, cy = 1050, turn = eased(t, TH.you - .5, TH.you);
-    push(); translate(cx, cy); scale(1.4); translate(-cx, -cy);
-    for (let i = 0; i < 6; i++) paint([[cx - 110 + i * 38, cy - 170 + i * 12], [cx - 72 + i * 38, cy - 158 + i * 12], [cx - 72 + i * 38 + 30, cy - 30], [cx - 110 + i * 38 + 30, cy - 30]], { wash: i % 2 ? PAL.cream : TK.ember, ink: INK, sw: .5 });
-    inkLine([[cx - 110, cy - 170], [cx - 50, cy]], 4, '#7A4A2E', 'ink', 0); inkLine([[cx + 118, cy - 100], [cx + 80, cy]], 4, '#7A4A2E', 'ink', 0);
-    clawd(cx, cy - 30, 9, { rot: -.25 * (1 - turn), eyes: t < TH.you - .5 ? 'shades' : 'look', lookX: 0, lookY: .2, mouth: turn > .9 ? 'flat' : 'smile', aL: 1.6 * (1 - turn) + .2, aR: 1.6 * (1 - turn) + .2, noShadow: true });
-    pop();
   }
   scene('e26_thesis', 157.46, 162.86, thesis, [
-    [157.46, 960, 400, 820], [TH.cap, 960, 360, 760, 1], [TH.nobody, 820, 860, 820, 1], [161.4, 1180, 880, 780, 1], [TH.you, 1290, 900, 620], [162.859, 1290, 900, 580, 1],
-  ], [[TH.you, 10]]);
+    [157.46, 840, 640, 980], [TH.nobody - .3, 900, 660, 960, 1], [161.4, 1480, 760, 880, 1], [TH.you - .01, 1480, 770, 860, 1],
+    [TH.you, 1560, 880, 720], [162.859, 1560, 900, 680, 1],
+  ], [[TH.you + .35, 12]]);
 
   // ======== E30 NEW (183.82–189.06) «REVENUE? LATER! PROFIT? HOW?! A-G-I? SOON! CAPEX? NOW!» ========
   // A departures board with no letters: four split-flap tiles flip to pictures on the words. Money bag + clock (the hands spin on «LATER»),
@@ -455,10 +458,10 @@
       ceoClawd(440, 1050, 14, { noShadow: true, eyes: 'closed', mouth: 'smile', click: kick(t, EN_GRID, .15), aR: 1.2 + .6 * Math.sin(t * 5), aL: .6 + .5 * Math.sin(t * 5 + 1) });
     }
   }
-  scene('e31_bench', 189.06, 210.0, bench, [
-    [189.06, 960, 860, 820], [BN.lift - .4, 1060, 800, 720, 1], [BN.lift + .5, 1060, 800, 720, 1], [BN.boom, 960, 700, 1000],
-    [BN.hold, 960, 560, 1000, 1], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
-  ], [[BN.lift, 6], [BN.boom, 20]]);
+  // user notes on draft 2: the RU puppeteers carry the benchmark line (189.06–199, scenes3 RU_CAM); this scene only takes the long «…more» hold
+  scene('e31_bench', 199.0, 210.0, bench, [
+    [199.0, 980, 560, 1000], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
+  ]);
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
   const SH = { games: 217.08, sites: 218.18, agents: 219.60, grey: 222.32 };

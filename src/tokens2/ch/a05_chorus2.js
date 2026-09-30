@@ -69,7 +69,7 @@ function a05_sky(t, L) {
     paint(ellPts(x, y, r * (.6 + tw * .5), r * (.6 + tw * .5), 6), { wash: '#F4EFFF', washOp: 200 * L.sky, ink: null });
   }
   // the moon is a token, of course
-  if (L.sky > .05) {
+  if (L.sky > .05 && !window.NO_MOON) {
     paint(ellPts(300, 160, 58, 58, 22), { wash: A5.moon, washOp: 235 * L.sky, fill: '#C9C0A4', fillOp: 60 * L.sky, tex: .5, ink: null });
     const g = tokenT(58, '#BDB292'); paint(g.pts.map(([x, y]) => [300 + x, 160 + y]), { wash: g.col, washOp: 150 * L.sky, ink: null });
   }
