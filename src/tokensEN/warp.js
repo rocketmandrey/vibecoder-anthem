@@ -96,7 +96,7 @@
   }
 
   window.TIME_WARP = EN2V2;
-  window.BEAT_OF = t => beatEN(window.REAL_CH ? V32EN(t) : enOfV2(t));
+  window.BEAT_OF = t => beatEN(window.EN_NATIVE ? t : window.REAL_CH ? V32EN(t) : enOfV2(t));   // EN_NATIVE: the new EN chapters (scenes.js) run on EN time
   HITS.length = 0; for (const [e, s] of EN_HITS) HITS.push([+EN2V2(e).toFixed(3), s]);
   // v3-real chapters: bounds and shot starts move to EN time, the shots still get v3 time
   for (const c of CH.filter(c => c.real)) {
@@ -104,5 +104,5 @@
     c.shots = c.shots.map(([t0, fn]) => [V32EN(t0), (t, lt, d) => { const r = EN2V3(t); fn(r, r - t0, d); }]);
   }
   CH.sort((a, b) => a.start - b.start);
-  Object.assign(window, { EN2V2, EN2V3, V32EN, EN_GRID: GRID });
+  Object.assign(window, { EN2V2, EN2V3, V32EN, EN_GRID: GRID, beatEN });
 })();

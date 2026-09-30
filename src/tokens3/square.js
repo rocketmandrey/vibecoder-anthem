@@ -102,7 +102,8 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     let k = 0; while (k < K.length && K[k][0] <= t) k++;
     const A = K[Math.max(0, k - 1)], B = K[Math.min(K.length - 1, k)], u = B[0] > A[0] ? clamp((t - A[0]) / (B[0] - A[0])) : 0, e = u * u * (3 - 2 * u);
     const side = Math.min(1920, lerp(A[3], B[3], e));
-    return [clamp(lerp(A[1], B[1], e), side / 2, W - side / 2), lerp(A[2], B[2], e), side];
+    const [sx, sy] = window.CAM_SHAKE ? CAM_SHAKE(t) : [0, 0];                // a song's beat shake (tokensEN/scenes.js)
+    return [clamp(lerp(A[1], B[1], e), side / 2, W - side / 2) + sx, lerp(A[2], B[2], e) + sy, side];
   };
   // a 16:9 screen-space HUD point (x, y in 0..1920 / 0..1080) → the world point at the same place in the current square
   window.sqHud = (x, y) => { const [cx, cy, side] = SQ_CAM(T), h = side * AR; return [cx - side / 2 + x * side / 1920, cy - h / 2 + y * h / 1080]; };

@@ -197,6 +197,7 @@ async function setup() {
   paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H + 2 * LETPAD); letG.pixelDensity(1);
   outC = document.getElementById('out'); outX = outC.getContext('2d');
   await Promise.all([document.fonts.load('100px "Permanent Marker"'), document.fonts.load('800 50px "Shantell Sans"'), document.fonts.load('50px "Russo One"', 'КРЕМЛЬ')]);
+  if (window.preloadAssets) await window.preloadAssets();                  // a song's raster cut-outs (tokensEN/scenes.js)
   window.ready = true;
   if (!location.search.includes('render')) devUI();
 }
@@ -214,7 +215,7 @@ function draw() {
 }
 // the world → canvas transform (WEBGL origin is the centre): 16:9 = the frame as is; square = the square camera
 function sqView() {
-  if (!SQ) { translate(-W / 2, -H / 2); return; }
+  if (!SQ) { const [sx, sy] = window.CAM_SHAKE ? CAM_SHAKE(T) : [0, 0]; translate(-W / 2 - sx, -H / 2 - sy); return; }
   const [cx, cy, side] = SQ_CAM(T); scale(SQS / side); translate(-cx, -cy);
 }
 function composite(t) {

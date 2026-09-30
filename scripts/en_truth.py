@@ -21,6 +21,7 @@ const EN_DUR = {d['duration']:.3f};
 const EN_BEATS = {r(d['beats'])};
 const EN_DOWNBEATS = {r(d['downbeats'])};
 const EN_HITS = [{",".join(f"[{h['t']:g},{STRENGTH[h['kind']]}]" for h in d['hits'])}];
+const EN_SECTIONS = [{",".join(f"[{x['s']:g},{x['e']:g},{json.dumps(x['label'])},{x['energy']:g}]" for x in d['sections'])}];   // [start, end, label, energy]
 const EN_SILENCES = [{",".join(f"[{s['s']:g},{s['e']:g}]" for s in d['silences'])}];
 const LY = [
 {chr(10).join("  " + json.dumps(x, ensure_ascii=False) + "," for x in ly)}
