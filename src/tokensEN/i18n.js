@@ -112,7 +112,9 @@
   // counter is dropped (the jokes are pictures, the lyric is in the subtitle band); Cyrillic that survived translation is dropped everywhere.
   const TITLE_OK = [[0, 18.16], [241.6, 1e9]], BIG = 64;
   const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
-  const quiet = (en, size) => CYR.test(en) || (!titleOk() && size >= BIG && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay
+  const LABEL_OK = [[81.9, 87.6]];                                     // the reused a04 report shot: its small EN labels may stay (cover, sticky note)
+  const bigAt = () => LABEL_OK.some(([a, b]) => T >= a && T < b) ? 100 : BIG;
+  const quiet = (en, size) => CYR.test(en) || (!titleOk() && size >= bigAt() && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay
   const _counter = counter;
   counter = (...a) => { if (titleOk()) _counter(...a); };
   const _letter = letter;

@@ -349,5 +349,5 @@
     ...RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]).filter(([t]) => !inNew(t)),
     ...EN_KEYS,
   ].sort((a, b) => a[0] - b[0]);
-  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1 };   // for tokensEN/scenes2.js
+  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3 };   // for tokensEN/scenes2.js
 })();

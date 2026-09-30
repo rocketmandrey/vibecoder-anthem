@@ -56,7 +56,7 @@
     clawd(1290, TW.floor + 2, 9, { eyes: 'look', lookY: -1, mouth: t > TW.top ? 'o' : 'flat', emote: t > TW.top ? 'sweat' : null, aL: .2, aR: .2 });
   }
   scene('e12_tower', 76.72, 81.98, tower, [
-    [76.72, 960, 560, 960], [78.6, 960, 560, 1000, 1], [80.4, 960, 520, 1080, 1], [81.3, 970, 430, 860, 1], [81.979, 975, 410, 820, 1],
+    [76.72, 960, 860, 560], [77.7, 960, 820, 640, 1], [78.6, 960, 640, 960, 1], [80.4, 960, 520, 1080, 1], [81.3, 970, 430, 860, 1], [81.979, 975, 410, 820, 1],
   ], [[81.42, 10]]);
 
   // ======== E13 NEW (81.98–87.60) «A report: how to cut our AI spend. Nobody read it in the end.» ========
@@ -108,9 +108,12 @@
       for (let i = 0; i < 20; i++) { const p = frac(t * .25 + hash(i)); paint(ellPts(560 + hash(i + 2) * 800, lerp(0, dy - 20, p), 3, 3, 6), { wash: '#D8CFC0', washOp: 170, ink: null }); }
     }
   }
-  scene('e13_report', 81.98, 87.60, report, [
-    [81.98, 970, 600, 1000], [83.5, 990, 600, 960, 1], [85.0, 1000, 580, 940, 1], [87.599, 1000, 560, 880, 1],
-  ], [[RP.thud, 18]]);
+  // the user preferred the old one: the a04 report shot (binder thuds, colleagues walk past, cobweb, spider, «READS: 0») on EN time.
+  // RU «доклад» 80.58 ↔ EN «report» 82.30; after 84.3 its last 2.2 s are stretched over «Nobody read it in the end!» (to 87.60).
+  const ruRep = t => t <= 84.3 ? t - 1.72 : 82.58 + (t - 84.3) * (84.75 - 82.58) / (87.60 - 84.3);
+  scene('e13_report', 81.98, 87.60, t => a04_rep(ruRep(t), 0), [
+    [81.98, 850, 600, 1240], [84.0, 860, 600, 1220, 1], [87.599, 880, 600, 1200, 1],
+  ]);
 
   // ======== E14 NEW (87.60–92.86) pre-chorus 2 = S1 again, word for word 47.42 s later: the server hall, the floor splits, the bull ========
   const RE = 47.42;
@@ -169,8 +172,8 @@
   // printer → the tickets ride a glass pipe back up. Its loose end dangles by the press until the last «MORE TOKENS» (146.40): it plugs in,
   // flash, everything runs ×3. Clawd runs a hamster wheel in the middle, faster every line. «The economy is WORKING!»: the CEO applauds
   // on the roof, the camera drops to the output tray, and exactly one empty wrapper falls in.
-  const LP = { pairs: [139.62, 142.18, 144.78, 146.40], plug: 146.40, econ: 148.56, wrap: 150.24 };
-  const lpSpeed = t => 1 + LP.pairs.filter(p => t >= p).length * .5 + (t >= LP.plug ? 1.5 : 0);
+  const LP = { pairs: [137.06, 139.62, 142.18, 144.78, 146.40], plug: 146.40, econ: 148.56, wrap: 150.24 };
+  const lpSpeed = t => .6 + LP.pairs.filter(p => t >= p).length * .45 + (t >= LP.plug ? 1.5 : 0);
   const PIPE = [[1120, 1000], [1470, 1000], [1500, 900], [1500, 180], [1460, 120], [760, 120], [700, 170]];   // printer → up the right → over → press
   function pipePt(u) {                                                     // point u∈[0,1] along PIPE
     const L = []; let tot = 0; for (let i = 1; i < PIPE.length; i++) { const d = Math.hypot(PIPE[i][0] - PIPE[i - 1][0], PIPE[i][1] - PIPE[i - 1][1]); L.push(d); tot += d; }
@@ -232,8 +235,8 @@
       if (wk > 0 && wk < .4) sparks(tx, ty - 40, wk, 9, 5, 60);
     }
   }
-  scene('e23_loop', 139.38, 152.04, loop, [
-    [139.38, 1000, 600, 1080], [144.7, 960, 600, 1080, 1], [LP.plug, 900, 500, 900], [147.6, 1000, 560, 1080, 1],
+  scene('e23_loop', 137.0, 152.04, loop, [
+    [137.0, 1000, 600, 1080], [139.38, 1000, 600, 1080, 1], [144.7, 960, 600, 1080, 1], [LP.plug, 900, 500, 900], [147.6, 1000, 560, 1080, 1],
     [LP.econ, 1000, 460, 1000, 1], [149.5, 1360, 820, 760, 1], [150.1, 1440, 900, 620, 1], [152.039, 1440, 890, 600, 1],
   ], [[LP.plug, 16], [LP.wrap, 8]]);
 
@@ -446,9 +449,9 @@
       ceoClawd(440, 1050, 14, { noShadow: true, eyes: 'closed', mouth: 'smile', click: kick(t, EN_GRID, .15), aR: 1.2 + .6 * Math.sin(t * 5), aL: .6 + .5 * Math.sin(t * 5 + 1) });
     }
   }
-  scene('e31_bench', 189.06, 204.78, bench, [
+  scene('e31_bench', 189.06, 210.0, bench, [
     [189.06, 960, 560, 1000], [BN.lift - .4, 1080, 520, 700, 1], [BN.lift + .5, 1080, 520, 700, 1], [BN.boom, 960, 600, 1080],
-    [BN.hold, 960, 560, 1000, 1], [BN.mask + .5, 1000, 540, 1100, 1], [204.779, 1060, 480, 1400, 1],
+    [BN.hold, 960, 560, 1000, 1], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
   ], [[BN.lift, 6], [BN.boom, 20]]);
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
@@ -499,20 +502,30 @@
     [216.68, 960, 330, 860], [SH.sites - .1, 960, 390, 880, 1], [SH.agents - .1, 960, 700, 900, 1], [SH.grey - .2, 960, 620, 1000, 1], [224.719, 960, 620, 1040, 1],
   ]);
 
-  // ======== E34 NEW (228.76–230.82) «Midnight.» — a cuckoo clock with no numbers: the hand clicks to 12, the door flips open, a coin-cuckoo bobs out ========
-  const MN = { tick: 228.76, pop: 229.40 };
-  function midnight(t) {
-    back('#141218');
-    paint(rectPts(-400, -400, W + 800, 1500), { wash: '#221C2A', fill: '#141218', fillOp: 90, tex: .5, ink: null });
-    paint(rectPts(1180, 160, 300, 380, 1), { wash: '#1F2550', ink: INK, sw: 2 }); paint(ellPts(1360, 260, 46, 46, 18), { wash: PAL.cream, ink: null });   // window, moon
+  // ======== the room (verse 1 at dusk, the outro at night): one set, same furniture, drawn once here ========
+  // wall + window (dusk sky or stars, never a moon), the cuckoo clock (no numbers), the desk with the laptop, the token jar, the armchair.
+  const ROOM = { floor: 1060, clock: [900, 470], desk: [1140, 1460, 880], laptop: [1290, 880], jar: [1420, 880], chair: [1300, 1060] };
+  function roomWall(t, night) {                                            // night 0 = Friday dusk … 1 = Sunday night
+    paint(rectPts(-400, -400, W + 800, 1500), { wash: mixCol('#4A3848', '#221C2A', night), fill: mixCol('#3A2A38', '#141218', night), fillOp: 90, tex: .5, ink: null });
+    for (let x = 520; x < 1480; x += 120) inkLine([[x, -200], [x, ROOM.floor]], .5, mixCol('#3A2A38', '#141218', night), 'inkfine', 0);
+    paint(rectPts(1180, 160, 300, 380, 1), { wash: mixCol('#F2A283', '#1F2550', night), ink: INK, sw: 2 });
+    paint(rectPts(1180, 350, 300, 190), { wash: mixCol('#B85A7A', '#161B40', night), washOp: 200, ink: null });
+    if (night > .3) for (let i = 0; i < 14; i++) { const tw = .6 + .4 * Math.sin(t * 3 + i * 2.1); paint(starPts(1195 + hash(i) * 270, 175 + hash(i + 5) * 340, 5 + 4 * hash(i + 2) * tw), { wash: '#FFF5E2', washOp: 255 * (night - .3) / .7, ink: null }); }
     inkLine([[1330, 160], [1330, 540]], 3, INK, 'ink', 0); inkLine([[1180, 350], [1480, 350]], 3, INK, 'ink', 0);
-    const x = 900, y = 470;
+    paint(rectPts(1160, 540, 340, 20, 1), { wash: '#7A4A2E', ink: INK, sw: .8 });
+    paint(rectPts(-400, ROOM.floor, W + 800, 600), { wash: '#5A3A28', fill: '#3A2418', fillOp: 90, tex: .6, ink: null });
+    for (let x = -400; x < W + 400; x += 150) inkLine([[x, ROOM.floor], [x - 60, ROOM.floor + 300]], .6, '#3A2418', 'inkfine', 0);
+    paint(ellPts(960, ROOM.floor + 70, 420, 50, 30), { wash: '#7A3A4A', fill: '#5A2A38', fillOp: 70, tex: .5, ink: INK, sw: .8 });   // the rug
+  }
+  // the cuckoo clock without numbers; min/hour = hand angles (0 = up), pop = seconds since the door flipped (null = shut)
+  function cuckoo(t, x, y, sc, min, hour, popT = null) {
+    push(); translate(x, y); scale(sc); translate(-x, -y);
     paint([[x - 200, y - 150], [x, y - 330], [x + 200, y - 150], [x + 200, y + 250], [x - 200, y + 250]], { wash: '#7A4A2E', fill: '#4A2A1E', fillOp: 70, tex: .6, ink: INK, sw: 1.4 });
     paint([[x - 230, y - 140], [x, y - 360], [x + 230, y - 140]], { ink: '#4A2A1E', sw: 8 });
-    const door = t >= MN.pop ? easeOut(seg(t, MN.pop, MN.pop + .12)) : 0;
+    const door = popT != null && popT >= 0 ? easeOut(clamp(popT / .12)) : 0;
     paint(rectPts(x - 50, y - 250, 100, 90), { wash: '#1A0E08', ink: INK, sw: .8 });
     if (door > 0) {
-      const b = t - MN.pop, out = Math.min(1, b / .15) * (1 - seg(b, 1.1, 1.3)), bob = Math.sin(b * 18) * 12 * Math.exp(-b * 2);
+      const out = Math.min(1, popT / .15) * (1 - seg(popT, 1.1, 1.3)), bob = Math.sin(popT * 18) * 12 * Math.exp(-popT * 2);
       for (let k = 0; k < 4; k++) inkLine([[x - 12 + (k % 2) * 24, y - 205 + 20 * k * out], [x + 12 - (k % 2) * 24, y - 195 + 20 * k * out]], 2, A2.steelLt, 'inkfine', 0);
       const cy = y - 205 + 110 * out + bob; token(x, cy, 42, { spin: .15 });
       paint([[x + 38, cy - 6], [x + 70, cy + 2], [x + 38, cy + 10]], { wash: TK.orange, ink: INK, sw: .6 });
@@ -521,18 +534,68 @@
     push(); translate(x - 50, y - 250); scale(1 - 2 * door, 1); paint(rectPts(0, 0, 100, 90), { wash: '#8A5A36', ink: INK, sw: .8 }); pop();
     paint(ellPts(x, y + 30, 150, 150, 36), { wash: PAL.cream, ink: INK, sw: 1.4 });
     for (let k = 0; k < 12; k++) { const a = k * TAU / 12, r0 = k % 3 ? 128 : 112; inkLine([[x + Math.sin(a) * r0, y + 30 - Math.cos(a) * r0], [x + Math.sin(a) * 138, y + 30 - Math.cos(a) * 138]], k % 3 ? 1.5 : 4, INK, 'ink', 0); }
-    const mA = t < MN.tick ? -TAU * (1 - seg(t, 228.2, MN.tick)) * .02 : 0, snap = kick(t, [MN.tick], .2) * .06;
-    inkLine([[x, y + 30], [x + Math.sin(mA - snap) * 120, y + 30 - Math.cos(mA - snap) * 120]], 5, INK, 'ink', 0);
-    inkLine([[x, y + 30], [x + Math.sin(-.02) * 80, y + 30 - Math.cos(-.02) * 80]], 8, INK, 'ink', 0);
+    inkLine([[x, y + 30], [x + Math.sin(min) * 120, y + 30 - Math.cos(min) * 120]], 5, INK, 'ink', 0);
+    inkLine([[x, y + 30], [x + Math.sin(hour) * 80, y + 30 - Math.cos(hour) * 80]], 8, INK, 'ink', 0);
     paint(ellPts(x, y + 30, 10, 10, 10), { wash: TK.ember, ink: INK, sw: .6 });
-    const sw = Math.sin(t * TAU / 1.4) * .3;                                  // pendulum + weights
+    const sw = Math.sin(t * TAU / 1.4) * .3;
     inkLine([[x, y + 250], [x + Math.sin(sw) * 220, y + 250 + Math.cos(sw) * 220]], 2, TK.goldDk, 'inkfine', 0);
     token(x + Math.sin(sw) * 220, y + 250 + Math.cos(sw) * 220, 30, {});
     for (const wx of [x - 90, x + 90]) { inkLine([[wx, y + 250], [wx, y + 420]], 1.2, INK, 'inkfine', 0); paint(ellPts(wx, y + 450, 16, 34, 12), { wash: TK.goldDk, ink: INK, sw: .6 }); }
-    // Clawd leaning back on the floor below, eyes shut, smiling
-    clawd(1250, 1060, 11, { rot: -.2, eyes: 'closed', mouth: 'smile', aL: -.5, aR: -.5 });
+    pop();
   }
-  scene('e34_midnight', 228.76, 230.82, midnight, [[228.76, 980, 560, 1000], [230.819, 960, 520, 900, 1]], [[MN.pop, 8]]);
+  // the laptop: lid 0 = shut … 1 = open; glow colour on the screen
+  function laptop(x, y, lid, glow = null, s = 1) {
+    push(); translate(x, y); scale(s);
+    paint(rectPts(-110, -14, 220, 14, 1), { wash: '#8A95A1', ink: INK, sw: .9 });
+    const h = 150 * lid;
+    if (h > 4) { paint(rectPts(-100, -14 - h, 200, h, 1), { wash: '#3A4450', ink: INK, sw: .9 }); paint(rectPts(-88, -4 - h, 176, h - 20), { wash: glow || '#1A1F26', ink: null }); if (glow) glowAt(0, -14 - h / 2, 160, glow, 70); }
+    pop();
+  }
+  // the token jar: fill 0..1, dead 0..1 (x-eyes + fire), tokens as coins inside
+  function jar(t, x, y, fill, o = {}) {
+    const w = o.w || 150, h = o.h || 190, n = Math.round(fill * 14);
+    for (let i = 0; i < n; i++) {
+      const cx = x - w / 2 + 28 + (i % 4) * ((w - 56) / 3) + (Math.floor(i / 4) % 2) * 12, cy = y - 22 - Math.floor(i / 4) * 34 + Math.sin(t * 3 + i) * 1.5;
+      token(cx, cy, 16, { spin: o.spin ? t * 1.5 + i * .3 : .02 * i, burn: o.burn || 0 });
+      if (o.dead > .3) { for (const d of [-1, 1]) inkLine([[cx - 6, cy - 6 * d], [cx + 6, cy + 6 * d]], 1.6, INK, 'inkfine', 0); }
+    }
+    if (o.dead > 0) fire(x, y - 22 - Math.ceil(n / 4) * 34 + 20, w * .8, 90 * o.dead, t, { k: o.dead, seed: 3 });
+    paint([[x - w / 2, y - h], [x + w / 2, y - h], [x + w / 2, y], [x - w / 2, y]], { wash: '#DCEFF2', washOp: 70, ink: INK, sw: 1.4 });
+    paint(rectPts(x - w / 2 - 8, y - h - 28, w + 16, 30, 1), { wash: TK.ember, ink: INK, sw: 1 });
+    inkLine([[x - w / 2 + 12, y - h + 20], [x - w / 2 + 12, y - 20]], 3, '#FFFFFF', 'inkfine', 0);
+    for (let k = 1; k < 4; k++) inkLine([[x + w / 2 - 22, y - h * k / 4], [x + w / 2, y - h * k / 4]], k === 2 ? 3 : 1.5, INK, 'inkfine', 0);   // fill ticks, half marked
+  }
+  function armchair(x, y) {
+    paint(rrPts(x - 130, y - 230, 260, 170, 30), { wash: '#6A3A4A', fill: '#4A2A38', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
+    paint(rrPts(x - 150, y - 108, 300, 78, 20), { wash: '#7A4A5A', ink: INK, sw: 1.1 });
+    for (const sd of [-1, 1]) paint(rrPts(x + sd * 150 - 30, y - 150, 60, 130, 18), { wash: '#6A3A4A', ink: INK, sw: 1 });
+    for (const sd of [-1, 1]) paint(rectPts(x + sd * 120 - 8, y - 30, 16, 30), { wash: '#3A2418', ink: INK, sw: .6 });
+  }
+  function desk(x0, x1, y) {
+    paint(rectPts(x0, y, x1 - x0, 24, 1), { wash: '#7A4A2E', ink: INK, sw: 1 });
+    for (const lx of [x0 + 16, x1 - 34]) paint(rectPts(lx, y + 24, 18, ROOM.floor - y - 24), { wash: '#4A2A1E', ink: INK, sw: .7 });
+  }
+  // the whole night room with Clawd in the armchair. o: {min, hour, pop, lid, glow, fill, dead, eyes, mouth, lit}
+  function nightRoom(t, o = {}) {
+    back('#141218');
+    roomWall(t, o.night ?? 1);
+    cuckoo(t, ROOM.clock[0], ROOM.clock[1], 1, o.min ?? 0, o.hour ?? 0, o.pop ?? null);
+    desk(ROOM.desk[0], ROOM.desk[1], ROOM.desk[2]);
+    laptop(ROOM.laptop[0], ROOM.laptop[1], o.lid ?? 0, o.glow);
+    jar(t, ROOM.jar[0], ROOM.jar[1], o.fill ?? 0, { w: 90, h: 130, dead: o.dead || 0 });
+    if (o.gauge != null) ENK.gauge(1300, 640, 300, o.gauge, { glow: o.gaugeGlow || 0 });
+    const [cx, cy] = ROOM.chair; armchair(cx, cy);
+    clawd(cx, cy - 100, 12, { eyes: o.eyes || 'closed', mouth: o.mouth || 'smile', aL: -.3, aR: -.3, noShadow: true, dy: .2 * Math.sin(t * 1.2) });
+    if (o.lit) paint(ellPts(cx, cy - 120, 170, 150, 22), { fill: o.lit, fillOp: 50, bleed: .3, ink: null });
+    paint(rrPts(cx - 150, cy - 108, 300, 78, 20), { wash: '#7A4A5A', ink: INK, sw: 1.1 });          // seat front over the legs
+  }
 
-  window.EN2 = { eased, grey, CHOIR };
+  // ======== E34 NEW (228.76–230.72) «Midnight.» — the minute hand clicks to 12, the door flips open, a coin-cuckoo bobs out ========
+  const MN = { tick: 228.76, pop: 229.40 };
+  function midnight(t) {
+    const m = t < MN.tick ? -.035 * (1 - seg(t, 228.2, MN.tick)) : 0;
+    nightRoom(t, { min: m - kick(t, [MN.tick], .2) * .06, hour: -.004, pop: t >= MN.pop ? t - MN.pop : null, fill: 0, lid: 0 });
+  }
+  scene('e34_midnight', 228.76, 230.72, midnight, [[228.76, 960, 520, 900], [230.719, 940, 500, 820, 1]], [[MN.pop, 8]]);
+  window.EN2 = { eased, grey, CHOIR, ROOM, roomWall, cuckoo, laptop, jar, armchair, desk, nightRoom, TILE };
 })();
