@@ -15,9 +15,10 @@
     const [, , lab, en] = s, base = /break/.test(lab) ? (en >= .6 ? 9 : 4) : (LOUD.find(([re]) => re.test(lab)) || [0, 2])[1];
     return base * (.6 + .8 * en);                                          // gang vocals .52 → 9 px, the last chorus .8 → 11 px, verse 1 → 2 px
   };
-  const PUNCH = [[43.68, 24], [49.30, 20], [53.90, 14], [55.20, 16], [60.46, 9]];   // H1 punches: bull, bar on the floor, trucks, spoon
-  const HITPX = [...EN_HITS.map(([t, s]) => [t, s * 1.3]), ...PUNCH].filter(([t]) => secPx(t) > 0).sort((a, b) => a[0] - b[0]);
+  const PUNCH = window.EN_PUNCH = [[43.68, 24], [49.30, 20], [53.90, 14], [55.20, 16], [60.46, 9]];   // picture punches [EN t, px]; scenes2.js adds its own
+  let HITPX = null;                                                        // built on first use, after scenes2.js has added its punches
   window.CAM_SHAKE = t => {
+    HITPX = HITPX || [...EN_HITS.map(([t, s]) => [t, s * 1.3]).filter(([t]) => secPx(t) > 0), ...PUNCH].sort((a, b) => a[0] - b[0]);
     let a = 0; const px = secPx(t), g = lastLE(EN_GRID, t);
     if (px && g != null) a = px * Math.exp(-(t - g) / .09);               // a kick on every quarter of the tracked grid (~0.66 s)
     for (const [h, p] of HITPX) { if (h > t) break; if (t - h < .7) a = Math.max(a, p * Math.exp(-(t - h) / .2)); }
@@ -267,6 +268,14 @@
   function s3(t) {
     back(A2.gunDk);
     A03.hall(t, { lamps: [700, 1350] });
+    // the upper wall: a big gear and an overhead hook line delivering more agents across the hall, dangling by their backs
+    gear(760, 200, 150, t, { speed: .15, col: mixCol(A2.steel, A2.gunDk, .4) });
+    paint(rectPts(300, 250, 1400, 22), { wash: A2.steel, ink: INK, sw: .7 });
+    for (let i = 0; i < 9; i++) {
+      const x = 300 + frac(t * .12 + i / 9) * 1400, sw = Math.sin(t * 3 + i) * .08;
+      inkLine([[x, 272], [x + sw * 120, 340]], 1.2, A2.steelLt, 'ink', 0);
+      agentBot(x + sw * 150, 440, 11, t, { n: 60 + i, aL: 1.4, aR: 1.4, rot: sw, eyes: i % 3 ? 'happy' : 'scared', mouth: 'o', noShadow: true, seed: i });
+    }
     const k = kick(t, SPAWN, .15);
     conveyor(BELT.x0, BELT.y, BELT.x1 - BELT.x0, t, { items: [() => {}], speed: 200, legs: 250, seed: 2 });
     dispenser(560, 620, t, k);
@@ -324,18 +333,21 @@
     [43.68, 960, 600, 1080],                                              //   cut wide on the bull
     [45.46, 960, 640, 920],                                               // S2: the shredder, one take, tight
     [51.2, 960, 620, 960, 1],
-    [53.3, 1110, 560, 1080, 1],                                          //   follows the first truck in
-    [54.05, 1110, 560, 1080, 1],                                         //   holds through the pour
-    [54.85, 790, 560, 1120, 1],                                          //   swings left for the bigger one
-    [55.639, 800, 580, 1120, 1],
+    [53.3, 1180, 580, 1120, 1],                                          //   follows the first truck in
+    [54.05, 1180, 580, 1120, 1],                                         //   holds through the pour
+    [54.85, 740, 580, 1140, 1],                                          //   swings left for the bigger one
+    [55.639, 750, 600, 1140, 1],
     [55.64, 900, 640, 1000],                                              // S3: the hiring machine and the belt
     [58.48, 960, 760, 940, 1],                                            //   drift to the asker and the CEO
     [60.3, 980, 860, 820, 1],                                            //   push in on the spoon
     [65.179, 960, 800, 900, 1],
   ];
-  // everything else: the RU reels keys (v3 time) moved onto the EN track — a first pass until each scene gets its own
+  // everything else: the RU reels keys (v3 time) moved onto the EN track, minus the ones inside the NEW EN chapters (scenes2.js adds its keys to EN_KEYS)
+  window.EN_KEYS = [...H1];
+  const inNew = t => CH.some(c => c.real && c.name.startsWith('en_') && t >= c.start && t < c.end);
   window.SQSHOTS_X = RU => [
-    ...RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]).filter(([t]) => !(t >= 39.78 && t < 65.18)),
-    ...H1,
+    ...RU.map(([t, ...k]) => [+V32EN(t).toFixed(3), ...k]).filter(([t]) => !inNew(t)),
+    ...EN_KEYS,
   ].sort((a, b) => a[0] - b[0]);
+  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1 };   // for tokensEN/scenes2.js
 })();

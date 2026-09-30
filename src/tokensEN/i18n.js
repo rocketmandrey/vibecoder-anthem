@@ -81,7 +81,7 @@
   const AT = [
     ['ЖГИ!', 'IS THAT ALL\nYOU GOT?!', 43.5, 45.5, { fit: 1250 }],       // E06: Wall Street's shout (a03 talk)
   ];
-  const FIT = { 'BURN THE TOKENS!': 1000 };                            // explicit max widths (world px) for the 4:5 window
+  const FIT = { 'BURN THE TOKENS!': 1000, 'BURN THE TOKENS': 860 };                            // explicit max widths (world px) for the 4:5 window
   const SLACK = 1.25;
   const CYR = /[А-Яа-яЁё]/;
   window.I18N_MISS = new Set();
@@ -108,19 +108,27 @@
   }
   const scaleFont = (font, k) => font && font.replace(/(\d+(\.\d+)?)px/, (m, v) => (v * k) + 'px');
 
+  // NO BIG TEXT (user rule for BURN THE TOKENS): outside the title windows, lettering ≥ BIG world px, every stamp, ransom caption and
+  // counter is dropped (the jokes are pictures, the lyric is in the subtitle band); Cyrillic that survived translation is dropped everywhere.
+  const TITLE_OK = [[0, 18.16], [241.6, 1e9]], BIG = 64;
+  const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
+  const quiet = (en, size) => CYR.test(en) || (!titleOk() && size >= BIG && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay
+  const _counter = counter;
+  counter = (...a) => { if (titleOk()) _counter(...a); };
   const _letter = letter;
   letter = (txt, x, y, size, color, o = {}) => {
     const en = tr(txt);
+    if (typeof en === 'string' && quiet(en, size)) return;
     if (en === txt) return _letter(txt, x, y, size, color, o);
     const k = shrink(txt, en, size, o.font), lines = en.split('\n'), sz = size * k, lh = sz * 1.08;
     const oo = k < 1 ? { ...o, font: scaleFont(o.font, k) } : o;
     lines.forEach((l, i) => _letter(l, x, y + (i - (lines.length - 1) / 2) * lh, sz, color, oo));
   };
   const _stamp = stamp;
-  stamp = (txt, x, y, size, t, t0, o = {}) => { const en = tr(txt); _stamp(en, x, y, size * shrink(txt, en, size, ruFont(size)), t, t0, o); };
+  stamp = (txt, x, y, size, t, t0, o = {}) => { const en = tr(txt); if (!titleOk()) return; _stamp(en, x, y, size * shrink(txt, en, size, ruFont(size)), t, t0, o); };
   const _punk = punkText;
   punkText = (txt, x, y, size, t, t0, o = {}) => {
-    const en = tr(txt); if (en === txt) return _punk(txt, x, y, size, t, t0, o);
+    const en = tr(txt); if (!titleOk()) return; if (en === txt) return _punk(txt, x, y, size, t, t0, o);
     // punkText sets one letter per box (≈ glyph + 0.2 size, spaces 0.4 size): compare those widths, not the plain string
     const boxes = s => [...s].reduce((a, c) => a + (c === ' ' ? size * .4 : textW(c, ruFont(size)) + size * .2), 0);
     const cap = fitOf(en) || boxes(txt) * SLACK, k = Math.min(1, cap / boxes(en));
