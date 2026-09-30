@@ -3,6 +3,7 @@
 //   node render.mjs --stills=0.8,3,23.8 --out=out/test                          full-res PNG stills
 //   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio (streamed, no frame dump; --fade: hook-style audio fades)
 //   node render.mjs --song=tokensENr --clip=39.78:62.54 --fade --out=out/reels/btt_h1_pilot.mp4   BURN THE TOKENS reels hook H1
+//   scripts/colab_render.sh --song=tokensENr --clip=0:249.216 --out=out/reels/btt_full.mp4        the same on Colab GPUs (docs/COLAB.md)
 //   node render.mjs --frames=0:156.6 --workers=4                                full-res JPEG frames → out/frames (resumable)
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
@@ -19,7 +20,7 @@ const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 15
   tokens3sq: { page: 'tokens3.html', q: '&square', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3r: { page: 'tokens3.html', q: '&reels', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
   tokensEN: { page: 'tokensEN.html', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENr: { page: 'tokensEN.html', q: '&reels', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENru: { page: 'tokensEN.html', q: '&reels&ru', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENw: { page: 'tokensEN.html', q: '&reels&ru&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENwe: { page: 'tokensEN.html', q: '&reels&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 } };
 const S = SONGS[args.song || 'pdoom'];
-const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
+const CHROME = args.chrome || process.env.CHROME || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);
 const FRAMES_DIR = args.song && args.song !== 'pdoom' ? `out/frames_${args.song}` : 'out/frames';
 
@@ -44,7 +45,7 @@ if (args.encode) {
 
 const browser = await puppeteer.launch({
   executablePath: CHROME, headless: true, protocolTimeout: 0,
-  args: ['--allow-file-access-from-files', '--ignore-gpu-blocklist', process.platform === 'darwin' ? '--use-angle=metal' : '--use-angle=d3d11', '--enable-gpu-rasterization', '--window-size=1920,1080', '--disable-renderer-backgrounding', '--disable-background-timer-throttling']
+  args: ['--allow-file-access-from-files', '--ignore-gpu-blocklist', ...(process.env.CHROME_GL ? process.env.CHROME_GL.split(' ') : [process.platform === 'darwin' ? '--use-angle=metal' : '--use-angle=d3d11']), '--enable-gpu-rasterization', '--window-size=1920,1080', '--disable-renderer-backgrounding', '--disable-background-timer-throttling']
 });
 async function openPage(tag = '') {
   const page = await browser.newPage();
@@ -52,6 +53,9 @@ async function openPage(tag = '') {
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
   await page.goto(pathToFileURL(resolve(S.page)).href + '?render' + (S.q || ''), { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
+  // every @font-face subset now: setup() only loads the ones its probe text needs, so the first frames of a fresh page drew Latin
+  // Russo One in a fallback font (a mid-song chunk/part started with a wrong-font title and subtitles)
+  await page.evaluate(() => Promise.all([...document.fonts].map(f => f.load().catch(() => {}))));
   if (args.loop) await page.evaluate(name => { window.LOOP = LOOPS[name]; }, args.loop);
   return page;
 }
@@ -110,15 +114,16 @@ if (args.sheet) {
   const page = await openPage();
   const [a, b] = args.clip ? String(args.clip).split(':').map(Number) : [0, DUR];
   const out = args.out || 'out/clip.mp4'; mkdirSync(dirname(out), { recursive: true });
+  // --part=i0:i1: only frames [i0, i1) of the clip, video only (same codec params; scripts/colab_render.sh concats the parts and muxes the audio once)
+  const n = Math.round((b - a) * fps), [i0, i1] = args.part ? String(args.part).split(':').map(Number) : [0, n], start = Date.now();
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-    '-ss', String(a), '-t', String(b - a), '-i', S.audio, ...(args.fade ? ['-af', `afade=t=in:d=0.06:curve=tri,afade=t=out:st=${(b - a - .35).toFixed(3)}:d=0.35`] : []),
-    '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest', out],
+    ...(args.part ? [] : ['-ss', String(a), '-t', String(b - a), '-i', S.audio, ...(args.fade ? ['-af', `afade=t=in:d=0.06:curve=tri,afade=t=out:st=${(b - a - .35).toFixed(3)}:d=0.35`] : []), '-map', '0:v', '-map', '1:a']),
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', ...(args.part ? [] : ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest']), out],
     { stdio: ['pipe', 'inherit', 'inherit'] });
-  const n = Math.round((b - a) * fps), start = Date.now();
-  for (let i = 0; i < n; i++) {
+  for (let i = i0; i < i1; i++) {
     const buf = await frameOf(page, a + i / fps, 'image/jpeg', .92);
     if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
-    if (i % 24 === 0 || i === n - 1) console.log(`frame ${i + 1}/${n}  ${((Date.now() - start) / (i + 1)).toFixed(0)} ms/frame`);
+    if (i % 24 === 0 || i === i1 - 1) console.log(`frame ${i + 1}/${n}  ${((Date.now() - start) / (i - i0 + 1)).toFixed(0)} ms/frame`);
   }
   ff.stdin.end(); await new Promise(r => ff.on('close', r));
   console.log(`wrote ${out}`);
