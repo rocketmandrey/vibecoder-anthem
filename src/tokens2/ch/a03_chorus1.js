@@ -212,8 +212,8 @@
     fire(960, 900, 620, 560 * (.9 + .25 * k), t, { k: 1, seed: 31 });
     for (const s of [-1, 1]) fire(960 + s * 420, 900, 240, 260 + 120 * k, t + s, { k: 1, seed: 40 + s });
   }
-  function a03_shredder(t) {
-    const k = hitK(t, CHOMPS, .28), [jx, jy] = shakeXY(t + .3, 7 * k);
+  function a03_shredder(t, chomps = CHOMPS, label = true) {           // tokensEN reuses it with its own chomps and no label
+    const k = hitK(t, chomps, .28), [jx, jy] = shakeXY(t + .3, 7 * k);
     push(); translate(jx, jy);
     // legs, body, hazard band, plate
     for (const lx of [790, 1100]) paint(rectPts(lx, 740, 30, 90), { wash: A2.gunmetal, ink: INK, sw: .6 });
@@ -221,7 +221,7 @@
     hazard(760, 600, 400, 30);
     paint(rectPts(775, 636, 370, 50, 1), { wash: A2.rust, fill: '#6E2E18', fillOp: 70, tex: .5, ink: INK, sw: .7 });   // plate sits above the cart's heap
     const sfs = Math.min(34, 340 / (textW('ШРЕДЕР ТОКЕНОВ', ruFont(100)) / 100));                                      // label fits its plate
-    letter('ШРЕДЕР ТОКЕНОВ', 960, 661, sfs, A2.hazard, { font: ruFont(sfs) });
+    if (label) letter('ШРЕДЕР ТОКЕНОВ', 960, 661, sfs, A2.hazard, { font: ruFont(sfs) });
     // roller housing with the open slot and interlocking teeth
     paint(rectPts(780, 460, 360, 145, 1.5), { wash: A2.gunmetal, fill: A2.steel, fillOp: 60, tex: .6, ink: INK, sw: 1 });
     paint(rectPts(810, 480, 300, 105), { wash: '#0A0B0D', ink: INK, sw: .6 });
@@ -245,9 +245,9 @@
       a03_strip(x, 800 + p * 40, 20 + hash(i + 3) * 10, 1.4 + hash(i) * .5 + t * 3, i % 3 ? TK.gold : '#FFE38A');
     }
     pop();
-    a03_cart(960, 900, 460, 105, t, 'ПРОДУКЦИЯ');
-    for (const c of CHOMPS) a03_spray(960, 300, t - c, 26, 420, Math.floor(c * 10));
-    const age = t - CHOMPS.filter(c => c <= t).slice(-1)[0];
+    a03_cart(960, 900, 460, 105, t, label ? 'ПРОДУКЦИЯ' : null);
+    for (const c of chomps) if (t - c > -.1 && t - c < 1.5) a03_spray(960, 300, t - c, 26, 420, Math.floor(c * 10));
+    const age = t - chomps.filter(c => c <= t).slice(-1)[0];
     if (age >= 0) { sparks(820, 520, age, 3, 10, 200); sparks(1100, 520, age, 7, 10, 200); }
     return k;
   }
@@ -475,6 +475,7 @@
     a03_end(t);
   }
 
+  window.A03 = { hall: a03_hall, furnace: a03_furnace, shredder: a03_shredder, hardhat: a03_hardhat, confetti: a03_confetti };   // for tokensEN/scenes.js
   chapter('chorus1', 39.8, 67.1, [
     [39.8, a03_crush],
     [42.72, a03_talk],
