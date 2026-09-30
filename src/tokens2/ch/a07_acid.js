@@ -9,6 +9,7 @@
 //   to each on its sung word, stations light up, fire shock rings and fling goods, multipliers, the wheel speeds up.
 // 155.0 «ЭКОНОМИКА РАБОТАЕТ!» (v1 t05): stamps, the token index rockets off the top with a burning arrow. Hard cut 157.35.
 (() => {
+  const SQX = x => window.SQ ? 960 + (x - 960) * .6 : x;                            // square: «БОЛЬШЕ» / «GPU!» pulled in toward the centre
   const INK = PAL.ink;
   const HIT1 = 132.55, HIT2 = 137.7, HIT3 = 143.9, LOOP0 = 145.55, ECO = 155.0, END = 157.35;
   const W1 = [132.64, 133.34], W2 = [137.78, 138.48], W3 = [143.94, 144.8];         // «Больше» / «GPU!» word onsets
@@ -107,8 +108,8 @@
     });
     grows.forEach((g0, i) => sparks(960 + (i % 2 ? 150 : -150), 880 - 8 * 40 - i * 92, t - g0, i * 11, 14, 220));
     camEnd();
-    sqText('БОЛЬШЕ', 520, 200, 120, t, W1[0], .2 * hk);
-    sqText('GPU!', 1420, 200, 150, t, W1[1], .2 * hk, { cols: [A2.hazard, A2.cream, A2.sodium] });
+    sqText('БОЛЬШЕ', SQX(520), 200, 120, t, W1[0], .2 * hk);
+    sqText('GPU!', SQX(1420), 200, 150, t, W1[1], .2 * hk, { cols: [A2.hazard, A2.cream, A2.sodium] });
   }
 
   // ---------- the gaps: БОЛЬШЕ GPU madness, a panic-joy stampede ----------
@@ -203,8 +204,9 @@
       camEnd();
       for (const s0 of slams) sfx('ЕЩЁ GPU!', 960, 400, 120, A2.hazard, t - s0, { life: .9, font: ruFont(120), stroke: INK, rot: -.06 });
       const bought = 1200 * Math.pow(3, (t - 135.2) * .9);
-      letter('КУПЛЕНО GPU:', 60, 330, 40, A2.hazard, { font: ruFont(40), align: 'left', stroke: INK });
-      counter(210, 385, 36, bought);
+      const [hx, hy] = window.SQ ? sqHud(60, 330) : [60, 330];                   // square: pinned to the square's left edge
+      letter('КУПЛЕНО GPU:', hx, hy, 40, A2.hazard, { font: ruFont(40), align: 'left', stroke: INK });
+      counter(hx + 150, hy + 55, 36, bought);
       flash(hk * .25, A2.cream);
     };
   }
@@ -274,8 +276,8 @@
       if (a > .6 && a < 1.5) { const k = seg(a, .6, 1.3); letter('В' + 'Ж'.repeat(2 + Math.floor(k * 4)) + '!', 1400, 440, 70 + 60 * k, mixCol(A2.cream, A2.sodium, k), { font: ruFont(70 + 60 * k), stroke: INK, rot: -.08 + Math.sin(t * 40) * .03 * k }); }
       sfx('ПШШШ…', 420, 470, 100, A2.steelLt, a - 1.25, { life: 1.3, font: ruFont(100), stroke: INK, rot: -.1 });
     }
-    sqText('БОЛЬШЕ', 520, 180, 120, t, W2[0], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
-    sqText('GPU!', 1420, 180, 150, t, W2[1], .2 * hk, { cols: [A2.hazard, A2.sodium, A2.cream] });
+    sqText('БОЛЬШЕ', SQX(520), 180, 120, t, W2[0], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
+    sqText('GPU!', SQX(1420), 180, 150, t, W2[1], .2 * hk, { cols: [A2.hazard, A2.sodium, A2.cream] });
   }
 
   // ---------- 143.9 «БОЛЬШЕ GPU!» #3: the whole factory plugs into him ----------
@@ -324,8 +326,8 @@
       inkLine([[960 + Math.cos(q) * 520, cy + Math.sin(q) * 110], [960 + Math.cos(q) * 640, cy + Math.sin(q) * 150]], 2.5 * lit, A2.hazard, 'ink', 0);
     }
     camEnd();
-    sqText('БОЛЬШЕ', 560, 175, 120, t, W3[0], .2 * hk);
-    sqText('GPU!', 1400, 175, 160, t, W3[1], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
+    sqText('БОЛЬШЕ', SQX(560), 175, 120, t, W3[0], .2 * hk);
+    sqText('GPU!', SQX(1400), 175, 160, t, W3[1], .2 * hk, { cols: [A2.cream, A2.hazard, A2.sodium] });
   }
 
   // ---------- 145.55 «МАХОВИК ЭКОНОМИКИ» (ported from v1 t05 97.3–114, retimed to v2's words) ----------
@@ -485,7 +487,7 @@
   function wheelShot(t) {
     const heat = seg(t, 147.5, 154.6), last = fwLast(t), hitAge = last ? t - last[0] : 9;
     const bp = V3 ? 0 : 1;                                                         // v3: no eighth-note pulsing (it strobed), only the word punches
-    const [cx, cy, z, r] = kf(t, V3 ? (window.VERT ? CAMK3V : CAMK3) : window.VERT ? CAMKV : CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * bp * heat * pulse2(t));
+    const [cx, cy, z, r] = kf(t, V3 ? ((window.VERT || window.SQ) ? CAMK3V : CAMK3) : (window.VERT || window.SQ) ? CAMKV : CAMK, fwWhip), [sx, sy] = shakeXY(t, 14 * Math.exp(-hitAge * 7) + 3 * bp * heat * pulse2(t));
     camBegin(cx + sx, cy + sy, z * (1 + .018 * bp * pulse2(t, 7) + .05 * Math.exp(-hitAge * 9)), r);
     a07_hall(t, { heat: .3 + .7 * heat, dark: .1 });
     glowAt(WC[0], WC[1], 700, TK.orange, 40 + 40 * heat + 25 * bp * pulse2(t, 8));
@@ -497,8 +499,8 @@
     counter(ST.tok.x, ST.tok.y + 130, 28, 1e6 * Math.pow(10, Math.max(0, t - 145.5) / 2));
     counter(ST.task.x, ST.task.y + 130, 28, Math.pow(2, 6 + Math.max(0, t - 145.5) * 2.6));
     camEnd();
-    if (last) punkText(last[2], 960, 112, window.VERT ? 68 : 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
-    const [bx, by] = window.VERT ? [446, 930] : [34, 214];                          // VERT: bottom-left of the square window
+    if (last) punkText(last[2], 960, 112, (window.VERT || window.SQ) ? 68 : 80, t, last[0], { seed: Math.round(last[0] * 10), step: .012 });
+    const [bx, by] = (window.VERT || window.SQ) ? [446, 930] : [34, 214];                          // VERT: bottom-left of the square window
     paint(rrPts(bx, by, 470, 118, 10), { wash: A2.gunDk, washOp: 220, ink: INK, sw: .8 });
     letter('МАХОВИК ЭКОНОМИКИ', bx + 16, by + 32, 42, A2.hazard, { font: ruFont(42), align: 'left', stroke: INK, rot: -.03 });
     letter('КРУГ ' + (Math.floor(fwAng(t) / TAU) + 1), bx + 16, by + 88, 40, A2.cream, { font: ruFont(40), align: 'left', stroke: INK, rot: -.03 });

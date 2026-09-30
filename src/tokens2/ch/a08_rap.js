@@ -129,7 +129,7 @@
     }
   }
   // 9:16 (VERT only): Clawd (x 200) and the CEO (x 1720) step in so the 1300-wide vfocus window holds slide + both
-  const A08_VCX = window.VERT ? 480 : 200, A08_VDX = window.VERT ? -250 : 0;
+  const A08_VCX = (window.VERT || window.SQ) ? 480 : 200, A08_VDX = (window.VERT || window.SQ) ? -250 : 0;
   // big foreground cast for the fast rap slides: the CEO (right) and Clawd with his tally card (left), ~1/3+ frame
   // tall, feet hidden behind the frame bottom; both bob on the beat (o.pk = punch 0..1)
   function a08_bigCast(t, o) {

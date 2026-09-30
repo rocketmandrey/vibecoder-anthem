@@ -4,6 +4,11 @@ const W = 1920, H = 1080;
 const SONG = window.SONG || {};
 const BPM = SONG.bpm ?? 88, BEAT = 60 / BPM, OFF = SONG.off ?? 0.21, BOIL = 12, DUR = SONG.dur ?? 156.6;
 const TAU = Math.PI * 2;
+// Square mode (?square / ?reels, src/tokens3/square.js): the world is still laid out in 1920×1080 units, but the p5 canvas is
+// 1080×1080 and each frame is shot by a square camera (SQ_CAM(t) → [cx, cy, side]): side 1080 = a 1:1 slice at full scale,
+// up to 1920 = the whole width, scaled down. Full-width background rects are stretched vertically (rectPts) so a wide square
+// shows more sky / floor instead of bars. Chapters may recompose for it under window.SQ.
+const SQ = window.SQ = /[?&](square|reels)\b/.test(location.search), SQS = 1080, LETPAD = SQ ? 420 : 0;   // LETPAD: lettering above/below the 16:9 frame
 const PAL = {
   paper: '#F3EBDC', ink: '#2B2233', clay: '#D97757', clayDk: '#A84D33', clayLt: '#F2A283',
   night: '#1F2550', indigo: '#2F3C7A', rose: '#E27A92', ochre: '#E8AA38', sap: '#6E9F58',
@@ -79,6 +84,8 @@ let LETTERS = [], KARAOKE = null;
 
 // ---------- geometry ----------
 function rectPts(x, y, w, h, j = 0) {
+  // square mode: a full-width backdrop (sky, floor, full-frame wash) keeps going above/below the 16:9 frame
+  if (SQ && x <= -40 && x + w >= W + 40) { if (y <= -40) { h += y + 1100; y = -1100; } if (y + h >= H + 40) h = H + 1100 - y; }
   return [[x + jit(j), y + jit(j)], [x + w / 2 + jit(j), y + jit(j) * .5], [x + w + jit(j), y + jit(j)],
           [x + w + jit(j) * .5, y + h / 2], [x + w + jit(j), y + h + jit(j)], [x + w / 2 + jit(j), y + h + jit(j) * .5],
           [x + jit(j), y + h + jit(j)], [x + jit(j) * .5, y + h / 2]];
@@ -143,19 +150,20 @@ function drawLetters(c) {
 // Paint the queued lettering into the scene itself, so later layers (wipes) cover it.
 function flushLetters() {
   if (!LETTERS.length) return;
-  letG.clear(); drawLetters(letG.drawingContext); LETTERS = [];
+  const lc = letG.drawingContext; letG.clear(); lc.save(); lc.translate(0, LETPAD); drawLetters(lc); lc.restore(); LETTERS = [];
   // p5.brush defers washes and strokes into a mask layer; a (tiny, off-screen) watercolor fill forces it to composite
   // now, so everything painted before this call really lands under the letters.
   // Letters are already in screen space, so composite them with the base transform even inside camBegin().
-  push(); resetMatrix(); translate(-W / 2, -H / 2);
+  push(); resetMatrix(); sqView();
   brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0);
   brush.polygon([[-50, -50], [-40, -50], [-40, -40]]); brush.noFill();
-  image(letG, 0, 0); pop();
+  image(letG, 0, -LETPAD); pop();
 }
 
 // ---------- paper ----------
 function lcg(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
-function makePaper() {
+function makePaper(pw = SQ ? SQS : W, ph = SQ ? SQS : H) {
+  const W = pw, H = ph;
   const g = createGraphics(W, H); g.pixelDensity(1); const c = g.drawingContext, rnd = lcg(11);
   c.fillStyle = PAL.paper; c.fillRect(0, 0, W, H);
   for (let i = 0; i < 70; i++) { const x = rnd() * W, y = rnd() * H, r = 120 + rnd() * 380, gr = c.createRadialGradient(x, y, 0, x, y, r), a = .045 * rnd(); gr.addColorStop(0, `rgba(160,125,80,${a})`); gr.addColorStop(1, 'rgba(160,125,80,0)'); c.fillStyle = gr; c.fillRect(x - r, y - r, 2 * r, 2 * r); }
@@ -164,7 +172,8 @@ function makePaper() {
   return g;
 }
 // Static grain + vignette, multiplied over the painted frame so pigment sits "in" the paper.
-function makeGrain() {
+function makeGrain(pw = SQ ? SQS : W, ph = SQ ? SQS : H) {
+  const W = pw, H = ph;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'), rnd = lcg(5);
   const id = c.createImageData(W, H), d = id.data;
   for (let i = 0; i < d.length; i += 4) { const v = 255 - (rnd() < .55 ? rnd() * rnd() * 34 : 0); d[i] = v; d[i + 1] = v - 1; d[i + 2] = v - 3; d[i + 3] = 255; }
@@ -183,9 +192,9 @@ function defineBrushes() {
 
 // ---------- frame ----------
 async function setup() {
-  createCanvas(W, H, WEBGL); pixelDensity(1); noLoop();
+  createCanvas(SQ ? SQS : W, SQ ? SQS : H, WEBGL); pixelDensity(1); noLoop();
   brush.scaleBrushes(5); defineBrushes();
-  paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H); letG.pixelDensity(1);
+  paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H + 2 * LETPAD); letG.pixelDensity(1);
   outC = document.getElementById('out'); outX = outC.getContext('2d');
   await Promise.all([document.fonts.load('100px "Permanent Marker"'), document.fonts.load('800 50px "Shantell Sans"'), document.fonts.load('50px "Russo One"', 'КРЕМЛЬ')]);
   window.ready = true;
@@ -194,16 +203,22 @@ async function setup() {
 function draw() {
   if (!window.ready) return;
   LETTERS = []; KARAOKE = null; METER_SHOWN = false; CAM = null;
-  push(); translate(-W / 2, -H / 2);
+  push(); translate(-width / 2, -height / 2); image(paperG, 0, 0); pop();
+  push(); sqView();
   // the linework boils at BOIL (12) fps; a song can boil at 24 over near-static stretches (SONG.boil24 = [[a, b], …]),
   // where a 12-fps boil with no other motion reads as the whole picture running on twos
   const boil = (SONG.boil24 || []).some(([a, b]) => T >= a && T < b) ? 24 : BOIL;
   randomSeed(1000 + Math.floor(T * boil)); noiseSeed(77);
-  image(paperG, 0, 0);
   drawWorld(T);
   pop();
 }
+// the world → canvas transform (WEBGL origin is the centre): 16:9 = the frame as is; square = the square camera
+function sqView() {
+  if (!SQ) { translate(-W / 2, -H / 2); return; }
+  const [cx, cy, side] = SQ_CAM(T); scale(SQS / side); translate(-cx, -cy);
+}
 function composite(t) {
+  if (SQ) return sqComposite(drawingContext.canvas, grainC, t);          // src/tokens3/square.js
   const c = outX;
   c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
   c.drawImage(drawingContext.canvas, 0, 0, W, H);
@@ -213,7 +228,7 @@ function composite(t) {
   drawKaraokeText(c);
   if (window.VERT) vertComposite(outC, t);                                 // 9:16 reframe (src/vertical.js)
 }
-const finalC = () => window.VERT_C || outC;
+const finalC = () => window.SQ_C || window.VERT_C || outC;
 // SONG.shift: the tables are timed on an earlier master; clip time t shows table time t + shift (tokens3: new master = old − 0.18 s, assets/tokens3/master_offset.json)
 const SHIFT = SONG.shift ?? 0;
 window.renderAt = async (t, type = 'image/png', q = .92) => { T = t + SHIFT; await redraw(); composite(T); return finalC().toDataURL(type, q); };

@@ -44,7 +44,7 @@ function drawWorld(t) {
   flushLetters();
   if (!METER_SHOWN) { cornerMeter(t); flushLetters(); }
   WIPES.forEach((b, j) => { if (Math.abs(t - b) < WIPE_TR) wipe((t - (b - WIPE_TR)) / (2 * WIPE_TR), j); });
-  if (!window.VERT) karaoke(tr);                                             // vertical sets its own karaoke
+  if (!window.VERT && !SQ) karaoke(tr);                                           // vertical sets its own karaoke
 }
 
 function placeholder(t) {
