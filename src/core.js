@@ -8,7 +8,7 @@ const TAU = Math.PI * 2;
 // 1080×1080 and each frame is shot by a square camera (SQ_CAM(t) → [cx, cy, side]): side 1080 = a 1:1 slice at full scale,
 // up to 1920 = the whole width, scaled down. Full-width background rects are stretched vertically (rectPts) so a wide square
 // shows more sky / floor instead of bars. Chapters may recompose for it under window.SQ.
-const SQ = window.SQ = /[?&](square|reels)\b/.test(location.search), SQS = 1080, LETPAD = SQ ? 420 : 0;   // LETPAD: lettering above/below the 16:9 frame
+const SQ = window.SQ = /[?&](square|reels)\b/.test(location.search), SQS = 1080, SQH = Math.round(SQS * (SONG.reels?.ar ?? 1)), LETPAD = SQ ? 420 : 0;   // SONG.reels.ar: picture h/w (1.25 = 4:5); LETPAD: lettering above/below the 16:9 frame
 const PAL = {
   paper: '#F3EBDC', ink: '#2B2233', clay: '#D97757', clayDk: '#A84D33', clayLt: '#F2A283',
   night: '#1F2550', indigo: '#2F3C7A', rose: '#E27A92', ochre: '#E8AA38', sap: '#6E9F58',
@@ -162,7 +162,7 @@ function flushLetters() {
 
 // ---------- paper ----------
 function lcg(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
-function makePaper(pw = SQ ? SQS : W, ph = SQ ? SQS : H) {
+function makePaper(pw = SQ ? SQS : W, ph = SQ ? SQH : H) {
   const W = pw, H = ph;
   const g = createGraphics(W, H); g.pixelDensity(1); const c = g.drawingContext, rnd = lcg(11);
   c.fillStyle = PAL.paper; c.fillRect(0, 0, W, H);
@@ -172,7 +172,7 @@ function makePaper(pw = SQ ? SQS : W, ph = SQ ? SQS : H) {
   return g;
 }
 // Static grain + vignette, multiplied over the painted frame so pigment sits "in" the paper.
-function makeGrain(pw = SQ ? SQS : W, ph = SQ ? SQS : H) {
+function makeGrain(pw = SQ ? SQS : W, ph = SQ ? SQH : H) {
   const W = pw, H = ph;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'), rnd = lcg(5);
   const id = c.createImageData(W, H), d = id.data;
@@ -192,7 +192,7 @@ function defineBrushes() {
 
 // ---------- frame ----------
 async function setup() {
-  createCanvas(SQ ? SQS : W, SQ ? SQS : H, WEBGL); pixelDensity(1); noLoop();
+  createCanvas(SQ ? SQS : W, SQ ? SQH : H, WEBGL); pixelDensity(1); noLoop();
   brush.scaleBrushes(5); defineBrushes();
   paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H + 2 * LETPAD); letG.pixelDensity(1);
   outC = document.getElementById('out'); outX = outC.getContext('2d');

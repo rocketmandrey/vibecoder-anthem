@@ -1,7 +1,8 @@
 // render.mjs: drive studio.html in headless Chrome.
 //   node render.mjs --sheet=23,23.5,24 [--cols=3] [--w=640] --out=out/check.jpg   contact sheet (fast visual check)
 //   node render.mjs --stills=0.8,3,23.8 --out=out/test                          full-res PNG stills
-//   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio
+//   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio (streamed, no frame dump; --fade: hook-style audio fades)
+//   node render.mjs --song=tokensENr --clip=39.78:62.54 --fade --out=out/reels/btt_h1_pilot.mp4   BURN THE TOKENS reels hook H1
 //   node render.mjs --frames=0:156.6 --workers=4                                full-res JPEG frames → out/frames (resumable)
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
@@ -15,7 +16,8 @@ import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3h: { page: 'tokens3.html', q: '&hamster', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
-  tokens3sq: { page: 'tokens3.html', q: '&square', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3r: { page: 'tokens3.html', q: '&reels', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 } };
+  tokens3sq: { page: 'tokens3.html', q: '&square', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3r: { page: 'tokens3.html', q: '&reels', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
+  tokensEN: { page: 'tokensEN.html', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENr: { page: 'tokensEN.html', q: '&reels', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 } };
 const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);
@@ -109,8 +111,8 @@ if (args.sheet) {
   const [a, b] = args.clip ? String(args.clip).split(':').map(Number) : [0, DUR];
   const out = args.out || 'out/clip.mp4'; mkdirSync(dirname(out), { recursive: true });
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-    '-ss', String(a), '-t', String(b - a), '-i', S.audio,
-    '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', out],
+    '-ss', String(a), '-t', String(b - a), '-i', S.audio, ...(args.fade ? ['-af', `afade=t=in:d=0.06:curve=tri,afade=t=out:st=${(b - a - .35).toFixed(3)}:d=0.35`] : []),
+    '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest', out],
     { stdio: ['pipe', 'inherit', 'inherit'] });
   const n = Math.round((b - a) * fps), start = Date.now();
   for (let i = 0; i < n; i++) {

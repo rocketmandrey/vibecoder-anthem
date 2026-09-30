@@ -93,9 +93,11 @@ const SQSHOTS = [
   [240.018, 860, 540, 1200], [240.201, 1000, 540, 1600, 1],          // «ЖГИ!» flashes in on the right
   [240.641, 960, 540, 1540],                                   // credit card
 ];
+// SONG.reels overrides the layout (BURN THE TOKENS: 4:5 picture 220–1570, subtitles centred at 1675); window.SQSHOTS_X(SQSHOTS) → the keys to use.
+const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', titleY: 168, subY: 1525, censor: false }, SONG.reels);
 (() => {
-  const K = [];
-  SQSHOTS.forEach(([t, x, y, w, glide], i) => { const P = K[K.length - 1]; if (i && !glide && t - P[0] > .02) K.push([t - .01, P[1], P[2], P[3]]); K.push([t, x, y, w]); });
+  const K = [], CFG = SQ_CFG, AR = CFG.ar;
+  (typeof window.SQSHOTS_X === 'function' ? SQSHOTS_X(SQSHOTS) : SQSHOTS).forEach(([t, x, y, w, glide], i) => { const P = K[K.length - 1]; if (i && !glide && t - P[0] > .02) K.push([t - .01, P[1], P[2], P[3]]); K.push([t, x, y, w]); });
   window.SQ_CAM = t => {
     let k = 0; while (k < K.length && K[k][0] <= t) k++;
     const A = K[Math.max(0, k - 1)], B = K[Math.min(K.length - 1, k)], u = B[0] > A[0] ? clamp((t - A[0]) / (B[0] - A[0])) : 0, e = u * u * (3 - 2 * u);
@@ -103,9 +105,9 @@ const SQSHOTS = [
     return [clamp(lerp(A[1], B[1], e), side / 2, W - side / 2), lerp(A[2], B[2], e), side];
   };
   // a 16:9 screen-space HUD point (x, y in 0..1920 / 0..1080) → the world point at the same place in the current square
-  window.sqHud = (x, y) => { const [cx, cy, side] = SQ_CAM(T); return [cx - side / 2 + x * side / 1920, cy - side / 2 + y * side / 1080]; };
+  window.sqHud = (x, y) => { const [cx, cy, side] = SQ_CAM(T), h = side * AR; return [cx - side / 2 + x * side / 1920, cy - h / 2 + y * h / 1080]; };
   if (!window.SQ) return;
-  const REELS = /[?&]reels\b/.test(location.search), VW = 1080, VH = REELS ? 1920 : 1080, PY = REELS ? 300 : 0, S = 1080;
+  const REELS = /[?&]reels\b/.test(location.search), VW = 1080, S = 1080, SH = Math.round(S * AR), VH = REELS ? 1920 : SH, PY = REELS ? CFG.py : 0;
   const C = window.SQ_C = document.createElement('canvas'); C.width = VW; C.height = VH;
   const c = C.getContext('2d'), sm = document.createElement('canvas'); sm.width = 54; sm.height = 96;   // tiny copy = cheap heavy blur
   const smx = sm.getContext('2d');
@@ -114,7 +116,7 @@ const SQSHOTS = [
   // subtitle: the current LY line, ≤ 2 balanced lines in x 90–900, soft fade in/out, no per-word highlight
   function subtitle(t) {
     const L = LY.find(l => t >= l[0] - .12 && t < l[1] + .2); if (!L) return;
-    const [a, b, txt] = L, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
+    const [a, b, raw] = L, txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
     const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
     const maxW = 810; let size = 66, lines;
     for (;; size -= 3) {
@@ -125,7 +127,7 @@ const SQSHOTS = [
       if (best) { lines = [words.slice(0, best).join(' '), words.slice(best).join(' ')]; break; }
       if (size < 36) { lines = [words.join(' ')]; break; }
     }
-    const lh = size * 1.22, cx = 495, cy = 1525 - (lines.length - 1) * lh / 2 + (1 - k) * 14;
+    const lh = size * 1.22, cx = 495, cy = CFG.subY - (lines.length - 1) * lh / 2 + (1 - k) * 14;
     c.save(); c.globalAlpha = k; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = FONT(size); c.lineJoin = 'round';
     lines.forEach((s, i) => {
       const y = cy + i * lh;
@@ -144,15 +146,15 @@ const SQSHOTS = [
       const g = c.createLinearGradient(0, 0, 0, VH);
       g.addColorStop(0, 'rgba(43,34,51,.55)'); g.addColorStop(.16, 'rgba(43,34,51,.35)'); g.addColorStop(.72, 'rgba(43,34,51,.62)'); g.addColorStop(1, 'rgba(30,24,36,.9)');
       c.fillStyle = g; c.fillRect(0, 0, VW, VH);
-      c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 36; c.fillStyle = '#000'; c.fillRect(0, PY, VW, S); c.restore();
+      c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = 36; c.fillStyle = '#000'; c.fillRect(0, PY, VW, SH); c.restore();
     }
-    c.drawImage(src, 0, PY, S, S);
-    c.save(); c.globalCompositeOperation = 'multiply'; c.drawImage(grain, 0, PY, S, S); c.restore();
+    c.drawImage(src, 0, PY, S, SH);
+    c.save(); c.globalCompositeOperation = 'multiply'; c.drawImage(grain, 0, PY, S, SH); c.restore();
     if (!REELS) return;
     if (!window.VTITLE_OFF || !VTITLE_OFF(t)) {
       c.save(); c.font = FONT(64); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
-      c.lineWidth = 9; c.strokeStyle = 'rgba(24,14,10,.85)'; c.strokeText('ЖГИ ТОКЕНЫ', VW / 2, 168);
-      c.fillStyle = '#FFB02E'; c.fillText('ЖГИ ТОКЕНЫ', VW / 2, 168); c.restore();
+      c.lineWidth = 9; c.strokeStyle = 'rgba(24,14,10,.85)'; c.strokeText(CFG.title, VW / 2, CFG.titleY);
+      c.fillStyle = '#FFB02E'; c.fillText(CFG.title, VW / 2, CFG.titleY); c.restore();
     }
     subtitle(t);
   };
