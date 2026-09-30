@@ -197,6 +197,7 @@ async function setup() {
   paperG = makePaper(); grainC = makeGrain(); letG = createGraphics(W, H + 2 * LETPAD); letG.pixelDensity(1);
   outC = document.getElementById('out'); outX = outC.getContext('2d');
   await Promise.all([document.fonts.load('100px "Permanent Marker"'), document.fonts.load('800 50px "Shantell Sans"'), document.fonts.load('50px "Russo One"', 'КРЕМЛЬ')]);
+  if (window.preloadAssets) await window.preloadAssets();                  // a song's raster cut-outs (tokensEN/scenes.js: the bull)
   window.ready = true;
   if (!location.search.includes('render')) devUI();
 }

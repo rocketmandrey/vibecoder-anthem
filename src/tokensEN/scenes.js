@@ -61,54 +61,50 @@
 
   // ============ S1 NEW (E06, 39.78–45.46): «Fans are howling, the racks run hot. Wall Street screams: "Is that all you got?"» ============
   const S1 = { hot: 41.36, crack: 42.68, bull: 43.68 };
-  // Wall Street (after the Codex design ref): a bull in a pinstripe suit, red tie, big cream horns, angry brows, a gaping roar with teeth,
-  // fists up, steam out of the nostrils. (x, y) = the middle of his belt line; s = scale (1 ≈ 600 px wide); o.jaw 0..1, o.sx / o.sy squash-stretch.
-  const BULL = { hide: '#B4552A', hideDk: '#7A3216', hideLt: '#E08A50', muzzle: '#E8B08A', suit: '#34323C', suitDk: '#1E1D24', stripe: '#8E8A9C' };
-  function bull(x, y, s, t, o = {}) {
-    const C = BULL, jaw = o.jaw ?? 1, sw = 1.4;
-    push(); translate(x, y); scale(s * (o.sx ?? 1), s * (o.sy ?? 1));
-    // fists + sleeves (behind the torso), shaking
+  // Wall Street: the bull, drawn from vector paths (src/tokensEN/bull_art.js: Codex layers in the clip's style, vectorized) as a rig —
+  // body, head (roaring / shut), two fists, steam puffs. Each layer is painted from its paths once into an offscreen 2D canvas at load.
+  const ART = {};
+  window.preloadAssets = async () => {
+    for (const [k, [w, h, paths]] of Object.entries(BULL_ART)) {
+      const q = 1.5, g = createGraphics(Math.ceil(w * q), Math.ceil(h * q)); g.pixelDensity(1);
+      const c = g.drawingContext; c.scale(q, q);
+      for (const [fill, tx, ty, d] of paths) {
+        c.save(); c.translate(tx, ty); c.globalCompositeOperation = fill === 'KEY' ? 'destination-out' : 'source-over';
+        c.fillStyle = fill === 'KEY' ? '#000' : fill; c.fill(new Path2D(d)); c.restore();
+      }
+      ART[k] = g;
+    }
+  };
+  // a layer in world space over everything painted so far (the brush layer is forced to composite first); (x, y) = its centre, w = width
+  function layer(k, x, y, w, o = {}) {
+    const g = ART[k];
+    push(); translate(x, y); rotate(o.rot || 0); scale((o.flip ? -1 : 1) * (o.sx ?? 1), o.sy ?? 1); imageMode(CENTER);
+    if (o.alpha != null && o.alpha < 1) tint(255, 255 * o.alpha);
+    image(g, 0, 0, w, w * g.height / g.width); pop();
+  }
+  const WORDS = [43.68, 43.88, 44.12, 44.42, 44.7];                        // «Is that all you got?»
+  // (x, y) = the belt line (bottom of the jacket); o.sx / o.sy squash-stretch the whole rig from there; age = time since the burst
+  function bull(x, y, t, age, o = {}) {
+    LETTERS.push({ txt: '', x: 0, y: 0, size: 1, color: '#000' }); flushLetters();
+    const BW = 640, BH = BW * BULL_ART.body[1] / BULL_ART.body[0], HW = 400, HH = HW * BULL_ART.head_open[1] / BULL_ART.head_open[0];
+    const word = kick(t, WORDS, .12), beat = kick(t, EN_GRID, .1), open = age > .12 && t < 45.3;
+    push(); translate(x, y); scale(1.3 * (o.sx ?? 1), 1.3 * (o.sy ?? 1));
+    layer('body', 0, -BH / 2, BW, { sy: 1 + .03 * word });
+    // head: bobs forward on every word, the jaw open through the shout
+    const hy = -BH + 40 - HH / 2 - 14 * word, hs = 1 + .07 * word;
+    layer(open ? 'head_open' : 'head_shut', 0, hy, HW * hs, { rot: .05 * Math.sin(t * 23) * word + .03 * Math.sin(t * 3) });
+    // fists above the cuffs, pumped on the beat and trembling
     for (const d of [-1, 1]) {
-      const fx = d * 330 + Math.sin(t * 34 + d) * 8, fy = -360 + Math.cos(t * 29 + d) * 8;
-      paint([[d * 200, -280], [d * 290, -290], [fx + d * 70, fy + 40], [fx - d * 70, fy + 60], [d * 170, -150]], { wash: '#4A4854', fill: C.suitDk, fillOp: 60, tex: .5, ink: INK, sw });
-      paint(rrPts(fx - d * 60 - 30, fy + 30, 120, 40, 10), { wash: PAL.cream, ink: INK, sw: sw * .7 });                          // shirt cuff
-      paint(ellPts(fx, fy - 20, 78, 70, 18), { wash: C.hide, fill: C.hideDk, fillOp: 70, tex: .5, ink: INK, sw });
-      for (let k = 0; k < 3; k++) inkLine([[fx - 44 + k * 32, fy - 84], [fx - 40 + k * 32, fy - 40]], 1.2, C.hideDk, 'inkfine', 0);
-      paint(ellPts(fx - d * 52, fy + 4, 28, 20, 10, 0, d * .5), { wash: C.hideLt, ink: INK, sw: sw * .6 });                       // thumb
+      const jx = 5 * Math.sin(t * 41 + d), jy = 5 * Math.cos(t * 37 + d);
+      layer(d < 0 ? 'fist_l' : 'fist_r', d * BW * .43 + jx, -BH * .72 - 26 * beat + jy, 175, { rot: d * (.1 + .12 * beat) });
     }
-    // torso: jacket with pinstripes, lapels, shirt V, the red tie flapping
-    paint([[-250, 0], [-270, -230], [-150, -300], [150, -300], [270, -230], [250, 0]], { wash: C.suit, fill: C.suitDk, fillOp: 90, tex: .6, border: .4, ink: INK, sw });
-    for (let i = -8; i <= 8; i++) if (Math.abs(i) > 2) inkLine([[i * 30, -290 + Math.abs(i) * 6], [i * 30, -6]], .5, C.stripe, 'inkfine', 0);
-    paint([[-110, -300], [110, -300], [0, -120]], { wash: PAL.cream, ink: INK, sw: sw * .8 });
-    for (const d of [-1, 1]) paint([[d * 110, -300], [d * 150, -300], [d * 60, -60], [d * 20, -120]], { wash: C.suitDk, ink: INK, sw: sw * .8 });
-    const fl = Math.sin(t * 17) * 18;
-    paint([[-22, -290], [22, -290], [30, -250], [40 + fl, -40], [fl, 0], [-40 + fl, -40], [-30, -250]], { wash: '#D8262A', fill: '#8A1418', fillOp: 70, tex: .4, ink: INK, sw: sw * .8 });
-    // head
-    push(); translate(0, -420);
-    for (const d of [-1, 1]) {                                              // horns, then ears
-      paint([[d * 100, -100], [d * 210, -130], [d * 290, -190], [d * 320, -280], [d * 300, -330], [d * 262, -262], [d * 200, -212], [d * 120, -170]], { wash: PAL.cream, fill: '#C8B88A', fillOp: 80, tex: .4, ink: INK, sw, curv: .4 });
-      paint([[d * 150, -60], [d * 270, -110], [d * 250, -20], [d * 160, 0]], { wash: C.hide, fill: C.hideDk, fillOp: 60, ink: INK, sw, curv: .3 });
+    // steam: a puff out of each nostril on every word, growing and drifting off
+    for (const w of WORDS) {
+      const a = t - w; if (a < 0 || a > .7 || !open) continue;
+      const f = a / .7, sc = lerp(.45, 1.15, easeOut(f));
+      for (const d of [-1, 1]) layer('steam', d * (70 + 150 * sc + 40 * f), hy + HH * .06 - 30 * f, 250 * sc, { flip: d < 0, alpha: 1 - f * f });
     }
-    paint([[-170, -150], [0, -180], [170, -150], [185, 20], [120, 150], [-120, 150], [-185, 20]], { wash: C.hide, fill: C.hideDk, fillOp: 70, tex: .6, border: .4, ink: INK, sw, curv: .35 });
-    paint(ellPts(-50, -110, 70, 30, 12, 0, -.2), { fill: C.hideLt, fillOp: 110, bleed: .2, tex: .7, ink: null });
-    for (const d of [-1, 1]) {                                              // angry eyes under heavy brows
-      paint(ellPts(d * 75, -55, 38, 26, 12), { wash: '#FFF6E0', ink: INK, sw: sw * .8 });
-      paint(ellPts(d * 68 + (o.lookX || 0) * 6, -50, 13, 13, 8), { wash: TK.soot, ink: null });
-      paint([[d * 25, -58], [d * 130, -108], [d * 140, -86], [d * 30, -36]], { wash: C.hideDk, ink: INK, sw: sw * .6 });
-    }
-    // muzzle with flaring nostrils, a gold ring, and the roaring mouth below
-    const flare = 1 + .4 * (o.flare || 0);
-    paint(ellPts(0, 60, 150, 70, 20), { wash: C.muzzle, fill: C.hideLt, fillOp: 70, tex: .4, ink: INK, sw });
-    for (const d of [-1, 1]) paint(ellPts(d * 55, 40, 22 * flare, 14 * flare, 10, 0, d * .3), { wash: '#3A1A10', ink: null });
-    inkLine(ellPts(0, 88, 26, 22, 12).concat([[26, 88]]), 2.4, TK.gold, 'ink', .5);
-    const mh = 30 + 150 * jaw, my = 110;
-    paint(ellPts(0, my + mh * .45, 120 + 20 * jaw, mh * .55 + 6, 20), { wash: '#5A1418', fill: '#2A0A0C', fillOp: 110, ink: INK, sw });
-    if (jaw > .15) {
-      paint(ellPts(0, my + mh * .75, 70, mh * .2, 14), { wash: PAL.rose, ink: null });                               // tongue
-      for (let i = 0; i < 7; i++) { const tx = -96 + i * 32; paint([[tx, my + 2], [tx + 26, my + 2], [tx + 13, my + 26]], { wash: PAL.cream, ink: INK, sw: .6 }); }
-      for (let i = 0; i < 6; i++) { const tx = -80 + i * 32; paint([[tx, my + mh - 2], [tx + 26, my + mh - 2], [tx + 13, my + mh - 24]], { wash: PAL.cream, ink: INK, sw: .6 }); }
-    }
-    pop(); pop();
+    pop();
   }
   function s1(t) {
     back(TK.soot);
@@ -146,12 +142,10 @@
     if (age > -.02) {
       const up = easeOut(clamp(age / .22)), y = lerp(1900, 1170, up);
       const st = age < .22 ? .35 * (1 - up) + .15 : age < .5 ? -.22 * Math.sin((age - .22) / .28 * Math.PI) : .06 * Math.sin(age * 26) * Math.exp(-(age - .5) * 1.5);
-      const roarK = age > .9 ? Math.abs(Math.sin((age - .9) * 9)) : 0;
-      bull(fx, y, 1, t, { sy: 1 + st, sx: 1 - st * .6, jaw: age < .25 ? .3 : .75 + .25 * roarK, flare: roarK });
+      bull(fx, y, t, age, { sy: 1 + st, sx: 1 - st * .6 });
       paint(rectPts(-200, fy + 60, W + 400, 400), { wash: '#262A31', fill: TK.orangeDk, fillOp: 60, tex: .5, ink: null });   // the floor in front of the hole hides his legs
       inkLine([[fx - 420, fy + 60], [fx + 420, fy + 60]], 1.6, INK, 'ink', .3);
       rubble(fx, fy + 40, 800, age, 5);
-      if (age > .2) for (const s of [-1, 1]) steam(fx + s * 60, y - 380, t, { dir: s > 0 ? -.35 : Math.PI + .35, len: 260, n: 5, per: .45, seed: s * 7, col: '#F4EEE4', k: .5 + .5 * roarK });
       flash(Math.exp(-age / .08) * .6 * (age < .3), '#FFF3C8');
     }
   }
