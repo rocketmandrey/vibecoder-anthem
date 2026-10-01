@@ -139,7 +139,7 @@
       for (let k = 0; k < 4; k++) paint(rectPts(x - 45, 900 + k * 120, 90, 40), { wash: '#C8412E', ink: null });
     }
     // the billboard: legs, catwalk, lamps, the panel
-    const [X, Y, Wd, Hd] = BP, on = t < BB.on ? 0 : t < BB.full ? (frac(t * 9) < .5 ? .35 : .8) : 1;
+    const [X, Y, Wd, Hd] = BP, on = t < BB.on ? .45 : t < BB.full ? (frac(t * 9) < .5 ? .35 : .8) : 1;
     for (const x of [X + 160, X + Wd - 160]) paint(rectPts(x - 16, Y + Hd, 32, 560), { wash: '#4A5060', ink: INK, sw: .8 });
     paint(rectPts(X - 20, Y + Hd + 10, Wd + 40, 18), { wash: '#5A6070', ink: INK, sw: .7 });
     paint(rrPts(X - 22, Y - 22, Wd + 44, Hd + 44, 10), { wash: '#2E3444', ink: INK, sw: 1.2 });

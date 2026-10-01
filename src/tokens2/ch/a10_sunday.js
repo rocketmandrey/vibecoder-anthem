@@ -414,15 +414,15 @@
   }
 
   function sCredit(t) {                                                       // 237.73 «ЖГИ ТОКЕНЫ» on soot black + the credit: AGENT #42 takes it
-    const SY = R ? -150 : 150, SX = R ? 860 : 960;                                                  // R34: the card stacked taller and centred in the 3:4 picture (camera below)
+    const SY = R ? -150 : 150, SX = R ? 955 : 960;   // R34 (draft 4): title + credit centred over the name block (x 640..1270), all straight                                                  // R34: the card stacked taller and centred in the 3:4 picture (camera below)
     paint(R ? rectPts(-600, -600, W + 1200, H + 1200) : rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
     if (!R) glowAt(960, 150, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
     for (let i = 0; i < 18; i++) {                                             // the last embers
       const p = frac(t * (.18 + hash(i) * .2) + hash(i * 3)), x = R ? 420 + hash(i * 7) * 1080 : hash(i * 7) * W, y = R ? 1260 - p * 1540 : H - p * (H + 100), r = (2 + hash(i + 11) * 4) * (1 - p * .5);
       paint(ellPts(x, y, r, r, 6), { wash: p < .5 ? A2.hazard : A2.sodium, washOp: 200 * (1 - p), ink: null });
     }
-    if (R) camBegin(720, 170, .78), glowAt(SX, SY, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
-    stamp('ЖГИ ТОКЕНЫ', SX, SY, 104, t, CARD, { col: A2.sodium, punch: .02, rot: -.05 });
+    if (R) camBegin(930, 110, .78), glowAt(SX, SY, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
+    stamp('ЖГИ ТОКЕНЫ', SX, SY, 104, t, CARD, { col: A2.sodium, punch: .02, rot: R ? 0 : -.05 });
     flushLetters();
     const T0 = CARD, S0 = 238.08, S1 = 238.24, W0 = 238.3, W1 = 238.66;
     letter('created by', SX, R ? 150 : 300, 52, '#9A9488', { ink: false });
@@ -444,7 +444,7 @@
     // the new name
     if (t >= W0) {
       const n = Math.round(seg(t, W0, W1) * NEW.length);
-      if (n > 0) letter(NEW.slice(0, n), nx0, ny, 84, RED, { align: 'left', rot: -.035, ink: false });
+      if (n > 0) letter(NEW.slice(0, n), nx0, ny, 84, RED, { align: 'left', rot: R ? 0 : -.035, ink: false });
     }
     // AGENT #42 with a giant marker, walking in and following the pen point
     const u = 24, RM = 272, piv = 822 - 4.5 * u, sa = clamp((piv - P[1]) / RM, -1, 1), a = Math.asin(sa);

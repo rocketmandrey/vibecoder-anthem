@@ -466,4 +466,4 @@ chapter('chorus2', 91.8, 116.3, [
   [104.92, a05_drones], [107.5, a05_why], [110.85, a05_banner], [113.6, a05_zero], [114.12, a05_dark]
 ]);
 // 3:4 reels: one fixed band over the chapter's own R34 cameras (EN 92.86–105.84; 105.84+ is the EN billboard scene)
-if (window.RU34) RU34.push([92.86, 105.84, [[92.86, 960, 540, 790]]]);
+if (window.RU34) RU34.push([92.86, 102.88, [[92.86, 960, 540, 790]]]);   // 102.88–105.84 is the EN one-shot (scenes4.js)

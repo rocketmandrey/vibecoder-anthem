@@ -325,6 +325,7 @@
     for (let k = 1; k <= 3; k++) { const pts = []; for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2, rr = r * k / 3.4 * (i % 4 ? .88 : 1); pts.push([x + sx * Math.cos(a) * rr, y + sy * Math.sin(a) * rr]); } inkLine(pts, .45, col, 'inkfine', .5); }
   }
   function arcade(t, lt) {
+    if (R && t >= window.EN2V2(36.78)) return siteR(t, T);                            // EN «Build me a website»: clean cut inside the arcade shot
     paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.gunmetal, fillOp: 90, bleed: .1, tex: .6, ink: null });
     if (R) camBegin(); else camBegin(960, 520 - lt * 10, 1.02 + lt * .04);
     paint(rectPts(-100, 880, W + 200, 400), { wash: '#2A2D33', fill: C.steel, fillOp: 70, tex: .6, ink: INK, sw: .7 });
@@ -337,7 +338,7 @@
     paint(rectPts(cx - 190, 300, 380, 290), { wash: '#0E1410', ink: INK, sw: 1 });
     tx('ТОКЕН-РАННЕР', cx, 375, 44, TK.green);
     if (frac(t * 1.66) < .6) tx('ВСТАВЬТЕ ТОКЕН', cx, 460, 40, C.hazard);
-    tx('РЕКОРД: —', cx, 540, 40, TK.led);
+    tx('РЕКОРД: —', cx, 540, R ? 46 : 40, TK.led);
     paint([[cx - 230, 620], [cx + 230, 620], [cx + 270, 700], [cx - 270, 700]], { wash: C.steelLt, ink: INK, sw: 1 });       // control deck
     inkLine([[cx - 120, 660], [cx - 120, 600]], 3, TK.soot, 'ink', 0);
     paint(ellPts(cx - 120, 596, 18, 18, 10), { wash: TK.ember, ink: INK, sw: .6 });
@@ -346,10 +347,12 @@
     token(cx - 20, 795, 18, { ink: false });
     paint(rectPts(cx + 10, 775, 8, 40), { wash: TK.soot, ink: null });
     web(cx - 230, 170, 150, 1, 1); web(cx + 230, 170, 130, -1, 1); web(cx + 250, 900, 120, -1, -1);
-    const spy = 360 + 60 * Math.sin(t * 1.4), spx = cx + (R ? 280 : 330);             // spider on its thread
-    inkLine([[spx, R ? -80 : -40], [spx, spy]], .5, '#CFC8D8', 'inkfine', 0);
-    paint(ellPts(spx, spy + 14, 13, 16, 10), { wash: TK.soot, ink: INK, sw: .5 });
-    for (const e of [-1, 1]) for (let k = 0; k < 3; k++) inkLine([[spx, spy + 10 + k * 6], [spx + e * 22, spy + k * 8], [spx + e * 30, spy + 18 + k * 8]], .6, TK.soot, 'inkfine', .3);
+    if (R) arcadeDust(cx, t);
+    const sk = R ? 1.8 : 1, spy = R ? 395 + 28 * Math.sin(t * 1.1) : 360 + 60 * Math.sin(t * 1.4), spx = cx + (R ? 222 : 330);   // spider on its thread
+    inkLine([[spx, R ? 268 : -40], [spx, spy]], R ? .8 : .5, '#CFC8D8', 'inkfine', 0);
+    for (const e of [-1, 1]) for (let k = 0; k < 4; k++) inkLine([[spx, spy + (10 + k * 6) * sk], [spx + e * 22 * sk, spy + k * 8 * sk], [spx + e * 30 * sk, spy + (18 + k * 8) * sk]], .6 * sk, TK.soot, 'inkfine', .3);
+    paint(ellPts(spx, spy + 14 * sk, 13 * sk, 16 * sk, 10), { wash: TK.soot, ink: INK, sw: .5 });
+    if (R) for (const e of [-1, 1]) { paint(ellPts(spx + e * 7, spy + 8, 5, 6, 8), { wash: TK.cream, ink: null }); paint(ellPts(spx + e * 7, spy + 9, 2.2, 2.6, 6), { wash: TK.soot, ink: null }); }
     if (R) {                                                                             // 3:4: the players board hangs over the marquee
       for (const e of [-1, 1]) inkLine([[cx + e * 130, -80], [cx + e * 130, 40]], 1, C.steelLt, 'inkfine', 0);
       paint(rectPts(cx - 175, 34, 350, 96), { wash: TK.soot, ink: INK, sw: 1 });
@@ -363,6 +366,76 @@
     }
     camEnd();
     stamp('0 ИГРОКОВ', 460, 780, 84, t, 36.7, { col: TK.ember, rot: -.1 });
+  }
+
+  // R only: dust everywhere, a cobweb strung from the joystick knob to the deck and buttons (nobody has touched it)
+  function arcadeDust(cx, t) {
+    for (let i = 0; i < 9; i++) paint(ellPts(cx - 220 + i * 55, 150 + hash(i + 9) * 4, 34, 9, 10), { wash: '#B9B3AA', washOp: 150, ink: null });   // dust on the marquee
+    for (let i = 0; i < 7; i++) paint(ellPts(cx - 210 + i * 70, 624 + hash(i) * 6, 30, 5, 8), { wash: '#C8C2B8', washOp: 120, ink: null });        // dust on the deck
+    for (let i = 0; i < 6; i++) paint(ellPts(cx - 330 + i * 130 + hash(i + 4) * 40, 915 + hash(i + 1) * 30, 60, 10, 10), { wash: '#6E6A64', washOp: 120, ink: null });   // floor dust
+    const k = [cx - 120, 596], col = '#ECE6F2';
+    const ends = [[cx - 255, 690], [cx - 215, 640], [cx - 120, 690], [cx - 20, 652], [cx + 40, 650], [cx - 60, 590], [cx - 190, 595]];
+    for (const e of ends) inkLine([k, e], .9, col, 'inkfine', 0);
+    for (const f of [.3, .55, .8]) inkLine(ends.map(e => [k[0] + (e[0] - k[0]) * f, k[1] + (e[1] - k[1]) * f + 4 * f]), .7, col, 'inkfine', .5);
+    paint(ellPts(cx - 118, 586, 6, 3, 6), { wash: '#C8C2B8', washOp: 200, ink: null });                                   // dust cap on the knob
+  }
+  // R only, EN 36.78–39.78 «Build me a website no one needs anyway»: a shiny landing page nobody visits (EN time e)
+  function siteR(t, e) {
+    const L = 670, Tp = 70, Wd = 580, Hh = 760, BZ = 36, mx = L + Wd / 2;                                           // the browser window inside the monitor
+    paint(rectPts(-100, -100, W + 200, H + 200), { wash: '#24262C', fill: C.gunDk, fillOp: 90, bleed: .1, tex: .6, ink: null });
+    camBegin();
+    glowAt(mx, 400, 520, '#9FC8F2', 40);
+    paint(rectPts(300, 950, 1320, 420), { wash: '#6B4B33', fill: '#4E3524', fillOp: 70, tex: .6, ink: INK, sw: .8 });                  // desk
+    paint([[mx - 60, 880], [mx + 60, 880], [mx + 90, 960], [mx - 90, 960]], { wash: C.steel, ink: INK, sw: .9 });                        // stand
+    paint(rrPts(mx - 150, 948, 300, 22, 8), { wash: C.steelLt, ink: INK, sw: .8 });
+    paint(rrPts(L - BZ, Tp - 30, Wd + 2 * BZ, Hh + 80, 18), { wash: '#1C1E22', ink: INK, sw: 1.3 });                                   // bezel
+    paint(rectPts(L, Tp, Wd, Hh), { wash: '#FBF8F2', ink: null });                                                             // page
+    // hero image: a stock photo of hills (no sky orb)
+    const hy = 186, hh = 236;
+    paint(rectPts(L + 24, hy, Wd - 48, hh), { wash: '#9FD6F2', ink: INK, sw: .6 });
+    paint([[L + 24, hy + hh * .7], [L + 180, hy + hh * .3], [L + 330, hy + hh * .62], [L + 470, hy + hh * .25], [L + Wd - 24, hy + hh * .55], [L + Wd - 24, hy + hh], [L + 24, hy + hh]], { wash: '#7DBE6A', ink: null });
+    paint([[L + 24, hy + hh * .9], [L + 260, hy + hh * .72], [L + Wd - 24, hy + hh * .85], [L + Wd - 24, hy + hh], [L + 24, hy + hh]], { wash: '#5FA05A', ink: null });
+    paint(ellPts(L + 140, hy + 46, 46, 16, 12), { wash: '#FFFFFF', washOp: 220, ink: null }); paint(ellPts(L + 420, hy + 34, 36, 12, 12), { wash: '#FFFFFF', washOp: 200, ink: null });
+    for (let i = 0; i < 2; i++) paint(rectPts(mx - 190 + i * 40, 446 + i * 26, 380 - i * 80, 14), { wash: '#D6D1C8', ink: null });   // headline / subline as grey bars
+    // glossy hero button; hover glow once the cursor sits on it
+    const cur = [lerp(1180, mx + 40, ease(seg(e, 36.9, 38.3))) + 14 * Math.sin(e * 1.3), lerp(300, 536, ease(seg(e, 36.9, 38.3))) + 8 * Math.sin(e * 1.9)];
+    const hov = seg(e, 38.2, 38.5), by = 510;
+    if (hov > 0) paint(rrPts(mx - 180, by - 10, 360, 88, 44), { ink: TK.ember, sw: 1.4 * hov });                                   // hover ring
+    paint(rrPts(mx - 170, by, 340, 68, 34), { wash: hov > .5 ? '#FF8A44' : '#F2702A', ink: INK, sw: 1.2 });
+    paint(rrPts(mx - 150, by + 6, 300, 22, 11), { wash: '#FFFFFF', washOp: 110, ink: null });                                       // gloss
+    tx('GET STARTED', mx, by + 36, 30, '#FFFFFF');
+    // analytics card: visitors, flat at zero
+    const gy = 612, gx = L + 30, gw = Wd - 60, gh = 196;
+    paint(rrPts(gx, gy, gw, gh, 10), { wash: '#FFFFFF', ink: INK, sw: .7 });
+    tx('VISITORS · last 30 days', gx + 20, gy + 24, 20, '#55555F', { align: 'left' });
+    tx('0', gx + gw - 40, gy + 30, 40, TK.ember);
+    const bx0 = gx + 50, bx1 = gx + gw - 24, base = gy + gh - 26;
+    for (let i = 0; i < 5; i++) inkLine([[bx0, base - i * 28], [bx1, base - i * 26]], .4, '#D6D1C8', 'inkfine', 0);
+    inkLine([[bx0, gy + 52], [bx0, base], [bx1, base]], .8, '#55555F', 'inkfine', 0);
+    inkLine([[bx0, base - 1], [bx1, base - 1]], 1.6, '#2E9E5A', 'ink', 0);                                                        // the line: zero, all month
+    for (let i = 0; i <= 6; i++) paint(ellPts(bx0 + (bx1 - bx0) * i / 6, base - 1, 4, 4, 8), { wash: '#2E9E5A', ink: null });
+    // tumbleweed across the page, then the frame chrome masks it at the window edges
+    const tp = seg(e, 37.2, 39.5), twx = lerp(L - 6, L + Wd + 6, tp), twy = gy - 40 - Math.abs(Math.sin((e - 37.2) * 4.4)) * 70;
+    for (let i = 1; i < 4; i++) if (twx - i * 55 > L + 30) paint(ellPts(twx - i * 55, gy - 8 - i * 2, 30 - i * 6, 8, 10), { fill: '#C9B48A', fillOp: 90 / i, bleed: .3, ink: null });
+    if (tp > 0 && tp < 1) tumbleweed(twx, twy, 40, e * 6);
+    // the lonely cursor
+    const [ux, uy] = cur;
+    paint([[ux, uy], [ux, uy + 40], [ux + 10, uy + 31], [ux + 18, uy + 48], [ux + 25, uy + 45], [ux + 17, uy + 28], [ux + 29, uy + 28]], { wash: '#FFFFFF', ink: INK, sw: .9 });
+    // window chrome over everything: masks + title bar, URL, nav
+    paint(rectPts(L - BZ + 4, Tp, BZ - 4, Hh), { wash: '#1C1E22', ink: null }); paint(rectPts(L + Wd, Tp, BZ - 4, Hh), { wash: '#1C1E22', ink: null });
+    paint(rectPts(L, Tp, Wd, 40), { wash: '#C9C4BC', ink: null });
+    for (let i = 0; i < 3; i++) paint(ellPts(L + 22 + i * 24, Tp + 20, 7, 7, 8), { wash: [TK.ember, C.hazard, TK.green][i], ink: null });
+    paint(rrPts(L + 100, Tp + 8, 380, 24, 12), { wash: '#FFFFFF', ink: null });
+    tx('my-site.com', L + 116, Tp + 20, 18, '#55555F', { align: 'left' });
+    paint(rectPts(L, Tp + 40, Wd, 56), { wash: '#FFFFFF', ink: null }); inkLine([[L, Tp + 96], [L + Wd, Tp + 96]], .4, '#D6D1C8', 'inkfine', 0);
+    paint(rrPts(L + 22, Tp + 54, 30, 30, 8), { wash: TK.ember, ink: null }); tx('MySite', L + 62, Tp + 69, 22, '#2B2233', { align: 'left' });
+    ['Home', 'Pricing', 'Blog'].forEach((s, i) => tx(s, L + 220 + i * 80, Tp + 69, 19, '#55555F'));
+    paint(rrPts(L + Wd - 120, Tp + 54, 100, 30, 15), { wash: '#2B2233', ink: null }); tx('Sign up', L + Wd - 70, Tp + 69, 17, '#FFFFFF');
+    paint(rrPts(L - BZ, Tp - 30, Wd + 2 * BZ, Hh + 80, 18), { ink: INK, sw: 1.3 });                                               // bezel outline again
+    const wc = [L + 2, Tp + 98];                                                                                                     // a cobweb in the page corner
+    for (let i = 0; i < 5; i++) { const a = i / 4 * Math.PI / 2; inkLine([wc, [wc[0] + Math.cos(a) * 70, wc[1] + Math.sin(a) * 70]], .5, '#8A8A92', 'inkfine', 0); }
+    for (const r of [25, 48]) inkLine([0, 1, 2, 3, 4].map(i => { const a = i / 4 * Math.PI / 2; return [wc[0] + Math.cos(a) * r, wc[1] + Math.sin(a) * r]; }), .5, '#8A8A92', 'inkfine', .5);
+    camEnd();
   }
 
   // ---------- 37.75 «Сайт мне сделай, чтоб никто не читал»: tumbleweed, then pan to the hot rack ----------
@@ -413,6 +486,6 @@
   // EN 3:4 reels camera (EN song time): office 18.16–20.8 + screen –23.54 + park –26.38 + burn –29.08; arcade 34.52–39.78 (29.08–34.52 is the coordinator's)
   if (window.RU34) RU34.push(
     [18.16, 29.08, [[18.16, 960, 500, 860], [20.8, 960, 520, 860], [23.54, 960, 500, 860], [26.38, 960, 480, 860], [27.7, 960, 400, 860], [29.079, 960, 360, 820, 1]]],   // the burn: calendar whole, the floor and its ash out of frame
-    [34.52, 39.78, [[34.52, 960, 470, 760], [39.7, 960, 480, 720, 1]]],
+    [34.52, 39.78, [[34.52, 960, 480, 780], [36.77, 960, 515, 700, 1], [36.78, 960, 500, 790], [39.77, 960, 490, 740, 1]]],   // arcade push-in | cut at «Build» → the website push-in
   );
 })();

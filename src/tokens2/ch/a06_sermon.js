@@ -421,7 +421,7 @@
     if (R) camBegin(960, 540, 1); else camBegin(740, 540, 1 + lt * .02);               // R34: still; the reels keys frame it
     a06_nave(t, { choirO: { eyes: 'look', lookX: -1, lookY: -.3, mouth: () => 'o', f: R ? a06_CHOIR_F : 0 } });
     a06_pulpit(t, { eyes: 'look', lookX: -1, mouth: 'flat', aR: .3, aL: .2 });
-    a06_bill(t, easeOut(seg(t, 125.3, 127.1)));
+    if (!R) a06_bill(t, easeOut(seg(t, 125.3, 127.1)));                                // R34 (draft 4): no bill, the tag tells it
     if (R) a06_madman(t, ...a06_MAD_R, 32); else a06_madman(t, 60, 900, 32);
     a06_beam(tx, tx, 40, 180, 520, Math.max(.3, stab));                                 // the choir stabs light the price tag
     a06_tag(t, tx, 440, price, lerp(1.05, .85, pe));
@@ -442,7 +442,7 @@
     // R34: the madman stays on his pew, quiet; the tag AND the bill are reeled up before the cut to the preacher (EN 133.5 = v2 ~130.4)
     const reel = R ? easeIn(seg(t, 129.8, 130.3)) : 0;
     if (R && t < 130.4) a06_madman(t, ...a06_MAD_R, 32, 1);
-    a06_bill(t, 1, 1 - seg(t, 129.8, 130.3), -1100 * reel);                            // the total fades with the lights
+    if (!R) a06_bill(t, 1, 1 - seg(t, 129.8, 130.3), -1100 * reel);                   // the total fades with the lights (R34: no bill)
     a06_tag(t, R ? a06_TAGX_R : 700, 440 - 900 * (R ? reel : easeIn(seg(t, 129.8, 130.5))), .002, .85);   // reeled up out of the push-in
     a06_dark(seg(t, 129.8, 131.4) * .55);
     a06_beam(960, 960, 50, 250, 880, .35 + .55 * seg(t, 129.8, 131.4));

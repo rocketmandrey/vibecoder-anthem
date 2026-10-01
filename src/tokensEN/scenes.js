@@ -150,7 +150,7 @@
       paint(rectPts(-200, fy + 60, W + 400, 400), { wash: '#262A31', fill: TK.orangeDk, fillOp: 60, tex: .5, ink: null });   // the floor in front of the hole hides his legs
       inkLine([[fx - 420, fy + 60], [fx + 420, fy + 60]], 1.6, INK, 'ink', .3);
       rubble(fx, fy + 40, 800, age, 5);
-      flash(Math.exp(-age / .08) * .6 * (age < .3), '#FFF3C8');
+      flash(Math.exp(-age / .08) * .25 * (age < .3), '#FFF3C8');   // draft 4: a small pop, not a grey wash
     }
   }
 
