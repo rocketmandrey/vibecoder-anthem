@@ -93,7 +93,8 @@
   // ---------- the keynote stage ----------
   // content(x, y, w, h) paints the slide; o.train {x, dist, cargo, cars, puffs, xAt}: the toy train on the stage floor
   function a08_stage(t, content, o = {}) {
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#15171D', ink: null });
+    const R = o.r34;                                                                                                      // R34: the 3:4 picture reaches y -130..1790
+    paint(R ? rectPts(-300, -300, W + 600, H + 1100) : rectPts(-60, -60, W + 120, H + 120), { wash: '#15171D', ink: null });
     for (const tx of [120, 1800]) paint(rectPts(tx - 14, -40, 28, 800), { wash: '#23262E', ink: null });                    // truss
     for (let i = 0; i < 9; i++) paint(ellPts(160 + i * 200, 30, 16, 10, 10), { wash: i % 2 ? '#FFE8B0' : '#BFD6FF', washOp: 200, ink: null });
     paint(ellPts(SX + SW / 2, SY + SH / 2, SW * .62, SH * .7, 24), { fill: '#6C7FB0', fillOp: 55, bleed: .3, tex: .2, ink: null });
@@ -102,7 +103,7 @@
     content(SX, SY, SW, SH);
     flushLetters();                                                                                                       // slide text stays under the stage + props
     // stage floor
-    paint(rectPts(-60, 720, W + 120, 400), { wash: '#2A2630', fill: '#15131A', fillOp: 90, tex: .5, border: .3, ink: null });
+    paint(rectPts(R ? -300 : -60, 720, W + (R ? 600 : 120), R ? 1100 : 400), { wash: '#2A2630', fill: '#15131A', fillOp: 90, tex: .5, border: .3, ink: null });
     inkLine([[-60, 722], [W + 60, 722]], 1.4, '#5A5563', 'ink', 0);
     for (const sx of [360, 1560]) paint([[sx - 40, -40], [sx + 40, -40], [sx + 330, 820], [sx - 330, 820]], { fill: '#FFF3D0', fillOp: 22, bleed: .2, tex: .2, border: .1, ink: null });
     if (o.big) return a08_bigCast(t, o);
@@ -132,8 +133,23 @@
   const A08_VCX = (window.VERT || window.SQ) ? 480 : 200, A08_VDX = (window.VERT || window.SQ) ? -250 : 0;
   // big foreground cast for the fast rap slides: the CEO (right) and Clawd with his tally card (left), ~1/3+ frame
   // tall, feet hidden behind the frame bottom; both bob on the beat (o.pk = punch 0..1)
+  // R34 (o.r34, the AGI calendar + loading shots): both stand fully under the slide, the frame x 240..1680, feet at A08_R.y; a dark front row fills the floor
+  const A08_R = { cX: 640, eX: 1300, y: 1300, k: 1.05 }, a08_rPt = (x, y) => [960 + (x - 960) * A08_R.k, A08_R.y + (y - 1000) * A08_R.k];   // cast coords → R34 world
   function a08_bigCast(t, o) {
-    const pk = o.pk || 0, n = o.tally || 0, cX = A08_VCX, eX = 1720 + A08_VDX;   // VERT pulls both in toward the slide
+    const R = o.r34, pk = o.pk || 0, n = o.tally || 0, cX = R ? A08_R.cX : A08_VCX, eX = R ? A08_R.eX : 1720 + A08_VDX, fy = R ? A08_R.y : 1000;   // VERT pulls both in toward the slide
+    if (R) { push(); translate(960, fy); scale(A08_R.k); translate(-960, -1000); }   // the cast is drawn around feet y 1000; R34 scales it up 5% about the stage centre
+    a08_bigCastAt(t, o, pk, n, cX, eX);
+    if (R) { pop(); a08_crowd(t, 1600); }
+  }
+  function a08_crowd(t, y0) {                                                     // R34: dark heads + a few phones along the frame bottom
+    for (let i = 0; i < 12; i++) {
+      const hx = 260 + i * 128 + hash(i) * 40, hy = y0 + hash(i + 4) * 50;
+      paint(ellPts(hx, hy, 56, 62, 14), { wash: '#0B0C10', ink: null });
+      paint(ellPts(hx, hy + 110, 96, 70, 14), { wash: '#0B0C10', ink: null });
+      if (hash(i * 7) > .6) { paint(rectPts(hx + 30, hy - 90, 30, 50, 1), { wash: '#DDE8FF', ink: '#0B0C10', sw: .8 }); glowAt(hx + 45, hy - 65, 50, '#9FBFFF', 50); }
+    }
+  }
+  function a08_bigCastAt(t, o, pk, n, cX, eX) {
     paint(ellPts(eX, 1010, 300, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
     ceoClawd(eX, 1000, 47, { click: o.click || 0, aR: (o.ceoArm ?? 1.1) + pk * .25, aL: .35, dy: -pk * .15, eyes: o.ceoEyes, mouth: o.ceoMouth || 'smile', emote: o.ceoEmote, emoteK: o.ceoEmoteK, noShadow: true });
     paint(ellPts(cX, 1010, 280, 40, 16), { fill: '#000', fillOp: 90, bleed: .3, tex: .2, ink: null });
@@ -150,8 +166,9 @@
   // camera punch on every sung word / strong hit of the fast verse
   const a08_BEATS = [157.47, 158.42, 159.02, 159.08, 159.32, 159.8, 160.34, 160.68, 160.86, 161.36, 162.28, 162.6, 162.88, 163.62, 164.2, 164.64, 165.34, 166.18, 166.68, 166.9];
   const a08_pk = t => hitK(t, a08_BEATS, .11);
-  function a08_cam(t, lt, cy = 520) {
+  function a08_cam(t, lt, cy = 520, R = false) {
     const p = a08_pk(t), [sx, sy] = shakeXY(t, 9 * p);
+    if (R) { camBegin(960, 540, 1); return p; }                                  // R34: no per-word shake / roll jitter
     camBegin(960 + sx, cy + sy, 1 + lt * .012 + .05 * p, (hash(Math.floor(t * 24)) - .5) * .012 * p);
     return p;
   }
@@ -178,7 +195,7 @@
     }
   }
   function shotCalendar(t, lt) {
-    const pk = a08_cam(t, lt);
+    const R = window.R34, pk = a08_cam(t, lt, 520, R);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI — К ВЕСНЕ!');
       const cx = x + w * .5, cy = y + h * .56, pw = 320, ph = 380;
@@ -203,8 +220,8 @@
         inkLine([[x + 82, y + 262 + j * 58], [x + 320, y + 258 + j * 58]], 5, RED, 'marker', 0);
       });
       stamp('ОПЯТЬ', x + w * .82, y + h * .62, 64, t, 159.02, { col: RED, rot: .12 });
-    }, { big: true, pk, tally: CAL.filter(c => t >= c[1] + .1).length, clawdO: { eyes: t > 159.02 ? 'narrow' : 'happy', mouth: t > 159.02 ? 'flat' : 'cat' }, click: hitK(t, [157.47, 158.42, 159.02], .15), ceoMouth: 'grin' });
-    if (t > 159.02) emote('!', A08_VCX + 130, 560, 30, seg(t, 159.02, 159.2));
+    }, { big: true, pk, tally: CAL.filter(c => t >= c[1] + .1).length, clawdO: { eyes: t > 159.02 ? 'narrow' : 'happy', mouth: t > 159.02 ? 'flat' : 'cat' }, click: hitK(t, [157.47, 158.42, 159.02], .15), ceoMouth: 'grin', r34: R });
+    if (t > 159.02) emote('!', ...(R ? a08_rPt(A08_R.cX + 130, 560) : [A08_VCX + 130, 560]), 30, seg(t, 159.02, 159.2));
     camEnd();
     glitchCut(t, L1, { k: 1.2 });
   }
@@ -212,7 +229,7 @@
   // ---------- 159.3 each release: «осталось чуть-чуть», the train stalls at 99.999% ----------
   const LOAD = [[159.3, '99%', '5.0'], [159.8, '99.9%', '5.5'], [160.34, '99.99%', '6.0'], [160.86, '99.999%', '6.5'], [161.36, '99.9999%', '7.0']];
   function shotLoading(t, lt) {
-    const pk = a08_cam(t, lt);
+    const R = window.R34, pk = a08_cam(t, lt, 520, R);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI: ЗАГРУЗКА…');
       let i = 0; while (i + 1 < LOAD.length && t >= LOAD[i + 1][0]) i++;
@@ -240,7 +257,7 @@
       letter("релиз " + LOAD[i][2], x + w - 200, y + 125, 38 * pk, '#1E1E24', { font: ruFont(38 * pk), rot: .12, ink: false });
       if (t >= 160.86) stamp('ОСТАЛОСЬ ЧУТЬ-ЧУТЬ', x + w * .36, y + 200, 40, t, 160.86, { col: RED, rot: -.06 });
       if (t >= 161.36) letter('…подождите', x + w / 2, y + 610, 36, '#8A8A95', { font: ruFont(36), pop: (t - 161.36) * 5, ink: false });
-    }, { big: true, pk, tally: 3, clawdO: { eyes: 'narrow', mouth: 'flat' }, click: hitK(t, LOAD.map(l => l[0]), .15) });
+    }, { big: true, pk, tally: 3, clawdO: { eyes: 'narrow', mouth: 'flat' }, click: hitK(t, LOAD.map(l => l[0]), .15), r34: R });
     camEnd();
   }
 
@@ -724,4 +741,6 @@
     [L7, shotGPU],
     [L8, shotForest],
   ]);
+  // R34 reels keys (EN time): AGI by spring → loading, one still frame — the slide on top at ~90% width, Clawd + the CEO fully under it
+  if (window.RU34) RU34.push([152.04, 157.46, [[152.04, 960, 830, 1440]]]);
 })();

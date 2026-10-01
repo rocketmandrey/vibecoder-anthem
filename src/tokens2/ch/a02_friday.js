@@ -10,7 +10,7 @@
 //   37.75 «Сайт мне сделай»: «0 ПОСЕТИТЕЛЕЙ», tumbleweed, pan to the hot rack → glitchCut at 39.8 into the data center.
 // Clawd wears no hat and no scarf. Palette pulled toward v2's factory: steel wall, sodium lamp light.
 (() => {
-  const INK = PAL.ink, C = A2;
+  const INK = PAL.ink, C = A2, R = window.R34;              // R: the EN 3:4 reels picture (x ~530–1390, the whole height) — see RU34 at the end
   const WALL = '#A39C93', WALLDK = C.steel;
   const VH = hitsIn(20.1, 39.8);
   const pk = t => .5 + .5 * Math.sin(t * 9.8);             // ponytail: soft throb instead of bpOf() (beat phase drifts in v2)
@@ -107,24 +107,32 @@
   }
   function room(t, o = {}) {
     wall();
+    if (R) {                                                  // 3:4: window upper-left, the to-do note upper-right, the calendar under it
+      windowView(600, 70, 330, 300, t, o.park || 0);
+      stickyNote(1010, 30, o.checks ?? 3);
+      calendar(1035, 370, 270, 230, o.cur || DAYS.fr, o.next, o.flip || 0);
+      return;
+    }
     windowView(140, 150, 500, 460, t, o.park || 0);
     stickyNote(1080, 130, o.checks ?? 3);
     calendar(1480, 150, 320, 400, o.cur || DAYS.fr, o.next, o.flip || 0);
   }
 
+  const HX = 890, HY = 880, HS = 34;                         // R: the hero, centred and bigger, over a raised desk line
+  const heroDesk = () => { if (R) { laptopSide(1075, 842, .78); desk(840); } else { laptopSide(1060, 802); desk(800); } };
+
   // ---------- 20.1 «Пятница, дела позади» ----------
   const TICKS = [20.65, 21.29, 21.77], T_STR = 22.27;
   function friday(t, lt) {
-    camBegin(960 + lt * 10, 540, 1 + lt * .01);
+    if (R) camBegin(); else camBegin(960 + lt * 10, 540, 1 + lt * .01);
     const n = TICKS.reduce((a, h) => a + seg(t, h, h + .2), 0);
     room(t, { cur: DAYS.th, next: DAYS.fr, flip: seg(t, 20.12, 20.45), checks: n });
     const stretch = seg(t, T_STR, T_STR + .35);
-    clawd(820, 870, 40, {
+    clawd(...(R ? [HX, HY, HS] : [820, 870, 40]), {
       noShadow: true, mouth: stretch > .5 ? 'smile' : 'flat', ...mood(t, [[20.1, 'narrow'], [T_STR, 'happy']]),
       aL: lerp(-.3, 1.9, stretch) + (stretch > .9 ? .1 * Math.sin(t * 6) : 0), aR: lerp(-.1, 1.9, stretch), dy: -stretch * .4,
     });
-    laptopSide(1060, 802);
-    desk(800);
+    heroDesk();
     camEnd();
     flash(.5 * Math.exp(-lt * 6), C.sodium);
     glitchCut(t, 20.1);
@@ -133,6 +141,7 @@
   // ---------- 22.65 «Лимиты целы, полпути»: the laptop screen ----------
   function screen(t, lt) {
     paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.steel, fillOp: 70, tex: .5, ink: null });
+    if (R) return screenR(t);
     camBegin(960, 520, 1 + lt * .035);
     paint(rrPts(140, 60, 1640, 900, 40), { wash: '#1E232A', ink: INK, sw: 1.4 });
     paint(rectPts(190, 110, 1540, 800), { wash: '#15181D', fill: '#232A36', fillOp: 90, tex: .4, ink: null });
@@ -157,30 +166,56 @@
     camEnd();
   }
 
+  // R: the same screen stacked for 3:4 — a tall panel, the bar ~75% of the picture width and thicker, a daily-usage chart over the week strip
+  function screenR(t) {
+    camBegin();
+    paint(rrPts(575, 25, 770, 1000, 40), { wash: '#1E232A', ink: INK, sw: 1.4 });
+    paint(rectPts(615, 65, 690, 920), { wash: '#15181D', fill: '#232A36', fillOp: 90, tex: .4, ink: null });
+    tx('Использование', 650, 130, 48, TK.ash, { align: 'left' });
+    tx('сброс: вс, 23:59', 650, 190, 40, TK.ash, { align: 'left' });
+    const v = .5, bx = 650, bw = 620, by = 400, bh = 96;
+    limitBar(bx, by, bw, v, { h: bh, glow: .4 + .5 * hitK(t, [23.23, 24.18], .3) });
+    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'], dw = bw / 7, use = [.55, .8, .45, .9, .35];
+    inkLine([[bx, 800], [bx + bw, 800]], .8, C.steelLt, 'inkfine', 0);
+    days.forEach((d, i) => {
+      const x = bx + i * dw, cur = i === 4, past = i < 4;
+      if (i < 5) { const hh = 220 * use[i] * (cur ? .8 + .2 * Math.sin(t * 3) : 1); paint(rectPts(x + 18, 800 - hh, dw - 36, hh), { wash: cur ? C.sodium : '#4A5566', ink: null }); }
+      paint(rrPts(x + 6, 830, dw - 12, 110, 14), { wash: cur ? C.sodium : past ? '#2E3440' : '#232A36', ink: cur ? TK.cream : C.steelLt, sw: .8 });
+      tx(d, x + dw / 2, 885, 38, cur ? TK.soot : past ? TK.ash : TK.cream);
+      if (past) inkLine([[x + 22, 920], [x + dw - 22, 850]], 1, TK.ash, 'inkfine', 0);
+    });
+    const fk = backOut(seg(t, 24.02, 24.32)), fx = bx + (bw - bh * .3) * v + 14;   // the halfway flag
+    if (fk > .02) {
+      inkLine([[fx, by + 10], [fx, by - 170 * fk]], 2.4, TK.cream, 'ink', 0);
+      paint([[fx, by - 170 * fk], [fx + 130 * fk, by - 144 * fk], [fx, by - 118 * fk]], { wash: C.hazard, ink: INK, sw: .8 });
+      tx('½', fx + 46 * fk, by - 144 * fk, 40 * fk, TK.soot);
+    }
+    camEnd();
+  }
+
   // ---------- 25.25 «Парк зовёт, но в воскресенье»: the window becomes a park; the calendar runs to Sunday ----------
   function park(t, lt) {
     const pkk = ease(seg(t, 25.32, 25.9)), f1 = seg(t, 26.27, 26.57), f2 = seg(t, 26.9, 27.2);
-    camBegin(lerp(700, 1000, ease(seg(t, 25.8, 26.4))), 470, 1.12);
+    if (R) camBegin(); else camBegin(lerp(700, 1000, ease(seg(t, 25.8, 26.4))), 470, 1.12);
     const cal = t < 26.9 ? { cur: DAYS.fr, next: DAYS.sa, flip: f1 } : { cur: DAYS.sa, next: DAYS.su, flip: f2 };
     room(t, { park: pkk, ...cal });
-    if (pkk > .3) for (let k = 0; k < 4; k++) { const f = frac(t * .7 + k / 4); paint(starPts(200 + hash(k) * 380, 220 + hash(k + 3) * 300, 16 * Math.sin(f * Math.PI), .3), { wash: TK.cream, ink: null }); }
+    if (pkk > .3) for (let k = 0; k < 4; k++) { const f = frac(t * .7 + k / 4); paint(starPts(R ? 630 + hash(k) * 270 : 200 + hash(k) * 380, R ? 110 + hash(k + 3) * 220 : 220 + hash(k + 3) * 300, 16 * Math.sin(f * Math.PI), .3), { wash: TK.cream, ink: null }); }
     const turn = t >= 26.27;
-    clawd(820, 870, 40, {
+    clawd(...(R ? [HX, HY, HS] : [820, 870, 40]), {
       noShadow: true, eyes: 'look', lookX: turn ? 1 : -1, lookY: -.5, mouth: turn ? 'o' : 'smile',
       aL: turn ? .2 : .9 + .15 * Math.sin(t * 5), aR: -.1, ...(t > 26.95 ? { emote: '!', emoteK: seg(t, 26.95, 27.15) } : {}),
     });
-    laptopSide(1060, 802);
-    desk(800);
+    heroDesk();
     camEnd();
   }
 
   // ---------- 27.8 «всё сгорит»: the Sunday page burns ----------
   function burn(t, lt) {
     const ig = 28.1, b = ease(seg(t, ig, 30.0)), p = pk(t);
-    const [shx, shy] = shakeXY(t, t > ig ? 4 + 5 * p : 0);
+    const [shx, shy] = R ? [0, 0] : shakeXY(t, t > ig ? 4 + 5 * p : 0);
     wall();
-    camBegin(960 + shx, 470 + shy, 1 + lt * .03);
-    const x = 560, y = 60, w = 800, h = 880, hh = h * .2, py = y + hh, ph = h - hh, yb = y + h - (ph + 30) * b;
+    if (R) camBegin(); else camBegin(960 + shx, 470 + shy, 1 + lt * .03);
+    const [x, y, w, h] = R ? [600, 40, 720, 800] : [560, 60, 800, 880], hh = h * .2, py = y + hh, ph = h - hh, yb = y + h - (ph + 30) * b;
     paint(rectPts(x + 16, y + 20, w, h), { fill: INK, fillOp: 70, bleed: .2, ink: null });
     if (yb > py + 4) {
       paint(rectPts(x, py, w, yb - py), { wash: TK.cream, fill: mixCol('#E9DCC4', C.sodium, b * .4), fillOp: 80, tex: .4, ink: INK, sw: 1.6 });
@@ -197,6 +232,11 @@
       paint([...edge, [x + w + 10, yb + 40], [x - 10, yb + 40]], { wash: TK.soot, fill: TK.emberDk, fillOp: 90, tex: .7, ink: null });
       inkLine(edge, 2, C.sodium, 'marker', .4);
       const fk = clamp((t - ig) / .4) * (b < .98 ? 1 : 1 - seg(t, 30.0, 30.2));
+      if (R) {                                                               // 3:4: the ash heap grows on the floor under the page, embers glowing
+        glowAt(960, 1000, 260 * b, C.sodium, 40 + 30 * p);
+        paint(ellPts(960, 1010, 60 + 340 * b, 20 + 60 * b, 24), { wash: TK.sootLt, fill: TK.soot, fillOp: 90, tex: .6, ink: INK, sw: .6 });
+        for (let i = 0; i < 9; i++) paint(ellPts(960 + (hash(i + 20) - .5) * 560 * b, 995 + hash(i + 30) * 30, 9, 6, 6), { wash: i % 2 ? C.sodium : C.hazard, washOp: 120 + 120 * pk(t + i), ink: null });
+      }
       fire(x + w / 2, yb + 20, w * 1.1, 360, t, { k: fk * (1 + .15 * p), seed: 90, n: 8, cols: [C.rust, C.sodium, C.hazard] });
       smoke(x + w / 2, yb - 200, t, { n: 6, r: 80, h: 500, seed: 3 });
       for (let i = 0; i < 12; i++) {                                         // falling ash
@@ -286,14 +326,14 @@
   }
   function arcade(t, lt) {
     paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.gunmetal, fillOp: 90, bleed: .1, tex: .6, ink: null });
-    camBegin(960, 520 - lt * 10, 1.02 + lt * .04);
+    if (R) camBegin(); else camBegin(960, 520 - lt * 10, 1.02 + lt * .04);
     paint(rectPts(-100, 880, W + 200, 400), { wash: '#2A2D33', fill: C.steel, fillOp: 70, tex: .6, ink: INK, sw: .7 });
     paint([[820, -60], [1100, -60], [1380, 900], [540, 900]], { wash: C.sodium, washOp: 34, ink: null });       // sodium spotlight
     for (let i = 0; i < 16; i++) { const f = frac(t * .08 + hash(i)); paint(ellPts(700 + hash(i + 2) * 520 + Math.sin(t + i) * 20, 60 + f * 800, 2.5, 2.5, 5), { wash: TK.cream, washOp: 160, ink: null }); }
     const cx = 960;
     paint([[cx - 230, 170], [cx + 230, 170], [cx + 250, 900], [cx - 250, 900]], { wash: C.steel, fill: C.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: 1.3 });
     paint(rectPts(cx - 240, 150, 480, 120), { wash: C.rust, fill: TK.emberDk, fillOp: 60, tex: .5, ink: INK, sw: 1.1 });   // marquee
-    tx('МОЯ ИГРА', cx, 212, 66, C.hazard);
+    tx('МОЯ ИГРА', cx, 212, R ? 60 : 66, C.hazard);          // R: under the 64 px gate, so MY GAME stays on the marquee
     paint(rectPts(cx - 190, 300, 380, 290), { wash: '#0E1410', ink: INK, sw: 1 });
     tx('ТОКЕН-РАННЕР', cx, 375, 44, TK.green);
     if (frac(t * 1.66) < .6) tx('ВСТАВЬТЕ ТОКЕН', cx, 460, 40, C.hazard);
@@ -306,14 +346,21 @@
     token(cx - 20, 795, 18, { ink: false });
     paint(rectPts(cx + 10, 775, 8, 40), { wash: TK.soot, ink: null });
     web(cx - 230, 170, 150, 1, 1); web(cx + 230, 170, 130, -1, 1); web(cx + 250, 900, 120, -1, -1);
-    const spy = 360 + 60 * Math.sin(t * 1.4);                                          // spider on its thread
-    inkLine([[cx + 330, -40], [cx + 330, spy]], .5, '#CFC8D8', 'inkfine', 0);
-    paint(ellPts(cx + 330, spy + 14, 13, 16, 10), { wash: TK.soot, ink: INK, sw: .5 });
-    for (const e of [-1, 1]) for (let k = 0; k < 3; k++) inkLine([[cx + 330, spy + 10 + k * 6], [cx + 330 + e * 22, spy + k * 8], [cx + 330 + e * 30, spy + 18 + k * 8]], .6, TK.soot, 'inkfine', .3);
-    paint(rectPts(1330, 460, 330, 170), { wash: TK.soot, ink: INK, sw: 1 });            // the players counter
-    tx('ИГРОКОВ', 1495, 505, 40, TK.ash);
-    counter(1495, 575, 70, 0, { col: TK.ember });
-    inkLine([[1495, 630], [1495, 880]], 3, C.steelLt, 'ink', 0);
+    const spy = 360 + 60 * Math.sin(t * 1.4), spx = cx + (R ? 280 : 330);             // spider on its thread
+    inkLine([[spx, R ? -80 : -40], [spx, spy]], .5, '#CFC8D8', 'inkfine', 0);
+    paint(ellPts(spx, spy + 14, 13, 16, 10), { wash: TK.soot, ink: INK, sw: .5 });
+    for (const e of [-1, 1]) for (let k = 0; k < 3; k++) inkLine([[spx, spy + 10 + k * 6], [spx + e * 22, spy + k * 8], [spx + e * 30, spy + 18 + k * 8]], .6, TK.soot, 'inkfine', .3);
+    if (R) {                                                                             // 3:4: the players board hangs over the marquee
+      for (const e of [-1, 1]) inkLine([[cx + e * 130, -80], [cx + e * 130, 40]], 1, C.steelLt, 'inkfine', 0);
+      paint(rectPts(cx - 175, 34, 350, 96), { wash: TK.soot, ink: INK, sw: 1 });
+      tx('ИГРОКОВ', cx - 45, 84, 40, TK.ash);
+      tx('0', cx + 120, 84, 60, TK.ember);
+    } else {
+      paint(rectPts(1330, 460, 330, 170), { wash: TK.soot, ink: INK, sw: 1 });            // the players counter
+      tx('ИГРОКОВ', 1495, 505, 40, TK.ash);
+      counter(1495, 575, 70, 0, { col: TK.ember });
+      inkLine([[1495, 630], [1495, 880]], 3, C.steelLt, 'ink', 0);
+    }
     camEnd();
     stamp('0 ИГРОКОВ', 460, 780, 84, t, 36.7, { col: TK.ember, rot: -.1 });
   }
@@ -363,4 +410,9 @@
     [20.1, friday], [22.65, screen], [25.25, park], [27.8, burn],
     [30.5, wave], [32.5, wave], [33.98, rocket], [35.1, arcade], [37.75, website],
   ]);
+  // EN 3:4 reels camera (EN song time): office 18.16–20.8 + screen –23.54 + park –26.38 + burn –29.08; arcade 34.52–39.78 (29.08–34.52 is the coordinator's)
+  if (window.RU34) RU34.push(
+    [18.16, 29.08, [[18.16, 960, 500, 860], [20.8, 960, 520, 860], [23.54, 960, 500, 860], [26.38, 960, 480, 860], [27.7, 960, 400, 860], [29.079, 960, 360, 820, 1]]],   // the burn: calendar whole, the floor and its ash out of frame
+    [34.52, 39.78, [[34.52, 960, 470, 760], [39.7, 960, 480, 720, 1]]],
+  );
 })();

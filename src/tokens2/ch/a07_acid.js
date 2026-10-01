@@ -93,7 +93,8 @@
   function drop1(t, lt) {
     const hits = [...W1, ...hitsIn(132.3, 135.2)], hk = hitK(t, hits, .2);
     const [sx, sy] = shakeXY(t, 10 * hk);
-    camBegin(960 + sx, 560 + sy - lt * 30, 1 + lt * .035 + .05 * hk);
+    if (window.R34) camBegin(960, 540, 1);                                       // R34: still (no hit shake); the reels keys frame the CEO + tower
+    else camBegin(960 + sx, 560 + sy - lt * 30, 1 + lt * .035 + .05 * hk);
     a07_hall(t, { heat: .35 + .4 * hk });
     for (const s of [-1, 1]) fire(960 + s * 560, 905, 260, 200 + 160 * hk, t, { seed: 3 + s, k: .7 + .4 * hk });
     press(40, 470, 320, 435, t, hits, { label: 'ПРЕСС 1', seed: 3 });
@@ -547,4 +548,6 @@
     [LOOP0, G(wheelShot)],
     [ECO, G(economy)]
   ]);
+  // R34 reels keys (EN time): «MORE GPUs!» drop 1, a medium on the CEO in shades with room above for the GPU tower, floor kept low
+  if (window.RU34) RU34.push([135.22, 137.0, [[135.22, 960, 600, 800], [136.999, 960, 580, 760, 1]]]);
 })();

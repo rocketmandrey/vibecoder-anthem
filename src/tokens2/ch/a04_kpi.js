@@ -246,7 +246,8 @@ function a04_extinguisher(t, lt) {
 function a04_god(t, lt) {
   const bowT = [74.62, 75.36, 76.5, 77.02], godK = hitK(t, [77.02], .3);
   const cy = kf(t, [[74.6, 820], [75.9, 540]], ease), z = kf(t, [[74.6, 1.35], [75.9, 1]], ease) + .05 * godK;
-  camBegin(960, cy, z);
+  const R = window.R34;                                                // EN 3:4 reels: a still chapter camera, the RU34 keys move; the cast pulled in
+  if (R) camBegin(); else camBegin(960, cy, z);
   paint(rectPts(-400, -400, W + 800, H + 800), { wash: '#241A12', fill: A2.gunDk, fillOp: 70, tex: .5, ink: null });
   // rays from the idol
   for (let i = 0; i < 18; i++) {
@@ -263,16 +264,16 @@ function a04_god(t, lt) {
   clawd(960, 525, 26, { col: '#F2C53D', dk: '#A88A10', lt: '#FFE38A', hat: 'crown', eyes: t > 77.02 ? 'spark' : 'happy', mouth: 'grin', aL: 1.4, aR: 1.4, noShadow: true,
     armR: (u, sw) => token(1.2 * u, 0, 1.4 * u, { burn: .6 }) });
   // token candles on the steps
-  for (let i = 0; i < 6; i++) { const x = 560 + i * 160 + (i > 2 ? 0 : 0); if (i === 2 || i === 3) continue; token(x, 830, 18, { burn: .9 }); }
+  for (let i = 0; i < 6; i++) { const x = R ? 960 + (i - 2.5) * 110 : 560 + i * 160; if (i === 2 || i === 3) continue; token(x, 830, 18, { burn: .9 }); }
   // worshippers bowing on the words
   let last = -9; for (const b of bowT) if (b <= t) last = b;
   const bow = Math.exp(-(t - last) / .35);
   for (let i = 0; i < 7; i++) {
-    const x = 200 + i * 255, n = i + 1, o = { rot: bow * .55, aL: 1.6 + bow * .6, aR: 1.6 + bow * .6, eyes: 'closed', mouth: 'O', noShadow: false, flip: i > 3 };
-    if (i % 2) agentBot(x, 1000, 13, t, { n: 40 + i, ...o }); else clawd(x, 1000, 13, { ...o, draw: a04_tie(TK.ember), seed: n });
+    const x = R ? 960 + (i % 2 ? ((i - 3) / 2) * 200 : (i / 2 - 1.5) * 170) : 200 + i * 255, n = i + 1, y = R ? (i % 2 ? 1085 : 985) : 1000, o = { rot: bow * .55, aL: 1.6 + bow * .6, aR: 1.6 + bow * .6, eyes: 'closed', mouth: 'O', noShadow: false, flip: i > 3 };
+    if (i % 2) agentBot(x, y, 13, t, { n: 40 + i, ...o }); else clawd(x, y, 13, { ...o, draw: a04_tie(TK.ember), seed: n });
   }
-  if (t > 75.36) sfx('АМИНЬ', 360, 690, 52, A2.hazard, t - 75.36, { font: ruFont(52), life: .9, rot: -.12 });
-  if (t > 76.5) sfx('АМИНЬ', 1560, 690, 52, A2.hazard, t - 76.5, { font: ruFont(52), life: .9, rot: .12 });
+  if (t > 75.36) sfx('АМИНЬ', R ? 690 : 360, 690, 52, A2.hazard, t - 75.36, { font: ruFont(52), life: .9, rot: -.12 });
+  if (t > 76.5) sfx('АМИНЬ', R ? 1230 : 1560, 690, 52, A2.hazard, t - 76.5, { font: ruFont(52), life: .9, rot: .12 });
   camEnd();
   if (godK > .02) flash(godK * .55, '#FFE9A8');
 }
@@ -370,56 +371,61 @@ function a04_cobweb(cx, cy, k) {
   }
 }
 function a04_rep(t, lt) {
-  const tL = 80.58, land = t >= tL, age = t - tL, hit = land ? Math.exp(-age * 7) : 0, [sx, sy] = shakeXY(t, 18 * hit);
-  camBegin(960 + sx, kf(t, [[80.8, 560], [84.8, 580]], ease) + sy, kf(t, [[80.8, 1.1], [84.8, 1.34]], ease));
-  a04_office(t, { bg: 'wall' });
+  const tL = 80.58, land = t >= tL, age = t - tL, hit = land ? Math.exp(-age * 7) : 0, R = window.R34, [sx, sy] = R ? [0, 0] : shakeXY(t, 18 * hit);
+  // R (EN 3:4 reels, x ~510–1410): a still chapter camera; the aisle (desk edge 660) above a bigger binder low on the desk, «READS: 0» above it,
+  // the clock upper-right, the cobweb + spider on the binder's corner; the RU34 keys frame it
+  const DY = R ? -30 : 0, BS = R ? .86 : 1, BX = R ? 960 - 400 * BS : 560, BY = R ? 690 : 460, CX = R ? 1280 : 1500, CY = R ? 170 : 250;
+  if (R) camBegin(); else camBegin(960 + sx, kf(t, [[80.8, 560], [84.8, 580]], ease) + sy, kf(t, [[80.8, 1.1], [84.8, 1.34]], ease));
+  a04_office(t, { bg: 'wall', fy: R ? 660 : undefined });
   // wall clock racing from the landing on: time passes, nobody reads it
   const tl = Math.max(0, t - 80.8);
-  paint(ellPts(1500, 250, 70, 70, 24), { wash: '#FBF8F2', ink: PAL.ink, sw: 1.4 });
-  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; inkLine([[1500 + Math.cos(a) * 56, 250 + Math.sin(a) * 56], [1500 + Math.cos(a) * 64, 250 + Math.sin(a) * 64]], .8, PAL.ink, 'inkfine', 0); }
+  paint(ellPts(CX, CY, 70, 70, 24), { wash: '#FBF8F2', ink: PAL.ink, sw: 1.4 });
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; inkLine([[CX + Math.cos(a) * 56, CY + Math.sin(a) * 56], [CX + Math.cos(a) * 64, CY + Math.sin(a) * 64]], .8, PAL.ink, 'inkfine', 0); }
   const ma = -Math.PI / 2 + tl * 14, ha = -Math.PI / 2 + tl * 14 / 12;
-  inkLine([[1500, 250], [1500 + Math.cos(ha) * 36, 250 + Math.sin(ha) * 36]], 2.6, PAL.ink, 'ink', 0);
-  inkLine([[1500, 250], [1500 + Math.cos(ma) * 56, 250 + Math.sin(ma) * 56]], 1.6, PAL.ink, 'ink', 0);
+  inkLine([[CX, CY], [CX + Math.cos(ha) * 36, CY + Math.sin(ha) * 36]], 2.6, PAL.ink, 'ink', 0);
+  inkLine([[CX, CY], [CX + Math.cos(ma) * 56, CY + Math.sin(ma) * 56]], 1.6, PAL.ink, 'ink', 0);
   // colleagues stroll past without a glance (the first one crosses centre on «никто»)
   for (let k = 0; k < 3; k++) {
     const p = (t - 81.0 - k * 1.0) / 2.8;
     if (p < 0 || p > 1) continue;
     const dir = k % 2 ? -1 : 1, x = dir > 0 ? lerp(-150, 2070, p) : lerp(2070, -150, p);
-    clawd(x, 690, 17, { ...move('walk', t, k), eyes: 'look', lookX: dir, mouth: 'flat', seed: k, flip: dir < 0, ...(k === 1 ? a04_AG : { draw: a04_tie(k ? A2.uv : TK.ember) }),
+    clawd(x, 690 + DY, 17, { ...move('walk', t, k), eyes: 'look', lookX: dir, mouth: 'flat', seed: k, flip: dir < 0, ...(k === 1 ? a04_AG : { draw: a04_tie(k ? A2.uv : TK.ember) }),
       armR: (u, sw) => paint(rrPts(-.2 * u, -1.2 * u, 1.3 * u, 1.6 * u, .2 * u), { wash: k === 1 ? TK.orange : TK.cream, ink: PAL.ink, sw: sw * .5 }) });
   }
   // desk
-  paint([[-200, 690], [W + 200, 690], [W + 400, 1300], [-400, 1300]], { wash: '#8A6446', fill: '#5E4230', fillOp: 80, tex: .6, border: .4, ink: PAL.ink, sw: 1.2 });
-  for (let i = 0; i < 6; i++) inkLine([[-200, 740 + i * 60 + i * i * 6], [W + 200, 735 + i * 62 + i * i * 6]], .6, '#6E4E36', 'inkfine', .5);
-  paint(rectPts(-200, 680, W + 400, 16), { wash: '#A07654', ink: PAL.ink, sw: .8 });
-  if (!land) { const k = seg(t, 80.0, tL); paint(ellPts(960, 890, 420 * (.4 + .6 * k), 30 * (.4 + .6 * k), 20), { fill: PAL.ink, fillOp: 120 * k, bleed: .2, ink: null }); }
+  paint([[-200, 690 + DY], [W + 200, 690 + DY], [W + 400, 1300], [-400, 1300]], { wash: '#8A6446', fill: '#5E4230', fillOp: 80, tex: .6, border: .4, ink: PAL.ink, sw: 1.2 });
+  for (let i = 0; i < 6; i++) inkLine([[-200, 740 + DY + i * 60 + i * i * 6], [W + 200, 735 + DY + i * 62 + i * i * 6]], .6, '#6E4E36', 'inkfine', .5);
+  paint(rectPts(-200, 680 + DY, W + 400, 16), { wash: '#A07654', ink: PAL.ink, sw: .8 });
+  const FY = BY + 420 * BS;                                           // the binder's bottom edge on the desk
+  if (!land) { const k = seg(t, 80.0, tL); paint(ellPts(960, FY + 10, 420 * BS * (.4 + .6 * k), 30 * (.4 + .6 * k), 20), { fill: PAL.ink, fillOp: 120 * k, bleed: .2, ink: null }); }
   // the report drops like a brick on «доклад»
   const fall = land ? 0 : -950 * (1 - easeIn(seg(t, 80.3, tL))), bounce = land ? -Math.abs(Math.sin(age * 16)) * 26 * Math.exp(-age * 9) : 0;
-  a04_binder(560, 460 + fall + bounce, 1, { dust: seg(t, 81.4, 84.6) });
+  a04_binder(BX, BY + (fall + bounce) * (R ? 1.3 : 1), BS, { dust: seg(t, 81.4, 84.6) });
   if (land && age < 1.1) {
     for (let i = 0; i < 14; i++) {
       const side = i % 2 ? 1 : -1, a = hash(i + 3) * .9, d = easeOut(age / 1.1) * (140 + hash(i) * 240), r = (30 + hash(i + 9) * 40) * (.5 + age);
-      paint(ellPts(960 + side * (400 + Math.cos(a) * d), 870 - Math.sin(a) * d * .5, r, r * .7, 14), { wash: '#D8CFC0', washOp: 200 * (1 - age / 1.1), ink: null });
+      paint(ellPts(960 + side * (400 * BS + Math.cos(a) * d * BS), FY - 10 - Math.sin(a) * d * .5, r, r * .7, 14), { wash: '#D8CFC0', washOp: 200 * (1 - age / 1.1), ink: null });
     }
-    sfx('БУМ!', 1480, 520, 120, TK.ember, age, { life: .7, rot: .12, font: ruFont(120) });
+    sfx('БУМ!', R ? 1200 : 1480, R ? 560 : 520, 120, TK.ember, age, { life: .7, rot: .12, font: ruFont(120) });
   }
   // cobweb, spider, the view counter
-  a04_cobweb(1340, 462, seg(t, 82.0, 83.8));
+  a04_cobweb(BX + 780 * BS, BY + 2, seg(t, 82.0, 83.8));
   const sp = seg(t, 82.8, 84.0);
   if (sp > 0) {
-    const spx = 1240 + Math.sin(t * 2.2) * 8, spy = lerp(0, 420, easeOut(sp));
+    const spx = BX + 680 * BS + Math.sin(t * 2.2) * 8, spy = lerp(R ? -40 : 0, BY - 40, easeOut(sp));
     inkLine([[spx, -60], [spx, spy - 20]], .8, '#8A8480', 'inkfine', 0);
     for (const e of [-1, 1]) for (let j = 0; j < 4; j++) inkLine([[spx, spy], [spx + e * 26, spy - 10 + j * 8], [spx + e * 36, spy + 6 + j * 9]], 1.1, TK.soot, 'inkfine', .3);
     paint(ellPts(spx, spy, 15, 18, 10), { wash: TK.soot, ink: null }); paint(ellPts(spx, spy - 20, 9, 9, 8), { wash: TK.soot, ink: null });
   }
   const vk = backOut(seg(t, 81.08, 81.3));
   if (vk > .02) {
-    push(); translate(460, 360); rotate(-.05); scale(vk);
+    const [nx, ny, q] = R ? [930, 330, 1.3] : [460, 360, 1];          // R: the sticky note above the binder, bigger
+    push(); translate(nx, ny); rotate(-.05); scale(vk * q);
     paint(rectPts(-172, -60, 372, 120), { wash: TK.yellowLt, fill: TK.yellow, fillOp: 70, tex: .5, ink: PAL.ink, sw: .8 });
     pop();
-    paint(ellPts(322, 367, 26 * vk, 15 * vk, 16), { wash: '#FFFFFF', ink: PAL.ink, sw: .8 });
-    paint(ellPts(322, 367, 9 * vk, 9 * vk, 10), { wash: PAL.ink, ink: null });
-    letter('ПРОЧТЕНИЙ: 0', 494, 358, 34 * vk, TK.soot, { font: ruFont(34 * vk), ink: false, rot: -.05 });
+    paint(ellPts(nx - 138 * q, ny + 7 * q, 26 * vk * q, 15 * vk * q, 16), { wash: '#FFFFFF', ink: PAL.ink, sw: .8 });
+    paint(ellPts(nx - 138 * q, ny + 7 * q, 9 * vk * q, 9 * vk * q, 10), { wash: PAL.ink, ink: null });
+    letter('ПРОЧТЕНИЙ: 0', nx + 34 * q, ny - 2 * q, 34 * vk * q, TK.soot, { font: ruFont(34 * vk * q), ink: false, rot: -.05 });
   }
   camEnd();
 }
@@ -488,3 +494,9 @@ chapter('verse2', 67.1, 91.8, [
   [67.1, a04_kpi], [69.95, a04_chairs], [72.65, a04_extinguisher], [74.6, a04_god], [77.3, a04_org],
   [79.85, a04_rep], [84.8, a04_bill], [88.2, a04_break]
 ]);
+// EN 3:4 reels camera (EN song time): the idol 74.0–76.72 (wide on the crown, then an eased pull-back onto the whole congregation);
+// the report 81.98–87.60 (tokensEN/scenes2.js e13_report draws a04_rep): one still frame, a slow eased push, no pan
+if (window.RU34) RU34.push(
+  [74.0, 76.72, [[74.0, 960, 620, 760], [75.5, 960, 640, 820, 1]]],
+  [81.98, 87.60, [[81.98, 960, 560, 900], [87.59, 960, 580, 860, 1]]],
+);

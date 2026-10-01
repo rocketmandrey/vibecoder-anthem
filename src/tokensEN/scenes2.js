@@ -54,10 +54,10 @@
       }
     }
     // tiny Clawd on the floor, head tipped back
-    clawd(1290, TW.floor + 2, 9, { eyes: 'look', lookY: -1, mouth: t > TW.top ? 'o' : 'flat', emote: t > TW.top ? 'sweat' : null, aL: .2, aR: .2 });
+    clawd(1130, TW.floor + 2, 9, { eyes: 'look', lookY: -1, mouth: t > TW.top ? 'o' : 'flat', emote: t > TW.top ? 'sweat' : null, aL: .2, aR: .2 });
   }
   scene('e12_tower', 76.72, 81.98, tower, [
-    [76.72, 960, 880, 520], [77.7, 960, 840, 600, 1], [78.6, 960, 800, 640, 1], [79.6, 960, 640, 900, 1], [80.4, 960, 520, 1080, 1], [81.3, 970, 430, 860, 1], [81.979, 975, 410, 820, 1],
+    [76.72, 1000, 860, 560], [77.7, 990, 830, 620, 1], [78.6, 980, 790, 680, 1], [79.6, 960, 660, 920, 1], [80.4, 960, 580, 1000, 1], [81.979, 960, 560, 1000, 1],   // whole tower top to floor from 80.4, tiny Clawd in frame from the start
   ], [[81.42, 10]]);
 
   // ======== E13 NEW (81.98–87.60) «A report: how to cut our AI spend. Nobody read it in the end.» ========
@@ -143,7 +143,7 @@
     // the bill: rolls down from the vault, over the pulpit, piles up on the choir
     const bill = eased(t, 127.3, 129.0);
     if (bill > 0) {
-      const x = 1250, w = 170, len = bill * 1350, top = -250;
+      const x = 1240, w = 170, len = bill * 1350, top = 0;            // 3:4: the holder in frame, the strip inside the right edge
       paint(rectPts(x - 16, top - 30, w + 32, 34, 1), { wash: A2.rust, ink: INK, sw: .8 });
       paint(rectPts(x, top, w, Math.min(len, 1250), .5), { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .6 });
       for (let y = top + 40; y < top + Math.min(len, 1250) - 10; y += 30) inkLine([[x + 18, y], [x + w - 18 - hash(y) * 50, y]], .6, '#8A8480', 'inkfine', 0);
@@ -164,29 +164,27 @@
     A06.beam(ax, ax, 40, 160, ay + 10, eased(t, WY.why, WY.why + .1) * (1 - eased(t, WY.cheap, WY.cheap + .5)));
   }
   scene('e19_why', 124.48, 129.02, why, [
-    [124.48, 980, 620, 1040], [129.019, 980, 600, 1000, 1],
+    [124.48, 980, 600, 760], [126.6, 980, 590, 820, 1], [129.019, 975, 550, 1240, 1],   // a closer angle on the pulpit + asker (no same-set jump), eased pull-out to the a06 sermon framing
   ]);
 
 
   // ======== E23+E24 NEW (137.00–152.04) «MORE GPUs — MORE TOKENS! MORE TOKENS — MORE AGENTS! MORE AGENTS — MORE TASKS! MORE TASKS — MORE TOKENS!» ========
   // One big ring, four stations round it: GPU (top) → tokens (right) → agents (bottom) → tasks (left) → back to tokens. Each sung noun slams
   // its station, a stream of stuff runs along the rim to the next one. Every line the ring spins faster; on the last «tokens» it blurs, sparks
-  // and coins fly off the rim. Clawd is strapped to the hub, spinning with it, dizzier every lap.
-  // «The economy is WORKING!» (the RU a07 move): the whole ring gets yanked up and rockets off the top on a fire trail; one empty wrapper floats down.
-  const RG = { x: 960, y: 600, R: 280, lines: [137.06, 139.62, 142.18, 144.78], eco: 148.56, wrap: 150.24,
+  // and coins fly off the rim. User notes on draft 3: Clawd is a HAMSTER (round ears) running inside it like a hamster wheel, dizzier every lap.
+  const RG = { x: 950, y: 640, R: 260, lines: [137.06, 139.62, 142.18, 144.78], eco: 148.56,
     words: [[137.38, 0], [138.64, 1], [139.94, 1], [141.34, 2], [142.62, 2], [143.84, 3], [145.14, 3], [146.40, 1]] };
   const STA = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];                  // station angles: GPU, tokens, agents, tasks
   const spinOf = t => {                                                   // integrated ring angle (rev/s grows per line, blur after the last noun)
     const rates = [.25, .5, .9, 1.5, 3], edges = [137.0, ...RG.lines.slice(1), 146.4, 1e9];
     let a = 0; for (let i = 0; i < rates.length; i++) { const s0 = edges[i], s1 = i + 1 < edges.length ? edges[i + 1] : 1e9; if (t <= s0) break; a += (Math.min(t, s1) - s0) * rates[i] * TAU; }
-    return Math.min(a, spinFreeze(t));
+    return a;
   };
-  let FREEZE = null; const spinFreeze = t => t < RG.eco ? 1e12 : (FREEZE ??= spinOf(RG.eco - 1e-6));
   function station(i, x, y, k, t) {                                       // k = slam 0..1
     push(); translate(x, y); scale(1 + .4 * k); translate(-x, -y);
     if (k > .05) glowAt(x, y, 150, [TK.green, TK.yellow, '#6F8BE0', TK.yellowLt][i], 120 * k);
     if (i === 0) gpuCard(x, y, .85, t, { fans: t * 8, glow: k });
-    else if (i === 1) for (let j = 0; j < 9; j++) token(x - 90 + (j % 4) * 60 + (Math.floor(j / 4) % 2) * 30, y + 60 - Math.floor(j / 4) * 50, 44, { spin: .1 * j });
+    else if (i === 1) for (let j = 0; j < 9; j++) token(x - 110 + (j % 4) * 50 + (Math.floor(j / 4) % 2) * 25, y + 60 - Math.floor(j / 4) * 50, 44, { spin: .1 * j });
     else if (i === 2) for (let j = 0; j < 5; j++) agentBot(x - 150 + j * 75, y + 80 - (j % 2) * 36, 8, t, { n: j + 1, rot: NOTXT, noShadow: true, eyes: 'happy', mouth: 'grin', aL: .6 + k * 1.2, aR: .6 + k * 1.2 });
     else for (let j = 0; j < 4; j++) { push(); translate(x - 30 + j * 16, y + 30 - j * 22); rotate((hash(j) - .5) * .4); scale(1.4); paint(rectPts(-55, -55, 110, 110), { wash: [TK.yellow, '#9FE3A0', '#FFB8C8', '#8EC3E6'][j], ink: INK, sw: 1 }); for (let q = 0; q < 3; q++) inkLine([[-38, -25 + q * 22], [30 - q * 12, -25 + q * 22]], 2, INK, 'inkfine', 0); pop(); }
     pop();
@@ -195,52 +193,43 @@
   function ringScene(t) {
     back(A2.gunDk);
     A03.hall(t, { lamps: [560, 1360], floor: 1060 });
-    const up = easeIn(seg(t, RG.eco, RG.eco + 1.1)), dy = -up * 1700, cx = RG.x, cy = RG.y + dy, ang = spinOf(t), blur = seg(t, 146.4, 146.9) * (t < RG.eco ? 1 : 0);
-    if (up > 0) { fire(cx, cy + RG.R + 150, 360, 420 * (.4 + up), t, { k: 1, seed: 7 }); smoke(cx, cy + RG.R + 380, t, { k: up }); }
-    // the ring: thick rim with bolts and lights, spokes to the hub
+    paint(rectPts(-400, 1060, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });   // floor down to the 3:4 frame's bottom
+    const cx = RG.x, cy = RG.y, ang = spinOf(t), blur = seg(t, 146.4, 146.9);
+    // the hamster wheel: an A-frame stand, a thick rim with rungs, spokes to the hub
+    for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 250, 1062]], 14, A2.steel, 'ink', 0);
     paint(ellPts(cx, cy, RG.R + 36, RG.R + 36, 48), { wash: A2.gunmetal, fill: '#15171B', fillOp: 70, tex: .5, ink: INK, sw: 2 });
     paint(ellPts(cx, cy, RG.R - 36, RG.R - 36, 48), { wash: '#1C1F24', ink: INK, sw: 2 });
-    for (let k = 0; k < 16; k++) { const a = ang + k * TAU / 16; paint(ellPts(cx + Math.cos(a) * RG.R, cy + Math.sin(a) * RG.R, 11, 11, 8), { wash: k % 2 ? TK.yellow : TK.ember, ink: INK, sw: .6 }); }
+    for (let k = 0; k < 28; k++) { const a = ang + k * TAU / 28; inkLine([[cx + Math.cos(a) * (RG.R - 34), cy + Math.sin(a) * (RG.R - 34)], [cx + Math.cos(a) * (RG.R + 34), cy + Math.sin(a) * (RG.R + 34)]], 4, k % 7 ? A2.steelLt : TK.yellow, 'ink', 0); }
     for (let k = 0; k < 6; k++) { const a = ang * 1 + k * TAU / 6; inkLine([[cx, cy], [cx + Math.cos(a) * (RG.R - 40), cy + Math.sin(a) * (RG.R - 40)]], 6, A2.steel, 'ink', 0); }
     if (blur > 0) for (let k = 0; k < 5; k++) paint(ellPts(cx, cy, RG.R - 20 + k * 10, RG.R - 20 + k * 10, 48), { ink: [TK.yellow, TK.orange, TK.ember, TK.yellowLt, TK.orange][k], sw: 3 * blur });
     // the stream: after each noun, stuff runs clockwise along the rim to the next station
     for (const [w, i] of RG.words) {
       const a = t - w; if (a < 0 || a > 1.1 || t > RG.eco) continue;
-      for (let q = 0; q < 7; q++) { const u = clamp((a - q * .06) / .9); if (u <= 0 || u >= 1) continue; const th = STA[i] + u * Math.PI / 2, r = RG.R + 90;
+      for (let q = 0; q < 7; q++) { const u = clamp((a - q * .06) / .9); if (u <= 0 || u >= 1) continue; const th = STA[i] + u * Math.PI / 2, r = RG.R + 66;
         itemOf(i, cx + Math.cos(th) * r, cy + Math.sin(th) * r, t, th); }
       const tipA = STA[i] + clamp(a / .9) * Math.PI / 2;                     // the arrow head leading the stream
-      if (a < .9) { const x = cx + Math.cos(tipA) * (RG.R + 90), y = cy + Math.sin(tipA) * (RG.R + 90); push(); translate(x, y); rotate(tipA + Math.PI); paint([[-26, 0], [10, -22], [10, 22]], { wash: TK.ember, ink: INK, sw: 1 }); pop(); }
+      if (a < .9) { const x = cx + Math.cos(tipA) * (RG.R + 66), y = cy + Math.sin(tipA) * (RG.R + 66); push(); translate(x, y); rotate(tipA + Math.PI); paint([[-26, 0], [10, -22], [10, 22]], { wash: TK.ember, ink: INK, sw: 1 }); pop(); }
     }
     // the four stations, slamming on their words
     for (let i = 0; i < 4; i++) {
       const k = Math.max(0, ...RG.words.filter(([, j]) => j === i).map(([w]) => { const a = t - w; return a >= 0 && a < .35 ? Math.exp(-a * 9) : 0; }));
-      station(i, cx + Math.cos(STA[i]) * (RG.R + 90), cy + Math.sin(STA[i]) * (RG.R + 90), k, t);
+      station(i, cx + Math.cos(STA[i]) * (RG.R + 66), cy + Math.sin(STA[i]) * (RG.R + 66), k, t);
     }
     // sparks and coins flung off the rim once it blurs
     if (blur > 0) for (let q = 0; q < 10; q++) { const a0 = hash(q) * TAU, age = frac(t * 1.6 + hash(q + 3)), th = a0 + ang, r = RG.R + age * 500;
       token(cx + Math.cos(th) * r - Math.sin(th) * age * 200, cy + Math.sin(th) * r + Math.cos(th) * age * 200, 14, { spin: t * 5 + q, burn: age }); }
     if (blur > 0) sparks(cx + Math.cos(ang) * RG.R, cy + Math.sin(ang) * RG.R, frac(t * 3) * .35, Math.floor(t * 3), 12, 200);
-    // Clawd strapped to the hub, spinning with the ring
-    const dz = seg(t, 137.0, 146.6);
-    paint(ellPts(cx, cy, 130, 130, 24), { wash: A2.steel, ink: INK, sw: 1.4 });
-    push(); translate(cx, cy); rotate(ang); translate(-cx, -cy);
-    clawd(cx, cy + 70, 13, { eyes: dz > .7 ? 'swirl' : dz > .35 ? 'scared' : 'normal', mouth: dz > .5 ? 'O' : 'flat', aL: 2.2, aR: 2.2, noShadow: true, emote: dz > .6 ? 'sweat' : null });
-    for (const d of [-1, 1]) inkLine([[cx - 90, cy + 16 * d - 30], [cx + 90, cy + 16 * d - 30]], 7, '#7A4A2E', 'ink', 0);
-    pop();
-    // one lone empty wrapper floats down where the machine was
-    const wk = t - RG.wrap;
-    if (wk > -1.2) {
-      const sp = clamp((wk + 1.2) / .6);                                  // a work lamp finds the wrapper
-      paint([[900, -200], [1020, -200], [1180, 1060], [740, 1060]], { wash: '#FFF3C8', washOp: 50 * sp, ink: null });
-      const k = clamp((wk + 1.2) / 1.6), y = lerp(-300, 1040, easeOut(k)), r = Math.sin(t * 5) * .7 * (1 - k);
-      push(); translate(960 + Math.sin(t * 3) * 60 * (1 - k), y); rotate(r); scale(4);
-      paint([[-22, -8], [-8, -16], [6, -10], [24, -14], [18, 6], [4, 14], [-16, 10]], { wash: TK.gold, fill: TK.goldDk, fillOp: 60, ink: INK, sw: .7 });
-      inkLine([[-12, -4], [10, 4]], .6, TK.goldDk, 'inkfine', .4); pop();
-    }
-    if (t > RG.eco) for (let i = 0; i < 14; i++) { const u = frac((t - RG.eco) * .5 + hash(i)); token(460 + hash(i + 2) * 1000, lerp(-200, 1060, u), 16, { spin: t * 3 + i }); }
+    // the hub, and Clawd the hamster running at the bottom of the wheel: the rim turns under him, his legs match its speed, dizzier every lap
+    const dz = seg(t, 137.0, 146.6), rate = [.25, .5, .9, 1.5, 3][Math.max(0, [137.0, ...RG.lines.slice(1), 146.4].filter(e => t >= e).length - 1)];
+    paint(ellPts(cx, cy, 40, 40, 16), { wash: A2.steel, ink: INK, sw: 1.2 });
+    const ears = (u, sw) => { for (const d of [-1, 1]) { paint(ellPts(d * 3.4 * u, -8.1 * u, 1.5 * u, 1.4 * u, 12), { wash: '#D97757', ink: INK, sw: sw * .6 }); paint(ellPts(d * 3.4 * u, -8.0 * u, .8 * u, .75 * u, 10), { wash: '#F2A0A8', ink: null }); }
+      paint(ellPts(0, -4.6 * u, .45 * u, .35 * u, 8), { wash: '#F2A0A8', ink: null }); };
+    const bob = Math.abs(Math.sin(t * rate * 14)) * 10, lean = .08 + rate * .05;
+    clawd(cx - 20, cy + RG.R - 38 - bob, 17, { walk: t * rate * 7, rot: lean, draw: ears, eyes: dz > .7 ? 'swirl' : dz > .35 ? 'scared' : 'normal', mouth: dz > .5 ? 'O' : 'flat',
+      aL: 1.2 + .4 * Math.sin(t * rate * 14), aR: 1.2 - .4 * Math.sin(t * rate * 14), noShadow: true, emote: dz > .6 ? 'sweat' : null });
   }
-  // ends on «The economy is WORKING!» (148.56): from there the RU a07 green graph grows and is yanked upward
-  scene('e23_loop', 137.0, RG.eco, ringScene, [[137.0, 960, 620, 1060], [148.559, 960, 620, 1060, 1]], RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]));
+  // ends on «The economy is WORKING!» (148.56): from there the EN pitch deck (scenes3 eco_deck)
+  scene('e23_loop', 137.0, RG.eco, ringScene, [[137.0, 950, 650, 1000], [148.559, 950, 640, 960, 1]], RG.words.map(([w]) => [w, w === 146.40 ? 18 : 9]));
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
   // A classroom where everybody is asleep: the students (agents) face-down on their desks, the teacher asleep at his desk with his glasses
@@ -252,9 +241,10 @@
     paint(rectPts(x - w / 2, y, w, 22, 1), { wash: '#7A4A2E', ink: INK, sw: .9 });
     for (const lx of [x - w / 2 + 14, x + w / 2 - 30]) paint(rectPts(lx, y + 22, 16, 1060 - y - 22), { wash: '#4A2A1E', ink: INK, sw: .6 });
   }
-  const BB = [520, 170, 820, 440];                                           // the blackboard
-  const HM = { a: [1470, 700], b: [1860, 700] };                             // the hammock hooks
+  const BB = [560, 190, 740, 420];                                           // the blackboard
+  const HM = { a: [680, 720], b: [1240, 720] };                              // the hammock hooks (the park trees)
   function thesis(t) {
+    if (t >= TH.nobody) return park(t);
     back('#2A2F2A');
     paint(rectPts(-400, -600, 2720, 1660), { wash: '#B9CDB0', fill: '#9DB594', fillOp: 60, tex: .5, ink: null });             // classroom wall
     paint(rectPts(-400, 1060, 2720, 600), { wash: '#8A5E3C', fill: '#6A4430', fillOp: 70, tex: .6, ink: INK, sw: 1 });         // wooden floor
@@ -276,42 +266,52 @@
     if (t >= TH.cap) { const k = backOut(seg(t, TH.cap, TH.cap + .25)); push(); translate(bx + bw - 110, by + bh - 110); scale(k); rotate(.2); paint(starPts(0, 0, 70, .45, 5), { wash: TK.yellow, fill: TK.gold, fillOp: 60, ink: INK, sw: 1 }); pop(); }
     if (t < TH.cap + .4) { push(); translate(chalk[0], chalk[1]); rotate(-.7 + .15 * Math.sin(t * 30)); paint(rectPts(-6, -34, 12, 34), { wash: '#F4F4EE', ink: INK, sw: .6 }); pop(); }
     // the teacher's desk (left), the teacher asleep on it, glasses pushed up
-    tdesk(400, 900, 240);
-    clawd(400, 905, 12, { eyes: 'closed', mouth: 'flat', rot: .25, aL: -.4, aR: -.4, noShadow: true, dy: .3 * Math.sin(t * 1.3) });
-    paint(rectPts(345, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 }); paint(rectPts(410, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 });
-    emote('zzz', 480, 750, 22, 1);
+    tdesk(500, 900, 180);
+    clawd(500, 905, 12, { eyes: 'closed', mouth: 'flat', rot: .25, aL: -.4, aR: -.4, noShadow: true, dy: .3 * Math.sin(t * 1.3) });
+    paint(rectPts(445, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 }); paint(rectPts(510, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 });
+    emote('zzz', 570, 750, 22, 1);
     // the students: two rows, asleep face-down
-    for (const [x, y, n] of [[720, 930, 1], [960, 930, 2], [1200, 930, 3], [600, 1040, 4], [840, 1040, 5], [1080, 1040, 6]]) {
+    for (const [x, y, n] of [[780, 930, 1], [1010, 930, 2], [1240, 930, 3], [680, 1040, 4], [910, 1040, 5], [1140, 1040, 6]]) {
       agentBot(x, y + 4, 12, t, { n: 60 + n, rot: NOTXT, eyes: 'closed', mouth: 'flat', noShadow: true, dy: .3 * Math.sin(t * 1.3 + n), aL: -.5, aR: -.5 });
       tdesk(x, y, 200);
       if (n % 2) emote('zzz', x + 60, y - 110, 16, 1);
     }
-    // the hammock in the corner; snaps on «Including you»
-    const [ax, ay] = HM.a, [hx, hy] = HM.b, snap = t >= TH.you, fall = seg(t, TH.you, TH.you + .35);
-    for (const [x, y] of [HM.a, HM.b]) paint(ellPts(x, y, 10, 10, 8), { wash: A2.steel, ink: INK, sw: .6 });
-    const sag = 140, mid = [(ax + hx) / 2, ay + sag];
+  }
+  // «No one's working. Including you.» (160.10–162.86): outside, in a park (user notes on draft 3): Clawd asleep in a hammock between two trees;
+  // on «Including you» the rope snaps, he drops and sleeps on right there on the ground, on flattened cardboard under a newspaper, like a bum
+  function park(t) {
+    back('#BFE3F0');
+    paint(rectPts(-400, -900, W + 800, 1960), { wash: '#CFEAF3', fill: '#A8D4E6', fillOp: 50, tex: .4, ink: null });
+    for (const [x, y, r] of [[560, 120, 90], [700, 90, 70], [1320, 200, 80], [1440, 170, 60]]) paint(ellPts(x, y, r * 1.6, r, 16), { wash: '#FFFFFF', washOp: 200, ink: null });
+    paint(rectPts(-400, 1040, W + 800, 800), { wash: '#8CC06E', fill: '#6FA058', fillOp: 70, tex: .6, ink: INK, sw: 1 });            // grass
+    for (let i = 0; i < 40; i++) { const x = 400 + hash(i) * 1100, y = 1060 + hash(i + 3) * 240; inkLine([[x, y], [x - 6, y - 18]], 1.2, '#4E7A3C', 'inkfine', 0); }
+    paint(rectPts(1320, 1000, 110, 60, 1), { wash: '#6A7A70', ink: INK, sw: .8 }); paint(rectPts(1330, 960, 90, 44), { wash: '#7E8E84', ink: INK, sw: .8 });   // a bin
+    for (const [x, y] of [HM.a, HM.b]) {                                                                                  // the trees
+      paint(rectPts(x - 38, y - 300, 76, 1340 - y, 1), { wash: '#7A4A2E', fill: '#5A3420', fillOp: 60, tex: .6, ink: INK, sw: 1 });
+      for (const [dx, dy, r] of [[-90, -330, 130], [70, -360, 140], [0, -450, 150], [-10, -250, 120]]) paint(ellPts(x + dx, y + dy, r, r * .85, 18), { wash: '#6FB058', fill: '#4E8A3E', fillOp: 60, tex: .5, ink: INK, sw: 1 });
+    }
+    const [ax, ay] = HM.a, [hx, hy] = HM.b, snap = t >= TH.you, fall = seg(t, TH.you, TH.you + .35), sag = 150, mid = [(ax + hx) / 2, ay + sag];
     if (!snap) {
-      const sw = Math.sin(t * 1.4) * 10, net = []; for (let i = 0; i <= 10; i++) { const u = i / 10; net.push([lerp(ax, hx, u) + sw * Math.sin(u * Math.PI), ay + sag * Math.sin(u * Math.PI) + 10]); }
+      const sw = Math.sin(t * 1.4) * 12, net = []; for (let i = 0; i <= 12; i++) { const u = i / 12; net.push([lerp(ax, hx, u) + sw * Math.sin(u * Math.PI), ay + sag * Math.sin(u * Math.PI) + 10]); }
       inkLine(net, 10, '#C8A060', 'ink', .4);
-      clawd(mid[0] + sw, mid[1] - 6, 12, { rot: -.15, eyes: 'closed', mouth: 'smile', aL: 1.5, aR: 1.5, noShadow: true });
-      paint(net.concat(net.slice().reverse().map(([x, y]) => [x, y + 30])), { wash: '#E0B870', fill: '#B88A40', fillOp: 60, ink: INK, sw: .8 });
-      emote('zzz', mid[0] + 80, mid[1] - 150, 20, 1);
+      clawd(mid[0] + sw, mid[1] - 4, 16, { rot: -.12, eyes: 'closed', mouth: 'smile', aL: 1.5, aR: 1.5, noShadow: true });
+      paint(net.concat(net.slice().reverse().map(([x, y]) => [x, y + 34])), { wash: '#E0B870', fill: '#B88A40', fillOp: 60, ink: INK, sw: .8 });
+      emote('zzz', mid[0] + 120, mid[1] - 190, 24, 1);
     } else {
-      inkLine([[ax, ay], [ax + 30, ay + 180 * fall + 40], [ax + 50, ay + 280 * fall + 60]], 4, '#C8A060', 'ink', .4);   // the torn hammock hangs from one hook
-      inkLine([[hx, ay], [hx - 10, ay + 60]], 4, '#C8A060', 'ink', .3);
-      const fx = lerp(mid[0], 1580, fall), fy = lerp(mid[1] - 6, 1060, easeIn(fall));
-      if (fall >= 1) { paint(rectPts(1520, 1036, 300, 28, 1), { wash: '#B08A5A', ink: INK, sw: .8 }); }                   // flattened cardboard under him
-      clawd(fx, fy, 12, { rot: fall >= 1 ? 1.45 : -.15 + 1.6 * fall, eyes: 'closed', mouth: fall >= 1 ? 'flat' : 'O', aL: .2, aR: .2, noShadow: true });
+      inkLine([[ax, ay], [ax + 40, ay + 200 * fall + 40], [ax + 60, ay + 300 * fall + 60]], 5, '#C8A060', 'ink', .4);   // the torn hammock hangs from one tree
+      inkLine([[hx, ay], [hx - 12, ay + 70]], 5, '#C8A060', 'ink', .3);
+      const fx = lerp(mid[0], 1000, fall), fy = lerp(mid[1] - 4, 1062, easeIn(fall));
+      if (fall >= 1) paint(rectPts(820, 1046, 360, 24, 1), { wash: '#B08A5A', ink: INK, sw: .8 });                   // flattened cardboard under him
+      clawd(fx, fy, 16, { rot: fall >= 1 ? 0 : -.12 + .9 * Math.sin(fall * Math.PI), eyes: 'closed', mouth: fall >= 1 ? 'flat' : 'O', aL: .2, aR: .2, noShadow: true });
       if (fall >= 1) {                                                                                                  // a newspaper for a blanket
-        paint(rotPts(rectPts(1610, 975, 170, 70), 1695, 1010, .06), { wash: '#E8E2D2', ink: INK, sw: .8 });
-        for (let q = 0; q < 3; q++) inkLine([[1625, 995 + q * 16], [1765, 1003 + q * 16]], 1.5, '#8A8480', 'inkfine', 0);
-        emote('zzz', 1620, 930, 22, clamp((t - TH.you - .5) * 2));
+        paint([[850, 1068], [862, 1000], [1000, 984], [1140, 998], [1152, 1068]], { wash: '#E8E2D2', ink: INK, sw: .8 });   // pulled up to his chin, only the sleeping face shows
+        for (let q = 0; q < 3; q++) inkLine([[880, 1012 + q * 18], [1120, 1014 + q * 18]], 1.5, '#8A8480', 'inkfine', 0);
+        emote('zzz', 1110, 860, 26, clamp((t - TH.you - .5) * 2));
       }
     }
   }
   scene('e26_thesis', 157.46, 162.86, thesis, [
-    [157.46, 840, 640, 980], [TH.nobody - .3, 900, 660, 960, 1], [161.4, 1480, 760, 880, 1], [TH.you - .01, 1480, 770, 860, 1],
-    [TH.you, 1560, 880, 720], [162.859, 1560, 900, 680, 1],
+    [157.46, 900, 640, 1040], [TH.nobody - .01, 900, 650, 1020, 1], [TH.nobody, 960, 640, 1000], [TH.you, 960, 660, 960, 1], [162.859, 960, 720, 880, 1],
   ], [[TH.you + .35, 12]]);
 
   // ======== E30 NEW (183.82–189.06) «REVENUE? LATER! PROFIT? HOW?! A-G-I? SOON! CAPEX? NOW!» ========
@@ -384,84 +384,62 @@
     [183.82, 960, 600, 1000], [186.3, 960, 580, 980, 1], [BD.sub[3], 1060, 520, 940], [189.059, 1040, 540, 1000, 1],
   ], [[BD.flips[3], 12], [BD.sub[3], 22]]);
 
-  // ======== E31+E31b NEW (189.06–204.78) «One point up on the benchmark score — worth half a trillion more! …more» ========
-  // A crane lifts the top of a benchmark bar by a hair (a magnifier shows it). On «half a trillion» a gold coin mountain erupts out of the floor,
-  // shareholders in top hats up to their necks in it. The hold «…more»: agents on the summit sing one note, going red, then blue; the CEO
-  // conducts with his clicker, an agent runs up with an oxygen mask; behind, a blank odometer keeps growing new cells to the right while
-  // the camera backs away from it.
-  const BN = { lift: 190.90, boom: 192.90, hold: 194.22, mask: 199.0 };
+  // (189.06–194.32 is the RU a09 benchmark board + puppeteers.)
   const tophat = (u, sw) => { paint(rectPts(-3.4 * u, -11.6 * u, 6.8 * u, 3.8 * u), { wash: TK.soot, ink: PAL.ink, sw: sw * .6 }); paint(rectPts(-4.6 * u, -8.1 * u, 9.2 * u, .7 * u), { wash: TK.soot, ink: PAL.ink, sw: sw * .6 }); paint(rectPts(-3.4 * u, -9 * u, 6.8 * u, .7 * u), { wash: TK.ember, ink: null }); };
-  function mound(t) {                                                      // height profile of the coin mountain at x
-    const k = easeOut(seg(t, BN.boom, BN.boom + .6)) * (1 + .03 * Math.sin(t * 20) * (1 - seg(t, BN.boom, BN.boom + 1)));
-    return x => 1060 - k * 560 * Math.exp(-Math.pow((x - 960) / 330, 2));
-  }
+  // ======== the held «…more» (194.32–210.0): the money pile grows on every beat ========
+  // User notes on draft 3: the pile GROWS ON EVERY BEAT with a bump + a small shake (bigger on the downbeats). A narrow tall peak so it stays inside
+  // the 3:4 frame; shareholders in top hats up to their necks at its foot; agents on the summit hold one note (going red, then blue), the CEO
+  // conducts, a medic agent brings an oxygen mask; a short blank odometer above grows a cell every downbeat.
+  const BN = { a: 194.32, hold: 194.32, mask: 199.0, end: 209.88 };
+  const PBEATS = EN_BEATS.filter(b => b >= BN.a - .01 && b < BN.end), PDOWN = new Set(EN_DOWNBEATS.filter(b => b >= BN.a - .01 && b < BN.end));
+  const pileK = t => {                                                     // 0..1 growth: a step per beat (a double step on downbeats), each with an overshoot bump
+    let k = 0; const unit = 1 / PBEATS.reduce((a, b) => a + (PDOWN.has(b) ? 2 : 1), 0);
+    for (const b of PBEATS) { if (t < b) break; const s = (PDOWN.has(b) ? 2 : 1) * unit, a = t - b; k += s * (a > .25 ? 1 : 1 + .6 * Math.sin(a / .25 * Math.PI) * (1 - a / .25) + (easeOut(clamp(a / .12)) - 1)); }
+    return k;
+  };
+  function mound(t) { const k = pileK(t), H = 300 + 520 * k, sg = 170 + 40 * k; return x => 1060 - H * Math.exp(-Math.pow((x - 960) / sg, 2)); }
   function bench(t) {
     back('#1C1F24');
     A03.hall(t, { lamps: [560, 1360], floor: 1060 });
-    // the odometer: a row of blank drums, one more cell every half-second of the hold
-    const cells = 4 + (t > BN.hold ? Math.floor((t - BN.hold) * 2.2) : 0);
+    paint(rectPts(-400, 1060, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
+    // the odometer: short, centred, one more blank drum every downbeat
+    const cells = 3 + [...PDOWN].filter(b => t >= b).length, ox = 960 - cells * 38;
     for (let i = 0; i < cells; i++) {
-      const x = 700 + i * 76, y = 170, pop = clamp((t - BN.hold - (i - 4) / 2.2) / .15);
-      if (i >= 4 && pop <= 0) continue;
-      paint(rectPts(x, y - 50, 70, 100 * (i < 4 ? 1 : pop), 1), { wash: '#15171B', ink: INK, sw: 1 });
+      const x = ox + i * 76, y = 150;
+      paint(rectPts(x, y - 50, 70, 100, 1), { wash: '#15171B', ink: INK, sw: 1 });
       for (let k = 0; k < 3; k++) { const yy = y - 50 + frac(t * (1 + i * .3) + k / 3) * 100; inkLine([[x + 6, yy], [x + 64, yy]], 1.5, A2.steelLt, 'inkfine', 0); }
     }
-    paint(rectPts(680, 110, 20 + Math.min(4, cells) * 76, 120), { ink: A2.hazard, sw: 3 });
-    // the benchmark: one tall bar; a crane hook lifts its top a hair; a magnifier shows the gap
-    const up = easeOut(seg(t, BN.lift - .2, BN.lift + .2)) * 8, bh = 520, bx = 960, by = 1060, boom = t >= BN.boom;
-    if (!boom || t < BN.boom + .3) {
-      [[640, 470, '#8A95A1'], [760, 490, '#8A95A1'], [860, 505, '#8A95A1']].forEach(([x, h, c]) => paint(rectPts(x - 45, by - h, 90, h, 1), { wash: c, fill: mixCol(c, INK, .3), fillOp: 50, tex: .4, ink: INK, sw: 1 }));
-      ceoClawd(1190, 1058, 24, { noShadow: true, flip: true, eyes: t > BN.lift ? 'spark' : 'normal', mouth: t > BN.lift ? 'grin' : 'smile', aR: 1.3, aL: t > BN.lift ? 1.6 : .4 });
-      paint(rectPts(bx - 70, by - bh, 140, bh, 1), { wash: PAL.teal, fill: mixCol(PAL.teal, INK, .3), fillOp: 60, tex: .5, ink: INK, sw: 1.2 });
-      paint(rectPts(bx - 70, by - bh - up - 12, 140, 12 + up), { wash: TK.led, ink: INK, sw: .8 });
-      inkLine([[bx, -400], [bx, by - bh - up - 50]], 2, INK, 'inkfine', 0);
-      inkLine([[bx - 14, by - bh - up - 50], [bx, by - bh - up - 12], [bx + 14, by - bh - up - 50]], 5, A2.steel, 'ink', .5);
-      if (t > BN.lift - .4) {
-        const mx = bx + 190, my = by - bh - 30, R = 90;
-        inkLine([[mx - R * .7, my + R * .7], [mx - R * 1.6, my + R * 1.6]], 12, '#7A4A2E', 'ink', 0);
-        paint(ellPts(mx, my, R, R, 28), { wash: '#DCEFF2', washOp: 140, ink: INK, sw: 2 });
-        paint(rectPts(mx - R * .7, my - 10 - up * 5, R * 1.4, 12 + up * 5), { wash: TK.led, ink: null });
-        inkLine([[mx - R * .7, my + 2], [mx + R * .7, my + 2]], 1.5, INK, 'inkfine', 0);
-      }
+    paint(rectPts(ox - 10, 90, cells * 76 + 14, 120), { ink: A2.hazard, sw: 3 });
+    // the pile
+    const h = mound(t), pts = [[420, 1100]]; for (let x = 420; x <= 1500; x += 30) pts.push([x, h(x)]); pts.push([1500, 1100]);
+    paint(pts, { wash: TK.gold, fill: TK.goldDk, fillOp: 70, tex: .6, ink: INK, sw: 1.2 });
+    for (let i = 0; i < 70; i++) { const x = 500 + hash(i) * 920, y = lerp(h(x), 1080, hash(i + 9) * .9) + 6; if (y < 1075) token(x, y, 14 + hash(i + 3) * 10, { spin: hash(i) }); }
+    const lb = PBEATS.filter(b => t >= b).pop(), la = lb == null ? 9 : t - lb;          // coins bouncing on the last beat
+    if (la < .5) for (let i = 0; i < 8; i++) { const x = 960 + (hash(i + lb * 7) - .5) * 360, v = 300 + hash(i + 2) * 300; token(x, h(x) - v * la + 1400 * la * la, 15, { spin: t * 5 + i }); }
+    // shareholders at the foot, top hats, up to their necks
+    for (const [x, n] of [[780, 1], [880, 2], [1060, 3], [1170, 4]]) {
+      const y = Math.min(1040, h(x) + 50), cheer = Math.abs(Math.sin(t * 7 + n));
+      clawd(x, y, 9, { col: '#8A8A96', dk: '#5A5A66', lt: '#C8C8D2', draw: tophat, eyes: 'happy', mouth: 'grin', aL: 1.4 + cheer * .5, aR: 1.4 + cheer * .5, noShadow: true });
+      paint([[x - 70, y - 20], [x - 30, y - 34], [x, y - 22], [x + 40, y - 36], [x + 70, y - 18], [x + 70, y + 60], [x - 70, y + 60]], { wash: TK.gold, ink: null });
+      for (let k = 0; k < 4; k++) token(x - 50 + k * 33, y - 22 - (k % 2) * 8, 16, {});
     }
-    // the coin mountain: bursts up through the floor on «half a trillion»
-    if (boom) {
-      const h = mound(t), a = t - BN.boom;
-      if (a < .5) { flash((1 - a / .5) * .6, TK.yellowLt); rubble(960, 1060, 700, a, 8); }
-      const pts = [[300, 1100]]; for (let x = 300; x <= 1620; x += 40) pts.push([x, h(x)]); pts.push([1620, 1100]);
-      paint(pts, { wash: TK.gold, fill: TK.goldDk, fillOp: 70, tex: .6, ink: INK, sw: 1.2 });
-      for (let i = 0; i < 60; i++) { const x = 340 + hash(i) * 1240, y = lerp(h(x), 1080, hash(i + 9) * .9) + 6; token(x, y, 14 + hash(i + 3) * 10, { spin: hash(i) + t * (a < 1 ? 3 : 0) }); }
-      for (let i = 0; i < 16 && a < 1.5; i++) { const x = 960 + (hash(i) - .5) * 600, v = 500 + hash(i + 4) * 500; token(x + (hash(i + 7) - .5) * 400 * a, 700 - v * a + 900 * a * a, 16, { spin: t * 4 + i }); }
-      // shareholders, top hats, up to their necks in coins
-      for (const [x, n] of [[560, 1], [720, 2], [1200, 3], [1370, 4]]) {
-        const y = h(x) + 40, cheer = Math.abs(Math.sin(t * 7 + n));
-        clawd(x, y, 9, { col: '#8A8A96', dk: '#5A5A66', lt: '#C8C8D2', draw: tophat, eyes: 'happy', mouth: 'grin', aL: 1.4 + cheer * .5, aR: 1.4 + cheer * .5, noShadow: true });
-        paint([[x - 70, y - 20], [x - 30, y - 34], [x, y - 22], [x + 40, y - 36], [x + 70, y - 18], [x + 70, y + 60], [x - 70, y + 60]], { wash: TK.gold, ink: null });
-        for (let k = 0; k < 4; k++) token(x - 50 + k * 33, y - 22 - (k % 2) * 8, 16, {});
-      }
+    // the singers on the summit hold one note: red, then blue
+    const hk = seg(t, BN.hold, 206), col = hk < .5 ? mixCol('#6F8BE0', '#E0283F', hk * 2) : mixCol('#E0283F', '#4A6AD8', (hk - .5) * 2);
+    for (const [x, n] of [[900, 1], [960, 2], [1020, 3]]) {
+      const y = h(x) + 4, pulse = 1 + .05 * Math.sin(t * 13 + n);
+      agentBot(x, y, 8 * pulse, t, { n: 70 + n, rot: NOTXT, col, dk: mixCol(col, INK, .35), eyes: hk > .6 ? 'swirl' : 'closed', mouth: 'O', aL: 1.6, aR: 1.6, noShadow: true, emote: hk > .45 ? 'sweat' : null });
     }
-    // the hold: singers on the summit hold one note, go red, then blue; an agent brings an oxygen mask; the CEO conducts
-    if (t > BN.hold - .3) {
-      const h = mound(t), hk = seg(t, BN.hold, 203), col = hk < .5 ? mixCol('#6F8BE0', '#E0283F', hk * 2) : mixCol('#E0283F', '#4A6AD8', (hk - .5) * 2);
-      for (const [x, n] of [[880, 1], [960, 2], [1040, 3]]) {
-        const y = h(x) + 4, pulse = 1 + .05 * Math.sin(t * 13 + n);
-        agentBot(x, y, 8 * pulse, t, { n: 70 + n, rot: NOTXT, col, dk: mixCol(col, INK, .35), eyes: hk > .6 ? 'swirl' : 'closed', mouth: 'O', aL: 1.6, aR: 1.6, noShadow: true, emote: hk > .45 ? 'sweat' : null });
-      }
-      const ma = t - BN.mask;                                                    // the medic agent
-      if (ma > -1.5) {
-        const k = clamp((ma + 1.5) / 1.5), x = lerp(1560, 1110, easeOut(k)), y = h(x) + 4;
-        agentBot(x, y, 7, t, { n: 77, rot: NOTXT, walk: t * 3 * (k < 1 ? 1 : 0), flip: true, eyes: 'scared', mouth: 'o', aL: 1.2, aR: 1.2, noShadow: true });
-        paint(ellPts(x - 60, y - 70, 18, 14, 12), { wash: '#BFE3E6', ink: INK, sw: .7 });
-        inkLine([[x - 60, y - 60], [x - 20, y + 10], [x + 30, y - 20]], 2, '#7ACBD0', 'inkfine', .6);
-        paint(rrPts(x + 20, y - 40, 40, 70, 12), { wash: TK.green, ink: INK, sw: .7 });
-      }
-      ceoClawd(440, 1050, 14, { noShadow: true, eyes: 'closed', mouth: 'smile', click: kick(t, EN_GRID, .15), aR: 1.2 + .6 * Math.sin(t * 5), aL: .6 + .5 * Math.sin(t * 5 + 1) });
+    const ma = t - BN.mask;                                                    // the medic agent climbs up with the oxygen
+    if (ma > -1.5) {
+      const k = clamp((ma + 1.5) / 2.5), x = lerp(1340, 1090, easeOut(k)), y = h(x) + 4;
+      agentBot(x, y, 7, t, { n: 77, rot: NOTXT, walk: t * 3 * (k < 1 ? 1 : 0), flip: true, eyes: 'scared', mouth: 'o', aL: 1.2, aR: 1.2, noShadow: true });
+      paint(ellPts(x - 60, y - 70, 18, 14, 12), { wash: '#BFE3E6', ink: INK, sw: .7 });
+      inkLine([[x - 60, y - 60], [x - 20, y + 10], [x + 30, y - 20]], 2, '#7ACBD0', 'inkfine', .6);
+      paint(rrPts(x + 20, y - 40, 40, 70, 12), { wash: TK.green, ink: INK, sw: .7 });
     }
+    ceoClawd(640, 1050, 13, { noShadow: true, eyes: 'closed', mouth: 'smile', click: kick(t, PBEATS, .15), aR: 1.2 + .6 * Math.sin(t * 5), aL: .6 + .5 * Math.sin(t * 5 + 1) });
   }
-  // user notes on draft 2: the RU puppeteers carry the benchmark line (189.06–199, scenes3 RU_CAM); this scene only takes the long «…more» hold
-  scene('e31_bench', 199.0, 210.0, bench, [
-    [199.0, 980, 560, 1000], [BN.mask + .5, 1000, 540, 1100, 1], [204.78, 1060, 480, 1400, 1], [209.99, 1060, 470, 1440, 1],
-  ]);
+  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 960, 600, 1000], [209.99, 960, 600, 960, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
   const SH = { games: 217.08, sites: 218.18, agents: 219.60, grey: 222.32 };

@@ -28,7 +28,7 @@
     // the moon rocket and the website are skipped: the sparkle under the limit bar plays slow under «Don't need an app … why the hell not?»,
     // the arcade holds «game» + «website»
     [18.2, null, 20.2], [20.799, null, 22.6], [20.8, null, 22.7], [23.539, null, 25.2], [23.54, null, 25.3], [26.379, null, 27.75], [26.38, null, 27.85],
-    [29.079, null, 30.45], [29.08, null, 32.55], [34.519, null, 33.95], [34.52, null, 35.15], [39.779, null, 37.7],
+    [29.079, null, 30.45], [29.08, null, 30.52], [29.68, null, 30.95], [30.98, null, 31.62], [31.759, null, 32.45], [31.76, null, 32.55], [34.519, null, 33.95], [34.52, null, 35.15], [39.779, null, 37.7],
     ...PRE.map(([d, v2]) => [39.78 + d, null, v2]),
     // E07 45.46–50.72: one shredder take (a03 chorusA; the limit close-up and the re-entry are dropped in scenes.js)
     [45.46, null, 45.05], [45.47, null, 45.10],                    // gang A shouts on «Burn» (the cut sits on the 45.46 downbeat)
@@ -47,7 +47,7 @@
     // E14 87.60–92.86: the pre-chorus replays a03 crush → talk (+47.43 s, same cues)
     [87.60, null, 40.11, 1], ...PRE.map(([d, v2]) => [87.21 + d, null, v2, 1]).filter(a => a[0] > 87.6), [92.859, null, 45.049, 1],   // 40.11 = the crush at the same point of «Fans» as E06
     // E15–E17 chorus 2 (a05 night factory) + break: ЩЁЛК on the 109.90 downbeat, the four «click»s on the next ones
-    [92.86, 97.45], [95.68, 99.736], [98.00, 102.5], [100.64, 104.9], [102.88, 107.244], [105.84, 112.03],
+    [92.86, 97.45], [95.68, 99.736], [98.00, null, 96.86], [102.879, null, 100.0], [102.88, 107.244], [105.84, 112.03],
     [109.90, 118.075], [110.55, 118.71], [111.2, 119.344], [111.86, 119.978], [112.52, 120.613],
     // E18–E21 bridge: the choir is three calls long in EN (116.44–124.36) → the RU «меди / воды» shot is held slow, not repeated
     [113.84, 121.868], [114.12, 122.265], [116.44, 126.012], [124.36, 128.6], [124.74, 128.72], [126.88, 129.974], [129.98, 132.464], [133.30, 135.004],
@@ -57,11 +57,16 @@
     // E23 139.38: the flywheel, one whip per sung half-phrase (EN has 6 left in this shot, v3 whips 3–8)
     [139.38, 151.6], [139.62, 151.89], [140.88, 152.869], [142.18, 154.175], [143.38, 155.48], [144.78, 156.788], [146.06, 158.092], [147.53, 159.94],
     // E24 THE ECONOMY IS WORKING (148.70 / 149.60), rap on the 152.04 slam
-    [148.56, 160.4], [149.60, 161.483], [152.04, 162.545], [154.46, 164.734], [157.46, 167.819], [160.10, 170.252],
+    [148.56, 160.4], [149.60, 161.483], [152.04, 162.545], [153.24, null, 158.42], [154.08, null, 159.02], [154.46, 164.734], [156.06, null, 160.86],   // a08 calendar 2024 «say» / 2025 «year», LOADING 99.999% «it's» [157.46, 167.819], [160.10, 170.252],
     // E27–E28 mayo (v3 real chapter 172.66–186.95), the held «mayonnaise» 172.14–175.88 rides the tunnel
     [162.86, 172.66], [165.12, 175.552], [167.58, 177.876], [170.30, 180.637], [175.88, 186.12],
     // E29–E31 final chorus (a09)
-    [178.58, 186.95], [181.44, 189.379], [183.82, 191.62], [186.38, 194.313], [189.06, 197.34], [191.88, 199.381], [194.32, 200.768],
+    [178.58, 186.95], [178.84, null, 180.92], [179.82, null, 182.44], [180.46, null, 183.0], [181.44, null, 183.76],   // a09 presses on Burn / burn / tokens, the drain on «Till»
+    // a09 on the EN words (scripts/sync_check.mjs): ДОХОДЫ / ПОТОМ / ПРИБЫЛЬ / ПОТОМ on Revenue / Later / Profit / How, AGI cut, SOON, CAPEX, NOW,
+    // the benchmark cut on «One», the axis presses on «up» / «score», + on «Worth», the puppet jerks on «half» / «trillion»
+    [183.74, null, 185.68], [184.38, null, 186.66], [185.00, null, 187.48], [185.66, null, 188.0], [186.38, null, 188.7],
+    [187.04, null, 190.0], [187.62, null, 190.72], [188.32, null, 191.2], [189.04, null, 191.7], [189.76, null, 192.55], [190.90, null, 193.19],
+    [191.88, null, 193.32], [192.26, null, 193.77], [192.90, null, 194.34], [194.32, 200.768],
     // E31b/c the held «more.» 194.22–209.88: placeholder, the v3 puppets / TV-off stretched until the new scene exists
     [209.88, 203.4], [210.0, 203.565],
     // E32–E34 outro (a10) on the spoken words

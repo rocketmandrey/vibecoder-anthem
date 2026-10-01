@@ -13,6 +13,8 @@
 // a shrinking dot, black (no «0 токенов» here: that belongs to the outro line) → hard cut at 197.9 to the outro.
 (() => {
   const INK = PAL.ink;
+  // R34 (EN reels): a 3:4 layout per shot inside the reels band, screen x 565–1355 (RU34 key [960, 540, 790]); no chapter shakes / punches
+  const R = window.R34;
   // word stresses + strong hits of the final chorus (camera punches, character bounces)
   const ACC = [180.92, 181.72, 182.44, 183.0, 183.76, 184.73, 185.68, 186.12, 186.66, 187.48, 188.0, 188.8, 190.0, 190.72, 191.2,
     191.52, 192.01, 192.55, 193.19, 193.77, 194.34, 194.97, 195.62, 196.28, 196.94, 197.6];
@@ -42,11 +44,11 @@
   }
   // the chapter-long weekly-limit HUD (screen space), always draining, with a ×2 badge
   function a09_hud(t) {
-    const v = limitV(t), x = 40, y = 64;
-    limitBar(x, y, 440, v, { h: 38, burn: .6 });
+    const v = limitV(t), x = R ? 620 : 40, y = R ? 80 : 64, bw = R ? 540 : 440;
+    limitBar(x, y, bw, v, { h: 38, burn: .6 });
     const b = frac(t * 3) < .5;
-    paint(rrPts(x + 452, y - 4, 86, 46, 12), { wash: b ? A2.magenta : '#7A1466', ink: INK, sw: .6 });
-    letter('×2', x + 495, y + 19, 34, A2.cream, { font: ruFont(34), ink: false });
+    paint(rrPts(x + bw + 12, y - 4, 86, 46, 12), { wash: b ? A2.magenta : '#7A1466', ink: INK, sw: .6 });
+    letter('×2', x + bw + 55, y + 19, 34, A2.cream, { font: ruFont(34), ink: false });
   }
   // a document page: title + a little rising line chart
   function a09_doc(cx, cy, w, h, rot, title, col) {
@@ -64,6 +66,7 @@
   // ---------- 180.85 «Жги токены!» ×2: on top of the biggest press ----------
   const P_BIG = [180.92, 182.44, 183.0], P_L = [180.92, 181.72, 182.44, 183.0], P_R = [181.2, 181.72, 182.7, 183.3];
   function blast(t, lt) {
+    if (R) return blastR(t, lt);
     const a = acc(t), [sx, sy] = shakeXY(t, 16 * a);
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: A2.gunDk, ink: null });        // the wide cam sees past the hall's top edge
     a09_hall(t);
@@ -88,8 +91,30 @@
     glitchCut(t, 180.85);
   }
 
+  // 3:4: one big press filling the band, the two of them on its crossbeam, fire behind and below, the HUD on top
+  function blastR(t, lt) {
+    const a = acc(t);
+    paint(rectPts(-60, -60, W + 120, H + 120), { wash: A2.gunDk, ink: null });
+    push(); translate(0, 140); a09_hall(t); pop();                                  // floor line at 980 under the press
+    camBegin(960, 540 - lt * 4, 1);
+    fire(960, 470, 760, 380, t, { k: .95 + .35 * a, seed: 4, n: 6 });
+    siren(645, 430, t, { speed: 1.6, r: 26, len: 300 });
+    siren(1275, 430, t + .3, { speed: -1.6, r: 26, len: 300, col: A2.magenta });
+    const pr = press(640, 440, 640, 540, t, P_BIG, { label: 'ПРЕСС №1 · ПОЛНАЯ МОЩНОСТЬ', seed: 11 });
+    const hop = -a * 1.6;
+    clawd(770, 440, 20, { dy: hop, sq: a * .12, aL: 2.1, aR: 2.1, armL: fist(PAL.clay), armR: fist(PAL.clay), eyes: 'angry', mouth: 'o' });
+    ceoClawd(1150, 440, 20, { dy: hop * .8, sq: a * .1, aL: 2.1, aR: .4, armL: fist(PAL.clay), eyes: 'happy', mouth: 'grin', click: a });
+    fire(960, 1010, 1000, 150, t, { k: .9 + .4 * a, seed: 17, n: 7 });
+    camEnd();
+    punkText('ЖГИ ТОКЕНЫ!', 960, 168, 100, t, 180.92, { seed: 3 });
+    a09_hud(t);
+    flash(pr.k * .25, '#FFE7B0');
+    glitchCut(t, 180.85);
+  }
+
   // ---------- 183.76 «Пока лимит не обнулён»: the burn lever to ×2, the bar drains into the firebox ----------
   function drain(t, lt) {
+    if (R) return drainR(t, lt);
     const a = acc(t), [sx, sy] = shakeXY(t, 10 * a), tL = 183.76, v = limitV(t);
     a09_hall(t, { lamp: .6 });
     camBegin(960 + sx, 540 + sy, 1.0 + lt * .02);
@@ -139,9 +164,58 @@
     flash(Math.exp(-(t - tL) / .08) * .4, '#FFE7B0');
   }
 
+  // 3:4: stacked — the bar on top pouring tokens, the firebox in the middle, the lever + CEO and the burn-rate gauge below; one steady frame
+  function drainR(t, lt) {
+    const a = acc(t), tL = 183.76, v = limitV(t);
+    a09_hall(t, { lamp: .6 });
+    camBegin(960, 540, 1 + lt * .01);
+    fire(960, 710, 680, 340, t, { k: 1 + .3 * a, seed: 21, n: 6 });
+    const bx = 620, bw = 680, bh = bw * .085, by = 110, ex = bx + bh * .15 + (bw - bh * .3) * v;
+    for (let i = 0; i < 10; i++) {
+      const p = frac(t * 2.2 + i / 10), y = by + bh + p * (690 - by - bh), x = ex - 20 + (hash(i) - .5) * 70 + Math.sin(p * 6 + i) * 14;
+      token(x, y, 20 + hash(i + 3) * 8, { spin: t * 2 + hash(i), burn: p > .7 ? (p - .7) * 2.5 : 0 });
+    }
+    paint(rectPts(600, 690, 720, 170, 1), { wash: A2.rust, fill: '#6E2E18', fillOp: 110, tex: .7, border: .5, ink: INK, sw: 1 });
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) {
+      const x0 = 600 + c * 97 + (r % 2) * 48; if (x0 > 1300) continue;
+      inkLine([[x0, 690 + r * 57], [x0, 747 + r * 57]], .5, '#4A1C10', 'inkfine', 0);
+    }
+    for (let r = 1; r < 3; r++) inkLine([[600, 690 + r * 57], [1320, 690 + r * 57]], .5, '#4A1C10', 'inkfine', 0);
+    hazard(600, 680, 720, 22);
+    letter('ТОПКА', 960, 780, 52, A2.hazard, { font: ruFont(52) });
+    limitBar(bx, by, bw, v, { burn: 1, glow: .6 });
+    for (let i = 0; i < 6; i++) {
+      const f = frac(t * 3 + i / 6), x1 = ex - f * (ex - bx) - 40, len = 90;
+      if (x1 - len > bx + 20) inkLine([[x1, by + bh * (.3 + (i % 3) * .2)], [x1 - len, by + bh * (.3 + (i % 3) * .2)]], 1.6, '#FFFFFF', 'inkfine', 0);
+    }
+    // the lever ×1 → ×2, the CEO beside it
+    const la = kf(t, [[tL - .05, -2.3], [tL + .12, -.75], [tL + .22, -.9]], easeOut), px = 830, py = 950;
+    paint(rectPts(px - 55, py - 10, 110, 55, 1), { wash: A2.steel, ink: INK, sw: .8 });
+    const hx = px + Math.cos(la) * 140, hy = py + Math.sin(la) * 140;
+    inkLine([[px, py], [hx, hy]], 5, INK, 'ink', 0);
+    paint(ellPts(hx, hy, 22, 22, 14), { wash: '#E0302A', ink: INK, sw: .8 });
+    letter('×1', 725, 900, 30, A2.cream, { font: ruFont(30) });
+    letter('×2', 955, 900, 34, A2.magenta, { font: ruFont(34) });
+    ceoClawd(690, 1030, 15, { aR: la < -1.5 ? 1.8 : .9, aL: .3, eyes: 'happy', mouth: 'grin', noClicker: true, dy: -a * .8 });
+    // burn-rate gauge
+    const gx = 1175, gy = 880, gr = 82, na = kf(t, [[tL, -2.6], [tL + .18, -.35], [tL + .3, -.6]], backOut) + Math.sin(t * 40) * .04;
+    paint(ellPts(gx, gy, gr + 10, gr + 10, 30), { wash: A2.steel, ink: INK, sw: 1 });
+    paint(ellPts(gx, gy, gr, gr, 30), { wash: A2.cream, ink: null });
+    const arc = []; for (let i = 0; i <= 10; i++) { const q = lerp(-1.1, -.25, i / 10); arc.push([gx + Math.cos(q) * gr * .8, gy + Math.sin(q) * gr * .8]); }
+    inkLine(arc, 7, '#E0302A', 'ink', .5);
+    letter('×1', gx - gr * .6, gy - gr * .1, 26, INK, { font: ruFont(26), ink: false });
+    letter('×2', gx + gr * .55, gy - gr * .1, 28, '#E0302A', { font: ruFont(28), ink: false });
+    inkLine([[gx, gy], [gx + Math.cos(na) * gr * .85, gy + Math.sin(na) * gr * .85]], 3, INK, 'ink', 0);
+    paint(ellPts(gx, gy, 10, 10, 10), { wash: INK, ink: null });
+    letter('СКОРОСТЬ СЖИГАНИЯ', gx, gy + gr + 34, 24, A2.hazard, { font: ruFont(24) });
+    camEnd();
+    flash(Math.exp(-(t - tL) / .08) * .4, '#FFE7B0');
+  }
+
   // ---------- 185.68 «Доходы — потом! Прибыль — потом!»: into the shredder ----------
   const DOCS = [[185.68, 'ДОХОДЫ', '#2F9F5A', 186.66], [187.48, 'ПРИБЫЛЬ', '#2E6BD8', 188.0]];
   function shred(t, lt) {
+    if (R) return shredR(t, lt);
     const a = acc(t), [sx, sy] = shakeXY(t, 9 * a);
     a09_hall(t);
     camBegin(1000 + sx, 580 + sy, 1.15 - lt * .02);
@@ -189,11 +263,54 @@
     a09_hud(t);
   }
 
+  // 3:4: the shredder centred and big, the documents fly up over it, the CEO on his crate right, Clawd dancing bottom-left; slow push, no cuts
+  function shredR(t, lt) {
+    const a = acc(t);
+    a09_hall(t);
+    camBegin(960, 560, 1 + lt * .012);
+    const mx0 = 720, mx1 = 1080, my = 520, mc = (mx0 + mx1) / 2;
+    DOCS.forEach(([t0, , col], d) => {
+      for (let i = 0; i < 14; i++) {
+        const ts = t0 + .5 + i * .04; if (t < ts) continue;
+        const p = clamp((t - ts) / .45), x = 740 + hash(i * 3 + d * 50) * 320, y0 = 850, y1 = 905 + hash(i + d * 9) * 30;
+        const y = lerp(y0, y1, p * p), r = lerp(0, (hash(i * 7 + d) - .5) * 2.6, p) + Math.sin(t * 9 + i) * .2 * (1 - p);
+        paint(rotPts(rectPts(x - 8, y - 38, 16, 76), x, y, r), { wash: A2.cream, ink: INK, sw: .4 });
+        paint(rotPts(rectPts(x - 8, y - 38, 16, 18), x, y, r), { wash: col, ink: null });
+      }
+    });
+    paint(rectPts(mx0, my - 16, mx1 - mx0, 30), { wash: '#0C0D10', ink: INK, sw: .8 });
+    for (const [t0, title, col, tP] of DOCS) {
+      const ag = t - t0; if (ag < 0 || ag > 1.6) continue;
+      const dw = 220, dh = 280;
+      let cx, cy, rot;
+      if (ag < .38) { const p = ag / .38; cx = lerp(1170, mc, p); cy = lerp(580, my - dh / 2 - 20, p) - Math.sin(p * Math.PI) * 160; rot = (1 - p) * 2.6; }
+      else { const p = easeIn(clamp((ag - .38) / 1.1)); cx = mc + Math.sin(t * 70) * 5; cy = lerp(my - dh / 2 - 20, my + dh / 2 + 30, p); rot = Math.sin(t * 50) * .02; }
+      a09_doc(cx, cy, dw, dh, rot, title, col);
+      if (t >= tP) stamp('ПОТОМ', cx, cy - 20, 60, t, tP, { rot: -.14, col: '#E0302A' });
+    }
+    flushLetters();
+    paint(rectPts(mx0 - 40, my, mx1 - mx0 + 80, 320, 1), { wash: A2.steel, fill: A2.gunDk, fillOp: 90, tex: .6, border: .4, ink: INK, sw: 1.2 });
+    hazard(mx0 - 40, my, mx1 - mx0 + 80, 30);
+    for (let i = 0; i < 7; i++) gear(mx0 + 16 + i * 55, my + 6, 24, t, { speed: (i % 2 ? -1 : 1) * 3, col: A2.steelLt, n: 8 });
+    paint(rectPts(mc - 170, 800, 340, 32), { wash: '#0C0D10', ink: INK, sw: .8 });
+    letter('ШРЕДДЕР', mc, 640, 50, A2.hazard, { font: ruFont(50) });
+    letter('утилизация лишнего', mc, 700, 28, A2.cream, { font: ruFont(28) });
+    paint(rectPts(1105, 740, 180, 140, 1), { wash: '#6B4A2A', fill: '#3E2A16', fillOp: 70, tex: .6, ink: INK, sw: 1 });
+    hazard(1105, 840, 180, 40);
+    const throwA = d => kf(t, [[DOCS[d][0] - .35, .3], [DOCS[d][0] - .08, 2.5], [DOCS[d][0] + .08, -.3], [DOCS[d][0] + .5, .3]], ease);
+    ceoClawd(1195, 740, 18, { aR: t < 186.9 ? throwA(0) : throwA(1), aL: .5, eyes: 'happy', mouth: 'grin', noClicker: true, dy: -a * .6 });
+    dancer(680, 1000, 16, 'roof', t, { eyes: 'happy', mouth: 'grin', armL: fist(PAL.clay), armR: fist(PAL.clay) });
+    camEnd();
+    a09_hud(t);
+  }
+
   // ---------- 188.8 «ЭЙДЖИАЙ — скоро! CAPEX — сейчас!»: the dusty billboard vs the neon chimney ----------
   function capex(t, lt) {
     const a = acc(t), tC = 190.72, tN = 191.2;
-    const cam = kf(t, [[188.8, [560, 480, 1.4]], [190.55, [620, 480, 1.45]], [190.72, [1400, 470, 1.25]], [191.12, [1400, 450, 1.2]], [191.4, [1000, 480, .9]]], ease);
-    const [sx, sy] = shakeXY(t, 10 * a);
+    // 3:4: two steady framings with a clean cut on «CAPEX» — the billboard (slow push), then the whole chimney, flame to base
+    const cam = R ? (t < tC ? [510, 540, lerp(1.35, 1.4, ease(seg(t, 188.7, tC)))] : [1400, 250, lerp(.88, .9, ease(seg(t, tC, 191.7)))])
+      : kf(t, [[188.8, [560, 480, 1.4]], [190.55, [620, 480, 1.45]], [190.72, [1400, 470, 1.25]], [191.12, [1400, 450, 1.2]], [191.4, [1000, 480, .9]]], ease);
+    const [sx, sy] = R ? [0, 0] : shakeXY(t, 10 * a);
     paint(rectPts(-400, -300, W + 800, H + 600), { wash: '#2A1E33', fill: A2.rust, fillOp: 50, bleed: .1, tex: .5, ink: null });
     glowAt(960, 900, 900, A2.sodium, 70);
     camBegin(cam[0] + sx, cam[1] + sy, cam[2]);
@@ -204,7 +321,7 @@
     paint(rectPts(495, 620, 28, 240), { wash: A2.steel, ink: INK, sw: .7 });
     paint(rectPts(260, 300, 500, 330, 1), { wash: '#4A4650', fill: '#2A282E', fillOp: 90, tex: .7, border: .5, ink: INK, sw: 1.2 });
     const fl = hash(Math.floor(t * 9)) > .78 ? .35 : 1;
-    letter('AGI', 510, 390, 120, mixCol('#8FA0B8', '#3A3E48', 1 - fl), { stroke: '#1A1A20' });
+    letter('AGI', 510, 390, R ? 62 : 120, mixCol('#8FA0B8', '#3A3E48', 1 - fl), { stroke: '#1A1A20' });
     const sa = t * 7;
     for (let i = 0; i < 8; i++) {
       const q = sa + i / 8 * TAU;
@@ -224,15 +341,16 @@
       token(x, y, 20 + hash(i + 2) * 10, { spin: t * 3 + i, burn: .4 + p * .6 });
     }
     'CAPEX'.split('').forEach((c, i) => {
-      const on = t >= tC + i * .07, y = 210 + i * 130, pk = on ? Math.exp(-(t - tC - i * .07) / .15) : 0;
-      if (on) glowAt(1400, y, 110 + 60 * pk, A2.magenta, 90);
-      letter(c, 1400, y, 120, on ? '#FFD0F6' : '#5A2A50', { stroke: on ? A2.magenta : '#3A1A30', ink: false, pop: on ? 1 : undefined });
+      const on = t >= tC + i * .07, y = R ? 190 + i * 110 : 210 + i * 130, pk = on ? Math.exp(-(t - tC - i * .07) / .15) : 0;
+      if (on) glowAt(1400, y, (R ? 80 : 110) + 60 * pk, A2.magenta, 90);
+      letter(c, 1400, y, R ? 62 : 120, on ? '#FFD0F6' : '#5A2A50', { stroke: on ? A2.magenta : '#3A1A30', ink: false, pop: on ? 1 : undefined });
     });
     if (t >= tN) {
       const k = backOut((t - tN) / .15);
-      glowAt(1400, 800, 300 * k, A2.acid, 80);
-      paint(rrPts(1400 - 260 * k, 752, 520 * k, 96, 20), { wash: '#10140A', ink: A2.acid, sw: 1.4 });
-      if (k > .5) letter('СЕЙЧАС!', 1400, 800, 76, '#EFFFC8', { font: ruFont(76), stroke: A2.acid, ink: false });
+      glowAt(1400, R ? 748 : 800, (R ? 200 : 300) * k, A2.acid, 80);
+      const ny = R ? 700 : 752, nw = R ? 300 : 520, ns = R ? 60 : 76;               // 3:4: a smaller NOW! plate above the frame bottom, its word under the gate
+      paint(rrPts(1400 - nw / 2 * k, ny, nw * k, 96, 20), { wash: '#10140A', ink: A2.acid, sw: 1.4 });
+      if (k > .5) letter('СЕЙЧАС!', 1400, ny + 48, ns, '#EFFFC8', { font: ruFont(ns), stroke: A2.acid, ink: false });
     }
     camEnd();
     a09_hud(t);
@@ -241,6 +359,7 @@
   // ---------- 191.74 «Плюс процент к бенчмарку»: presses push the axis down, so the bar "grows" ----------
   const AX_HITS = [192.55, 193.19];
   function bench(t, lt) {
+    if (R) return benchR(t, lt);
     const a = acc(t), [sx, sy] = shakeXY(t, 14 * hitK(t, AX_HITS, .15));
     a09_hall(t, { lamp: .7 });
     camBegin(960 + sx, 530 + sy, 1.02 + lt * .025);
@@ -278,12 +397,54 @@
     camEnd();
   }
 
+  // 3:4: a tall board filling the band; axis labels inside the chart right of the axis, the rams at the beam ends clear of them
+  function benchR(t, lt) {
+    a09_hall(t, { lamp: .7 });
+    camBegin(960, 540, 1 + lt * .012);
+    paint(rectPts(590, 90, 740, 870, 1), { wash: A2.steel, ink: INK, sw: 1.2 });
+    paint(rectPts(608, 108, 704, 834, 1), { wash: A2.cream, fill: '#D9CFB5', fillOp: 60, tex: .5, ink: null });
+    letter('БЕНЧМАРК', 960, 170, 54, INK, { font: ruFont(54), ink: false });
+    const ax = 700, vy = v => 260 + (88.5 - v) / 1.5 * 460, base = kf(t, [[192.45, 720], [192.55, 800], [193.09, 800], [193.19, 870]], easeOut);
+    for (const v of [88.5, 88.0, 87.5]) {
+      inkLine([[ax, vy(v)], [1290, vy(v)]], .5, '#B8AE98', 'inkfine', 0);
+      letter(v.toFixed(1), ax + 14, vy(v) - 20, 30, INK, { font: ruFont(30), ink: false, align: 'left' });
+    }
+    inkLine([[ax, 240], [ax, base]], 2, INK, 'ink', 0);
+    paint([[ax - 12, base - 70], [ax + 12, base - 82], [ax - 12, base - 94], [ax + 12, base - 106]], { ink: INK, sw: 1.2 });
+    letter('87.0', ax + 14, base - 22, 30, '#E0302A', { font: ruFont(30), ink: false, align: 'left' });
+    for (const [x, v, lab, col] of [[800, 87.1, 'было', '#8A95A1'], [1060, 88.1, 'стало', '#2F9F5A']]) {
+      const top = vy(v);
+      paint(rectPts(x, top, 210, base - top, 1), { wash: col, fill: mixCol(col, INK, .3), fillOp: 70, tex: .5, ink: INK, sw: 1 });
+      letter(v.toFixed(1) + '%', x + 105, top - 30, 40, INK, { font: ruFont(40), ink: false });
+      letter(lab, x + 105, base - 30, 32, A2.cream, { font: ruFont(32), ink: false });
+    }
+    hazard(620, base, 680, 26);
+    for (const px of [640, 1280]) {
+      const hk = hitK(t, AX_HITS, .15);
+      paint(rectPts(px - 14, -300, 28, base - 70 + 300), { wash: A2.steelLt, fill: A2.steel, fillOp: 70, tex: .3, ink: INK, sw: .6 });
+      paint(rectPts(px - 45, base - 72, 90, 72, 1), { wash: A2.steel, fill: A2.gunDk, fillOp: 90, tex: .5, ink: INK, sw: 1 });
+      hazard(px - 45, base - 22, 90, 22);
+      for (const at of AX_HITS) sparks(px, base + 26, t - at, 40 + px, 10, 140);
+      if (hk > .2) steam(px, base - 40, t, { dir: px < 960 ? Math.PI + .4 : -.4, k: hk, len: 120, seed: px, n: 4, per: .6 });
+    }
+    stamp('+1%', 900, 420, 100, t, 191.88, { col: '#2F9F5A', rot: -.1 });
+    if (t > 192.6) letter('(ось от 87)', 1150, base + 55, 24, '#8A7F68', { font: ruFont(24), ink: false });
+    camEnd();
+  }
+
   // ---------- 193.32 «плюс триста миллиардов»: the whole factory is a puppet show ----------
   const T_PLUS = 193.32, JERK = [193.77, 194.34, 194.66, 194.97, 195.62], T_OFF = 196.28;
   const SKIN = '#D9A58A', SKIN_DK = '#A06A55', SUIT = '#1C2130', SHIRT = '#EFEAE0', STR = '#E8E1C9';
   const jerkN = t => { let n = -1; JERK.forEach((h, i) => { if (h <= t) n = i; }); return n; };
   // camera: counter close-up → the factory on strings → up to the shareholders → the bigger hand → whip to the tag
-  const pupCam = t => kf(t, [[T_PLUS, [960, 185, 1.15]], [193.9, [960, 200, 1.1]], [194.3, [960, 430, .6]], [194.62, [960, 330, .56]],
+  // 3:4 (R34): the whole factory box → up to the hands with the puppets still in → up to the shareholders, eased, never cut
+  // (the EN cut leaves this chapter at 195.13, before the bigger hand); the layout is pulled in to x 250–1670 (PU)
+  const PU = R ? { wall: [250, 1590], ch: [520, 1400], panel: [560, 800], press: [440, 1240], pw: 240, pup: [780, 1140], fireW: 220,
+    hand: [640, 1280], hs: 1.3, hl: 560, boss: [560, 960, 1360], bs: .65, plaque: [700, 520, 58] }
+    : { wall: [-480, W + 400], ch: [260, 1660], panel: [180, 1560], press: [60, 1540], pw: 320, pup: [720, 1200], fireW: 330,
+    hand: [560, 1360], hs: 1.5, hl: 760, boss: [330, 960, 1590], bs: 1, plaque: [580, 760, 112] };
+  const pupCam = R ? t => kf(t, [[T_PLUS, [960, 290, .7]], [193.9, [960, 280, .71]], [194.3, [960, 50, .52]], [194.62, [960, 30, .52]],
+    [195.02, [960, -900, .62]], [T_OFF, [960, -920, .62]]], ease) : t => kf(t, [[T_PLUS, [960, 185, 1.15]], [193.9, [960, 200, 1.1]], [194.3, [960, 430, .6]], [194.62, [960, 330, .56]],
     [195.02, [960, -420, .4]], [195.42, [960, -810, .21]], [195.68, [960, -810, .21]], [195.84, [960, -2390, .5]], [T_OFF, [960, -2380, .52]]], ease);
 
   // a puppet string that twangs after every jerk
@@ -325,12 +486,14 @@
   function a09_pupScene(t) {
     const cam = pupCam(t), z = cam[2], n = jerkN(t), jk = n >= 0 ? hitK(t, JERK, .16) : 0, sd = n % 2 ? 1 : -1;
     const big = t >= 195.62 ? hitK(t, [195.62], .2) : 0;                                   // the bigger hand yanks everything once
-    const [sx, sy] = shakeXY(t, 22 * hitK(t, [T_PLUS, 193.77], .2) + 6 * jk);
+    const [sx, sy] = R ? [0, 0] : shakeXY(t, 22 * hitK(t, [T_PLUS, 193.77], .2) + 6 * jk);
     camBegin(cam[0] + sx / z, cam[1] + sy / z, z);
     // dusk sky, darkening upward
     paint(rectPts(-4200, -5200, 10400, 6400), { wash: '#120F1C', ink: null });
     paint(rectPts(-4200, -2000, 10400, 3200), { wash: '#221A2E', washOp: 200, ink: null });
     paint(rectPts(-4200, -600, 10400, 1800), { wash: '#3A2436', washOp: 170, ink: null });
+    // 3:4: the camera climbs above world y −1100, where SQ rectPts clamps full-width backdrops; two half-width (unclamped) panels carry the sky up
+    if (R) for (const x of [-1000, 950]) paint(rectPts(x, -2600, 1990, 1560), { wash: '#1F1829', ink: null });
     glowAt(960, 500, 1500, A2.sodium, 45);
     paint(rectPts(-4200, 1000, 10400, 2000), { wash: '#0E0F12', ink: null });
     for (let i = 0; i < 16; i++) {                                                          // distant factories on the horizon
@@ -343,18 +506,18 @@
     a09_hall(t);
     paint(rectPts(-420, -320, W + 840, 340), { wash: '#221A2E', ink: null });
     paint(rectPts(-420, -320, W + 840, 340), { wash: '#3A2436', washOp: 170, ink: null });
-    const chL = a09_chimney(260, t, jk, sd, 51), chR = a09_chimney(1660, t, jk, -sd, 57);
+    const chL = a09_chimney(PU.ch[0], t, jk, sd, 51), chR = a09_chimney(PU.ch[1], t, jk, -sd, 57);
     inkLine([[-440, -60], [W + 440, -60]], 3, A2.gunmetal, 'ink', 0);                     // open roof truss
     inkLine([[-440, 30], [W + 440, 30]], 3, A2.gunmetal, 'ink', 0);
     for (let i = 0; i <= 14; i++) { const x = -440 + i * 200; inkLine([[x, -60], [x + 200, 30]], 1.4, A2.steel, 'inkfine', 0); inkLine([[x, -60], [x, 30]], 1.4, A2.steel, 'inkfine', 0); }
-    for (const x of [-480, W + 400]) paint(rectPts(x, -70, 80, 1080, 1), { wash: '#2A2C33', fill: A2.rust, fillOp: 50, tex: .6, ink: INK, sw: 1 });
+    for (const x of PU.wall) paint(rectPts(x, -70, 80, 1080, 1), { wash: '#2A2C33', fill: A2.rust, fillOp: 50, tex: .6, ink: INK, sw: 1 });
     // the counter panel, hanging on two strings
     const cdy = -(8 + 34 * jk * (sd > 0 ? 1 : .6)), a0 = t - T_PLUS, ag = t - 193.77;
     const sc = a0 < .12 ? lerp(1.8, 1, easeOut(a0 / .12)) : ag >= 0 && ag < .12 ? lerp(1.25, 1, easeOut(ag / .12)) : 1;
     push(); translate(960, 185 + cdy); scale(sc); translate(-960, -185);
-    paint(rectPts(180, 60, 1560, 250, 1), { wash: A2.gunDk, ink: A2.hazard, sw: 1.4 });
+    paint(rectPts(PU.panel[0], 60, PU.panel[1], 250, 1), { wash: A2.gunDk, ink: A2.hazard, sw: 1.4 });
     pop();
-    counter(960, 165 + cdy, 124 * sc, 300000000000, { col: A2.hazard });
+    counter(960, 165 + cdy, (R ? 66 : 124) * sc, 300000000000, { col: A2.hazard });   // 3:4: fits the narrower panel
     letter('ТОКЕНОВ СОЖЖЕНО ЗА НЕДЕЛЮ', 960, 275 + cdy, 42 * sc, A2.cream, { font: ruFont(42 * sc) });
     if (ag >= 0 && ag < .5) for (let i = 0; i < 10; i++) {                                 // gold burst on the monster hit
       const q = i / 10 * TAU, d = 300 + 700 * easeOut(ag / .5);
@@ -362,9 +525,9 @@
     }
     // the floor: presses slam when their strings are yanked, the fire in between
     const JF = JERK.slice(1);
-    press(60, 400, 320, 440, t, JF, { label: 'ПРЕСС 2', seed: 3, steam: false });
-    press(1540, 400, 320, 440, t, JF, { label: 'ПРЕСС 3', seed: 7, steam: false });
-    fire(960, 842, 330, 230, t, { k: .9 + .5 * jk, seed: 61, n: 5 });
+    press(PU.press[0], 400, PU.pw, 440, t, JF, { label: 'ПРЕСС 2', seed: 3, steam: false });
+    press(PU.press[1], 400, PU.pw, 440, t, JF, { label: 'ПРЕСС 3', seed: 7, steam: false });
+    fire(960, 842, PU.fireW, 230, t, { k: .9 + .5 * jk, seed: 61, n: 5 });
     // CEO + Clawd, limp on their strings, jerked arm-up on each hit
     const U = 24, lift = .5 + 2 * jk + 1.5 * big, up = lerp(-.7, 2.4, jk), dn = lerp(-.7, -.3, jk), sway = Math.sin(t * 3.1) * .03;
     const pup = (x, flip, draw) => {
@@ -372,37 +535,42 @@
       draw(x, 840, { dy: -lift, aL, aR, rot: sway + sd * flip * .07 * jk, noShadow: false });
       return [[x, y - 8 * U], [x - (4.9 + 2.2 * Math.cos(aL)) * U, y - 4.5 * U - 2.2 * Math.sin(aL) * U], [x + (4.9 + 2.2 * Math.cos(aR)) * U, y - 4.5 * U - 2.2 * Math.sin(aR) * U]];
     };
-    const ceoP = pup(720, 1, (x, y, o) => ceoClawd(x, y, U, { ...o, eyes: 'happy', mouth: 'grin', noClicker: true }));
-    const clP = pup(1200, -1, (x, y, o) => clawd(x, y, U, { ...o, eyes: jk > .3 ? 'scared' : 'normal', mouth: 'o' }));
+    const ceoP = pup(PU.pup[0], 1, (x, y, o) => ceoClawd(x, y, U, { ...o, eyes: 'happy', mouth: 'grin', noClicker: true }));
+    const clP = pup(PU.pup[1], -1, (x, y, o) => clawd(x, y, U, { ...o, eyes: jk > .3 ? 'scared' : 'normal', mouth: 'o' }));
     // the investors' layer: faceless shareholders in the clouds, cigar, their hands work the control bars
     const bigBar = [960, -1900], bigAng = -.07 * big;
-    for (const [x, cig] of [[330, 0], [960, 1], [1590, 0]]) {
+    PU.boss.forEach((x, i) => {                                                           // shareholders scaled by bs around their collar (x, -1250)
+      push(); translate(x, -1250); scale(PU.bs); translate(-x, 1250);
       paint(ellPts(x, -1215, 340, 200, 24), { wash: SUIT, fill: '#0E1119', fillOp: 60, tex: .4, ink: INK, sw: 1.4 });
       paint([[x - 85, -1410], [x + 85, -1410], [x, -1250]], { wash: SHIRT, ink: null });
       paint([[x - 20, -1398], [x + 20, -1398], [x + 30, -1270], [x, -1235], [x - 30, -1270]], { wash: '#7A1420', ink: null });
       token(x - 150, -1300, 22, { glow: .3 });                                                // a lapel pin
       paint(ellPts(x, -1500, 128, 158, 22), { wash: '#262A36', fill: '#141720', fillOp: 90, tex: .4, ink: INK, sw: 1.4 });   // no face
-      if (cig) {
-        smoke(1235, -1520, t, { n: 5, r: 60, h: 480, seed: 9, col: '#8A8480' });
-        paint(rotPts(rectPts(1045, -1466, 190, 30, 1), 1045, -1451, -.12), { wash: '#6B4020', ink: INK, sw: .8 });
-        glowAt(1233, -1475, 55, '#FF5A1A', 150);
-        paint(ellPts(1233, -1475, 16, 16, 10), { wash: '#FF8A3A', ink: null });
+      if (i === 1) {
+        smoke(x + 275, -1520, t, { n: 5, r: 60, h: 480, seed: 9, col: '#8A8480' });
+        paint(rotPts(rectPts(x + 85, -1466, 190, 30, 1), x + 85, -1451, -.12), { wash: '#6B4020', ink: INK, sw: .8 });
+        glowAt(x + 273, -1475, 55, '#FF5A1A', 150);
+        paint(ellPts(x + 273, -1475, 16, 16, 10), { wash: '#FF8A3A', ink: null });
       }
-    }
-    const barL = a09_hand(560, -520 - 30 * jk * (sd > 0 ? 1 : 0) - 60 * big, 1.5, 760, sd * .12 * jk + bigAng, { sleeve: -1220 });
-    const barR = a09_hand(1360, -520 - 30 * jk * (sd < 0 ? 1 : 0) - 60 * big, 1.5, 760, sd * .12 * jk - bigAng, { sleeve: -1220 });
+      pop();
+    });
+    const HL = PU.hand[0], HR = PU.hand[1];
+    const barL = a09_hand(HL, -520 - 30 * jk * (sd > 0 ? 1 : 0) - 60 * big, PU.hs, PU.hl, sd * .12 * jk + bigAng, { sleeve: -1220 });
+    const barR = a09_hand(HR, -520 - 30 * jk * (sd < 0 ? 1 : 0) - 60 * big, PU.hs, PU.hl, sd * .12 * jk - bigAng, { sleeve: -1220 });
     for (let i = 0; i < 26; i++) {                                                           // the cloud bank
       const x = -3600 + i * 350 + hash(i) * 120, y = -1080 + hash(i * 7) * 90, r = 230 + hash(i * 3) * 150;
       paint(ellPts(x, y, r, r * .55, 20), { wash: '#4E3F58', fill: '#2E2438', fillOp: 70, tex: .5, ink: null });
       paint(ellPts(x - r * .15, y - r * .2, r * .7, r * .3, 16), { fill: '#9A7C8A', fillOp: 70, bleed: .2, tex: .4, ink: null });
     }
-    paint(rrPts(580, -1135, 760, 150, 14, 1), { wash: '#C9A24A', fill: '#8A6A24', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
-    letter('АКЦИОНЕРЫ', 960, -1060, 112, '#2A1E10', { font: ruFont(112), ink: false });
+    const [plx, plw, pls] = PU.plaque;                                                     // 3:4: the plaque's word under the 64 px text gate, so it reads
+    paint(rrPts(plx, -1135, plw, R ? 120 : 150, 14, 1), { wash: '#C9A24A', fill: '#8A6A24', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });
+    letter('АКЦИОНЕРЫ', 960, R ? -1075 : -1060, pls, '#2A1E10', { font: ruFont(pls), ink: false });
     // the puppet strings: investor bars → counter, presses, chimneys, CEO, Clawd
-    const L = barL, R = barR;
-    [[L, [340, 60 + cdy]], [L, [220, 400]], [L, chL], [R, [1580, 60 + cdy]], [R, [1700, 400]], [R, chR]].forEach(([b, p], i) => a09_str(b(p[0] - (b === L ? 560 : 1360)), p, t, z, i));
-    ceoP.forEach((p, i) => a09_str(L(p[0] - 560), p, t, z, 10 + i));
-    clP.forEach((p, i) => a09_str(R(p[0] - 1360), p, t, z, 20 + i));
+    const L = barL, Rb = barR;
+    const pl = PU.panel[0], pr = PU.panel[0] + PU.panel[1], xl = PU.press[0] + PU.pw / 2, xr = PU.press[1] + PU.pw / 2;
+    [[L, [pl + 160, 60 + cdy]], [L, [xl, 400]], [L, chL], [Rb, [pr - 160, 60 + cdy]], [Rb, [xr, 400]], [Rb, chR]].forEach(([b, p], i) => a09_str(b(p[0] - (b === L ? HL : HR)), p, t, z, i));
+    ceoP.forEach((p, i) => a09_str(L(p[0] - HL), p, t, z, 10 + i));
+    clP.forEach((p, i) => a09_str(Rb(p[0] - HR), p, t, z, 20 + i));
     // the bigger hand: its strings run to the shareholders' heads and wrists; it hangs from a tiny grey tag
     if (z < .45 || cam[1] < -1500) {
       const B = a09_hand(bigBar[0], bigBar[1] - 90 * big, 4.2, 1600, bigAng);
@@ -443,7 +611,7 @@
   }
   function puppets(t) {
     a09_pupScene(t);
-    flash(hitK(t, [T_PLUS], .09) * .4 + hitK(t, [193.77], .09) * .7, '#FFF2C0');
+    flash((hitK(t, [T_PLUS], .09) * .4 + hitK(t, [193.77], .09) * .7) * (R ? .35 : 1), '#FFF2C0');   // 3:4: no washed frame
     if (t >= 196.0) a09_crt(t, seg(t, 196.0, 196.12));
   }
 
@@ -480,3 +648,5 @@
     [180.85, blast], [183.76, drain], [185.4, shred], [188.7, capex], [191.7, bench], [T_PLUS, puppets], [T_OFF, tvOff]
   ]);
 })();
+// 3:4 reels: one fixed band over the chapter's own R34 cameras (EN 178.58–194.32; 194.32+ is the EN coin mountain)
+if (window.RU34) RU34.push([178.58, 194.32, [[178.58, 960, 540, 790]]]);

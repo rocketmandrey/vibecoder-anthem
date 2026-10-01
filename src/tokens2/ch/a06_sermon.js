@@ -19,6 +19,9 @@
   const a06_PILLARS = [20, 660, 1160, 1800];
   const a06_CEO = [960, 700, 32];                                    // ground x, y, u (legs hidden by the pulpit)
   const a06_BILL = [1190, 390];                                      // scroll hangs at world x .. x + w
+  // R34 (3:4 reels): the sermon plays in one steady frame, world x 355..1595 (RU34 keys at the file end): the tag left and the bill right
+  // flank the pulpit inside the frame, the choir stalls squeeze in, the madman shouts from a front pew, the chapter camera stays still
+  const a06_BILL_R = [1185, 330], a06_TAGX_R = 585, a06_MAD_R = [610, 1150], a06_CHOIR_F = .7;
 
   // ---------- small helpers ----------
   function a06_arch(cx, top, w, h) {                                 // pointed gothic arch
@@ -166,17 +169,17 @@
   function a06_choir(t, o = {}) {
     const k = hitK(t, a06_HC, .35), s = o.s || 12;
     for (const side of [-1, 1]) {
-      const X = x => side < 0 ? x : W - x;
+      const X0 = x => side < 0 ? x : W - x, f = o.f || 1, X = x => 960 + (X0(x) - 960) * f;   // o.f: squeeze the stalls toward the pulpit (R34)
       for (const [gy, xs, row] of [[770, [150, 310, 470], 0], [855, [230, 390, 550], 1]]) {
         xs.forEach((x, i) => {
           const n = 7 + row * 4 + i + (side > 0 ? 20 : 0), my = o.mouth ? o.mouth(n) : (k > .3 ? 'O' : 'smile');
           a06_angel(X(x), gy, s, t, { n, k: k * (.6 + .4 * hash(n)), mouth: my, eyes: o.eyes, lookX: o.lookX ? o.lookX * (side < 0 ? 1 : -1) : 0, lookY: o.lookY,
             emote: o.emote && hash(n * 3) > .45 ? o.emote : null, emoteK: o.emoteK });
         });
-        const rx = side < 0 ? 40 : W - 620;                                           // carved stall rail
-        paint(rectPts(rx, gy - 34, 580, 56), { wash: '#4A2A1E', ink: INK, sw: .7 });
-        for (let q = 0; q < 8; q++) inkLine([[rx + 36 + q * 72, gy - 20], [rx + 36 + q * 72, gy + 16]], .8, '#2A1812', 'ink', 0);
-        inkLine([[rx, gy - 34], [rx + 580, gy - 34]], 1.2, '#B4502A', 'ink', 0);
+        const rw = 580 * f, rx = side < 0 ? X(40) : X(40) - rw;                      // carved stall rail
+        paint(rectPts(rx, gy - 34, rw, 56), { wash: '#4A2A1E', ink: INK, sw: .7 });
+        for (let q = 0; q < 8; q++) inkLine([[rx + (36 + q * 72) * f, gy - 20], [rx + (36 + q * 72) * f, gy + 16]], .8, '#2A1812', 'ink', 0);
+        inkLine([[rx, gy - 34], [rx + rw, gy - 34]], 1.2, '#B4502A', 'ink', 0);
       }
     }
   }
@@ -363,20 +366,21 @@
   }
 
   // ---------- 125.15 the madman; the intelligence price tag shrinks, the bill unrolls to the floor ----------
-  function a06_bill(t, p, tot = 1) {                                          // p 0..1 unrolled; scroll hangs from the vault to the floor then pools right
-    const [x, w] = a06_BILL, top = 60, fl = 880, len = p * 1500, vert = Math.min(len, fl - top), pool = Math.max(0, len - vert);
+  function a06_bill(t, p, tot = 1, dy = 0) {                                          // p 0..1 unrolled; scroll hangs from the vault to the floor then pools right
+    const R = window.R34, [x, w] = R ? a06_BILL_R : a06_BILL, top = 60 + dy, fl = 880 + dy, len = p * 1500, vert = Math.min(len, fl - top), pool = Math.max(0, len - vert);
     paint(rectPts(x - 16, top - 30, w + 32, 34, 1), { wash: '#B4502A', fill: '#6E2E18', fillOp: 80, tex: .5, ink: INK, sw: .7 });   // the roller
     if (vert < 4) return;
     paint(rectPts(x, top, w, vert, .5), { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .5 });
     letter('СЧЁТ', x + w / 2, top + 40, 48, '#2B2233', { font: ruFont(48), ink: false });
     for (let y = top + 90; y < top + vert - 10; y += 34) inkLine([[x + 20, y], [x + w - 20, y]], .4, '#C8C0B4', 'inkfine', 0);   // ruled paper, no text
     if (pool > 4) {                                                   // the tail piles up on the floor in loops
-      paint([[x, fl - 10], [x + w, fl - 10], [x + w + pool * .55, fl + 34], [x + pool * .55 - 40, fl + 50]], { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .5 });
-      for (let i = 0; i < Math.min(5, pool / 110); i++) paint(ellPts(x + w * .5 + i * 70, fl + 10 - i * 4, 60, 26, 14), { ink: INK, sw: .5 });
+      const pw = pool * (R ? .12 : .55);                                // R34: the pile stays inside the 3:4 frame
+      paint([[x, fl - 10], [x + w, fl - 10], [x + w + pw, fl + 34], [x + pw - 40, fl + 50]], { wash: '#FBF8F2', fill: '#E9E2D6', fillOp: 60, tex: .4, ink: INK, sw: .5 });
+      for (let i = 0; i < Math.min(R ? 2 : 5, pool / 110); i++) paint(ellPts(x + w * .5 + i * 70, fl + 10 - i * 4, 60, 26, 14), { ink: INK, sw: .5 });
     }
     // the total rides down on the unrolling edge and stops mid-scroll
     const k = seg(p, .15, .35) * tot; if (k <= 0) return;
-    const ty = Math.min(top + vert - 120, 500);
+    const ty = Math.min(top + vert - 120, 500 + dy);
     paint(rectPts(x + 14, ty - 46, w - 28, 150, 1), { wash: '#FFF5E2', washOp: 255 * k, ink: k > .99 ? '#D8262A' : null, sw: 1.2 });
     letter('ИТОГО:', x + w / 2, ty, 52, '#2B2233', { font: ruFont(52), ink: false, alpha: k });
     letter('$300 МЛРД', x + w / 2, ty + 64, 56, '#D8262A', { font: ruFont(56), ink: false, alpha: k });   // ponytail: 300 000 000 000 won't fit ≥40 px on the scroll
@@ -395,8 +399,16 @@
       letter(fmt, x, y + 40 * s, fs, '#D8262A', { font: ruFont(fs), ink: false });
     }
   }
-  function a06_madman(t, x, y, u) {
+  function a06_madman(t, x, y, u, calm = 0) {
     const sh = Math.floor(t * 14);
+    if (window.R34) {                                                                     // steady: no hash shake, smooth gestures
+      paint(rectPts(x - 180, y, 420, 40, 1), { wash: '#4A2A1E', fill: '#2A1812', fillOp: 90, tex: .6, ink: INK, sw: .8 });
+      paint(rectPts(x - 190, y - 70, 20, 110), { wash: '#4A2A1E', ink: INK, sw: .6 });
+      const a = 1 - calm;
+      clawd(x, y, u, { eyes: calm ? 'look' : 'scared', lookX: .8, lookY: -.3, mouth: calm ? 'flat' : 'O', aL: lerp(.3, 1.7 + Math.sin(t * 5) * .15, a), aR: lerp(.3, 2 + Math.sin(t * 4 + 1) * .15, a), noShadow: true });
+      if (!calm) for (let i = 0; i < 3; i++) inkLine([[x + 70 + i * 16, y - 7 * u - i * 22], [x + 120 + i * 26, y - 7.6 * u - i * 34]], 1.2, '#FFF5E2', 'ink', 0);
+      return;
+    }
     paint(rectPts(x - 180, y, 420, 40, 1), { wash: '#4A2A1E', fill: '#2A1812', fillOp: 90, tex: .6, ink: INK, sw: .8 });   // the pew he stands on
     paint(rectPts(x - 190, y - 70, 20, 110), { wash: '#4A2A1E', ink: INK, sw: .6 });
     clawd(x + (hash(sh) - .5) * 8, y, u, { eyes: 'scared', lookX: .8, mouth: 'O', aL: 1.7 + Math.sin(t * 17) * .4, aR: 2 + Math.sin(t * 13 + 1) * .4,
@@ -405,17 +417,18 @@
   }
   function prophecy(t, lt) {
     const pe = ease(seg(t, 125.25, 127.05)), price = 20 * Math.pow(10, -4 * pe), stab = hitK(t, [125.48, 126.34], .45);
-    camBegin(740, 540, 1 + lt * .02);
-    a06_nave(t, { choirO: { eyes: 'look', lookX: -1, lookY: -.3, mouth: () => 'o' } });
+    const R = window.R34, tx = R ? a06_TAGX_R : 700;
+    if (R) camBegin(960, 540, 1); else camBegin(740, 540, 1 + lt * .02);               // R34: still; the reels keys frame it
+    a06_nave(t, { choirO: { eyes: 'look', lookX: -1, lookY: -.3, mouth: () => 'o', f: R ? a06_CHOIR_F : 0 } });
     a06_pulpit(t, { eyes: 'look', lookX: -1, mouth: 'flat', aR: .3, aL: .2 });
     a06_bill(t, easeOut(seg(t, 125.3, 127.1)));
-    a06_madman(t, 60, 900, 32);
-    a06_beam(700, 700, 40, 180, 520, Math.max(.3, stab));                               // the choir stabs light the price tag
-    a06_tag(t, 700, 440, price, lerp(1.05, .85, pe));
+    if (R) a06_madman(t, ...a06_MAD_R, 32); else a06_madman(t, 60, 900, 32);
+    a06_beam(tx, tx, 40, 180, 520, Math.max(.3, stab));                                 // the choir stabs light the price tag
+    a06_tag(t, tx, 440, price, lerp(1.05, .85, pe));
     camEnd();
     punkText('ЧТОБЫ ИНТЕЛЛЕКТ', 620, 110, 76, t, 125.2, { seed: 3 });
     punkText('СТАЛ ДЕШЕВЛЕ!', 620, 215, 88, t, 126.1, { seed: 8 });
-    if (t > 126.44) stamp('−99,99%', 1180, 250, 50, t, 126.44, { col: '#2FBF71', rot: .1 });
+    if (t > 126.44) stamp('−99,99%', R ? tx : 1180, R ? 600 : 250, 50, t, 126.44, { col: '#2FBF71', rot: .1 });   // R34: under the tag
   }
 
   // ---------- 127.15 «А когда он станет дешевле — нам понадобится…»: push-in, lights out, shades on ----------
@@ -423,10 +436,14 @@
     // the push-in holds back and leans right while the bill's total is up (world x 590..1600: tag + whole bill in frame), then centres on the CEO
     const z = kf(t, [[127.15, 1.02], [129.8, 1.45], [131.4, 2.35], [132.3, 2.6]], ease), cy = kf(t, [[127.15, 520], [131.4, 548], [132.3, 545]]);
     const offs = [129.8, 130.56, 131.25], out = offs.map(o => seg(t, o, o + .08)), clicks = hitK(t, offs, .2);
-    camBegin(lerp(1095, 960, ease(seg(t, 129.8, 130.6))), cy, z);
-    a06_nave(t, { L: 1 - .25 * seg(t, 131.25, 131.4), win: { pylon: 1 - out[0] * .92, drop: 1 - out[1] * .92, coil: 1 - out[2] * .92 }, choirO: { eyes: 'normal', mouth: () => 'flat' } });
-    a06_bill(t, 1, 1 - seg(t, 129.8, 130.3));                                          // the total fades with the lights
-    a06_tag(t, 700, 440 - 900 * easeIn(seg(t, 129.8, 130.5)), .002, .85);   // reeled up out of the push-in
+    const R = window.R34;
+    if (R) camBegin(960, 540, 1); else camBegin(lerp(1095, 960, ease(seg(t, 129.8, 130.6))), cy, z);   // R34: still; the push-in is in the reels keys
+    a06_nave(t, { L: 1 - .25 * seg(t, 131.25, 131.4), win: { pylon: 1 - out[0] * .92, drop: 1 - out[1] * .92, coil: 1 - out[2] * .92 }, choirO: { eyes: 'normal', mouth: () => 'flat', f: R ? a06_CHOIR_F : 0 } });
+    // R34: the madman stays on his pew, quiet; the tag AND the bill are reeled up before the cut to the preacher (EN 133.5 = v2 ~130.4)
+    const reel = R ? easeIn(seg(t, 129.8, 130.3)) : 0;
+    if (R && t < 130.4) a06_madman(t, ...a06_MAD_R, 32, 1);
+    a06_bill(t, 1, 1 - seg(t, 129.8, 130.3), -1100 * reel);                            // the total fades with the lights
+    a06_tag(t, R ? a06_TAGX_R : 700, 440 - 900 * (R ? reel : easeIn(seg(t, 129.8, 130.5))), .002, .85);   // reeled up out of the push-in
     a06_dark(seg(t, 129.8, 131.4) * .55);
     a06_beam(960, 960, 50, 250, 880, .35 + .55 * seg(t, 129.8, 131.4));
     // the shades descend from above ("deal with it") and land on the face at 132.05
@@ -449,4 +466,7 @@
 
   window.A06 = { reservoir: a06_reservoir, mini: a06_mini, nave: a06_nave, angel: a06_angel, beam: a06_beam, pulpit: a06_pulpit, dark: a06_dark };   // for tokensEN/scenes2.js
   chapter('bridge', 116.3, 132.55, [[116.3, preach], [120.8, sip], [123.7, why], [125.15, prophecy], [127.15, shades]]);
+  // R34 reels keys (EN time): one steady wide frame on the tag / pulpit / bill, a slow creep; a clean cut to the preacher on «we're gonna need…»
+  // with headroom for the shades coming down, a slow creep in; the a07 «MORE GPUs!» drop (a07_acid.js) keeps its own keys from 135.22
+  if (window.RU34) RU34.push([129.02, 135.22, [[129.02, 975, 550, 1240], [133.499, 975, 560, 1200, 1], [133.5, 960, 560, 780], [135.219, 960, 580, 720, 1]]]);
 })();

@@ -112,11 +112,13 @@
   // counter is dropped (the jokes are pictures, the lyric is in the subtitle band); Cyrillic that survived translation is dropped everywhere.
   const TITLE_OK = [[0, 18.16], [241.6, 1e9]], BIG = 64;
   const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
-  const LABEL_OK = [[81.9, 87.6]];                                     // the reused a04 report shot: its small EN labels may stay (cover, sticky note)
-  const bigAt = () => LABEL_OK.some(([a, b]) => T >= a && T < b) ? 100 : BIG;
+  // [from, to, max size]: the reused a04 report shot (its small EN labels may stay: cover, sticky note); the chorus 2 CANNED TOKENS billboard
+  // (user: the slogan in huge type)
+  const LABEL_OK = [[81.9, 87.6, 100], [105.84, 110.55, 400], [191.8, 194.32, 140]];   // + the a09 puppets' «tokens burned» counter
+  const bigAt = () => (LABEL_OK.find(([a, b]) => T >= a && T < b) || [0, 0, BIG])[2];
   const quiet = (en, size) => CYR.test(en) || (!titleOk() && !/^(SUN|MON) \d/.test(en) && size >= bigAt() && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay; the a10 clock readout (SUN 11:59 PM) is a prop, it stays
   const _counter = counter;
-  counter = (...a) => { if (titleOk()) _counter(...a); };
+  counter = (...a) => { if (titleOk() || (T >= 191.8 && T < 194.32)) _counter(...a); };   // the a09 puppets' panel keeps its number (else it reads as an empty box)
   const _letter = letter;
   letter = (txt, x, y, size, color, o = {}) => {
     const en = tr(txt);

@@ -14,6 +14,19 @@
   const dim = (c, g = 0, d = 0) => mixCol(mixCol(c, GREY, g), NIGHT, d);
   const bgFill = (col, fill, op = 90) => paint(rectPts(-400, -400, W + 800, H + 800), { wash: col, fill: fill || col, fillOp: op, tex: .5, border: .3, ink: null });
 
+  // R34 (EN reels, 3:4 picture): the room is re-laid for the fixed view x 420–1500, y -180..1260 (RU34 keys at the end): window top-left,
+  // the clock over the corkboard top-right, the games shelf / the 42-agent grid in the middle, the desk along the bottom. Each group is drawn
+  // with its 16:9 code under a [dx, dy, scale] map; sub() moves the brush AND the letter camera (CAM) so the labels follow.
+  const R = window.R34;
+  const L34 = { win: [445.6, -169.4, .68], games: [-166, 11.8, 1.1], sites: [417.4, -13, .72], clock: [-395, -220, 1], agents: [-23.2, -12.3, .78], desk: [-35, 230, 1] };
+  const at = (g, x, y) => { if (!R) return [x, y]; const [dx, dy, s] = L34[g]; return [dx + x * s, dy + y * s]; };
+  function sub(g, fn) {
+    if (!R) return fn();
+    const [dx, dy, s] = L34[g], C = CAM;
+    push(); translate(dx, dy); scale(s); if (C) CAM = { ...C, cx: (C.cx - dx) / s, cy: (C.cy - dy) / s, zoom: C.zoom * s };
+    try { fn(); } finally { pop(); CAM = C; }
+  }
+
   // ---------- the room (world = 1920 x 1080) ----------
   function windowMoon(x, y, w, h, t, o = {}) {
     const mk = o.moonK || 0;
@@ -76,11 +89,12 @@
   }
 
   function agents(t, g, d) {
-    for (let r = 0; r < 6; r++) {
+    const NR = R ? 7 : 6, NC = R ? 6 : 7;                                        // R34: 6 × 7, taller for the 3:4 picture
+    for (let r = 0; r < NR; r++) {
       const gy = 468 + r * 64;
-      paint(rectPts(1440, gy - 4, 460, 14, 1), { wash: dim('#3A3040', 0, d * .5), ink: null });
-      for (let c = 0; c < 7; c++) {
-        const i = r * 7 + c, x = 1478 + c * 60 + (r % 2) * 14, u = 5;
+      paint(rectPts(1440, gy - 4, R ? 400 : 460, 14, 1), { wash: dim('#3A3040', 0, d * .5), ink: null });
+      for (let c = 0; c < NC; c++) {
+        const i = r * NC + c, x = 1478 + c * 60 + (r % 2) * 14, u = 5;
         const grey = clamp(g * 3 - hash(i * 1.7) * 2);                                   // they go grey in a ripple
         // ponytail: 42 cheap block agents (4-5 washes each), not clawd(): 42 full clawds cost ~3 s/frame
         const ac = dim(AG.col, grey, d), dk = dim(AG.dk, grey, d), bob = grey > .5 ? 0 : -Math.abs(Math.sin(t * 3 + i)) * 2;
@@ -97,15 +111,20 @@
   function room(t, o = {}) {
     const g = o.grey || {}, lit = o.lit || {}, D = .55;
     bgFill(WALL, WALL2);
-    paint(rectPts(-400, 840, W + 800, 700), { wash: FLOOR, fill: '#0A0D15', fillOp: 90, tex: .5, ink: null });
-    inkLine([[-300, 842], [W + 300, 840]], 1, '#07080C', 'ink', 0);
-    windowMoon(110, 120, 450, 440, t, o);
-    paint([[140, 590], [560, 590], [800, 1000], [240, 1000]], { wash: '#DDE6F2', washOp: 14 + 22 * (o.moonK || 0), ink: null });  // moonlight on the floor
-    for (const [k, cx, cy, r] of [[lit.games, 770, 330, 220], [lit.sites, 1165, 285, 280], [lit.agents, 1670, 640, 300]]) if (k > .02) glowAt(cx, cy, r, '#FFD27A', 70 * k);
-    games(t, g.games || 0, D * (1 - (lit.games || 0)));
-    sites(t, g.sites || 0, D * (1 - (lit.sites || 0)));
-    clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0);
-    agents(t, g.agents || 0, D * (1 - (lit.agents || 0)));
+    sub('desk', () => {
+      paint(rectPts(-400, 840, W + 800, 700), { wash: FLOOR, fill: '#0A0D15', fillOp: 90, tex: .5, ink: null });
+      inkLine([[-300, 842], [W + 300, 840]], 1, '#07080C', 'ink', 0);
+    });
+    sub('win', () => windowMoon(110, 120, 450, 440, t, o));
+    paint(R ? [[520, 233], [830, 233], [1000, 1070], [560, 1070]] : [[140, 590], [560, 590], [800, 1000], [240, 1000]], { wash: '#DDE6F2', washOp: 14 + 22 * (o.moonK || 0), ink: null });  // moonlight on the floor
+    for (const [k, gr, x, y, r] of [[lit.games, 'games', 770, 330, 220], [lit.sites, 'sites', 1165, 285, 280], [lit.agents, 'agents', 1670, 640, 300]]) if (k > .02) { const [cx, cy] = at(gr, x, y); glowAt(cx, cy, r * (R ? L34[gr][2] : 1), '#FFD27A', 70 * k); }
+    sub('games', () => games(t, g.games || 0, D * (1 - (lit.games || 0))));
+    sub('sites', () => sites(t, g.sites || 0, D * (1 - (lit.sites || 0))));
+    sub('clock', () => clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0));
+    sub('agents', () => agents(t, g.agents || 0, D * (1 - (lit.agents || 0))));
+    sub('desk', () => roomDesk(t, o));
+  }
+  function roomDesk(t, o) {
     // the office chair at the desk (he sits on it; it stays when he gets up)
     paint(rrPts(784, 596, 34, 170, 12), { wash: '#2E3440', fill: '#1C2028', fillOp: 90, tex: .4, ink: PAL.ink, sw: .7 });
     paint(rrPts(790, 752, 230, 26, 10), { wash: '#2E3440', fill: '#1C2028', fillOp: 90, tex: .4, ink: PAL.ink, sw: .7 });
@@ -133,26 +152,38 @@
   // ---------- laptop screen close-up (screen space) ----------
   function screenCU(t, content) {
     bgFill('#0B0D14', '#161A24');
-    glowAt(960, 480, 900, SCREEN, 40);
+    glowAt(960, R ? 540 : 480, 900, SCREEN, 40);
+    if (R) {                                                                  // R34: the screen fills the 3:4 picture
+      paint(rrPts(440, -160, 1040, 1400, 42, 1), { wash: '#1A1D24', fill: '#2B2F36', fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.2 });
+      paint(ellPts(960, -138, 6, 6, 8), { wash: '#2E5BFF', ink: null });
+      paint(rectPts(480, -116, 960, 1316), { wash: '#0E1526', fill: '#1A2B4E', fillOp: 80, tex: .4, border: .3, ink: null });
+    } else {
     paint(rrPts(220, 50, 1480, 870, 42, 1), { wash: '#1A1D24', fill: '#2B2F36', fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.2 });
     paint(ellPts(960, 74, 6, 6, 8), { wash: '#2E5BFF', ink: null });
     paint(rectPts(262, 96, 1396, 786), { wash: '#0E1526', fill: '#1A2B4E', fillOp: 80, tex: .4, border: .3, ink: null });
+    }
     content();
   }
-  const noLimitMsg = (grey) => letter('Лимит исчерпан · сброс в ПН 00:00', 960, 640, 34, grey ? '#6A6E78' : '#C9D3E6', { font: ruFont(34), ink: false });
+  const noLimitMsg = (grey, y = 640) => letter('Лимит исчерпан · сброс в ПН 00:00', 960, y, 34, grey ? '#6A6E78' : '#C9D3E6', { font: ruFont(34), ink: false });
 
   // ---------- shots ----------
   function sRoom(t) {                                                         // 197.9 «Воскресенье. 23:58»
     const z = kf(t, [[197.9, 1], [205.65, 1.14]]), cx = kf(t, [[197.9, 960], [205.65, 1040]]), cy = kf(t, [[197.9, 520], [205.65, 470]]);
     const fl = hitK(t, window.TIME_WARP ? hitsIn(197.9, 205.65, 10) : [198.26, 199.94, 202.61, 203.28, 204.93], .12);   // v3: the track's own hits
-    camBegin(cx, cy, z);
+    if (R) camBegin(960, kf(t, [[197.9, 540], [205.65, 560]]), kf(t, [[197.9, 1], [205.65, 1.05]]));      // R34: the whole re-laid room, a slow push
+    else camBegin(cx, cy, z);
     room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: 1 }) });
     camEnd();
     glitchCut(t, 197.9);
   }
 
   function sZero(t) {                                                         // 205.65 «Ноль токенов»
-    const grey = t > 205.9, flick = t > 205.72 && t < 205.9 && frac(t * 30) < .5;
+    const grey = t > 205.9, flick = !R && t > 205.72 && t < 205.9 && frac(t * 30) < .5;   // R34: no flicker (read as a half-drawn panel)
+    if (R) return screenCU(t, () => {                                         // R34: «0 tokens» small enough to stay (< 64), bar 80% wide, the message under it
+      letter('0 токенов', 960, 330, 62, grey ? '#6A6E78' : '#FF5A4A', { font: ruFont(62), ink: false, pop: seg(t, 205.72, 205.95) * 1.2 + (t < 205.72 ? -1 : 0) });
+      limitBar(530, 520, 860, 0, { h: 100, grey });
+      noLimitMsg(grey, 720);
+    });
     screenCU(t, () => {
       if (!flick) limitBar(460, 400, 1000, 0, { h: 92, grey });
       letter('0 токенов', 960, 270, 110, grey ? '#6A6E78' : '#FF5A4A', { font: ruFont(110), ink: false, pop: seg(t, 205.72, 205.95) * 1.2 + (t < 205.72 ? -1 : 0) });
@@ -166,7 +197,11 @@
     const lit = { games: seg(t, 207.6, 207.8), sites: seg(t, 208.8, 209.0), agents: seg(t, 210.16, 210.4) };
     const grey = { games: seg(t, 212.28, 212.6), sites: seg(t, 213.06, 213.3), agents: seg(t, 213.36, 213.95) };
     for (const k of ['games', 'sites', 'agents']) lit[k] *= 1 - grey[k];
-    camBegin(cam[0], cam[1], cam[2]);
+    if (R) {                                                                  // R34: clean cuts between three held medium shots, then the eased pull back
+      const C3 = [[750, 640, 1.8], [1255, 95, 1.9], [1256, 520, 2.0]], i = t < 208.8 ? 0 : t < 210.16 ? 1 : 2, t0 = [207.6, 208.8, 210.16][i], c = C3[i];
+      const b = ease(seg(t, 212.28, 212.8)), z = c[2] * (1 + .015 * (Math.min(t, 212.28) - t0));
+      camBegin(lerp(c[0], 960, b), lerp(c[1], 540, b), lerp(z, 1, b));
+    } else camBegin(cam[0], cam[1], cam[2]);
     room(t, { lit, grey, clawd: sitClawd(t, { eyes: t > 212.3 ? 'narrow' : 'look', lookX: 1 }) });
     // the count stamps, one per group
     if (t < 212.28) {
@@ -179,8 +214,8 @@
 
   function sSilence(t) {                                                      // 213.95 «Тишина…»: he gets up, walks to the window
     const z = kf(t, [[213.95, 1.05], [216.8, .98]]), up = seg(t, 214.4, 214.7), wk = seg(t, 214.7, 216.6);
-    const x = lerp(900, 420, ease(wk)), gy = lerp(760, 840, up);
-    camBegin(kf(t, [[213.95, 1060], [216.8, 900]]), 480, z);
+    const x = lerp(900, R ? 640 : 420, ease(wk)), gy = lerp(760, 840, up);
+    if (R) camBegin(960, 540, 1); else camBegin(kf(t, [[213.95, 1060], [216.8, 900]]), 480, z);
     room(t, {
       grey: { games: 1, sites: 1, agents: 1 }, moonK: seg(t, 215.5, 216.8) * .5, glow: .7,
       clawd: () => { if (up < .01) sitClawd(t, { eyes: 'narrow' })(); },
@@ -196,21 +231,21 @@
   }
 
   function sHappy(t) {                                                        // 216.8 «Я счастлив.» under the moon
-    const z = kf(t, [[216.8, 1.4], [218.45, 1.5]]);
-    camBegin(400, 560, z);
+    const z = kf(t, [[216.8, 1.4], [218.45, 1.5]]), hx = R ? 640 : 420;
+    if (R) camBegin(960, 540, kf(t, [[216.8, 1], [218.45, 1.03]])); else camBegin(400, 560, z);
     room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: 1, glow: .5,
       front: () => {
         const lean = easeOut(seg(t, 217.0, 217.6));                            // leans back, eyes shut, a small smile
-        clawd(420, 840, 26, { eyes: lean > .3 ? 'closed' : 'normal', mouth: lean > .3 ? 'smile' : null, blush: t > 217.7, seed: 3,
+        clawd(hx, 840, 26, { eyes: lean > .3 ? 'closed' : 'normal', mouth: lean > .3 ? 'smile' : null, blush: t > 217.7, seed: 3,
           rot: -.12 * lean, aL: lerp(.25, -1.2, lean), aR: lerp(.25, -1.15, lean), dy: -.3 * lean, squint: lean > .15 && lean < .3 ? 1 : 0 });
-        paint(ellPts(420, 660, 150, 120, 16), { fill: '#DDE6F2', fillOp: 45, bleed: .3, tex: .2, ink: null });
+        paint(ellPts(hx, 660, 150, 120, 16), { fill: '#DDE6F2', fillOp: 45, bleed: .3, tex: .2, ink: null });
       } });
     camEnd();
   }
 
   function sMidnight(t) {                                                     // 218.45 «Полночь.»: ВС 23:59 → ПН 00:00 on the 219.18 hit
     const z = kf(t, [[218.45, 2.6], [220.7, 3.0]]), flip = t >= 219.18;
-    camBegin(1650, 215, z);
+    if (R) camBegin(1255, -20, kf(t, [[218.45, 2.5], [220.7, 2.75]])); else camBegin(1650, 215, z);   // R34: the re-laid clock, ~85% of the width
     room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .6, glow: .5, clock: flip ? 'ПН 00:00' : 'ВС 23:59', clockGlow: hitK(t, [219.18], .6) });
     camEnd();
     if (Math.abs(t - 219.18) < .05) flash(.25, '#FF4A40');
@@ -219,27 +254,47 @@
   function sReset(t) {                                                        // 220.7 the notification, the one Matrix glitch, the bar refills
     const mx = seg(t, 220.9, 221.1) * (1 - seg(t, 222.25, 222.45)), fill = ease(seg(t, 222.45, 223.18)), full = t >= 223.18;
     const ring = t - 220.76;
+    // R34: a tall card: the notification up top, the bar under it, both inside ~85% of the width
+    const [bx, by, bw, cx0, cy0, cw, ch] = R ? [530, 620, 860, 490, 200, 940, 210] : [460, 470, 1000, 400, 130, 1120, 210];
     screenCU(t, () => {
-      limitBar(460, 470, 1000, fill, { h: 92, grey: fill < .01, glow: full ? .6 + .4 * hitK(t, [223.18, 223.68, 224.18], .4) : 0 });
-      if (fill < .01) noLimitMsg(true);
-      if (fill > .01) tokenRain(t, { n: 14, r: 20, seed: 4, area: [300, 1620] });
+      limitBar(bx, by, bw, fill, { h: R ? 100 : 92, grey: fill < .01, glow: full ? .6 + .4 * hitK(t, [223.18, 223.68, 224.18], .4) : 0 });
+      if (fill < .01) noLimitMsg(true, R ? 820 : 640);
+      if (fill > .01) tokenRain(t, { n: 14, r: 20, seed: 4, area: R ? [520, 1400] : [300, 1620] });
       if (full) stamp('+1 000 000', 960, 740, 64, t, 223.18, { col: '#2FBF71', rot: -.08 });
       const jx = mx > .1 ? (hash(Math.floor(t * 24)) - .5) * 40 * mx : 0;
-      uiCard(400 + jx, 130, 1120, 210, { title: 'Ваш недельный лимит восстановлен', body: 'Приятной недели! · 1 000 000 токенов', icon: 'token', time: '00:00', k: seg(t, 220.72, 221.0), accent: A2.matrix });
+      uiCard(cx0 + jx, cy0, cw, ch, { title: 'Ваш недельный лимит восстановлен', body: 'Приятной недели! · 1 000 000 токенов', icon: 'token', time: '00:00', k: seg(t, 220.72, 221.0), accent: A2.matrix });
       if (mx > .01) {
-        matrixRain(t, { area: [262, 96, 1396, 786], bg: mx > .5, k: .35 + .55 * mx, size: 30, seed: 7, speed: 1.4 });
-        if (mx > .5) letter('ВАШ НЕДЕЛЬНЫЙ ЛИМИТ ВОССТАНОВЛЕН', 960 + jx * 2, 235, 44, A2.matrix, { font: ruFont(44), ink: false, alpha: .9 });
+        matrixRain(t, { area: R ? [480, -116, 960, 1316] : [262, 96, 1396, 786], bg: mx > .5, k: .35 + .55 * mx, size: 30, seed: 7, speed: 1.4 });
+        if (mx > .5) letter('ВАШ НЕДЕЛЬНЫЙ ЛИМИТ ВОССТАНОВЛЕН', 960 + jx * 2, R ? 480 : 235, R ? 36 : 44, A2.matrix, { font: ruFont(R ? 36 : 44), ink: false, alpha: .9 });
       }
     });
-    if (ring > 0 && ring < .5) for (let i = 0; i < 3; i++) inkLine([[1400 + i * 22, 150 - i * 14], [1430 + i * 22, 120 - i * 14]], 2, '#C9D3E6', 'inkfine', 0);
+    if (ring > 0 && ring < .5) for (let i = 0; i < 3; i++) inkLine([[(R ? 1390 : 1400) + i * 22, (R ? 220 : 150) - i * 14], [(R ? 1420 : 1430) + i * 22, (R ? 190 : 120) - i * 14]], 2, '#C9D3E6', 'inkfine', 0);
     if (mx > .05) glitchCut(t, 221.65, { span: .8, k: .55 * mx, n: 7, cols: [A2.matrix, A2.matrixBg, '#7DFFAE', '#0B3D1E'] });
-    if (full) flash(.7 * hitK(t, [223.18], .1), '#E6FFE8');
+    if (full) flash((R ? .35 : .7) * hitK(t, [223.18], .1), '#E6FFE8');   // R34: a softer blink (no washed frame)
   }
 
   // v3 only (tokens3 warp): he says «Сука» with his eyes shut; the band crash cuts to this snap: the eyes fly open, red, on a zoom punch (v2 225.0+)
   const SNAP = 225.0;
+  // R34: the close-ups become a full-body medium shot inside the 3:4 picture (u 84, arms down, ground at 1060): the MON 12:00 AM clock over
+  // his head, the back of the laptop in front of him; the eyes sit at ~45% height so the red snap reads
+  const lidBack = (glow) => {
+    glowAt(960, 980, 420, glow, 90);
+    paint(rrPts(690, 960, 540, 340, 22, 1), { wash: '#3A4252', fill: '#232A36', fillOp: 90, tex: .5, ink: glow, sw: 1 });
+    token(960, 1110, 42, { ink: false });
+  };
   function sSnap(t) {
-    const a = t - SNAP, k = Math.exp(-a * 7), u = 172 + 34 * Math.exp(-a * 12), [sx, sy] = shakeXY(t, 22 * k);
+    const a = t - SNAP, k = Math.exp(-a * 7), u = R ? 84 + 8 * Math.exp(-a * 12) : 172 + 34 * Math.exp(-a * 12), [sx, sy] = shakeXY(t, 22 * k);
+    if (R) {
+      bgFill('#2A0C08', '#5A1A0C', 90);
+      glowAt(960, 1150, 1100, TK.ember, 140);
+      for (let i = 0; i < 18; i++) {
+        const q = i / 18 * TAU + hash(i) * .2, r0 = 300 + a * 700, r1 = r0 + 220 + hash(i + 3) * 160;
+        inkLine([[960 + Math.cos(q) * r0 * .7, 480 + Math.sin(q) * r0], [960 + Math.cos(q) * r1 * .7, 480 + Math.sin(q) * r1]], 3.5 * k + .5, i % 2 ? '#FFD9A0' : TK.ember, 'ink', 0);
+      }
+      clawd(960 + sx, 1060 + sy, u, { eyes: 'red', squint: 1 - seg(a, 0, .06), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
+      lidBack(TK.ember);
+      return flash(.55 * Math.exp(-a / .1), '#FF7A3A');
+    }
     bgFill('#2A0C08', '#5A1A0C', 90);
     glowAt(960, 1150, 1100, TK.ember, 140);
     for (let i = 0; i < 18; i++) {                                            // speed lines bursting out from the eyes
@@ -251,9 +306,14 @@
   }
   function sSuka(t) {                                                         // 224.2 «…Сука.» deadpan close-up
     if (window.TIME_WARP && t >= SNAP) return sSnap(t);
-    const u = 150 + (t - 224.2) * 8, shut = window.TIME_WARP || t < 224.57;   // EXTREME close-up: the face fills the frame, eyes shut, they open on «Сука» (224.57; v3 keeps them shut, see sSnap)
+    const u = R ? 84 + (t - 224.2) * 3 : 150 + (t - 224.2) * 8, shut = window.TIME_WARP || t < 224.57;   // EXTREME close-up: the face fills the frame, eyes shut, they open on «Сука» (224.57; v3 keeps them shut, see sSnap)
     bgFill(WALL, WALL2);
     glowAt(960, 1200, 900, '#9CFFB8', 90);
+    if (R) {
+      clock(740, -90, 440, 190, 'ПН 00:00', t, .3);
+      clawd(960, 1060, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
+      return lidBack('#9CFFB8');
+    }
     clawd(960, 540 + 6 * u, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
   }
@@ -269,7 +329,7 @@
     camBegin(ox - (dx * c + dy * s), oy - (-dx * s + dy * c), z, r);
   }
   // the fresh 100% limit burns to 0 across the whole blast
-  const burnBar = (t) => limitBar(560, 62, 800, 1 - seg(t, CRASH, CARD - .15), { h: 54, burn: 1, glow: .4 });
+  const burnBar = (t) => limitBar(R ? 580 : 560, R ? -40 : 62, R ? 760 : 800, 1 - seg(t, CRASH, CARD - .15), { h: 54, burn: 1, glow: .4 });   // R34: inside the 3:4 top
   function furnace(t, k = 1) {
     bgFill(SOOT, '#3A1A10', 90 * k);
     glowAt(960, 900, 1100, A2.sodium, 90 * k);
@@ -354,16 +414,18 @@
   }
 
   function sCredit(t) {                                                       // 237.73 «ЖГИ ТОКЕНЫ» on soot black + the credit: AGENT #42 takes it
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
-    glowAt(960, 150, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
+    const SY = R ? -150 : 150, SX = R ? 860 : 960;                                                  // R34: the card stacked taller and centred in the 3:4 picture (camera below)
+    paint(R ? rectPts(-600, -600, W + 1200, H + 1200) : rectPts(-60, -60, W + 120, H + 120), { wash: '#060709', ink: null });
+    if (!R) glowAt(960, 150, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
     for (let i = 0; i < 18; i++) {                                             // the last embers
-      const p = frac(t * (.18 + hash(i) * .2) + hash(i * 3)), x = hash(i * 7) * W, y = H - p * (H + 100), r = (2 + hash(i + 11) * 4) * (1 - p * .5);
+      const p = frac(t * (.18 + hash(i) * .2) + hash(i * 3)), x = R ? 420 + hash(i * 7) * 1080 : hash(i * 7) * W, y = R ? 1260 - p * 1540 : H - p * (H + 100), r = (2 + hash(i + 11) * 4) * (1 - p * .5);
       paint(ellPts(x, y, r, r, 6), { wash: p < .5 ? A2.hazard : A2.sodium, washOp: 200 * (1 - p), ink: null });
     }
-    stamp('ЖГИ ТОКЕНЫ', 960, 150, 104, t, CARD, { col: A2.sodium, punch: .02, rot: -.05 });
+    if (R) camBegin(720, 170, .78), glowAt(SX, SY, 460, EMBER, 80 * Math.exp(-(t - CARD) * 1.5));
+    stamp('ЖГИ ТОКЕНЫ', SX, SY, 104, t, CARD, { col: A2.sodium, punch: .02, rot: -.05 });
     flushLetters();
     const T0 = CARD, S0 = 238.08, S1 = 238.24, W0 = 238.3, W1 = 238.66;
-    letter('created by', 960, 300, 52, '#9A9488', { ink: false });
+    letter('created by', SX, R ? 150 : 300, 52, '#9A9488', { ink: false });
     letter('rocketmandrey', 960, 590, 96, A2.cream, { ink: false });
     flushLetters();                                                            // so the red strike lands over the name
     const NEW = 'Claude Opus 5.5', nx0 = 700, nx1 = 1235, ny = 450;
@@ -385,19 +447,22 @@
       if (n > 0) letter(NEW.slice(0, n), nx0, ny, 84, RED, { align: 'left', rot: -.035, ink: false });
     }
     // AGENT #42 with a giant marker, walking in and following the pen point
-    const u = 24, R = 272, piv = 822 - 4.5 * u, sa = clamp((piv - P[1]) / R, -1, 1), a = Math.asin(sa);
-    let x = P[0] - 4.9 * u - R * Math.cos(a);
+    const u = 24, RM = 272, piv = 822 - 4.5 * u, sa = clamp((piv - P[1]) / RM, -1, 1), a = Math.asin(sa);
+    let x = P[0] - 4.9 * u - RM * Math.cos(a);
     if (t < S0) x = lerp(2150, x, easeOut(seg(t, T0, S0)));
     const moving = t < W1, nod = seg(t, 238.74, 238.94);
     const marker = (uu, sw) => {
-      paint(rrPts(-.2 * uu, -.45 * uu, (R / uu - 2.2) * uu, .9 * uu, .35 * uu), { wash: '#F4F1EA', ink: PAL.ink, sw: sw * .6 });
-      paint(rectPts((R / uu - 3.6) * uu, -.5 * uu, 1.2 * uu, uu), { wash: RED, ink: PAL.ink, sw: sw * .5 });
-      paint([[(R / uu - 2.4) * uu, -.3 * uu], [(R / uu - 2.05) * uu, 0], [(R / uu - 2.4) * uu, .3 * uu]], { wash: RED, ink: null });
+      paint(rrPts(-.2 * uu, -.45 * uu, (RM / uu - 2.2) * uu, .9 * uu, .35 * uu), { wash: '#F4F1EA', ink: PAL.ink, sw: sw * .6 });
+      paint(rectPts((RM / uu - 3.6) * uu, -.5 * uu, 1.2 * uu, uu), { wash: RED, ink: PAL.ink, sw: sw * .5 });
+      paint([[(RM / uu - 2.4) * uu, -.3 * uu], [(RM / uu - 2.05) * uu, 0], [(RM / uu - 2.4) * uu, .3 * uu]], { wash: RED, ink: null });
     };
     agentBot(x, 822, u, t, { n: 42, walk: moving ? t * 3.2 : null, aR: a, aL: .3, armR: marker, eyes: t > 238.74 ? 'happy' : 'narrow', mouth: t > 238.74 ? 'smile' : 'flat',
       dy: -Math.sin(nod * Math.PI) * .5, rot: 0, sq: Math.sin(nod * Math.PI) * .08 });
+    if (R) camEnd();
   }
 
+  // R34 camera (EN time): one fixed 3:4 view over the re-laid shots; the b10 finale (238–241.5) pushes its own
+  if (window.RU34) RU34.push([210, 238, [[210, 960, 540, 1080]]], [241.5, 243, [[241.5, 960, 540, 1080]]], [243, 260, [[243, 960, 540, 1080]]]);
   chapter('sunday', 197.9, DUR + 1, [
     [197.9, sRoom], [205.65, sZero], [207.6, sTour], [213.95, sSilence], [216.8, sHappy], [218.45, sMidnight],
     [220.7, sReset], [224.2, sSuka], [227.2, sBlast], [HALL, sHall], [CARD, sCredit]   // no collage, no second «Сука»: the band plays through to the card

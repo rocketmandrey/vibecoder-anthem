@@ -4,6 +4,7 @@
 // 3) the reels camera keys. Loaded after tokensEN/warp.js (real chapters there are converted already), before tokens3/square.js.
 (() => {
   const INK = PAL.ink;
+  const R = window.R34;                                                    // the 3:4 reels picture: H1 re-laid out natively for it
   const inWin = W => W.some(([a, b]) => T >= a && T < b);
   const lastLE = (arr, t) => { let r = null; for (const x of arr) { if (x > t) break; r = x; } return r; };
   const kick = (t, list, len = .3) => { const h = lastLE(list, t); return h == null || t - h > len * 4 ? 0 : Math.exp(-(t - h) / len); };
@@ -115,9 +116,9 @@
     dataCenter(t, { heat, fire: burn, vp: [960, 470], seed: 3 });
     smoke(960, 380, t, { n: 6, h: 420, r: 80, col: '#2A2224', seed: 2 });
     // the two big coolers up top howl: blades whip round, air blasts down in streaks
-    for (const [x, dir] of [[640, 1], [1280, -1]]) {
-      cooler(x, 120, 130, t, { speed: dir * (5 + 3 * burn), howl: 1 });
-      steam(x, 250, t, { dir: Math.PI / 2 + dir * .25, len: 380, n: 7, per: .5, seed: x, col: '#DCE6F0', k: .8 });
+    for (const [x, dir] of R ? [[720, 1], [1200, -1]] : [[640, 1], [1280, -1]]) {
+      cooler(x, R ? 175 : 120, R ? 115 : 130, t, { speed: dir * (5 + 3 * burn), howl: 1 });
+      steam(x, R ? 290 : 250, t, { dir: Math.PI / 2 + dir * .25, len: 380, n: 7, per: .5, seed: x, col: '#DCE6F0', k: .8 });
     }
     siren(960, 20, t, { col: '#FF3A2A', speed: 1.6, len: 800, r: 34, on: seg(t, S1.hot, S1.hot + .2) });
     // «Wall Street screams» 42.68: the floor splits from the middle, orange light through the cracks
@@ -135,8 +136,8 @@
     // the vibecoder and two agents; the bull throws them clear
     const blown = age > 0 ? easeOut(age / .45) : 0, air = age > 0 && age < .55 ? Math.sin(age / .55 * Math.PI) : 0, scared = t > S1.crack - .1;
     const face = scared ? { eyes: 'scared', mouth: 'O', aL: 1.5, aR: 1.5 } : null;
-    agentBot(lerp(600, 380, blown), 1130 - air * 180, 17, t, { ...(face || move('bounce', t, 1)), rot: age > 0 ? -blown * .6 : NOTXT, n: 3 });
-    agentBot(lerp(1320, 1560, blown), 1130 - air * 200, 17, t, { ...(face || move('hop', t, 2)), flip: true, rot: age > 0 ? blown * .6 : NOTXT, n: 8 });
+    agentBot(lerp(R ? 660 : 600, 380, blown), 1130 - air * 180, 17, t, { ...(face || move('bounce', t, 1)), rot: age > 0 ? -blown * .6 : NOTXT, n: 3 });
+    agentBot(lerp(R ? 1260 : 1320, 1560, blown), 1130 - air * 200, 17, t, { ...(face || move('hop', t, 2)), flip: true, rot: age > 0 ? blown * .6 : NOTXT, n: 8 });
     if (age < 0) clawd(960, 1180, 30, {
       dy: t < S1.crack ? move('idle', t).dy : -Math.abs(Math.sin(t * 30)) * .5, eyes: scared ? 'scared' : 'narrow', mouth: scared ? 'o' : 'flat', lookY: scared ? 1 : 0,
       aL: scared ? 1.2 : .3 + .2 * pulse(t, 7), aR: scared ? 1.2 : .3 + .2 * pulse(t, 7), emote: t > 40.02 && t < S1.crack ? 'sweat' : null,
@@ -161,6 +162,7 @@
     [51.3, 53.90, 54.55, 1245, 80, 1],                                      //   «million»: from the right
     [54.4, 55.20, 99, 675, 100, -1],                                         //   «then one more»: a bigger one backs in from the left
   ];
+  if (R) TRUCKS[0].splice(3, 2, 1200, 50), TRUCKS[1].splice(3, 2, 715, 53);   // 3:4: both trucks parked whole inside x 420–1500
   // a dump truck, ground point (x, y), facing away from the hopper; side +1: cab on the right. tip 0..1 lifts the bed at the cab end.
   function truck(x, y, u, side, tip, roll, full) {
     push(); translate(x, y); scale(side, 1);
@@ -217,14 +219,17 @@
     } else {
       for (const [cx, s] of [[800, -1], [1120, 1]]) inkLine([[cx, -300], [cx + s * 30 * p, lerp(gy - 30, 40, p)]], 1.4, A2.steelLt, 'ink', 0);
       const y = land < 0 ? lerp(gy, floorY, p * p) : floorY - 34 * Math.abs(Math.sin(land * 12)) * Math.exp(-land * 7);
-      gauge(960, y, 400, v, { rot: land < 0 ? .25 * p : .05, cracked: land >= 0, burn: land < 0 ? 1 : .6 * Math.exp(-land) });
-      if (land >= 0) { rubble(960, floorY + 30, 520, land * .7, 9); for (const x of [730, 1190]) sparks(x, floorY + 20, land, x, 12, 180); }
+      // 3:4: a smaller bar lands in the gap between the gangs, then bursts to dust once the freeze ends (it cluttered the workers)
+      const gone = R ? ease(seg(t, S2.freeze[1], S2.freeze[1] + .3)) : 0;
+      if (gone < 1) gauge(960, y, (R ? 240 : 400) * (1 - gone), v, { rot: land < 0 ? .25 * p : .05, cracked: land >= 0, burn: land < 0 ? 1 : .6 * Math.exp(-land) });
+      if (land >= 0) { rubble(960, floorY + 30, R ? 300 : 520, land * .7, 9); for (const x of R ? [840, 1080] : [730, 1190]) sparks(x, floorY + 20, land, x, 12, 180); }
+      if (gone > 0 && gone < 1) rubble(960, floorY + 20, 240, gone * .9, 13);
     }
     // the gangs on the floor: hard hats left, agents right; each «Burn» the gang throws an arc of tokens up into the hopper
     for (const side of ['A', 'B']) {
       const t0 = lastLE(BURNS.filter(b => b[1] === side).map(b => b[0]), tt + .35), age = t0 == null ? 9 : tt - t0, shout = age > -.35 && age < 1.2;
       for (let i = 0; i < 3; i++) {
-        const x = side === 'A' ? 590 + i * 95 : 1330 - i * 95, y = 1180 - (i % 2) * 45, u = 15;
+        const x = side === 'A' ? (R ? 600 : 590) + i * (R ? 90 : 95) : (R ? 1320 : 1330) - i * (R ? 90 : 95), y = 1180 - (i % 2) * 45, u = 15;
         const arm = fz ? 1.6 : shout ? kf(age - i * .05, [[-.35, .2], [-.2, 1.6], [.1, 1.1], [.6, .9], [1.2, .3]]) : .3 + .15 * Math.sin(tt * 6 + i);
         const bob = fz ? 0 : Math.abs(Math.sin((tt + i * .1) * Math.PI * 3)) * (shout ? 1.2 : .5);
         const face = fz ? { eyes: 'scared', mouth: 'o', lookX: side === 'A' ? 1 : -1, lookY: 1 } : { eyes: shout ? 'angry' : 'normal', mouth: shout ? 'O' : 'grin', lookY: -1 };
@@ -233,7 +238,7 @@
       }
       if (age > -.35 && age < .5) for (let j = 0; j < 7; j++) {
         const f = seg(age, -.3 + j * .04, .35 + j * .02); if (f <= 0 || f >= 1) continue;
-        const x0 = side === 'A' ? 560 + j * 15 : 1360 - j * 15, x1 = 960 + (j - 3) * 50;
+        const x0 = side === 'A' ? (R ? 610 : 560) + j * 15 : (R ? 1310 : 1360) - j * 15, x1 = 960 + (j - 3) * 50;
         token(lerp(x0, x1, f), lerp(1030, 320, f) - Math.sin(f * Math.PI) * 300, 22, { spin: f * 2 + j, burn: f > .7 ? (f - .7) * 3 : 0 });
       }
     }
@@ -243,9 +248,12 @@
   // ============ S3 NEW (E09, 55.64–65.18): the hiring hall. «More agents, more compute. Don't ask why, it's good for you.» ============
   const S3 = { ask: 58.48, why: 59.12, spoonIn: 60.0, good: 60.46, spoonOut: 61.25, gulp: 61.9 };
   const SPAWN = Array.from({ length: 13 }, (_, i) => 55.54 + i * .33);     // «More agents»: the machine spits one out per beat
-  const SPOTS = SPAWN.map((_, i) => [560 + (i % 7) * 110 + (i >= 7 ? 55 : 0), 930 + (i >= 7 ? 70 : 0)]);
+  const SPOTS = SPAWN.map((_, i) => R ? [530 + (i % 7) * 105 + (i >= 7 ? 52 : 0), 895 + (i >= 7 ? 62 : 0)] : [560 + (i % 7) * 110 + (i >= 7 ? 55 : 0), 930 + (i >= 7 ? 70 : 0)]);
   const GPUS = [57.16, 57.4, 57.64, 57.88, 58.12, 58.36];                  // «more compute»: cards rain onto a pile
   const BELT = { x0: 600, x1: 1300, y: 650 };
+  // 3:4 layout: the machine top-left, the belt running diagonally down to the right, the GPU chute top-right, the crowd mid, the heroes low
+  const L3 = R ? { m: [690, 420], b0: [790, 450], b1: [1300, 730], off: [1360, 890], gpu: [1265, 330], hw: [730, 1255, 26], ceo: [1180, 1250, 29] }
+               : { m: [560, 620], b0: [700, BELT.y], b1: [BELT.x1 - 20, BELT.y], off: [BELT.x1 + 70, 900], gpu: [1250, 470], hw: [830, 1210, 24], ceo: [1220, 1205, 27] };
   // the hiring machine: a riveted box with a mouth-slot, a gear, a lamp and a plunger that pumps on each spawn
   function dispenser(x, y, t, k) {
     paint(rectPts(x - 170, y - 330, 340, 430, 1.5), { wash: A2.rust, fill: '#6E2E18', fillOp: 80, tex: .6, border: .4, ink: INK, sw: 1.2 });
@@ -271,41 +279,48 @@
     back(A2.gunDk);
     A03.hall(t, { lamps: [700, 1350] });
     // the upper wall: a big gear and an overhead hook line delivering more agents across the hall, dangling by their backs
-    gear(760, 200, 150, t, { speed: .15, col: mixCol(A2.steel, A2.gunDk, .4) });
-    paint(rectPts(300, 250, 1400, 22), { wash: A2.steel, ink: INK, sw: .7 });
-    for (let i = 0; i < 9; i++) {
+    gear(R ? 1040 : 760, R ? 150 : 200, R ? 120 : 150, t, { speed: .15, col: mixCol(A2.steel, A2.gunDk, .4) });
+    if (!R) paint(rectPts(300, 250, 1400, 22), { wash: A2.steel, ink: INK, sw: .7 });
+    for (let i = 0; i < (R ? 0 : 9); i++) {                               // ponytail: the hook line doesn't fit over the 3:4 machine + chute; dropped there
       const x = 300 + frac(t * .12 + i / 9) * 1400, sw = Math.sin(t * 3 + i) * .08;
       inkLine([[x, 272], [x + sw * 120, 340]], 1.2, A2.steelLt, 'ink', 0);
       agentBot(x + sw * 150, 440, 11, t, { n: 60 + i, aL: 1.4, aR: 1.4, rot: sw, eyes: i % 3 ? 'happy' : 'scared', mouth: 'o', noShadow: true, seed: i });
     }
     const k = kick(t, SPAWN, .15);
-    conveyor(BELT.x0, BELT.y, BELT.x1 - BELT.x0, t, { items: [() => {}], speed: 200, legs: 250, seed: 2 });
-    dispenser(560, 620, t, k);
+    if (R) {                                                               // the belt tilted down-right on two posts
+      const [[x0, y0], [x1, y1]] = [L3.b0, L3.b1], ang = Math.atan2(y1 - y0, x1 - x0);
+      for (const f of [.3, .8]) { const px = lerp(x0, x1, f), py = lerp(y0, y1, f); paint(rectPts(px - 8, py + 30, 16, 900 - py - 30), { wash: A2.gunmetal, ink: INK, sw: .5 }); }
+      push(); translate(x0 - 40 * Math.cos(ang), y0 - 40 * Math.sin(ang)); rotate(ang);
+      conveyor(0, 0, Math.hypot(x1 - x0, y1 - y0) + 80, t, { items: [() => {}], speed: 200, legs: 0, seed: 2 }); pop();
+    } else conveyor(BELT.x0, BELT.y, BELT.x1 - BELT.x0, t, { items: [() => {}], speed: 200, legs: 250, seed: 2 });
+    dispenser(L3.m[0], L3.m[1], t, k);
     // agents: popped out of the slot (squash), ride the belt, hop off the end, trot to a spot and dance
     SPAWN.forEach((s, i) => {
       const a = t - s; if (a < 0) return;
       const [sx, sy] = SPOTS[i], ride = 3.4, o = { n: i + 2, rot: NOTXT };
       let x, y, u = 13;
-      if (a < .25) { const f = a / .25; x = lerp(620, 700, f); y = BELT.y - Math.sin(f * Math.PI) * 70; Object.assign(o, { sy: 1 + .3 * (1 - f), sx: 1 - .2 * (1 - f), eyes: 'x', mouth: 'O' }); }
-      else if (a < ride) { const f = (a - .25) / (ride - .25); x = lerp(700, BELT.x1 - 20, f); y = BELT.y; Object.assign(o, { eyes: 'happy', aL: .5, aR: .5, dy: -Math.abs(Math.sin(a * 9)) * .4 }); }
-      else if (a < ride + .4) { const f = (a - ride) / .4; x = lerp(BELT.x1 - 20, BELT.x1 + 70, f); y = lerp(BELT.y, 900, f * f) - Math.sin(f * Math.PI) * 80; Object.assign(o, { aL: 1.5, aR: 1.5, mouth: 'O' }); }
-      else if (a < ride + 1.4) { const f = ease((a - ride - .4) / 1); x = lerp(BELT.x1 + 70, sx, f); y = lerp(900, sy, f); Object.assign(o, move('walk', t, i), { flip: true, rot: NOTXT }); }
+      const [b0, b1, off] = [L3.b0, L3.b1, L3.off];
+      if (a < .25) { const f = a / .25; x = lerp(b0[0] - 80, b0[0], f); y = b0[1] - Math.sin(f * Math.PI) * 70; Object.assign(o, { sy: 1 + .3 * (1 - f), sx: 1 - .2 * (1 - f), eyes: 'x', mouth: 'O' }); }
+      else if (a < ride) { const f = (a - .25) / (ride - .25); x = lerp(b0[0], b1[0], f); y = lerp(b0[1], b1[1], f); Object.assign(o, { eyes: 'happy', aL: .5, aR: .5, dy: -Math.abs(Math.sin(a * 9)) * .4 }); }
+      else if (a < ride + .4) { const f = (a - ride) / .4; x = lerp(b1[0], off[0], f); y = lerp(b1[1], off[1], f * f) - Math.sin(f * Math.PI) * 80; Object.assign(o, { aL: 1.5, aR: 1.5, mouth: 'O' }); }
+      else if (a < ride + 1.4) { const f = ease((a - ride - .4) / 1); x = lerp(off[0], sx, f); y = lerp(off[1], sy, f); Object.assign(o, move('walk', t, i), { flip: true, rot: NOTXT }); }
       else { x = sx; y = sy; Object.assign(o, move(i % 2 ? 'bounce' : 'roof', t, i), { rot: NOTXT, eyes: t > S3.good && t < S3.gulp ? 'look' : 'happy', lookX: -1 }); }
       agentBot(x, y, u, t, o);
     });
     // «more compute»: GPUs drop out of a ceiling chute onto a pile on the shelf, upper right
-    paint([[1180, -300], [1320, -300], [1320, 120], [1290, 170], [1210, 170], [1180, 120]], { wash: A2.steel, fill: A2.gunDk, fillOp: 90, tex: .6, ink: INK, sw: 1 }); hazard(1180, 110, 140, 16);
-    paint(rectPts(1080, 470, 340, 24), { wash: A2.steel, ink: INK, sw: .6 }); for (const lx of [1100, 1390]) paint(rectPts(lx, 494, 16, 156), { wash: A2.gunmetal, ink: INK, sw: .4 });
+    const [gx, gy] = L3.gpu, cy0 = R ? gy - 330 : 170;                      // shelf top gy, chute mouth cy0 (layout from the 16:9 one: 1250 / 470)
+    paint([[gx - 70, -300], [gx + 70, -300], [gx + 70, cy0 - 50], [gx + 40, cy0], [gx - 40, cy0], [gx - 70, cy0 - 50]], { wash: A2.steel, fill: A2.gunDk, fillOp: 90, tex: .6, ink: INK, sw: 1 }); hazard(gx - 70, cy0 - 60, 140, 16);
+    paint(rectPts(gx - 170, gy, 340, 24), { wash: A2.steel, ink: INK, sw: .6 }); for (const lx of [gx - 150, gx + 140]) paint(rectPts(lx, gy + 24, 16, R ? 110 : 156), { wash: A2.gunmetal, ink: INK, sw: .4 });
     GPUS.forEach((g, i) => {
       const a = t - g; if (a < 0) return;
-      const yT = 440 - i * 40, f = clamp(a / .25), y = lerp(170, yT, f * f), bounce = a > .25 ? 14 * Math.abs(Math.sin((a - .25) * 14)) * Math.exp(-(a - .25) * 8) : 0;
-      gpuCard(1250 + (hash(i) - .5) * 60, y - bounce, .55, t, { rot: (hash(i + 3) - .5) * .3 * f, glow: .4 * pulse(t, 6) });
-      if (a > .25 && a < .6) sparks(1250, yT + 30, a - .25, i * 13, 8, 140);
+      const yT = gy - 30 - i * 40, f = clamp(a / .25), y = lerp(cy0, yT, f * f), bounce = a > .25 ? 14 * Math.abs(Math.sin((a - .25) * 14)) * Math.exp(-(a - .25) * 8) : 0;
+      gpuCard(gx + (hash(i) - .5) * 60, y - bounce, .55, t, { rot: (hash(i + 3) - .5) * .3 * f, glow: .4 * pulse(t, 6) });
+      if (a > .25 && a < .6) sparks(gx, yT + 30, a - .25, i * 13, 8, 140);
     });
     // the asker (front) and the CEO; «good» 60.46: a heaped spoon of coins goes into the asker's mouth
     const ask = seg(t, S3.ask, S3.ask + .25), fed = t >= S3.good, chew = fed && t < S3.gulp ? Math.abs(Math.sin((t - S3.good) * 11)) : 0;
     const gulp = seg(t, S3.gulp, S3.gulp + .35), after = t > S3.gulp + .35;
-    const wx = 830, wy = 1210, wu = 24;
+    const [wx, wy, wu] = L3.hw, [cx, cyy, cu] = L3.ceo;
     clawd(wx, wy, wu, {
       aL: .3, aR: fed ? lerp(1.9, .4, seg(t, S3.good, S3.good + .4)) : lerp(.3, 1.9, ask) + (ask > .9 ? .15 * Math.sin(t * 14) : 0),
       eyes: after ? 'happy' : fed ? (t < S3.good + .5 ? 'x' : 'swirl') : t > S3.ask ? 'look' : 'normal', lookX: 1, lookY: -.4,
@@ -313,11 +328,11 @@
       emote: t > S3.ask && t < S3.good ? 'sweat' : null, dy: after ? move('hop', t).dy : 0,
     });
     const turn = t > S3.why;
-    ceoClawd(1220, 1205, 27, { flip: turn, eyes: turn && !after ? 'narrow' : 'happy', mouth: 'smile', click: kick(t, EN_GRID, .15), aL: t > S3.spoonIn && t < S3.spoonOut ? 1.2 : .4, dy: move('idle', t).dy });
+    ceoClawd(cx, cyy, cu, { flip: turn, eyes: turn && !after ? 'narrow' : 'happy', mouth: 'smile', click: kick(t, EN_GRID, .15), aL: t > S3.spoonIn && t < S3.spoonOut ? 1.2 : .4, dy: move('idle', t).dy });
     if (t > S3.spoonIn - .05 && t < S3.spoonOut + .6) {
       const inK = backOut(clamp((t - S3.spoonIn) / (S3.good - S3.spoonIn))), outK = easeIn(clamp((t - S3.spoonOut) / .45));
       const jig = fed && t < S3.spoonOut ? 10 * Math.sin((t - S3.good) * 30) : 0;
-      spoon(lerp(1110, wx + 250, inK) + outK * 500 + jig, wy - 4.6 * wu - jig * .3, 1.1, t, t < S3.spoonOut ? 1 : 0);
+      spoon(lerp(cx - 110, wx + 250 * wu / 24, inK) + outK * 500 + jig, wy - 4.6 * wu - jig * .3, 1.1 * wu / 24, t, t < S3.spoonOut ? 1 : 0);
     }
     if (after) A03.confetti(t - S3.gulp, 26, [500, -200, 1000, 1300], 7);
   }
@@ -329,21 +344,24 @@
   chapter('en_s3_hall', 55.64, 65.18, [[55.64, native(s3)]], { real: true });
 
   // ---------- the 3:4 reels camera: [EN t, cx, cy, width, glide] (width 1080 = full scale; picture height = 4/3 × width) ----------
-  const H1 = [
-    [39.78, 960, 560, 1080],                                              // S1: the burning server hall, the coolers up top
-    [42.68, 960, 640, 960, 1],                                            //   slow push in to the vibecoder while the floor splits
-    [43.68, 960, 600, 1080],                                              //   cut wide on the bull
-    [45.46, 960, 640, 920],                                               // S2: the shredder, one take, tight
-    [51.2, 960, 620, 960, 1],
-    [53.3, 1180, 580, 1120, 1],                                          //   follows the first truck in
-    [54.05, 1180, 580, 1120, 1],                                         //   holds through the pour
-    [54.85, 740, 580, 1140, 1],                                          //   swings left for the bigger one
-    [55.639, 750, 600, 1140, 1],
-    [55.64, 900, 720, 860],                                              // S3: the hiring machine and the belt
-    [58.48, 960, 820, 820, 1],                                            //   drift to the asker and the CEO
-    [60.3, 980, 860, 820, 1],                                            //   push in on the spoon
-    [65.179, 960, 800, 900, 1],
+  // 3:4 (R34 is always on where these keys are read): one frame per scene, gentle eased pushes, no pans / whips
+  const H1S1 = [
+    [39.78, 960, 570, 1080],                                              // S1: the burning server hall, both coolers + the trio in
+    [42.68, 960, 610, 980, 1],                                            //   slow push in to the vibecoder while the floor splits
+    [43.68, 960, 600, 1120],                                              //   cut wide on the bull (fists ≈ 85% of the width)
   ];
+  const H1 = [
+    ...H1S1,
+    [45.46, 960, 640, 1080],                                              // S2: the shredder, one locked take — bar, both gangs, both trucks inside
+    [49.30, 960, 650, 1040, 1],                                           //   a hair in on «floor.»
+    [55.639, 960, 640, 1080, 1],
+    [55.64, 960, 620, 1080],                                              // S3: machine top-left, belt diagonal, crowd, heroes low
+    [58.48, 960, 700, 1000, 1],                                           //   drift down to the asker and the CEO
+    [60.3, 960, 720, 980, 1],                                             //   push in on the spoon
+    [65.179, 960, 660, 1040, 1],
+  ];
+  // e14_bull2 (scenes2.js) replays S1 47.42 s later: frame it like S1
+  if (window.RU34) RU34.push([87.60, 92.86, [[87.60, 960, 570, 1080], ...H1S1.slice(1).map(([t, ...k]) => [+(t + 47.42).toFixed(2), ...k])]]);
   // everything else: the RU reels keys (v3 time) moved onto the EN track, minus the ones inside the NEW EN chapters (scenes2.js adds its keys to EN_KEYS)
   window.EN_KEYS = [...H1];
   // RU scenes brought back are re-framed for the 3:4 picture with their own EN keys (scenes3.js RUK), except the RU_CAM spans
@@ -360,8 +378,9 @@
       if (prev) out.push([a, ...prev.slice(1, 4)]);
       out.push(...ru.filter(([k]) => k > a && k < b));
     }
-    for (const [t, ...k] of RU_FIX) { const q = out.find(([u]) => Math.abs(u - t) < .02); if (q) q.splice(1, 3, ...k); }
-    return out.sort((x, y) => x[0] - y[0]);
+    for (const [t, ...k] of RU_FIX) { const q = out.find(([u]) => Math.abs(u - t) < .002); if (q) q.splice(1, 3, ...k); }
+    for (const [a, b, keys] of RU34) { for (let i = out.length - 1; i >= 0; i--) if (out[i][0] >= a && out[i][0] < b) out.splice(i, 1); out.push(...keys); }
+    out.sort((x, y) => x[0] - y[0]); if (window.DUMPK) console.warn("KEYS " + JSON.stringify(out.filter(k => k[0] > DUMPK[0] && k[0] < DUMPK[1])) + " PUNCH " + JSON.stringify(EN_PUNCH.filter(k => k[0] > DUMPK[0] && k[0] < DUMPK[1]))); return out;
   };
   window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3, layer };   // for tokensEN/scenes2.js
 })();

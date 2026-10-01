@@ -31,6 +31,7 @@ function a05_lights(t) {
 
 // ---------- smoke lettering: puffs out of a chimney and settles into a word ----------
 function a05_smokeWord(txt, ox, oy, x, y, size, t, t0, o = {}) {
+  if (a05_R) return;                                                             // 3:4: the words are text-gated anyway; only their growing first frames flickered at the band edge
   const age = t - t0, life = o.life ?? 1.6; if (age < 0 || age > life) return;
   const font = ruFont(size), chars = [...txt], ws = chars.map(c => textW(c, font) * .98 + size * .04);
   const tw = ws.reduce((a, b) => a + b, 0), burnA = o.burnAt != null ? t - o.burnAt : -1;
@@ -56,7 +57,9 @@ function a05_smokeWord(txt, ox, oy, x, y, size, t, t0, o = {}) {
 
 // ---------- world pieces ----------
 // ponytail: horizontal culling against the active camera only (the shots never rotate)
-const a05_vis = (x0, x1) => !CAM || (x1 > CAM.cx - W / 2 / CAM.zoom - 40 && x0 < CAM.cx + W / 2 / CAM.zoom + 40);
+let a05_noSign = false;                                                          // R34 gauge close-up: the facade sign would be cut by the band edge
+const a05_R = window.R34, a05_HW = a05_R ? 420 : W / 2;                        // R34: the 3:4 reels band is screen x 565–1355 (RU34 key [960, 540, 790])
+const a05_vis = (x0, x1) => !CAM || (x1 > CAM.cx - a05_HW / CAM.zoom - 40 && x0 < CAM.cx + a05_HW / CAM.zoom + 40);
 function a05_sky(t, L) {
   paint(rectPts(-800, -600, 3600, 1300), { wash: A5.sky, fill: '#15123A', fillOp: 90, tex: .4, border: .2, ink: null });
   paint(rectPts(-800, 330, 3600, 330), { wash: A5.sky2, washOp: 170, ink: null });
@@ -153,9 +156,16 @@ function a05_factory(t, L) {
   paint(rectPts(906, 600, 108, 45), { fill: A2.sodium, fillOp: 150 * f, bleed: .2, tex: .3, ink: null });
   hazard(894, 556, 132, 10);
   // the public counter panel above the gate
+  if (a05_R) {
+    if (!a05_noSign) {                                                    // 3:4: the counter is gated out, so the sign is just a bigger lit label
+    paint(rectPts(790, 482, 340, 64, 1), { wash: A2.gunDk, ink: PAL.ink, sw: .9 });
+    letter('СОЖЖЕНО ТОКЕНОВ', 960, 514, 30, f > .1 ? A2.hazard : '#4A4450', { font: ruFont(30), ink: false });
+    }
+  } else {
   paint(rectPts(772, 480, 376, 72, 1), { wash: A2.gunDk, ink: PAL.ink, sw: .9 });
   letter('СОЖЖЕНО ТОКЕНОВ', 960, 491, 12, f > .1 ? A2.hazard : '#4A4450', { font: ruFont(12), ink: false });
   counter(960, 523, 28, a05_count(t), { col: f > .1 ? A2.hazard : '#3A3440', box: '#15161C' });
+  }
   // a skip hoist feeding tokens into chimney 4
   if (a05_vis(1290, 1600)) { push(); translate(1296, 204); rotate(1.02);
   conveyor(0, 0, 520, t, { speed: -150, gap: 110, legs: 0, h: 22, size: .5, seed: 5 });
@@ -208,29 +218,51 @@ function a05_billboard(x, y, w, h, t, lit) {
 
 // ---------- shots ----------
 function a05_cam(t, cx, cy, z, amt = 7) {
-  const [sx, sy] = shakeXY(t, amt * hitK(t, HITS, .15));
+  const [sx, sy] = a05_R ? [0, 0] : shakeXY(t, amt * hitK(t, HITS, .15));       // 3:4: the global beat shake is enough
   camBegin(cx + sx, cy + sy, z);
 }
 
+// 3:4 foreground rooftops across the reels band (screen space), windows dim on the flares; fills the bottom instead of empty street
+function a05_roofs(t, lt, fl, top0) {
+  const px = -lt * 30;
+  for (let i = 0; i < 6; i++) {
+    const x = 500 + px + i * 175, w = 130 + hash(i * 2.1) * 40, top = top0 + hash(i * 3.7) * 90;
+    paint(rectPts(x, top, w, H - top + 60), { wash: '#07081A', ink: PAL.ink, sw: 1 });
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+      if (hash(i * 17 + r * 5 + c) < .35) continue;
+      paint(rectPts(x + 16 + c * (w - 32) / 3, top + 20 + r * 52, 22, 26), { wash: A5.win, washOp: 230 * (1 - fl * .85), ink: null });
+    }
+    if (i % 2) inkLine([[x + w * .7, top], [x + w * .7, top - 70]], 1.4, PAL.ink, 'ink', 0);
+  }
+}
 // 91.8 wide establishing: chimneys flare on every «Жги», smoke writes the words
 function a05_wide(t, lt, dur) {
   const L = a05_lights(t);
-  a05_cam(t, lerp(960, 930, lt / dur), lerp(470, 430, ease(lt / dur)), lerp(1.04, 1.16, ease(lt / dur)));
+  if (a05_R) a05_cam(t, 960, lerp(470, 455, ease(lt / dur)), lerp(.93, .97, ease(lt / dur)));   // 3:4: all four chimneys, horizon high, slow push
+  else a05_cam(t, lerp(960, 930, lt / dur), lerp(470, 430, ease(lt / dur)), lerp(1.04, 1.16, ease(lt / dur)));
   a05_world(t, L);
   a05_smokeWord('ЖГИ', 790, 60, 760, 30, 90, t, 91.86, { life: 1.8 });
   a05_smokeWord('ТОКЕНЫ', 1130, 80, 1170, 60, 80, t, 92.94, { life: 1.26 });
   a05_smokeWord('ЖГИ', 640, 120, 620, 80, 90, t, 93.66, { life: 1.4 });
   a05_smokeWord('ТОКЕНЫ', 1280, 130, 1150, 120, 88, t, 94.2, { life: .9 });
   camEnd();
+  if (a05_R) a05_roofs(t, lt, hitK(t, a05_ZHGI.concat(a05_TOK), .35), 850);
   glitchCut(t, 91.8);
 }
 // 94.94 «Пока лимит не обнулён»: low angle up chimney 3, the limit gauge draining while it burns
 function a05_gauge(t, lt, dur) {
   const L = a05_lights(t);
-  a05_cam(t, 1130, lerp(470, 360, ease(lt / dur)), lerp(2.3, 2.6, lt / dur), 4);
-  a05_world(t, L);
+  if (a05_R) a05_cam(t, 1150, lerp(335, 322, ease(lt / dur)), lerp(1.28, 1.32, ease(lt / dur)));   // 3:4: chimney 3 whole, flame to base, slow push
+  else a05_cam(t, 1130, lerp(470, 360, ease(lt / dur)), lerp(2.3, 2.6, lt / dur), 4);
+  a05_noSign = a05_R; a05_world(t, L); a05_noSign = false;
   camEnd();
   const v = a05_limit(t);
+  if (a05_R) {                                                                   // labels to the left of the chimney, inside the band
+    letter('ЛИМИТ', 700, 380, 56, A5.white, { font: ruFont(56), rot: -.06, stroke: A2.gunDk });
+    letter(Math.round(v * 100) + '% left', 700, 450, 40, A2.hazard, { font: ruFont(40), rot: -.06, stroke: A2.gunDk });
+    inkLine([[790, 470], [860, 540], [905, 560]], 3, A5.white, 'marker', .5);
+    return;
+  }
   letter('ЛИМИТ', 1320, 300, 64, A5.white, { font: ruFont(64), rot: -.06, stroke: A2.gunDk });
   inkLine([[1250, 330], [1180, 420], [1080, 460]], 3, A5.white, 'marker', .5);
   letter('ещё ' + Math.round(v * 100) + '%', 1330, 380, 40, A2.hazard, { font: ruFont(40), rot: -.06, stroke: A2.gunDk });
@@ -238,13 +270,15 @@ function a05_gauge(t, lt, dur) {
 // 96.86 from the city: rooftops in front, windows dim as the factory flares, pulses stream in
 function a05_city2(t, lt, dur) {
   const L = a05_lights(t), fl = hitK(t, a05_ZHGI.concat(a05_TOK), .35);
-  a05_cam(t, lerp(1040, 900, ease(lt / dur)), 420, 1.3);
+  if (a05_R) a05_cam(t, lerp(1055, 1040, ease(lt / dur)), 410, 1.15);          // 3:4: chimneys 2–4, slow drift left
+  else a05_cam(t, lerp(1040, 900, ease(lt / dur)), 420, 1.3);
   a05_world(t, L);
   a05_smokeWord('ЖГИ', 790, 90, 780, 60, 84, t, 96.86, { life: 1.6 });
   a05_smokeWord('ТОКЕНЫ', 1130, 100, 1120, 90, 76, t, 98.02, { life: 1.22 });
   a05_smokeWord('ЖГИ', 640, 130, 660, 150, 80, t, 98.78, { life: 1.3 });
   a05_smokeWord('ТОКЕНЫ', 1280, 140, 1080, 200, 80, t, 99.24, { life: .8 });
   camEnd();
+  if (a05_R) return a05_roofs(t, lt, fl, 880);
   // foreground rooftops (screen space, parallax) whose windows go dark each time the factory flares
   const px = -lt * 60;
   for (let i = 0; i < 6; i++) {
@@ -285,14 +319,16 @@ function a05_counter(t, lt, dur) {
 // 102.32 agents march out of the gate in columns (more columns on the second «Больше»)
 function a05_march(t, lt, dur) {
   const L = a05_lights(t);
-  a05_cam(t, 960, 540, 2.0, 3);
+  // 3:4: the whole factory on top, the road with the columns below (gate at screen y GY); same framing as the drones → no jump
+  const R = a05_R, GY = R ? 671 : 712, RX = R ? .4 : 1;
+  if (R) a05_cam(t, 960, 510, .97); else a05_cam(t, 960, 540, 2.0, 3);
   a05_world(t, L);
   camEnd();
   // gate is at screen (960, ~710); the road runs toward the camera
-  paint([[880, 712], [1040, 712], [1900, 1100], [20, 1100]], { wash: '#15131E', ink: null });
-  for (const s of [-1, 1]) inkLine([[960 + s * 80, 712], [960 + s * 940, 1100]], 2, A2.hazard, 'marker', 0);
+  paint(R ? [[905, GY], [1015, GY], [1420, 1100], [500, 1100]] : [[880, 712], [1040, 712], [1900, 1100], [20, 1100]], { wash: '#15131E', ink: null });
+  for (const s of [-1, 1]) inkLine([[960 + s * (R ? 55 : 80), GY], [960 + s * (R ? 440 : 940), 1100]], 2, A2.hazard, 'marker', 0);
   for (const s of [-1, 1]) for (let j = 0; j < 3; j++) {                       // sodium lamp posts
-    const d = (j + 1) / 4, y = lerp(712, 1060, d * d), x = 960 + s * lerp(120, 900, d * d), hgt = lerp(60, 420, d * d);
+    const d = (j + 1) / 4, y = lerp(GY, 1060, d * d), x = 960 + s * lerp(120, 900, d * d) * RX, hgt = lerp(60, 420, d * d) * (R ? .7 : 1);
     inkLine([[x, y], [x, y - hgt], [x - s * hgt * .18, y - hgt]], lerp(1, 3, d), '#05060E', 'ink', 0);
     paint(ellPts(x - s * hgt * .18, y - hgt, 10 + 60 * d * d, 6 + 30 * d * d, 12), { fill: A2.sodium, fillOp: 160, bleed: .3, tex: .2, ink: null });
   }
@@ -307,7 +343,7 @@ function a05_march(t, lt, dur) {
   }
   list.sort((a, b) => a.d - b.d);
   for (const a of list) {
-    const e = Math.pow(a.d, 1.25), y = lerp(716, 955, e), s = lerp(2.2, 15, e), x = 960 + (a.c - 2) * lerp(26, 270, e);
+    const e = Math.pow(a.d, 1.25), y = lerp(GY + 4, R ? 1000 : 955, e), s = lerp(2.2, R ? 12 : 15, e), x = 960 + (a.c - 2) * lerp(26, R ? 150 : 270, e);
     if (s < 9.5) {                                                           // ponytail: far agents as cheap blobs
       const b = Math.abs(Math.sin((t + a.c * .07) * 7)) * s * .6;
       paint(rectPts(x - 5 * s, y - 8 * s - b, 10 * s, 6 * s), { wash: '#6F8BE0', ink: PAL.ink, sw: .4 });
@@ -341,24 +377,27 @@ function a05_drone(x, y, s, t, seed, cs) {
 }
 function a05_drones(t, lt, dur) {
   const L = a05_lights(t), big = t - 106.4, land = big >= 0 ? easeOut(clamp(big / .5)) : 0, k = big >= .45 ? Math.exp(-(big - .45) / .25) : 0;
-  const [sx, sy] = shakeXY(t, 14 * k);
-  camBegin(lerp(900, 1020, lt / dur) + sx, 470 + sy, 1.25);
+  const R = a05_R, [sx, sy] = R ? [0, 0] : shakeXY(t, 14 * k);
+  if (R) camBegin(960, 510, .97);                                                // 3:4: the march framing held, drones sized to the band
+  else camBegin(lerp(900, 1020, lt / dur) + sx, 470 + sy, 1.25);
   a05_world(t, L);
   camEnd();
   flushLetters();
   // wave 1: seven small drones in a V, flying in from the right and climbing away once the big one arrives
   const age = t - 104.92;
   for (let i = 6; i >= 0; i--) {
-    const r = Math.ceil(i / 2), side = i % 2 ? -1 : 1, s = 1 - r * .07;
-    const x = W + 320 - age * 1000 + r * 260 + (side < 0 ? 130 : 0), y = 400 + side * r * 85 - Math.max(0, big) * 260 + Math.sin(t * 2 + i) * 6;
+    const r = Math.ceil(i / 2), side = i % 2 ? -1 : 1, s = (1 - r * .07) * (R ? .7 : 1);
+    const x = R ? 1560 - age * 700 + r * 150 + (side < 0 ? 75 : 0) : W + 320 - age * 1000 + r * 260 + (side < 0 ? 130 : 0);
+    const y = (R ? 320 + side * r * 75 : 400 + side * r * 85) - Math.max(0, big) * 260 + Math.sin(t * 2 + i) * 6;
     if (x > -300 && x < W + 300) a05_drone(x, y, s, t, i, s * .75);
   }
   // wave 2: the heavy-lift drone drops in and hovers, searchlights on the ground
   if (big >= 0) {
-    const bx = 960 + Math.sin(t * 1.3) * 12, by = lerp(-700, 330, land) + Math.sin(t * 2.4) * 6;
-    for (const d of [-1, 1]) paint([[bx + d * 150, by + 10], [bx + d * 150 + 18, by + 10], [bx + d * 520, 1000], [bx + d * 250, 1000]], { wash: '#FFF3C8', washOp: 30 * land, ink: null });
-    if (land > .9) for (const d of [-1, 1]) paint(ellPts(bx + d * 385, 990, 170, 30, 18), { wash: '#FFF7DA', washOp: 60, ink: null });
-    a05_drone(bx, by, 3.1, t, 9, 2.5);
+    const q = R ? .58 : 1;                                                        // 3:4: the heavy lifter at 58% so rotors + card stay inside the band
+    const bx = 960 + Math.sin(t * 1.3) * 12, by = lerp(-700, R ? 300 : 330, land) + Math.sin(t * 2.4) * 6;
+    for (const d of [-1, 1]) paint([[bx + d * 150 * q, by + 10], [bx + d * 150 * q + 18, by + 10], [bx + d * 520 * q, 1000], [bx + d * 250 * q, 1000]], { wash: '#FFF3C8', washOp: 30 * land, ink: null });
+    if (land > .9) for (const d of [-1, 1]) paint(ellPts(bx + d * 385 * q, 990, 170 * q, 30, 18), { wash: '#FFF7DA', washOp: 60, ink: null });
+    a05_drone(bx, by, 3.1 * q, t, 9, 2.5 * q);
     if (k > .05) { flushLetters(); sparks(960, 860, big - .45, 41, 14, 420); }
   }
   punkText('БОЛЬШЕ ЖЕЛЕЗА!', 960, 140, t >= 106.4 ? 104 : 88, t, t >= 106.4 ? 106.4 : 104.92, { seed: t >= 106.4 ? 12 : 9 });
@@ -419,10 +458,12 @@ function a05_dark(t, lt, dur) {
   ceoClawd(960, 440, 6, { eyes: 'narrow', mouth: 'smile', aR: .6 + .2 * Math.sin(t * 2) });
   camEnd();
   // each hit that kills a light gets a dry electric «щёлк»
-  for (const [ht, x] of [[114.15, 380], [114.79, 1540], [115.26, 520], [115.74, 1400]]) sfx('щёлк', x, 260, 54, '#8A8494', t - ht, { life: .45, font: ruFont(54) });
+  if (!a05_R) for (const [ht, x] of [[114.15, 380], [114.79, 1540], [115.26, 520], [115.74, 1400]]) sfx('щёлк', x, 260, 54, '#8A8494', t - ht, { life: .45, font: ruFont(54) });
 }
 
 chapter('chorus2', 91.8, 116.3, [
   [91.8, a05_wide], [94.94, a05_gauge], [96.86, a05_city2], [100.04, a05_counter], [102.32, a05_march],
   [104.92, a05_drones], [107.5, a05_why], [110.85, a05_banner], [113.6, a05_zero], [114.12, a05_dark]
 ]);
+// 3:4 reels: one fixed band over the chapter's own R34 cameras (EN 92.86–105.84; 105.84+ is the EN billboard scene)
+if (window.RU34) RU34.push([92.86, 105.84, [[92.86, 960, 540, 790]]]);

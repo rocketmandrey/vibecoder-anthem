@@ -14,7 +14,10 @@
   #tt { font-variant-numeric: tabular-nums; min-width: 190px; }
 </style>
 <script>window.SONG = { bpm: 90.9, off: 0.16, shift: 0, dur: 249.216, wipes: [], meter: [], boil24: [], lyFont: '44px "Russo One", "Arial Black", sans-serif',
-  reels: { ar: 4 / 3, py: 170, title: 'BURN THE TOKENS', titleY: 92, subY: 1690, censor: true } };   // ?reels: title 0–170, 3:4 picture 170–1610, subtitles 1625–1760 right under it</script>
+  reels: { ar: 4 / 3, py: 170, title: 'BURN THE TOKENS', titleY: 92, subY: 1690, censor: true } };   // ?reels: title 0–170, 3:4 picture 170–1610, subtitles 1625–1760 right under it
+  // R34: the 3:4 reels picture — chapters re-lay their elements for it (never in the 16:9 / RU pages); RU34: [enA, enB, keys] a chapter's own 3:4 camera
+  // keys (EN song time, [t, cx, cy, w, glide]) that replace every other key in [enA, enB) — see tokensEN/scenes.js SQSHOTS_X
+  window.R34 = /[?&]reels\b/.test(location.search); window.RU34 = [];</script>
 <script src="node_modules/p5/lib/p5.min.js"></script>
 <script src="node_modules/p5.brush/dist/p5.brush.js"></script>
 </head>

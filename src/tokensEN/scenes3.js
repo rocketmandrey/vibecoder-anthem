@@ -59,14 +59,15 @@
     press(PX, PY, PW, PH, t, t < 13.2 ? [99] : INH, { seed: 3, token: false });
     // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
     const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= INH[0] ? .2 : 1;
-    const bx = gx0 + SLN[0] * SL.r * (t < SL.top ? 1 : 0), by = t < SL.top ? gy0 + SLN[1] * SL.r + SL.r : lerp(gy0, bedY, lift);   // bottom-centre of the token
+    const ov = 1 - eased(t, SL.top - .15, SL.top + .25);                 // the slope → plateau hand-off eased (audit: +116 px snap at 11.0)
+    const bx = gx0 + SLN[0] * SL.r * ov, by = lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);   // bottom-centre of the token
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
     token(0, 0, SL.r, { spin: .02, burn: t > 14 ? seg(t, 14, 17) * .6 : 0 }); pop();
     // Clawd right behind it, leaning in; after the lift he stands back and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], 13.3);
-    const [fx, fy] = t < SL.top ? [gx0 - SLD[0] * (SL.r + 80), gy0 - SLD[1] * (SL.r + 80)] : [bx - SL.r - 80 - 140 * back2, SL.B[1]];
+    const [fx, fy] = [lerp(bx - SL.r - 80 - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
     const slip = [2.30, 5.11].some(d => t > d && t < d + .5);
-    clawd(fx, fy, 12, { walk: pushing && !slip ? t * 2 : null, rot: t < SL.top ? .3 : pushing ? .2 : 0, eyes: t > 13.4 ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > 12.9 ? -1 : 0,
+    clawd(fx, fy, 12, { walk: pushing && !slip ? t * 2 : null, rot: lerp(pushing ? .2 : 0, .3, ov), eyes: t > 13.4 ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > 12.9 ? -1 : 0,
       mouth: t > 13.4 ? 'O' : slip ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 7 ? 'sweat' : null, noShadow: true });
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= INH[0]) stamp('BURN THE TOKENS', 1380, 930, 78, t, INH[0], { col: TK.yellow, rot: -.04 });
@@ -76,21 +77,151 @@
   const IK = [0, 1.2, 2.3, 2.8, 4, 5.11, 5.6, 7, 8.5, 10, 11, 12.4].map((k, i) => { const [x, y] = slopeAt(k); return [k, x - 20, y - 150, 760, i ? 1 : 0]; });
   scene('intro', 0, 18.16, intro, [...IK, [12.9, 1320, 420, 960, 1], [13.39, 1380, 330, 1080, 1], [18.159, 1380, 360, 1040, 1]], [[13.4, 18], [2.30, 8], [5.11, 8]]);
 
+  // ======== «Don't need an app, don't need a bot» / «Still got tokens — so why the hell not?» (29.08–34.52), native 3:4, a02 office look ========
+  // user notes on draft 3: the RU wave shot read as an empty cropped wall in 3:4 → redrawn: an app tile pops up and is swatted off on «app»,
+  // a little bot walks in and is kicked away on «bot»; on «Still» the limit bar's beam lights him (star eyes), and hauls him up toward it by «not?»
+  const SW = { a: 29.08, app: 29.68, botIn: 30.1, bot: 30.98, beam: 31.76, lift: 32.98, not: 33.86 };
+  function swat(t) {
+    back('#A39C93');
+    paint(rectPts(-400, -400, W + 800, 1420), { wash: '#A39C93', fill: A2.steel, fillOp: 60, tex: .6, ink: null });
+    for (let i = 0; i < 9; i++) inkLine([[i * 240 + 40, -300], [i * 240 + 40, 1000]], .35, A2.steel, 'inkfine', 0);
+    paint(rectPts(-400, 1000, W + 800, 700), { wash: '#6E6258', fill: A2.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: .8 });
+    const beam = t >= SW.beam, bk = seg(t, SW.beam, SW.beam + .35), lift = ease(seg(t, SW.lift, SW.not)), cy = 1000 - lift * 330;
+    limitBar(580, 250, 760, .5, { glow: beam ? .8 + .3 * Math.sin(t * 9.8) : .3, label: 'WEEKLY LIMIT' });
+    if (beam) {
+      paint([[860, 330], [1060, 330], [1190, cy], [730, cy]], { wash: A2.hazard, washOp: 120 * bk, ink: null });
+      paint([[910, 330], [1010, 330], [1080, cy], [840, cy]], { wash: TK.yellowLt, washOp: 150 * bk, ink: null });
+      for (let i = 0; i < 7; i++) { const f = frac(t * 1.4 + i / 7); token(lerp(820, 1100, hash(i)), lerp(cy - 80, 360, f), 18, { spin: t + i }); }
+    }
+    // the app tile: pops up on the left, swatted off on «app»
+    const off1 = seg(t, SW.app, SW.app + .55);
+    if (off1 < 1) {
+      const pk = backOut(seg(t, SW.a, SW.a + .3)), x = 700 - easeIn(off1) * 700 + Math.sin(t * 1.3) * 12, y = 640 - easeIn(off1) * 360 + Math.sin(t * 2) * 14;
+      push(); translate(x, y); rotate(-off1 * 5 - .08); scale(Math.max(.01, pk));
+      paint(rrPts(-95, -95, 190, 190, 44), { wash: TK.green, fill: TK.greenDk, fillOp: 60, ink: INK, sw: 1.4 });
+      paint(rrPts(-38, -62, 76, 124, 14), { wash: PAL.cream, ink: INK, sw: .9 });
+      paint(ellPts(0, 44, 9, 9, 10), { wash: TK.green, ink: null });
+      paint(ellPts(78, -78, 30, 30, 16), { wash: '#E0302A', ink: INK, sw: .8 });
+      pop();
+      if (off1 > 0) for (let k = 0; k < 3; k++) inkLine([[860 - k * 40, 560 + k * 50], [760 - k * 60, 520 + k * 60]], 3 * (1 - off1), PAL.cream, 'ink', 0);
+    }
+    // the bot: walks in from the right, kicked away on «bot»
+    if (t > SW.botIn) {
+      const kk = seg(t, SW.bot, SW.bot + .7), x = t < SW.bot ? lerp(1450, 1190, eased(t, SW.botIn, SW.bot - .1)) : 1190 + easeIn(kk) * 700, y = 1000 - Math.sin(kk * Math.PI * .8) * 420;
+      if (kk < 1) agentBot(x, y, 13, t, { n: 7, rot: NOTXT + kk * 8, walk: t < SW.bot - .1 ? t * 3 : null, flip: true, eyes: kk > 0 ? 'x' : 'happy', mouth: kk > 0 ? 'O' : 'smile', aL: 1.2, aR: 1.2, noShadow: kk > 0 });
+    }
+    // Clawd
+    const sw1 = seg(t, SW.app - .15, SW.app + .25), kick1 = seg(t, SW.bot - .1, SW.bot + .25);
+    clawd(960, cy, 26, {
+      noShadow: lift > .05, rot: beam ? Math.sin(t * 7) * .05 * lift : -.25 * Math.sin(sw1 * Math.PI) + .2 * Math.sin(kick1 * Math.PI),
+      eyes: beam ? 'spark' : 'narrow', mouth: t > SW.not ? 'grin' : beam ? 'O' : 'flat', flip: t > SW.botIn + .3 && !beam,
+      aL: beam ? 1.9 : .3 + 1.6 * Math.sin(sw1 * Math.PI), aR: beam ? 1.9 : .3 + 1.4 * Math.sin(kick1 * Math.PI),
+    });
+    if (beam) flash(.3 * Math.exp(-(t - SW.beam) * 8), A2.hazard);
+  }
+  scene('v1_swat', 29.08, 34.52, swat, [[29.08, 960, 640, 900], [31.759, 960, 640, 900, 1], [31.76, 960, 600, 860], [34.519, 960, 520, 860, 1]], [[SW.app, 8], [SW.bot, 10], [SW.beam, 8]]);
+
+  // ======== chorus 2 «Don't ask why — it's good for you!» (105.84–110.55): the CANNED TOKENS billboard is the hero ========
+  // user notes on draft 3: a meme ad over the night factory — the CEO in a doctor's coat holds out a giant spoonful from an orange tin of tokens with a
+  // creepy toothpaste smile, the slogan in huge type «CANNED TOKENS. TRUST US.». Doctor + tin: Codex layers vectorized (prop_art.js doctor / tin).
+  // It flickers on at «why», the camera pushes in on it through «it's good for you», the spoon bobs out at the viewer on «good», the grin glints on «you».
+  const BB = { a: 105.84, on: 106.46, full: 106.9, push: 107.54, good: 107.82, you: 108.42, end: 110.55 };
+  const BP = [470, 150, 980, 760];                                             // the billboard panel x, y, w, h
+  function billboard(t) {
+    back('#121729');
+    paint(rectPts(-400, -600, W + 800, 1300), { wash: '#1B2340', fill: '#121729', fillOp: 90, tex: .4, ink: null });
+    for (let i = 0; i < 40; i++) paint(ellPts(hash(i) * 1920, hash(i + 5) * 700 - 300, 3, 3, 6), { wash: '#E8E2D2', washOp: 60 + 120 * hash(i + 9), ink: null });
+    // the factory skyline under it: roofs, two chimneys with fire, smoke
+    for (let i = 0; i < 12; i++) { const x = 300 + i * 120, h = 180 + hash(i * 3) * 160; paint(rectPts(x, 1300 - h, 112, h + 300), { wash: '#232A40', fill: '#1A2032', fillOp: 90, ink: INK, sw: .6 });
+      for (let k = 0; k < 3; k++) if (hash(i * 7 + k) > .5) paint(rectPts(x + 18 + k * 30, 1320 - h, 18, 26), { wash: '#FFD37A', washOp: 120, ink: null }); }
+    for (const x of [560, 1370]) {                                        // striped chimneys, they read as the billboard's legs
+      paint(rectPts(x - 45, 860, 90, 520, 1), { wash: '#B8B0A4', fill: '#7A7268', fillOp: 70, tex: .5, ink: INK, sw: 1 });
+      for (let k = 0; k < 4; k++) paint(rectPts(x - 45, 900 + k * 120, 90, 40), { wash: '#C8412E', ink: null });
+    }
+    // the billboard: legs, catwalk, lamps, the panel
+    const [X, Y, Wd, Hd] = BP, on = t < BB.on ? 0 : t < BB.full ? (frac(t * 9) < .5 ? .35 : .8) : 1;
+    for (const x of [X + 160, X + Wd - 160]) paint(rectPts(x - 16, Y + Hd, 32, 560), { wash: '#4A5060', ink: INK, sw: .8 });
+    paint(rectPts(X - 20, Y + Hd + 10, Wd + 40, 18), { wash: '#5A6070', ink: INK, sw: .7 });
+    paint(rrPts(X - 22, Y - 22, Wd + 44, Hd + 44, 10), { wash: '#2E3444', ink: INK, sw: 1.2 });
+    if (on > 0) {
+      glowAt(X + Wd / 2, Y + Hd / 2, 900, '#FFB860', 70 * on);
+      paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FFE6A0', fill: '#FFC25A', fillOp: 60 * on, tex: .4, ink: null });
+      for (let k = 0; k < 12; k++) { const a = k / 12 * TAU + t * .25; paint([[X + Wd * .62, Y + Hd * .52], [X + Wd * .62 + Math.cos(a) * 360, Y + Hd * .52 + Math.sin(a) * 360], [X + Wd * .62 + Math.cos(a + .13) * 360, Y + Hd * .52 + Math.sin(a + .13) * 360]], { wash: '#FFF3C8', washOp: 110 * on, ink: null }); }
+      paint(rectPts(X, Y + Hd - 150, Wd, 150), { wash: '#E8622A', fill: '#C94A1E', fillOp: 70, ink: null });
+      const bob = 1 + .06 * Math.exp(-Math.max(0, t - BB.good) * 4) * (t > BB.good ? 1 : 0) + .015 * Math.sin(t * 5.8);
+      layer('tin', X + 230, Y + 430, 330, { alpha: on });
+      layer('doctor', X + Wd * .64, Y + 400, 560 * bob, { alpha: on });
+      if (t > BB.you && t < BB.you + .45) { const g = 1 - (t - BB.you) / .45; paint(starPts(X + Wd * .62, Y + 330, 40 * g + 10, .22), { wash: '#FFFFFF', ink: null }); }
+      const font = s => `${s}px "Russo One", "Arial Black", sans-serif`;
+      letter('CANNED TOKENS.', X + Wd / 2, Y + 88, 96, '#C8321E', { font: font(96), stroke: '#FFF3C8', alpha: on });
+      letter('TRUST US.', X + Wd / 2, Y + Hd - 76, 118, '#FFF3C8', { font: font(118), stroke: '#6A1A0C', alpha: on });
+      if (on < 1) paint(rectPts(X, Y, Wd, Hd), { wash: '#101420', washOp: 200 * (1 - on), ink: null });
+    } else paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#1A1F2C', ink: null });
+    for (const x of [X + 120, X + Wd / 2, X + Wd - 120]) { paint(rectPts(x - 26, Y + Hd + 26, 52, 22), { wash: '#6A7080', ink: INK, sw: .6 });
+      if (on > 0) paint([[x - 20, Y + Hd + 26], [x + 20, Y + Hd + 26], [x + 90, Y + Hd - 260], [x - 90, Y + Hd - 260]], { wash: '#FFF6D8', washOp: 40 * on, ink: null }); }
+    if (t >= BB.full && t < BB.full + .12) flash(.4, '#FFE6A0');
+  }
+  scene('c2_billboard', 105.84, 110.55, billboard, [
+    [105.84, 960, 700, 1240], [BB.on, 960, 660, 1200, 1], [BB.push, 960, 560, 1140, 1], [BB.you, 960, 540, 1080, 1], [110.549, 960, 530, 1040, 1],
+  ], [[BB.full, 8], [BB.good, 10]]);
+
+  // ======== «The economy is WORKING!» (148.56–152.04): a pitch deck on an easel, native 3:4 ========
+  // user notes on draft 3: the green bars grow on the slide; exactly on «WORKING» (149.60) the top bar goes *pyn'k* and flies up off the board;
+  // the CEO beams, the audience heads follow it up. Everything inside the 3:4 frame.
+  const EC = { a: 148.56, work: 149.60, end: 152.04 }, DB = [470, 170, 740, 560], BARS = [.16, .27, .4, .56, .86];
+  const barAt = i => [DB[0] + 130 + i * 118, DB[1] + DB[3] - 64];              // bar i: left x, baseline y
+  function deck(t) {
+    back('#D9D1C2');
+    paint(rectPts(-400, -1100, W + 800, 2100), { wash: '#DDD5C6', fill: '#C9BFAE', fillOp: 60, tex: .5, ink: null });
+    for (let i = 0; i < 10; i++) inkLine([[i * 220 + 30, -1100], [i * 220 + 30, 1000]], .35, '#BDB2A0', 'inkfine', 0);
+    paint(rectPts(-400, 1000, W + 800, 700), { wash: '#8A7A66', fill: '#6E5E4C', fillOp: 80, tex: .6, ink: INK, sw: .8 });
+    const [BX, BY, BW, BH] = DB, a = t - EC.work, popped = a >= 0;
+    inkLine([[BX + 180, BY + BH], [BX + 110, 1010]], 9, '#6A4A30', 'ink', 0); inkLine([[BX + BW - 180, BY + BH], [BX + BW - 110, 1010]], 9, '#6A4A30', 'ink', 0);
+    paint(rrPts(BX - 18, BY - 18, BW + 36, BH + 36, 12), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
+    paint(rectPts(BX, BY, BW, BH, 1), { wash: '#FBF8F1', ink: null });
+    paint(rectPts(BX, BY, BW, 66), { wash: '#2FBF71', ink: null });
+    letter('Q4 · THE ECONOMY', BX + 26, BY + 35, 34, '#FBF8F1', { align: 'left', ink: false });
+    inkLine([[BX + 90, BY + 110], [BX + 90, BY + BH - 64], [BX + BW - 40, BY + BH - 64]], 2.4, INK, 'ink', 0);
+    for (let q = 1; q < 4; q++) inkLine([[BX + 90, BY + BH - 64 - q * 95], [BX + BW - 40, BY + BH - 64 - q * 95]], .6, '#CFC8BA', 'inkfine', 0);
+    const grow = ease(seg(t, EC.a, EC.work - .15)), wob = popped ? Math.exp(-a * 5) * Math.sin(a * 30) * .04 : 0;
+    const tops = BARS.map((h, i) => { const [x, y] = barAt(i); return [x + 40, y - (BH - 190) * h * grow * (1 + wob)]; });
+    BARS.forEach((h, i) => {
+      if (i === 4 && popped) return;
+      const [x, y] = barAt(i), hh = (BH - 190) * h * grow * (1 + wob);
+      if (hh > 2) paint(rectPts(x, y - hh, 80, hh, 1), { wash: '#2FBF71', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: 1 });
+    });
+    if (grow > .05) inkLine(tops.slice(0, popped ? 4 : 5).map(([x, y]) => [x, y - 26]), 3, '#E0302A', 'ink', 0);
+    if (popped) {
+      const [x, y] = barAt(4), hh = (BH - 190) * BARS[4], fy = y - hh / 2 - 380 * a - 1500 * a * a;
+      paint(ellPts(x + 40, y, 52, 11, 12), { wash: '#3A3A3A', ink: null });                           // the empty socket
+      push(); translate(x + 40 + 60 * a, fy); rotate(a * 2.2);
+      paint(rectPts(-40, -hh / 2, 80, hh, 1), { wash: '#2FBF71', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: 1 });
+      pop();
+      for (let k = 0; k < 4; k++) inkLine([[x + 20 + k * 14 + 60 * a, fy + hh / 2 + 30], [x + 20 + k * 14 + 60 * a, fy + hh / 2 + 110 + 40 * k]], 2, '#8A8480', 'inkfine', 0);
+      if (a < .4) paint(starPts(x + 40, y - 20, 150 * a / .4 + 50, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .4), ink: INK, sw: 1.2 });
+    }
+    // the audience in front, heads follow the bar up; the CEO beams at the easel's side
+    for (let i = 0; i < 4; i++) agentBot(590 + i * 225, 1170 + (i % 2) * 16, 15, t, { n: 31 + i, rot: NOTXT, noShadow: true, eyes: popped ? 'look' : 'happy', lookY: popped ? -1 : 0, lookX: popped ? .3 : 0, mouth: popped ? 'O' : 'smile' });
+    ceoClawd(1290, 1010, 17, { noShadow: true, flip: true, eyes: popped ? 'spark' : 'happy', mouth: popped ? 'O' : 'grin', aL: 1.5, aR: popped ? 1.8 : .6, click: kick(t, [EC.work], .2) });
+  }
+  scene('eco_deck', 148.56, 152.04, deck, [
+    [148.56, 940, 600, 1000], [149.55, 930, 580, 960, 1], [150.1, 930, 560, 980, 1], [152.039, 930, 540, 1000, 1],
+  ], [[EC.work, 14]]);
+
   // ======== RU scenes brought back (cued in tokensEN/warp.js), each with its own 3:4 framing ========
   const RUK = [
     // verse 1, a02 office: Friday desk → the usage panel → Clawd at the park window → Sunday page burns → sparkle under the limit bar → the arcade
     [18.16, 1200, 520, 1240], [20.8, 960, 560, 1650], [23.54, 680, 520, 1200], [26.38, 973, 440, 1000], [29.079, 973, 440, 940, 1],
-    [29.08, 960, 440, 1200], [34.519, 960, 460, 1100, 1], [34.52, 1080, 560, 1100], [39.779, 1000, 600, 900, 1],
+     [34.52, 1080, 560, 1100], [39.779, 1000, 600, 900, 1],
     // «Top burner gets a bonus»: the a04 golden idol on the TOP BURNER pedestal
     [74.0, 960, 560, 1000], [76.719, 960, 520, 900, 1],
     // chorus 2, a05 night factory: wide → the limit-gauge chimney → the city → the public counter → agents march in → wide → the billboard → 0% → blackout
     [92.86, 960, 470, 1000], [95.68, 960, 380, 1100], [98.0, 940, 420, 1080], [100.64, 980, 460, 1500], [102.88, 960, 520, 1100],
-    [105.84, 960, 450, 1080], [108.18, 960, 440, 1500], [109.9, 900, 560, 1000], [110.55, 960, 540, 1300],
+    [110.55, 960, 540, 1300],
     // a06 sermon: price tag + the bill (still, slow), the push-in as the shades come down; a07 «MORE GPUs!» drop: DJ in shades, Matrix burst
     [129.02, 1150, 500, 1300], [131.0, 1050, 480, 1250, 1], [133.299, 1000, 470, 1200, 1], [133.3, 960, 640, 1000], [135.219, 960, 620, 960, 1],
     [135.22, 960, 600, 1000], [136.999, 960, 560, 960, 1],
     // a07 «The economy is WORKING!»: the token index grows, then is yanked up out of frame (the camera rises with it); a08 AGI by spring → loading
-    [148.56, 940, 480, 1200], [150.3, 960, 420, 1220, 1], [152.039, 1020, 250, 1250, 1],
     [152.04, 820, 560, 1200], [154.2, 820, 560, 1180, 1], [155.2, 1150, 580, 1200, 1], [157.459, 1150, 580, 1140, 1],
   ];
   EN_KEYS.push(...RUK);
@@ -113,7 +244,7 @@
     paint(rectPts(sx, sy, sw, sh * down), { wash: '#F4F1EA', ink: INK, sw: 1 });
     if (down < 1) inkLine([[sx + sw / 2, sy + sh * down], [sx + sw / 2, sy + sh * down + 40]], 2, INK, 'inkfine', 0);
     if (on) {
-      const [lx, ly] = [575, 690];
+      const [lx, ly] = [635, 690];
       paint([[lx, ly - 10], [sx + sw, sy], [sx + sw, sy + sh], [lx, ly + 10]], { wash: '#FFF3C8', washOp: 70, ink: null });
       paint([[lx, ly - 10], [sx, sy], [sx, sy + sh]], { wash: '#FFF3C8', washOp: 70, ink: null });
       // the bar chart: one bar per desk, a little head under each, the leader gets a crown
@@ -128,8 +259,8 @@
       inkLine([[sx + 60, sy + sh - 70], [sx + sw - 40, sy + sh - 70]], 2, INK, 'inkfine', 0);
     }
     // the projector on its cart (left)
-    paint(rectPts(460, 730, 110, 330), { wash: A2.steel, ink: INK, sw: 1 }); paint(rrPts(430, 650, 170, 80, 14), { wash: '#3A3F48', ink: INK, sw: 1 });
-    paint(ellPts(575, 690, 28, 28, 14), { wash: on ? '#FFF3C8' : '#1A1D22', ink: INK, sw: .8 }); if (on) glowAt(575, 690, 90, '#FFF3C8', 120);
+    paint(rectPts(520, 730, 110, 330), { wash: A2.steel, ink: INK, sw: 1 }); paint(rrPts(490, 650, 170, 80, 14), { wash: '#3A3F48', ink: INK, sw: 1 });
+    paint(ellPts(635, 690, 28, 28, 14), { wash: on ? '#FFF3C8' : '#1A1D22', ink: INK, sw: .8 }); if (on) glowAt(635, 690, 90, '#FFF3C8', 120);
     // the agents at their desks, laptops back-to-camera, coins going in
     DESK.forEach((x, i) => {
       const low = i === LOWI, busy = t > V2.burn && t < V2.low && !low, ph = frac((t - V2.burn) * 1.6 + i * .3);
@@ -142,7 +273,7 @@
     paint(rectPts(620, 990, 680, 80, 1), { wash: '#8A6446', fill: '#5E4230', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });       // the long desk
     for (const x of DESK) { paint(rectPts(x - 36, 948, 72, 44, 1), { wash: '#3A3F48', ink: INK, sw: .8 }); token(x, 970, 10, { spin: .02 }); }
     // the CEO (right): pulls the screen, clicks, then the laser pointer
-    const cx = 1370, pointing = t > V2.low;
+    const cx = 1225, pointing = t > V2.low;
     ceoClawd(cx, 1058, 16, { noShadow: true, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: t < V2.on ? 2.2 : pointing ? 1.2 : .5, aR: .4 });
     if (pointing) {
       const [bx, by] = [SCR[0] + 90 + LOWI * 150 + 45, SCR[1] + SCR[3] - 90], k = eased(t, V2.laser, V2.laser + .5);
@@ -152,7 +283,7 @@
     }
   }
   scene('v2_kpi', 65.18, 74.0, verse2, [
-    [65.18, 980, 600, 1000], [V2.burn, 990, 620, 980, 1], [V2.low, 1030, 640, 940, 1], [73.999, 1030, 650, 900, 1],
+    [65.18, 960, 610, 1040], [73.999, 960, 630, 1000, 1],   // one slow creep, projector cart and CEO whole (audit: lens cut left, hero cut right, push-in at 72)
   ], [[V2.on, 6], [V2.laser, 8]]);
 
   // ======== CHORUS 2 = chorus 1 again, word for word 47.42 s later (the shredder, the trucks, the hiring hall) ========
@@ -163,7 +294,7 @@
   // left, copper coils crash onto their heap. «water»: pan right to the next town's reservoir by the houses (the RU a06 image, the user
   // liked it) — on every «water» its level drops a step; by 124.36 it is cracked mud with a stranded boat and a flapping fish.
   const BR = { plug: 114.12, in: 115.25, copper: [116.44, 119.42, 121.90], water: [117.78, 120.66, 123.14], dry: 124.36 };
-  const LAKE = [1140, 330, 500, 380];                                     // on the right wall, in the same still frame as the pulpit
+  const LAKE = [540, 110, 310, 235];                                      // 3:4: upper-left wall, above the copper singers, inside the frame
   const lakeLvl = t => Math.max(0, 1 - BR.water.reduce((l, w) => l + .3 * eased(t, w, w + .45), 0) - .1 * eased(t, 123.8, BR.dry));
   function heap(list, t, x, draw) {
     let n = 0; for (const h of list) { const a = t - h; if (a < 0) continue; for (let k = 0; k < 4; k++) {
@@ -185,17 +316,17 @@
       if (t > BR.in) { sparks(px, py + 30, t - BR.in, 5, 16, 260); flash(surge * .2, '#FFF3C8'); }
     }
     const cop = Math.max(...BR.copper.map(h => { const a = t - h; return a > 0 && a < 1.2 ? Math.exp(-a * 2) : 0; }));
-    [520, 640, 760].forEach((x, i) => A06.angel(x, 990, 12, t, { n: i + 3, k: cop, eyes: cop > .3 ? 'happy' : 'closed', mouth: cop > .3 ? 'O' : 'smile', aL: .3 + cop * 1.4, aR: .3 + cop * 1.4 }));
-    heap(BR.copper, t, 620, coil);
+    [600, 710, 820].forEach((x, i) => A06.angel(x, 990, 12, t, { n: i + 3, k: cop, eyes: cop > .3 ? 'happy' : 'closed', mouth: cop > .3 ? 'O' : 'smile', aL: .3 + cop * 1.4, aR: .3 + cop * 1.4 }));
+    heap(BR.copper, t, 700, coil);
     A06.reservoir(t, ...LAKE, lakeLvl(t));
   }
   // one calm, still frame (the user: the camera kept jerking between copper and lake): pulpit centre, copper + angels left, the lake right
-  scene('bridge_needs', 112.60, 124.48, bridge, [[112.60, 1060, 580, 1260], [124.479, 1040, 600, 1200, 1]]);
+  scene('bridge_needs', 112.60, 124.48, bridge, [[112.60, 960, 530, 1040], [124.479, 960, 530, 1040, 1]]);   // 3:4: poster upper-left, pulpit centred, floor fills the bottom
 
   // 129.02–137.0 «And when intelligence gets cheaper… we're gonna need… MORE GPUs!» is the RU sermon again: push-in, the shades come down,
   // then the a07 drop — the preacher turned DJ in shades, the Matrix burst, a GPU grows out of his head (keys in RUK)
 
-  // 148.56–157.46 is RU again: the a07 green graph yanked up on «The economy is WORKING!», the a08 AGI-by-spring calendar / loading bar (keys in RUK)
+  // 152.04–157.46 is RU a08 (AGI-by-spring board / loading bar; 3:4 layout + keys in a08_rap.js RU34); 148.56–152.04 is the EN pitch deck (eco_deck)
 
   // ======== RAP NEW (162.86–167.58) «All I want from that god-tier brain / Is a calorie tracker. Let me explain:» ========
   // A giant glowing brain enthroned on server racks, halo, lightning, cables everywhere. Far below, tiny Clawd holds up his phone.
@@ -353,7 +484,6 @@ else {
   const DROP = ['rap_mayo', 'c3_shredder', 'e30_board', 'out_sunday', 'e33_shelf', 'out_peace', 'e34_midnight', 'out_reset', 'out_finale'];
   for (let i = CH.length - 1; i >= 0; i--) if (DROP.includes(CH[i].name.slice(3)) && CH[i].name.startsWith('en_')) CH.splice(i, 1);
   RU_CAM.push([165.12, 194.32], [210.0, 241.5], [243.0, 1e9]);
-  RU_FIX.push([210.0, 1260, 520, 1300], [216.26, 900, 540, 1500], [219.6, 930, 700, 1000]);     // the a10 wall clock: whole in frame at 210, out of frame at 219.6 (not cut by the edge)
   CH.find(c => c.name === 'en_rap_brain').end = 165.12;              // the RU phone close-up takes «Is a calorie tracker»
   for (let i = EN_PUNCH.length - 1; i >= 0; i--) if (RU_CAM.some(([a, b]) => EN_PUNCH[i][0] >= a && EN_PUNCH[i][0] < b)) EN_PUNCH.splice(i, 1);
   // the second «Fuck.» (241.92): back to the a10 close-up, the calm shut-eyed face, and on the word the eyes snap open, red (a10 sSnap, v2 225.0,
@@ -362,7 +492,7 @@ else {
   const sun = CH.find(c => c.name === 'sunday');
   const ruAt = v => { let i = 0; while (i + 1 < sun.shots.length && v >= sun.shots[i + 1][0]) i++; const t0 = sun.shots[i][0], e = sun.shots[i + 1] ? sun.shots[i + 1][0] : sun.end; sun.shots[i][1](v, v - t0, e - t0); };
   chapter('en_fuck2', 241.5, 243.0, [[241.5, t => { const r = window.REAL_CH; window.REAL_CH = false; try { ruAt(t < 241.92 ? 224.95 : 225.0 + (t - 241.92)); } finally { window.REAL_CH = r; } }]], { real: true });
-  EN_KEYS.push([194.32, 960, 540, 800], [241.5, 960, 540, 1500], [241.92, 960, 540, 1800]);
+  EN_KEYS.push([241.5, 960, 540, 1500], [241.92, 960, 540, 1800]);
 }
 
 // BURN THE TOKENS keeps the moon out of every reused RU sky (a05 factory, a10 office window)

@@ -14,6 +14,7 @@
   // a raised arm: clawd's stub arm sits inside the body outline when pointed up, so the hook adds a forearm + fist (angle ~1.1 = V)
   const b10_fist = col => (u, sw) => { paint(rectPts(-.2 * u, -.42 * u, 1.9 * u, .84 * u), { wash: col, ink: INK, sw: sw * .6 }); paint(rrPts(1.5 * u, -.7 * u, 1.35 * u, 1.4 * u, .45 * u), { wash: col, ink: INK, sw: sw * .6 }); };
   const hop = (t, ph = 0) => Math.abs(Math.sin((bpOf(t) + ph) * Math.PI));
+  const R = window.R34;                                                             // EN reels 3:4 picture (view x 420–1500, y -180..1260; RU34 keys at the end)
 
   // the laptop (Clawd-local, u units, centre at 0,0), from a10 sHall
   function b10_laptop(u, glow = 1) {
@@ -32,14 +33,14 @@
   // ---------- 234.03 the mosh in the burning data centre ----------
   function shotMosh(t, lt) {
     const k = bk(t), slam = hitK(t, [S1], .25), [sx, sy] = shakeXY(t, 5 + 18 * slam);
-    camBegin(960 + sx + Math.sin(lt * 2) * 40, 560 + sy, 1.08 + .05 * k + .12 * slam + lt * .05, Math.sin(lt * 3) * .015);
+    camBegin(960 + sx + Math.sin(lt * 2) * (R ? 15 : 40), (R ? 600 : 560) + sy, (R ? 1 : 1.08) + .05 * k + .12 * slam + lt * .05, Math.sin(lt * 3) * .015);
     dataCenter(t, { heat: 1, fire: 1, n: 6, vp: [960, 470] });
-    for (const [fx, fw] of [[200, 560], [1720, 560]]) fire(fx, 1100, fw, 360, t, { seed: fx, k: .8 + .4 * k });
+    for (const [fx, fw] of (R ? [[560, 420], [1360, 420]] : [[200, 560], [1720, 560]])) fire(fx, R ? 1260 : 1100, fw, 360, t, { seed: fx, k: .8 + .4 * k });
     // back row: small agents; front row: big ones, #42 right up front next to Clawd
-    [[430, 830, 18, 7], [700, 800, 16, 13], [1220, 800, 16, 21], [1500, 830, 18, 33]].forEach(([x, y, u, n]) => b10_agent(x, y, u, t, n));
+    (R ? [[600, 820, 17, 7], [760, 790, 15, 13], [1160, 790, 15, 21], [1320, 820, 17, 33]] : [[430, 830, 18, 7], [700, 800, 16, 13], [1220, 800, 16, 21], [1500, 830, 18, 33]]).forEach(([x, y, u, n]) => b10_agent(x, y, u, t, n));   // R34: the mob packed into the 3:4 width
     const h = hop(t);
     clawd(960, 960, 30, { eyes: 'angry', mouth: 'O', dy: -h * 2.6, sq: (1 - h) * .12, aL: 1.1 + .2 * h, aR: 1.1 - .2 * h, armL: b10_fist(PAL.clay), armR: b10_fist(PAL.clay), seed: 3, noShadow: true, rot: (hash(Math.floor(bpOf(t))) - .5) * .15 });
-    [[400, 1090, 36, 42], [1540, 1100, 38, 17]].forEach(([x, y, u, n]) => b10_agent(x, y, u, t, n, { jump: 1.6 }));
+    (R ? [[640, 1160, 30, 42], [1280, 1170, 31, 17]] : [[400, 1090, 36, 42], [1540, 1100, 38, 17]]).forEach(([x, y, u, n]) => b10_agent(x, y, u, t, n, { jump: 1.6 }));
     camEnd();
     sfx('ЭЙ!', 560, 260, 110, A2.hazard, t - S1 + .08, { life: .5, rot: -.12, font: ruFont(110), stroke: SOOT });
     flash(.18 * k + .6 * hitK(t, [S1], .1), '#FFF3C8');
@@ -50,8 +51,8 @@
     const k = bk(t), [sx, sy] = shakeXY(t, 4 * k), camX = lerp(760, 1500, ease(seg(t, S2, S3)));
     bgFill(SOOT, '#3A1A10', 90);
     glowAt(960, 700, 1100, A2.sodium, 90);
-    camBegin(camX + sx, 560 + sy, 1 + .03 * k);
-    for (let i = 0; i < 4; i++) fire(-100 + i * 800, 1060, 900, 520 * (.85 + .3 * hash(i + 3)), t + i * .7, { seed: i * 11 });
+    camBegin(camX + sx, (R ? 640 : 560) + sy, (R ? 1.1 : 1) + .03 * k);
+    for (let i = 0; i < 4; i++) fire(-100 + i * 800, R ? 1300 : 1060, 900, 520 * (.85 + .3 * hash(i + 3)), t + i * .7, { seed: i * 11 });
     // the leap: from the left, over the crowd, lands on the hands, then rides them to the right
     const leap = seg(t, S2, S2 + .5), surf = seg(t, S2 + .5, S3);
     const cx = leap < 1 ? lerp(420, 900, leap) : lerp(900, 1900, surf), cy = leap < 1 ? lerp(760, 790, leap) - Math.sin(leap * Math.PI) * 300 : 790 + Math.sin(t * 9) * 14;
@@ -72,8 +73,8 @@
   function shotRoof(t, lt) {
     const bl = Math.max(0, t - BOOM), k = bk(t), [sx, sy] = shakeXY(t, 16 * Math.exp(-bl * 3) * (t > BOOM) + 4 * k);
     const tilt = ease(seg(t, BOOM + .3, S4));
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#0E111A', fill: '#1F2550', fillOp: 90, tex: .4, ink: null });
-    camBegin(960 + sx, lerp(560, 330, tilt) + sy, lerp(1, .9, tilt));
+    paint(R ? rectPts(-400, -400, W + 800, H + 800) : rectPts(-60, -60, W + 120, H + 120), { wash: '#0E111A', fill: '#1F2550', fillOp: 90, tex: .4, ink: null });
+    if (R) camBegin(960 + sx, lerp(600, 420, tilt) + sy, .85); else camBegin(960 + sx, lerp(560, 330, tilt) + sy, lerp(1, .9, tilt));   // R34: the whole building in the 3:4 width
     for (let i = 0; i < 30; i++) paint(ellPts(hash(i) * 2200 - 140, -500 + hash(i + 50) * 900, 3, 3, 5), { wash: '#FFF5E2', washOp: 200, ink: null });
     // the pillar (behind the building): a tall fire column + tokens riding up it
     const pil = easeOut(seg(t, BOOM, BOOM + .6));
@@ -111,19 +112,20 @@
     for (let i = 0; i < 5; i++) { const a = hash(i + 4) * TAU, d = hash(i + 9) * .7 * r; glowAt(Math.cos(a) * d, Math.sin(a) * d, r * .12, A2.sodium, 120); }
   }
   function shotOrbit(t, lt) {
-    const k = bk(t), flip = seg(t, MID, MID + .35), R = 330 * lerp(1.2, 1, easeOut(seg(t, S4, MID))) * (1 + .03 * k);
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#05060B', ink: null });
-    for (let i = 0; i < 60; i++) paint(ellPts(hash(i) * W, hash(i + 70) * H, 2 + hash(i + 3) * 2, 2 + hash(i + 3) * 2, 5), { wash: '#FFF5E2', washOp: 120 + 100 * hash(i + 5), ink: null });
-    glowAt(960, 580, R * 1.5, flip > .5 ? TK.yellow : A2.sodium, 90);
+    // R34: a bigger planet lower in the 3:4 picture, the bar inside 80% of the width, stars over the whole view
+    const k = bk(t), flip = seg(t, MID, MID + .35), PR = (R ? 390 : 330) * lerp(R ? 1.12 : 1.2, 1, easeOut(seg(t, S4, MID))) * (1 + .03 * k), PY = R ? 660 : 580;
+    paint(R ? rectPts(-400, -400, W + 800, H + 800) : rectPts(-60, -60, W + 120, H + 120), { wash: '#05060B', ink: null });
+    for (let i = 0; i < 60; i++) paint(ellPts(R ? 420 + hash(i) * 1080 : hash(i) * W, R ? -180 + hash(i + 70) * 1440 : hash(i + 70) * H, 2 + hash(i + 3) * 2, 2 + hash(i + 3) * 2, 5), { wash: '#FFF5E2', washOp: 120 + 100 * hash(i + 5), ink: null });
+    glowAt(960, PY, PR * 1.5, flip > .5 ? TK.yellow : A2.sodium, 90);
     // the pillar is still visible from space
-    fire(960 + R * .55, 580 - R * .82, 60, 380, t, { seed: 5, n: 3 });
-    push(); translate(960, 580);
+    fire(960 + PR * .55, PY - PR * .82, 60, 380, t, { seed: 5, n: 3 });
+    push(); translate(960, PY);
     const sxk = Math.max(.05, Math.abs(Math.cos(flip * Math.PI)));
-    if (flip < .5) { scale(sxk, 1); b10_earth(R, t); } else { pop(); push(); token(960, 580, R, { spin: .5 + flip * .5, glow: 1 }); }
+    if (flip < .5) { scale(sxk, 1); b10_earth(PR, t); } else { pop(); push(); token(960, PY, PR, { spin: .5 + flip * .5, glow: 1 }); }
     pop();
     // the limit bar over the planet, burning from 7% to 0
     const v = lerp(.07, 0, ease(seg(t, S4 + .1, MID)));
-    limitBar(460, 110, 1000, v, { h: 62, burn: 1, glow: .5, label: 'НЕДЕЛЬНЫЙ ЛИМИТ · ПЛАНЕТА ЗЕМЛЯ' });
+    limitBar(R ? 540 : 460, R ? -20 : 110, R ? 840 : 1000, v, { h: 62, burn: 1, glow: .5, label: 'НЕДЕЛЬНЫЙ ЛИМИТ · ПЛАНЕТА ЗЕМЛЯ' });
     if (t >= MID) stamp('0%', 1560, 820, 120, t, MID, { rot: -.12 });
     flash(.4 * hitK(t, [S4], .12) + .35 * hitK(t, [MID], .1), '#FFF3C8');
   }
@@ -135,7 +137,7 @@
     glowAt(960, 820, 1200, A2.sodium, 90 + 60 * hit);
     camBegin(960 + sx, 600 + sy, kf(t, [[S5, 1.3], [SMASH - .05, 1.18], [SMASH, 1.4], [SMASH + .5, 1.12], [FLASH, 1.2]], easeOut));
     for (let i = 0; i < 4; i++) fire(-40 + i * 670, 1110, 820, 520 * (.85 + .3 * hash(i + 3)) * (1 + .4 * hit), t + i * .7, { seed: i * 11 });
-    paint(rectPts(-400, 900, 2800, 400), { wash: '#1A1718', ink: INK, sw: 1 });
+    paint(rectPts(-400, 900, 2800, R ? 800 : 400), { wash: '#1A1718', ink: INK, sw: 1 });
     // wind-up: arms go up and back; smash: arms slam down; after: fists up
     const wind = ease(seg(t, S5, SMASH - .08)), down = seg(t, SMASH - .08, SMASH);
     const armA = sm < 0 ? lerp(.9, 1.15, wind) - 1.1 * easeIn(down) : lerp(.2, 1.1, ease(seg(t, B[10] - .1, B[10])));
@@ -171,5 +173,6 @@
     if (bl > 0) paint(rectPts(-60, -60, W + 120, H + 120), { wash: BLACK, washOp: 255 * bl, ink: null });
   }
 
+  if (window.RU34) RU34.push([238, 241.5, [[238, 960, 540, 1080]]]);
   chapter('finale', S1, END, [[S1, shotMosh], [S2, shotSurf], [S3, shotRoof], [S4, shotOrbit], [S5, shotSmash]], { real: true });
 })();

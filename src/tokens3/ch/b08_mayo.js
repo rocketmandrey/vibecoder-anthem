@@ -10,6 +10,7 @@
   const ONE = 174.846, TAP = 177.096, MAYO = 181.757, DIVE = 182.76;   // «одно», «давно», «майонез», the beat before the 2/4 bar
   const CREAM = '#FFF8E8', MAYO_C = '#FFFBEF', MAYO_SH = '#E9DDBE', APP = '#5CC27E', APP_DK = '#2F8F5B', PLUS = '#FF7A3D';
   const beatsIn = (a, b) => V3_BEATS.filter(x => x >= a && x < b);
+  const R = window.R34;                                                     // EN reels 3:4 picture: re-laid shots (RU34 keys at the end)
 
   // ---------- the phone (portrait), centre (cx, cy), w wide ----------
   // screen(x, y, w, h) paints the screen content (top-left rect, world coords)
@@ -72,6 +73,18 @@
   }
 
   // ---------- 175.55 the app: empty diary, the finger taps «+» on «давно» ----------
+  // R34: a cartoon hand (local: the index fingertip at (0, -40), pointing up; fist, curled knuckles, tucked thumb, a blue sleeve off-frame)
+  function b08_hand() {
+    const SK = '#F2C29B', SKD = '#D99A74', CR = '#B9785A';
+    paint(rrPts(-96, 330, 192, 760, 34), { wash: '#3D55A8', fill: '#2B3F80', fillOp: 60, tex: .5, ink: INK, sw: 1.1 });          // sleeve
+    paint(rotPts(rrPts(-112, 178, 64, 136, 30), -80, 246, .35), { wash: SK, fill: SKD, fillOp: 50, tex: .4, ink: INK, sw: 1 });   // thumb
+    paint(rrPts(-84, 140, 176, 206, 62), { wash: SK, fill: SKD, fillOp: 50, tex: .4, ink: INK, sw: 1.1 });                        // back of the hand
+    for (let i = 0; i < 3; i++) paint(rrPts(34, 154 + i * 54, 76, 56, 26), { wash: SK, fill: SKD, fillOp: 60, tex: .4, ink: INK, sw: .9 });   // curled fingers
+    paint(rrPts(-34, -40, 68, 236, 34), { wash: SK, fill: SKD, fillOp: 40, tex: .4, ink: INK, sw: 1.1 });                         // the index finger
+    paint(rrPts(-21, -30, 42, 46, 16), { wash: '#FBE6D6', ink: CR, sw: .5 });                                                      // nail
+    inkLine([[-24, 72], [22, 76]], .8, CR, 'inkfine', .3); inkLine([[-22, 124], [20, 128]], .8, CR, 'inkfine', .3);               // knuckle creases
+    paint(rrPts(-106, 318, 212, 62, 20), { wash: '#F4F1EA', ink: INK, sw: 1 });                                                   // cuff
+  }
   function shotApp(t, lt) {
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#E8B488', fill: '#C98A5E', fillOp: 70, tex: .5, ink: null });
     const tapK = hitK(t, [TAP], .12), [sx, sy] = shakeXY(t, 6 * tapK);
@@ -107,9 +120,12 @@
     const hover = Math.sin(t * 7) * 10, press = kf(t, [[TAP - .2, 0], [TAP, 1], [TAP + .16, .85], [TAP + .4, 0]], ease);
     const come = easeOut(seg(t, S2, 176.4)), fx = lerp(1450, 1030, come) - press * 50, fy = lerp(1250, 800, come) - press * 110 + (1 - press) * hover;
     push(); translate(fx, fy); rotate(-.55);
+    if (R) b08_hand();                                                             // R34 (user): a real hand pointing, not a clay sausage
+    else {
     paint(rrPts(-46, -40, 92, 420, 44), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 60, tex: .5, ink: INK, sw: 1.1 });
     paint(rrPts(-28, -26, 56, 60, 22), { wash: '#F2A283', washOp: 200, ink: null });                               // nail-ish highlight
     inkLine([[-30, 90], [30, 96]], .8, PAL.clayDk, 'inkfine', .3); inkLine([[-30, 200], [30, 206]], .8, PAL.clayDk, 'inkfine', .3);
+    }
     pop();
     camEnd();
     sfx('ТЫК!', 1370, 640, 90, PLUS, t - TAP, { life: .45, rot: .12, font: ruFont(90), stroke: '#FFFFFF' });
@@ -125,8 +141,8 @@
     dataCenter(t, { heat, n: 7, seed: 3 });
     // GPU cards hanging in the air on both sides (the sea goes on), fans spinning
     for (let i = 0; i < 6; i++) {
-      const s = i % 2 ? 1 : -1, row = Math.floor(i / 2), gx = 960 + s * (560 + row * 90), gy = 220 + row * 190 + Math.sin(t * 2 + i) * 8;
-      gpuCard(gx, gy, .7 - row * .1, t, { rot: s * (.12 + row * .05), glow: .3 + .5 * pb });
+      const s = i % 2 ? 1 : -1, row = Math.floor(i / 2), gx = 960 + s * (R ? 240 + row * 30 : 560 + row * 90), gy = (R ? 150 + row * 150 : 220 + row * 190) + Math.sin(t * 2 + i) * 8;   // R34: inside the 3:4 width
+      gpuCard(gx, gy, (R ? .55 : .7) - row * .1, t, { rot: s * (.12 + row * .05), glow: .3 + .5 * pb });
     }
     // fat cables from the racks converge on the phone
     const px = 960, py = 790;
@@ -134,7 +150,7 @@
       const s = i < 4 ? -1 : i > 4 ? 1 : 0, ex = 960 + (i - 4) * 250, ey = i === 4 ? 360 : 160 + Math.abs(i - 4) * 40;
       inkLine([[ex, ey], [lerp(ex, px, .5), lerp(ey, py, .3) + 120], [px + (i - 4) * 12, py - 40]], 3.2, ['#2E5BFF', '#D8262A', '#2FBF71', '#FFC53D'][i % 4], 'ink', .6);
     }
-    for (const s of [-1, 1]) cooler(960 + s * 690, 820, 120, t, { speed: 6 + 6 * heat, howl: .5 + .5 * pb });
+    if (!R) for (const s of [-1, 1]) cooler(960 + s * 690, 820, 120, t, { speed: 6 + 6 * heat, howl: .5 + .5 * pb });   // R34: no side coolers (they only fit cut)
     // the little table + the phone on it, filming the plate
     paint(ellPts(960, 930, 260, 34, 20), { fill: '#000', fillOp: 80, bleed: .2, ink: null });
     paint(rectPts(760, 880, 400, 24, 1), { wash: '#8A6440', ink: INK, sw: .7 });
@@ -157,7 +173,7 @@
       letter('GPU', 960 + 330 * k, 120, 76 * k, '#48E08A', { font: ruFont(76 * k), ink: false });
     }
     if (t >= PB) {
-      const p = .002 + .018 * seg(t, PB, S4 - .1), bx = 560, by = 850, bw = 800;
+      const p = .002 + .018 * seg(t, PB, S4 - .1), bx = 560, by = R ? 1090 : 850, bw = 800;   // R34 (user): under the table, not over it
       paint(rrPts(bx - 20, by - 70, bw + 40, 120, 20), { wash: TK.soot, washOp: 220, ink: TK.cream, sw: .8 });
       letter('АНАЛИЗ ФОТО' + '.'.repeat(1 + Math.floor(t * 4) % 3), bx, by - 34, 34, TK.cream, { font: ruFont(34), align: 'left', ink: false });
       letter((p * 100).toFixed(1) + '%', bx + bw, by - 34, 34, TK.yellow, { font: ruFont(34), align: 'right', ink: false });
@@ -195,15 +211,17 @@
     paint(ellPts(DX + DR * .05, DY - DR * .85, DR * .07, DR * .1, 8), { wash: '#FFFFFF', ink: null });
   }
   function b08_camBun(t) {
-    const c = kf(t, [[S4, [960, 640, 1.0]], [181.4, [960, 580, 1.3]], [DIVE, [960, 530, 1.5]]], ease);
+    const c = R ? kf(t, [[S4, [960, 600, .95]], [181.4, [960, 560, 1.1]], [DIVE, [960, 520, 1.2]]], ease)   // R34: the plate stays inside the 3:4 viewfinder
+      : kf(t, [[S4, [960, 640, 1.0]], [181.4, [960, 580, 1.3]], [DIVE, [960, 530, 1.5]]], ease);
     if (t < DIVE) return c;
     const u = t - DIVE, e = ease(seg(t, DIVE, DIVE + .5));
-    return [960, lerp(530, DY - 10, e), Math.min(70, 1.5 * Math.exp(Math.pow(u, 1.5) * 6))];
+    return [960, lerp(c[1], DY - 10, e), Math.min(70, c[2] * Math.exp(Math.pow(u, 1.5) * 6))];
   }
   function shotPlate(t, lt) {
+    if (R && t > S5 - .35) return shotTunnel(t, 0);                             // R34: cut into the tunnel on the dive (no washed cream frames)
     const [cx, cy, z] = b08_camBun(t), hk = hitK(t, [181.463, 182.422], .12), [sx, sy] = shakeXY(t, 4 * hk), inkS = Math.min(1, 1.8 / z), dv = seg(t, DIVE, S5);
     const S2X = (x, y) => [960 + (x - cx) * z, 540 + (y - cy) * z];
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#E9D3B0', ink: null });
+    paint(R ? rectPts(-400, -400, W + 800, H + 800) : rectPts(-60, -60, W + 120, H + 120), { wash: '#E9D3B0', ink: null });
     camBegin(cx + sx / z, cy + sy / z, z);
     if (z < 14) {
       paint(ellPts(600, 250, 520, 380, 20), { fill: '#FFF1C8', fillOp: 90, bleed: .3, tex: .2, ink: null });          // kitchen window light
@@ -218,22 +236,25 @@
     b08_mayoInk((x, y) => { const [a, b] = S2X(x, y); return [a - sx, b - sy]; });
     // the camera app (screen space): the phone body frames the view, shutter, modes, focus square
     const sb = 1 + 3 * easeIn(seg(t, DIVE, DIVE + .7)), uiK = 1 - seg(t, DIVE, DIVE + .3);
-    const X0 = 960 - 860 * sb, X1 = 960 + 860 * sb, Y0 = 470 - 430 * sb, Y1 = 470 + 430 * sb, BZ = '#17161B';
+    // R34: a portrait viewfinder that fills the 3:4 picture (view x 420–1500, y -180..1260), the shutter bar along the bottom
+    const VC = R ? 540 : 470, VW2 = R ? 505 : 860, VH2 = R ? 695 : 430;
+    const X0 = 960 - VW2 * sb, X1 = 960 + VW2 * sb, Y0 = VC - VH2 * sb, Y1 = VC + VH2 * sb, BZ = '#17161B';
     if (sb < 3.9) {
-      for (const r of [[-100, -100, W + 200, Y0 + 100], [-100, Y1, W + 200, 1400], [-100, -100, X0 + 100, 1400], [X1, -100, 900, 1400]]) paint(rectPts(r[0], r[1], r[2], r[3]), { wash: BZ, ink: null });
+      for (const r of [[-500, -500, W + 1000, Y0 + 500], [-500, Y1, W + 1000, 1800], [-500, -500, X0 + 500, 2400], [X1, -500, 1400, 2400]]) paint(rectPts(r[0], r[1], r[2], r[3]), { wash: BZ, ink: null });
       paint(rrPts(X0, Y0, X1 - X0, Y1 - Y0, 60 * sb), { ink: '#3A3840', sw: 2.4 });
-      for (const [qx, qy] of [[X0, Y0], [X1, Y0], [X0, Y1], [X1, Y1]]) paint([[qx, qy], [qx + (qx < 960 ? 60 : -60) * sb, qy], [qx, qy + (qy < 470 ? 60 : -60) * sb]], { wash: BZ, ink: null });
+      for (const [qx, qy] of [[X0, Y0], [X1, Y0], [X0, Y1], [X1, Y1]]) paint([[qx, qy], [qx + (qx < 960 ? 60 : -60) * sb, qy], [qx, qy + (qy < VC ? 60 : -60) * sb]], { wash: BZ, ink: null });
     }
     if (uiK > .02) {
-      paint(rectPts(X1 - 190, Y0, 190, Y1 - Y0), { wash: '#000', washOp: 110 * uiK, ink: null });
-      const shx = X1 - 95, shy = 470, press = hitK(t, [MAYO], .15);
+      if (R) paint(rectPts(X0, Y1 - 250, X1 - X0, 250), { wash: '#000', washOp: 110 * uiK, ink: null });
+      else paint(rectPts(X1 - 190, Y0, 190, Y1 - Y0), { wash: '#000', washOp: 110 * uiK, ink: null });
+      const shx = R ? 960 : X1 - 95, shy = R ? Y1 - 100 : 470, press = hitK(t, [MAYO], .15), MY = R ? Y1 - 200 : Y1 - 40;
       paint(ellPts(shx, shy, 58, 58, 24), { ink: '#FFFFFF', sw: 2 * uiK });
       paint(ellPts(shx, shy, 46 * (1 - .15 * press), 46 * (1 - .15 * press), 24), { wash: '#FFFFFF', washOp: 255 * uiK, ink: null });
-      letter('ФОТО', 960, Y1 - 40, 30, '#FFD60A', { font: ruFont(30), ink: false, alpha: uiK });
-      letter('ВИДЕО', 780, Y1 - 40, 26, '#FFFFFF', { font: ruFont(26), ink: false, alpha: uiK * .8 });
-      letter('ПОРТРЕТ', 1150, Y1 - 40, 26, '#FFFFFF', { font: ruFont(26), ink: false, alpha: uiK * .8 });
+      letter('ФОТО', 960, MY, 30, '#FFD60A', { font: ruFont(30), ink: false, alpha: uiK });
+      letter('ВИДЕО', R ? 790 : 780, MY, 26, '#FFFFFF', { font: ruFont(26), ink: false, alpha: uiK * .8 });
+      letter('ПОРТРЕТ', R ? 1140 : 1150, MY, 26, '#FFFFFF', { font: ruFont(26), ink: false, alpha: uiK * .8 });
       letter('AI · трекер калорий', X0 + 40, Y0 + 44, 26, '#FFD60A', { font: ruFont(26), align: 'left', ink: false, alpha: uiK });
-      letter('1×', 960, Y1 - 100, 24, '#FFD60A', { font: ruFont(24), ink: false, alpha: uiK });
+      letter('1×', 960, R ? Y1 - 290 : Y1 - 100, 24, '#FFD60A', { font: ruFont(24), ink: false, alpha: uiK });
       // the yellow focus square hunts, then locks on the mayo
       const lock = ease(seg(t, S4 + .15, 181.3)), [fx, fy] = S2X(DX, DY - 20), hunt = (1 - lock);
       const qx = fx + Math.sin(t * 9) * 120 * hunt, qy = fy + 140 * hunt + Math.cos(t * 7) * 60 * hunt, qs = lerp(220, DR * z * 1.5, lock) * (1 + .1 * Math.exp(-(t - 181.3) * 10) * (t > 181.3));
@@ -244,19 +265,21 @@
       const ck = (t >= MAYO ? backOut((t - MAYO) / .22) : 0) * uiK;
       if (ck > .02) {
         const [ax, ay0] = S2X(680, 330), [bx2, by0] = S2X(1240, 740);
-        const ay = Math.max(ay0, 180 + 95 * ck + 14), by2 = Math.min(by0, Y1 - 125);   // clear of the label plate and the «1×»/modes row
+        const LY0 = R ? 110 : 180, LW = R ? 430 : 470;                            // R34: the label plate under the AI tag, inside the 3:4 width
+        const ay = Math.max(ay0, LY0 + 95 * ck + 14), by2 = Math.min(by0, R ? Y1 - 320 : Y1 - 125);   // clear of the label plate and the «1×»/modes row
         paint(rectPts(ax, ay, bx2 - ax, by2 - ay), { ink: fc, sw: 2 * ck });
-        push(); translate(960, 180); scale(ck); rotate(-.02);
-        paint(rrPts(-470, -95, 940, 190, 26), { wash: fc, ink: INK, sw: 1.3 });
+        push(); translate(960, LY0); scale(ck); rotate(-.02);
+        paint(rrPts(-LW, -95, 2 * LW, 190, 26), { wash: fc, ink: INK, sw: 1.3 });
         pop();
-        letter('БУЛКА С МАЙОНЕЗОМ', 960, 180 - 38 * ck, 62 * ck, INK, { font: ruFont(62 * ck), ink: false, rot: -.02 });
-        letter('9999 ккал', 960, 180 + 44 * ck, 58 * ck, '#D8262A', { font: ruFont(58 * ck), ink: false, rot: -.02 });
+        letter('БУЛКА С МАЙОНЕЗОМ', 960, LY0 - 38 * ck, 62 * ck, INK, { font: ruFont(62 * ck), ink: false, rot: -.02 });
+        letter('9999 ккал', 960, LY0 + 44 * ck, 58 * ck, '#D8262A', { font: ruFont(58 * ck), ink: false, rot: -.02 });
       }
     }
     flash(.5 * hitK(t, [MAYO], .08), '#FFFFFF');                                    // shutter blink
     if (dv > 0) for (let i = 0; i < 22; i++) {
       const a = i / 22 * TAU + hash(i) * .2, r0 = 380 + hash(i + Math.floor(t * 12)) * 300;
-      inkLine([[960 + Math.cos(a) * r0, 540 + Math.sin(a) * r0 * .7], [960 + Math.cos(a) * (r0 + 300 * dv + 80), 540 + Math.sin(a) * (r0 + 300 * dv + 80) * .7]], 1.2, '#C9B27A', 'inkfine', 0);
+      const ax = R ? .7 : 1, ay = R ? 1 : .7;
+      inkLine([[960 + Math.cos(a) * r0 * ax, 540 + Math.sin(a) * r0 * ay], [960 + Math.cos(a) * (r0 + 300 * dv + 80) * ax, 540 + Math.sin(a) * (r0 + 300 * dv + 80) * ay]], 1.2, '#C9B27A', 'inkfine', 0);
     }
     if (t > DIVE) flushLetters(), flash(ease(seg(t, S5 - .25, S5)), CREAM);
   }
@@ -270,33 +293,35 @@
     const [sx, sy] = shakeXY(t, 3 + 8 * bk), wob = k => [Math.sin(k * .8 + t * 1.3) * 70, Math.cos(k * .6 + t * 1.1) * 50];
     // rings at depths d = (k - ph) / 2; nearest (largest) first, the background is the ring just passed
     const k0 = Math.floor(ph) + 1, rings = [];
-    paint(rectPts(-60, -60, W + 120, H + 120), { wash: BANDS[(((k0 - 1) % 4) + 4) % 4], ink: null });
+    paint(R ? rectPts(-400, -400, W + 800, H + 800) : rectPts(-60, -60, W + 120, H + 120), { wash: BANDS[(((k0 - 1) % 4) + 4) % 4], ink: null });
+    const EX = R ? .85 : 1.25, EY = R ? 1.15 : 1;                                 // R34: the tunnel is tall, not wide
     for (let k = k0; k < k0 + 16; k++) { const d = (k - ph) * .5; if (d > .06) rings.push([k, d]); }
     for (const [k, d] of rings) {
       const r = 420 / d, [ox, oy] = wob(k), cx = 960 + sx + ox * (1 - 1 / (1 + d)), cy = 520 + sy + oy * (1 - 1 / (1 + d));
       if (r > 3000) continue;
-      paint(ellPts(cx, cy, r * 1.25, r, 30, 0, rot + k * .3), { wash: BANDS[((k % 4) + 4) % 4], fill: '#C9A868', fillOp: d < 1 ? 40 : 70, tex: .4, border: .6, ink: r < 1400 ? '#B89A5E' : null, sw: clamp(r / 500, .4, 1.4) });
-      if (r > 60) inkLine(ellPts(cx, cy, r * 1.25 * .96, r * .96, 14, 0, rot + k * .3).slice(1, 6), clamp(r / 300, .4, 2.2), '#FFFFFF', 'ink', .5);
+      paint(ellPts(cx, cy, r * EX, r * EY, 30, 0, rot + k * .3), { wash: BANDS[((k % 4) + 4) % 4], fill: '#C9A868', fillOp: d < 1 ? 40 : 70, tex: .4, border: .6, ink: r < 1400 ? '#B89A5E' : null, sw: clamp(r / 500, .4, 1.4) });
+      if (r > 60) inkLine(ellPts(cx, cy, r * EX * .96, r * EY * .96, 14, 0, rot + k * .3).slice(1, 6), clamp(r / 300, .4, 2.2), '#FFFFFF', 'ink', .5);
     }
     // the bright vanishing point, growing to the white-out
     const out = ease(seg(t, 186.11, END - .05));
-    paint(ellPts(960 + sx, 520 + sy, 90 + 900 * out, 70 + 700 * out, 22), { fill: '#FFFFFF', fillOp: 160 + 90 * out, bleed: .3, tex: .2, border: .1, ink: null });
+    paint(ellPts(960 + sx, 520 + sy, (90 + 900 * out * (R ? .45 : 1)) * (R ? .75 : 1), (70 + 700 * out * (R ? .45 : 1)) * (R ? 1.3 : 1), 22), { fill: '#FFFFFF', fillOp: 160 + 90 * out, bleed: .3, tex: .2, border: .1, ink: null });
     // cream swirls spiralling in
     for (let arm = 0; arm < 4; arm++) {
-      const pts = []; for (let q = 0; q <= 14; q++) { const d = .35 + q * .45, a = arm * TAU / 4 + d * .9 - rot * 2, r = 520 / d; pts.push([960 + Math.cos(a) * r * 1.25, 520 + Math.sin(a) * r]); }
+      const pts = []; for (let q = 0; q <= 14; q++) { const d = .35 + q * .45, a = arm * TAU / 4 + d * .9 - rot * 2, r = 520 / d; pts.push([960 + Math.cos(a) * r * EX, 520 + Math.sin(a) * r * EY]); }
       inkLine(pts, 1.6, arm % 2 ? '#D9C08A' : '#FFFFFF', 'ink', .6);
     }
     // speed lines, more with speed
     const nl = Math.round(8 + sp * 3);
     for (let i = 0; i < nl; i++) {
       const a = hash(i * 7.1 + Math.floor(t * 12)) * TAU, r0 = 250 + hash(i + Math.floor(t * 12) * 3) * 400, r1 = r0 + 180 + sp * 60;
-      inkLine([[960 + Math.cos(a) * r0 * 1.2, 520 + Math.sin(a) * r0], [960 + Math.cos(a) * r1 * 1.2, 520 + Math.sin(a) * r1]], .9, '#FFFFFF', 'inkfine', 0);
+      inkLine([[960 + Math.cos(a) * r0 * EX * .96, 520 + Math.sin(a) * r0 * EY], [960 + Math.cos(a) * r1 * EX * .96, 520 + Math.sin(a) * r1 * EY]], .9, '#FFFFFF', 'inkfine', 0);
     }
     // things flying past: tokens, eggs, a «9999 ккал» label
     for (let i = 0; i < 7; i++) {
       const d = 1 - frac(ph * .5 + i / 7 + hash(i) * .1), a = hash(i * 3.7) * TAU, sc = 1 / Math.max(.12, d), r = 150 * sc;
-      const x = 960 + Math.cos(a) * r * 1.3, y = 520 + Math.sin(a) * r, s = 22 * sc;
+      const x = 960 + Math.cos(a) * r * (R ? .6 : 1.3), y = 520 + Math.sin(a) * r * (R ? 1.15 : 1), s = 22 * sc;   // R34: things fly past inside the 3:4 width
       if (s > 150 || d > .95) continue;
+      if (R && Math.abs(x - 960) + s * 1.6 > 520) continue;                       // R34: gone before they touch a side edge
       if (i % 3 === 0) token(x, y, Math.min(s, 21), { rot: t * 3 + i });
       else if (i % 3 === 1) { paint(ellPts(x, y, s * 1.1, s * 1.35, 14, 0, t * 2 + i), { wash: '#FFFFFF', ink: INK, sw: .6 }); paint(ellPts(x, y + s * .1, s * .5, s * .5, 10), { wash: '#FFC53D', ink: null }); }
       else letter('9999 ккал', x, y, s * .9, PLUS, { font: ruFont(s * .9), rot: a, ink: false, stroke: '#FFFFFF' });
@@ -307,9 +332,11 @@
     clawd(0, 40, cu, { eyes: 'spark', mouth: 'grin', aL: 2.2, aR: 2.2, noShadow: true });
     pop();
     flushLetters();
-    if (t < S5 + .3) flash(1 - ease(seg(t, S5, S5 + .3)), CREAM);
-    flash(ease(seg(t, 186.66, END - .06)), CREAM);                                 // full cream by the cut to a09
+    if (!R && t < S5 + .3) flash(1 - ease(seg(t, S5, S5 + .3)), CREAM);
+    flash(ease(seg(t, 186.66, END - .06)) * (R ? .35 : 1), CREAM);   // 3:4: no washed white-out, a09 cuts in                                 // full cream by the cut to a09
   }
 
+  // R34 camera (EN time, see tokensEN/warp.js): one fixed 3:4 view, the shots are laid out for it (162.86–165.12 is the coordinator's brain)
+  if (window.RU34) RU34.push([165.12, 178.58, [[165.12, 960, 540, 1080]]]);
   chapter('mayo', S1, END, [[S1, shotHug], [S2, shotApp], [S3, shotGPUs], [S4, shotPlate], [S5, shotTunnel]], { real: true });
 })();
