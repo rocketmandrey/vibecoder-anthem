@@ -459,12 +459,16 @@
     // draft 4: no counter, no medic, no singers — the pile, two agents shovelling coins onto it on every beat,
     // and Clawd pushing his token up the left slope (the intro's Sisyphus), on the summit on the last beat
     const lbi = PBEATS.filter(b => t >= b).length, la2 = lb == null ? 9 : t - lb;
-    [[1190, 0], [1275, 1]].forEach(([x, n]) => {                            // shovellers: scoop down between beats, fling on the beat
-      const up = la2 < .5 ? Math.exp(-la2 * 6) : 0;
-      agentBot(x, 1056, 11, t, { n: 80 + n, rot: NOTXT, flip: true, noShadow: true, eyes: 'narrow', mouth: 'grin', emote: lbi > 12 ? 'sweat' : null, aL: .2 + 1.8 * up, aR: .2 + 1.8 * up });
-      const bx = x - 40, by = 1000 - 120 * up;                               // the shovel blade
-      inkLine([[x - 10, 1010], [bx, by]], 5, '#7A4A2E', 'ink', 0); paint(rotPts(rectPts(bx - 26, by - 10, 40, 22), bx, by, -.5 + up), { wash: A2.steel, ink: INK, sw: .8 });
-      if (lb != null && la2 < .45) for (let k = 0; k < 3; k++) { const q = clamp(la2 / .45), tx = lerp(bx, 1010 - n * 40 - k * 25, q), ty = lerp(by, h(tx) - 10, q) - Math.sin(q * Math.PI) * 160; token(tx, ty, 14, { spin: t * 6 + k }); }
+    // draft 5: two hard-hat agents (Codex shovScoop / shovFling) at the right foot: scoop between beats, fling ON the beat, coins and tokens arc onto the pile
+    [[1120, 0], [1250, 1]].forEach(([x, n]) => {
+      const fl = la2 < .28, k = fl ? 1 - la2 / .28 : 0, key = fl ? 'shovFling' : 'shovScoop', w = 230, g = PROP_ART[key], hh = w * g[1] / g[0];
+      ENK.layer(key, x, 1066 - hh / 2 - (fl ? 8 * k : 0), w, { rot: fl ? -.06 * k : .02 * Math.sin(t * 9 + n) });
+      if (lb != null && la2 < .6) for (let q = 0; q < 6; q++) {               // the load: from the blade (upper-left in the fling pose) onto the slope
+        const u = clamp((la2 - q * .03) / .5); if (u <= 0 || u >= 1) continue;
+        const sx = x - w * .3, sy = 1066 - hh * .85, ex = 1020 - n * 50 - q * 18, ey = h(ex) - 8;
+        const px = lerp(sx, ex, u), py = lerp(sy, ey, u) - Math.sin(u * Math.PI) * 140;
+        if (q % 2) token(px, py, 15, { spin: t * 7 + q }); else paint(ellPts(px, py, 13, 6, 10, 0, t * 5 + q), { wash: TK.gold, ink: INK, sw: .7 });
+      }
     });
     // Clawd + his token: one shove per beat up the left slope (x 690 → 870), the token reaches the peak on the last beat
     const NB = PBEATS.length, pp = Math.min(1, (lbi - 1 + (lb == null ? 0 : easeOut(clamp(la2 / .3)))) / Math.max(1, NB - 1)), cxp = lerp(680, 850, Math.max(0, pp));
@@ -472,7 +476,7 @@
     push(); translate(tkx, tky); rotate(t * 1.5); token(0, 0, 64, { spin: .02 }); pop();
     clawd(cxp, h(cxp) + 6, 13, { walk: t * 4, rot: sl + .25, eyes: pp >= 1 ? 'spark' : 'narrow', mouth: pp >= 1 ? 'grin' : 'flat', aL: 1.3, aR: 1.3, emote: pp > .5 && pp < 1 ? 'sweat' : null, noShadow: true });
   }
-  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 940, 800, 820], [209.99, 960, 620, 1000, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
+  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 960, 790, 900], [209.99, 960, 620, 1000, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
   const SH = { games: 217.08, sites: 218.18, agents: 219.60, grey: 222.32 };

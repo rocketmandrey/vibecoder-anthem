@@ -73,24 +73,12 @@
   }
 
   // ---------- 175.55 the app: empty diary, the finger taps «+» on «давно» ----------
-  // R34: a cartoon hand (local: the index fingertip at (0, -40), pointing up; fist, curled knuckles, tucked thumb, a blue sleeve off-frame)
-  function b08_hand() {
-    const SK = '#F2C29B', SKD = '#D99A74', CR = '#B9785A';
-    paint(rrPts(-96, 330, 192, 760, 34), { wash: '#3D55A8', fill: '#2B3F80', fillOp: 60, tex: .5, ink: INK, sw: 1.1 });          // sleeve
-    paint(rotPts(rrPts(-112, 178, 64, 136, 30), -80, 246, .35), { wash: SK, fill: SKD, fillOp: 50, tex: .4, ink: INK, sw: 1 });   // thumb
-    paint(rrPts(-84, 140, 176, 206, 62), { wash: SK, fill: SKD, fillOp: 50, tex: .4, ink: INK, sw: 1.1 });                        // back of the hand
-    for (let i = 0; i < 3; i++) paint(rrPts(34, 154 + i * 54, 76, 56, 26), { wash: SK, fill: SKD, fillOp: 60, tex: .4, ink: INK, sw: .9 });   // curled fingers
-    paint(rrPts(-34, -40, 68, 236, 34), { wash: SK, fill: SKD, fillOp: 40, tex: .4, ink: INK, sw: 1.1 });                         // the index finger
-    paint(rrPts(-21, -30, 42, 46, 16), { wash: '#FBE6D6', ink: CR, sw: .5 });                                                      // nail
-    inkLine([[-24, 72], [22, 76]], .8, CR, 'inkfine', .3); inkLine([[-22, 124], [20, 128]], .8, CR, 'inkfine', .3);               // knuckle creases
-    paint(rrPts(-106, 318, 212, 62, 20), { wash: '#F4F1EA', ink: INK, sw: 1 });                                                   // cuff
-  }
   function shotApp(t, lt) {
     paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#E8B488', fill: '#C98A5E', fillOp: 70, tex: .5, ink: null });
     const tapK = hitK(t, [TAP], .12), [sx, sy] = shakeXY(t, 6 * tapK);
     camBegin(960 + sx, 480 + sy - lt * 6, 1 + lt * .025 + .03 * tapK, -.03);
     paint(ellPts(960, 480, 700, 560, 20), { fill: '#FFE9C0', fillOp: 110, bleed: .3, tex: .2, ink: null });
-    b08_phone(960, 520, 560, (x, y, w, h) => {
+    b08_phone(R ? 860 : 960, 520, 560, (x, y, w, h) => {                        // R34: the phone a bit left, Clawd peeks in on the right
       paint(rectPts(x, y + 30, w, 110), { wash: APP, fill: APP_DK, fillOp: 50, tex: .4, ink: null });
       letter('ТРЕКЕР КАЛОРИЙ', x + w / 2, y + 88, 42, '#FFFFFF', { font: ruFont(42), ink: false });
       // the ring gauge: 0 of 2000
@@ -105,23 +93,29 @@
         letter('пусто', x + w - 56, ry + 32, 24, '#A8A098', { font: ruFont(24), align: 'right', ink: false });
       });
       // the big «+», squished by the tap, then a ripple and «подключаем…»
-      const bx = x + w / 2, by = y + 640, br = 62 * (1 - .18 * tapK), age = t - TAP;
+      const bx = x + w / 2, by = y + (R ? 820 : 640), br = 62 * (1 - .18 * tapK), age = t - TAP;
       if (age > 0 && age < .5) paint(ellPts(bx, by, 62 + age * 260, 62 + age * 260, 24), { ink: PLUS, sw: 2.5 * (1 - age * 2) + .2 });
       paint(ellPts(bx, by + 8, br, br, 24), { wash: '#B8420E', ink: null });
       paint(ellPts(bx, by, br, br, 24), { wash: PLUS, fill: '#FFB07A', fillOp: 90, tex: .3, ink: INK, sw: 1 });
       letter('+', bx, by - 4, 96 * (1 - .18 * tapK), '#FFFFFF', { font: ruFont(96 * (1 - .18 * tapK)), ink: false });
       if (age > .12) {
         const dots = '.'.repeat(1 + Math.floor(age * 8) % 3);
-        letter('подключаем 100 000 GPU' + dots, bx, by + 104, 22, APP_DK, { font: ruFont(22), ink: false, pop: (age - .12) * 6 });
+        letter('подключаем 100 000 GPU' + dots, R ? bx - 40 : bx, R ? by - 100 : by + 104, 22, APP_DK, { font: ruFont(22), ink: false, pop: (age - .12) * 6 });
       }
     });
     flushLetters();                                                                // the phone's lettering goes under the finger
     // the clay finger: drifts in, hovers, pokes on «давно»
     const hover = Math.sin(t * 7) * 10, press = kf(t, [[TAP - .2, 0], [TAP, 1], [TAP + .16, .85], [TAP + .4, 0]], ease);
     const come = easeOut(seg(t, S2, 176.4)), fx = lerp(1450, 1030, come) - press * 50, fy = lerp(1250, 800, come) - press * 110 + (1 - press) * hover;
+    if (R) {                                                                       // R34 (user): Clawd himself peeks in and taps «+» with his stubby arm
+      const u = 44, gx = 1175, gy = 1060 + (1 - come) * 460, done = seg(t, TAP + .1, TAP + .3), hop = done * Math.max(0, Math.sin((t - TAP - .1) * 9)) * (1 - seg(t, TAP + .5, TAP + 1));
+      const aL = .35 + .85 * (1 - press) + (1 - press) * Math.sin(t * 7) * .06;     // hovering paw; aL .35 puts the paw on the button
+      clawd(gx, gy, u, done > .5 ? { eyes: 'happy', blush: true, dy: -hop * 1.2, aL: aL + hop * .3, aR: -1.1 }
+        : { eyes: 'look', lookX: -.8, lookY: .5, aL, aR: -1.1, rot: -.04 * press,
+            armL: (uu, sw) => paint(ellPts(0, 0, uu * .72, uu * .72, 14), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 50, ink: INK, sw: sw * .8 }) });
+    }
     push(); translate(fx, fy); rotate(-.55);
-    if (R) b08_hand();                                                             // R34 (user): a real hand pointing, not a clay sausage
-    else {
+    if (!R) {
     paint(rrPts(-46, -40, 92, 420, 44), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 60, tex: .5, ink: INK, sw: 1.1 });
     paint(rrPts(-28, -26, 56, 60, 22), { wash: '#F2A283', washOp: 200, ink: null });                               // nail-ish highlight
     inkLine([[-30, 90], [30, 96]], .8, PAL.clayDk, 'inkfine', .3); inkLine([[-30, 200], [30, 206]], .8, PAL.clayDk, 'inkfine', .3);
