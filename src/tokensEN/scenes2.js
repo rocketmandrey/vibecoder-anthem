@@ -197,37 +197,24 @@
     pop();
   }
   const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 2.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 });
-  // hamster-Clawd standing on the inside of the rim at angle th (π/2 = bottom); rate = wheel rev/s, n = words so far, spin = dizzy 0..1
+  // hamster-Clawd v4 (draft 5, the user's pick from sandbox/hamster): side view, galloping right on all fours at the bottom of the rim (4 Codex
+  // poses ham4Run0..3); th = rim angle (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1
   function hamster(th, t, rate, n, wk, spin) {
-    const BW = 300, BH = BW * PROP_ART.hamBody[1] / PROP_ART.hamBody[0], feetR = RG.R - 26;
-    const stride = t * (4 + rate * 9) * TAU, bob = Math.abs(Math.sin(stride / 2)) * (6 + 6 * Math.min(rate, 1.2));
-    push(); translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .1 + .05 * Math.min(rate, 1.5));
-    const L = 44, by = 4 - L - BH / 2 - bob;                              // body centre (the feet are at 0)
-    if (spin > 0) for (const d of [-1, 1]) ENK.layer('hamBody', d * 14 * spin, by, BW, { alpha: .3 * spin });   // motion ghosts
-    ENK.layer('hamBody', 0, by, BW);
-    // legs: four stubby orange legs cycling; when fast they smear into blur arcs
-    for (const [lx, ph] of [[-.3, 0], [.3, .5], [-.12, .25], [.12, .75]]) {
-      const hx = lx * BW, hy = by + BH * .5 - 6, sw = Math.sin(stride + ph * TAU);
-      if (rate > .4) for (let q = 0; q < 3; q++) { const pts = []; for (let s = 0; s <= 8; s++) { const a = Math.PI / 2 + (s / 8 - .5) * (1.2 + .3 * q); pts.push([hx + Math.cos(a) * (L - q * 6), hy + Math.sin(a) * (L - q * 6)]); }
-        inkLine(pts, 5 - q, ['#E9A27F', '#F2C2A8', '#F7DCCB'][q], 'ink', .5); }
-      const a = Math.PI / 2 + sw * (rate > .4 ? .6 : .45);
-      inkLine([[hx, hy], [hx + Math.cos(a) * L, hy + Math.sin(a) * L]], 10, INK, 'ink', 0);
-      inkLine([[hx, hy], [hx + Math.cos(a) * (L - 3), hy + Math.sin(a) * (L - 3)]], 6, '#D97757', 'ink', 0);
-    }
-    // eyes: Clawd's two tall black blocks → straining slits → wide → spirals
-    for (const d of [-1, 1]) {
-      const ex = d * BW * .17, ey = by - BH * .14;
-      if (spin > 0) { paint(ellPts(ex, ey, 24, 24, 16), { wash: '#FFFDF2', ink: INK, sw: 1.2 }); const pts = []; for (let s = 0; s <= 30; s++) { const a = s * .45 + t * 14 * d, r = s * .7; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); } inkLine(pts, 1.4, INK, 'inkfine', .5); }
-      else if (n >= 6) { paint(ellPts(ex, ey, 17, 19, 14), { wash: '#FFFDF2', ink: INK, sw: 1 }); paint(ellPts(ex, ey + 2, 5, 5, 8), { wash: INK, ink: null }); }
-      else { paint(rrPts(ex - 10, ey - 15, 20, 30, 7), { wash: INK, ink: null }); if (n >= 3) inkLine([[ex - d * 16, ey - 28], [ex + d * 12, ey - 20]], 3, INK, 'ink', 0); }
-    }
-    // cheeks: the stuffed token pouches, fuller every word (wk = the word kick)
-    const cw = BW * Math.min(1.25, .62 + .08 * n + .1 * wk), ch = cw * PROP_ART.hamCheeks[1] / PROP_ART.hamCheeks[0];
-    ENK.layer('hamCheeks', 0, by + BH * .24, cw, { sy: Math.min(1, 118 / ch) });
-    ENK.layer('hamPaws', 0, by + BH * .3 + 4 * Math.sin(stride), BW * .36);
-    // sweat flying off the head
-    for (let q = 0; q < Math.max(0, n - 2) * 2; q++) { const d = q % 2 ? 1 : -1, u = frac(t * 1.7 + hash(q + 11)), x = d * (BW * .4 + u * 120), y = by - BH * .35 - 60 * u + 140 * u * u;
-      paint([[x, y - 13], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', ink: INK, sw: .6 }); }
+    const BW = 440, g = PROP_ART.ham4Run0, BH = BW * g[1] / g[0], feetR = RG.R - 24;
+    const ph = t * (3 + rate * 5), f = Math.floor(ph) % 4, bob = [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
+    push(); translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .06 * Math.min(rate, 1.5));
+    for (let q = 0; q < 5; q++) { const v = frac(t * (1.5 + rate) + hash(q + 3)); paint(ellPts(-BW * .35 - v * 160, -10 - hash(q) * 12 - v * 20, 7 + v * 14, 7 + v * 14, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
+    if (rate > .5) for (let q = 0; q < 5; q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
+      inkLine([[x0 - 70 - 80 * m, y], [x0, y]], 4, '#F1E8D2', 'inkfine', 0); }                                        // speed lines
+    if (rate > .8 || spin > 0) for (let gh = 2; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 16 * Math.min(rate, 2), -BH / 2 + bob * .5, BW, { alpha: .15 / gh + .15 * spin });
+    ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: 1 / sq, sy: sq });
+    if (spin > 0) for (const dx of [.29, .37]) {                                                                          // dizzy spiral eyes over his
+      const ex = dx * BW, ey = -BH * .66 + bob, pts = []; for (let s2 = 0; s2 <= 24; s2++) { const a = s2 * .5 + t * 16, r = s2 * .55 * spin; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); }
+      paint(ellPts(ex, ey, 15 * spin, 15 * spin, 12), { wash: '#FFFDF2', ink: INK, sw: .8 }); inkLine(pts, 2, INK, 'inkfine', 0); }
+    for (let q = 0; q < 2 + n; q++) { const d = q % 2 ? 1 : -1, u = frac(t * (1.2 + rate * .8) + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
+      paint([[x, y - 12], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', washOp: 255 * (1 - u * u), ink: INK, sw: .6 }); }
+    for (let q = 0; q < Math.min(8, n + (spin > 0 ? 4 : 0)); q++) { const per = .9 + hash(q) * .5, v = frac((t + hash(q + 50) * per) / per);   // tokens squeezed out of his cheeks, flung back
+      token(BW * .36 - v * (260 + hash(q + 2) * 200), -BH * .62 - (520 * v - 260 * v * v) * (.7 + hash(q + 9) * .5), 15, { spin: t * 8 + q }); }
     pop();
   }
   function ringScene(t) {
