@@ -16,23 +16,24 @@
   // skyline rises out of the haze, its windows switching on beat by beat; the 13.24 downbeat SLAMS it + the title, then the press hammers on every downbeat to 22.40.
   // v12 «Golgotha» (user: «climb a bar longer, stand less; the beats keep knocking him back, he speeds up while the gang sings,
   // and he still carries it up»): the top is reached on 12.58, rolled onto the bed by 12.80, lifted by 13.02, the 13.24 SLAM.
-  // Three variants for approval, picked by ?var=A|B|C (render.mjs --var=): A = a knock-back on every bar downbeat, rhythmic
-  // speed-ups between them; B = escalating knock-backs, then a heroic final push into the press; C = a steeper slope, a tight
-  // low tracking camera, each knock-back a shockwave ring blasting out of a hanging speaker stack and hitting him on the beat.
-  const IV = ((location.search.match(/[?&]var=([ABC])/i) || [])[1] || 'A').toUpperCase();
+  // Each knock-back is a shockwave ring blasting out of a hanging speaker stack, hitting him ON the drum hit; the knock-backs grow,
+  // then a heroic last push into the press (ember aura, speed streaks, the camera pushes in).
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
   const SLAM = 13.24, TOP = 12.58, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
-  const KN = IV === 'B' ? [3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92] : [2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92];   // knock-backs: bar downbeats
-  const KL = KN.map((d, i) => IV === 'B' ? .03 + .15 * Math.pow(i / (KN.length - 1), 1.5) : .08);                       // B: they grow
-  const HB = RBT.filter((b, i, a) => b > 1.2 && b < TOP + .05 && KN.every(d => Math.abs(b - d) > .05) && !(i && b - a[i - 1] < .25))
-    .map(b => [b, (b > VOX[0] && b < VOX[1] ? 1.8 : 1) * (IV === 'B' && b > 12 ? 4 : 1)]);                          // a shove every beat, bigger while the gang sings
+  // v12b (user: «we have a BEAT, why knock him back on the guitar?»): the knock-backs sit on the real DRUM hits, measured off the track
+  // (sharp 5–10 kHz snare/crash transients + the 10.60 kick re-entry; the analysed beat grid follows the guitar here and is half a beat off
+  // in 5–6.6), each one bigger than the last: the 6.08–6.58 snare roll is four quick small jolts, 8.73/8.90 a double, 10.60 and 11.89 the big ones
+  const KN = [1.392, 2.632, 4.275, 5.106, 6.084, 6.248, 6.415, 6.578, 7.605, 8.73, 8.897, 9.229, 10.601, 11.893];
+  const KL = [.03, .035, .04, .055, .025, .025, .025, .025, .07, .05, .06, .08, .11, .15];
+  const HB = RBT.filter((b, i, a) => b > 1.2 && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
+    .map(b => [b, (b > VOX[0] && b < VOX[1] ? 1.8 : 1) * (b > 12 ? 4 : 1)]);                          // a shove every beat, bigger while the gang sings
   const HV = HB.filter(([, w]) => w > 1.5).map(([b]) => b);
   const HW = HB.reduce((a, [, w]) => a + w, 0), KSUM = KL.reduce((a, l) => a + l, 0);
   const INH = [...RDB.filter(d => d >= SLAM - .05 && d < IB - .3), ...RBT.filter(b => b > 21.3 && b < IB - .1)];      // slams; last bar every beat
   const FAR = Array.from({ length: 16 }, (_, i) => ({ x: 520 + i * 105 + hash(i + 40) * 40, w: 60 + hash(i + 41) * 70, h: 80 + hash(i + 42) * 130, ch: hash(i + 43) > .5 ? 110 + hash(i + 44) * 140 : 0, at: 11.15 + hash(i + 45) * .9 }));
   const LIT = RBT.filter(b => b > 11.1 && b < SLAM + .05);                                                            // window switch-on beats
-  const SL = IV === 'C' ? { A: [420, 1900], B: [1150, 700] } : { A: [180, 1700], B: [1150, 730] };
+  const SL = { A: [180, 1700], B: [1150, 730] };
   Object.assign(SL, { r: 110, px: 1440, top: TOP, lift: [12.80, 13.02] });
   const SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]), SLD = [(SL.B[0] - SL.A[0]) / SLL, (SL.B[1] - SL.A[1]) / SLL], SLN = [SLD[1], -SLD[0]];
   const SK = (SL.A[1] - SL.B[1]) / (SL.B[0] - SL.A[0]), hillY = x => x < SL.B[0] ? SL.A[1] - (x - SL.A[0]) * SK : SL.B[1];
@@ -44,7 +45,7 @@
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
     const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
   const lastLE = (arr, t) => { let r = null; for (const x of arr) { if (x > t) break; r = x; } return r; };
-  const kAmp = d => KL[KN.indexOf(d)] / .08;                                                                           // 1 for A / C, .4 → 2.25 for B
+  const kAmp = d => KL[KN.indexOf(d)] / .08;                                                                           // .3 (the roll) → 1.9 (the last one)
   function intro(tv) {
     const t = O2N(tv), hit = kick(t, INH, .25);
     back('#16181D');
@@ -67,7 +68,7 @@
       paint(rectPts(400, 560, 1900, 200), { wash: '#C8724A', washOp: 18 * sky, ink: null });                               // horizon haze over the far skyline
     }
     for (const [lx, ly, on] of [[520, 700, DROP], [980, 250, 5.22], [1440, -520, 5.22]]) {                       // hanging lamps bang on with the drops
-      if (IV === 'C' && lx === 980) continue;                                                                     // C: the speaker hangs there
+      if (lx === 980) continue;                                                                                   // the speaker hangs there
       inkLine([[lx, -1400], [lx, ly - 30]], .8, INK, 'inkfine', 0); paint([[lx - 30, ly - 30], [lx + 30, ly - 30], [lx + 70, ly + 20], [lx - 70, ly + 20]], { wash: A2.gunDk, ink: INK, sw: .6 });
       if (t > on && sky < .5) paint([[lx - 60, ly + 20], [lx + 60, ly + 20], [lx + 260, ly + 700], [lx - 260, ly + 700]], { wash: '#FFE2A8', washOp: 40 * (1 - 2 * sky), ink: null });
     }
@@ -80,8 +81,8 @@
     const PW = 520, PH = 1000, wob = t > SL.lift[0] && t < SLAM - .05 ? Math.sin(t * 40) * 3 * seg(t, SL.lift[0], SLAM) : 0;
     const PX = SL.px - PW / 2 + wob, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
     press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : INH, { seed: 3, token: false });
-    // C: the speaker stack the beats come out of; a ring leaves it .3 s before each knock beat and hits Clawd ON the beat
-    if (IV === 'C') {
+    // the speaker stack the drums come out of; a ring leaves it .3 s before each knock beat and hits Clawd ON the beat
+    {
       const pump = kick(t, KN, .12);
       inkLine([[SPK[0] - 60, -1400], [SPK[0] - 60, SPK[1] - 120]], .8, INK, 'inkfine', 0); inkLine([[SPK[0] + 60, -1400], [SPK[0] + 60, SPK[1] - 120]], .8, INK, 'inkfine', 0);
       push(); translate(SPK[0], SPK[1]); rotate(-.5); scale(1 + .08 * pump);
@@ -100,33 +101,33 @@
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
     token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // B: the heroic last push — an ember aura + speed streaks behind him from the last knock to the bed
-    const hero = IV === 'B' ? seg(t, 11.98, 12.1) * (1 - seg(t, SL.lift[0], SL.lift[1])) : 0;
+    const hero = seg(t, 11.95, 12.05) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .18);
     const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
     if (hero > 0) { glowAt(fx, fy - 60, 260, TK.ember, 70 * hero);
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
-    const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - 11.98) * (IV === 'B');   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: lerp(pushing ? (IV === 'C' ? .32 : .2) + .12 * heave - .25 * bump : 0, .3, ov), sq: -.06 * heave + .22 * bump + (t > SLAM ? .08 * hit : 0),
+    const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - 11.98) ;   // faster steps while the gang sings
+    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: lerp(pushing ? .2 + .12 * heave - .25 * bump : 0, .3, ov), sq: -.06 * heave + .22 * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));   // the impact burst where it hit him
-      if (IV === 'C') inkLine(ellPts(cx - 60, cy - 80, 90 + 500 * (t - d), 90 + 500 * (t - d), 32), 6 * (1 - (t - d) / .5), '#FFFDF6', 'ink', 0); }
+      inkLine(ellPts(cx - 60, cy - 80, 90 + 500 * (t - d), 90 + 500 * (t - d), 32), 6 * (1 - (t - d) / .5), '#FFFDF6', 'ink', 0); }
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
-    flash(Math.min(.3, kick(t, [SLAM], .2) * .3) + (IV === 'C' ? .12 * kick(t, KN, .06) : 0), TK.yellowLt);
+    flash(Math.min(.3, kick(t, [SLAM], .2) * .3) + .12 * kick(t, KN, .06), TK.yellowLt);
   }
   dropCh('en_intro');
   chapter('en_v8_intro', N2O(IA), N2O(IB), [[N2O(IA), native(intro)]], { real: true });
   // the 3:4 camera follows the climb, a key per bar; C: tighter and lower (the slope towers over him); B: pushes in on the heroic last push
-  const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, SL.top];
-  const IK = KT.map((k, i) => { const [x, y] = slopeAt(k + .5 > SL.top ? k : k + .5);
-    return IV === 'C' ? [N2O(k), x + 40, y - 110, 600, i ? 1 : 0] : IV === 'B' && k > 11 ? [N2O(k), x - 60, y - 70, 640, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
+  const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, 12.24, SL.top];
+  const IK = KT.map((k, i) => { const [x, y] = slopeAt(k > 11 ? k : k + .5);
+    return k > 11 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], [N2O(IB) - .001, 1380, 350, 1050, 1]]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
-  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...KN.map(d => [N2O(d), Math.round(14 * (IV === 'B' ? Math.max(.5, kAmp(d)) : 1))]), ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
+  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...KN.map(d => [N2O(d), Math.round(14 * Math.max(.5, kAmp(d)))]), ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
 
   // ======== 2+3. real 30.42–38.34: one take at the desk, Sunday night ========
   // v11 (user: «let the CALENDAR burn, just fix the effect»). «Every last token has to»: on each word a token hops off the stack into the
