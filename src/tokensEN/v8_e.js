@@ -15,11 +15,11 @@
     if (ch) {
       if (NATIVE.test(ch.name)) return null;
       const i = idx(ch.shots, x), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end, v3 = !/^en_/.test(ch.name);
-      return { key: ch.name + i, st: v3 ? EN2V3 : y => y, draw: ts => { const t = v3 ? V32EN(ts) : ts; fn(t, t - t0, end - t0); } };
+      return { key: ch.name + i, st: v3 ? EN2V3 : y => y, endS: v3 ? EN2V3(end) : end, draw: ts => { const t = v3 ? V32EN(ts) : ts; fn(t, t - t0, end - t0); } };
     }
     const x2 = TIME_WARP(x); ch = CH.find(c => !c.real && x2 >= c.start && x2 < c.end); if (!ch) return null;
     const i = idx(ch.shots, x2), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end;
-    return { key: ch.name + i, st: TIME_WARP, draw: t2 => { window.REAL_CH = false; fn(t2, t2 - t0, end - t0); } };
+    return { key: ch.name + i, st: TIME_WARP, endS: end, draw: t2 => { window.REAL_CH = false; fn(t2, t2 - t0, end - t0); } };
   }
   function seg(ra, rb, cueEnd) {
     const a = N2O(ra), b = N2O(rb), name = 'en_hold_' + ra.toFixed(3); let S = null;
@@ -29,7 +29,7 @@
         if (!sh) S = 0; else {
           const s0 = sh.st(a + 1e-4), dOld = sh.st(b - 1e-4) - s0, D = rb - ra, r = dOld / D, same = nx && nx.key === sh.key;
           const hold = r < .9 && same && cueEnd;                                // a chapter cue ahead in this very shot: 0.9x + a short anticipation hold
-          S = { sh, rate: r >= .9 && r <= 1.1 ? r : r > 1.1 ? 1.1 : hold ? .9 : 1, s0, cap: hold ? dOld - 1e-3 : 1e9 };
+          S = { sh, rate: r >= .9 && r <= 1.1 ? r : r > 1.1 ? 1.1 : hold ? .9 : 1, s0, cap: hold ? dOld - 1e-3 : sh.endS - s0 - 1e-3 };   // never run on past the shot's own end (the next old shot leaked in)
         }
       }
       const dt = O2N(t) - ra, T0 = T;
@@ -63,7 +63,7 @@
   span(93.13, L(102.88));             // chorus 2 factory, up to the drone one-shot
   span(L(102.88), L(105.84));         // the drone one-shot
   span(L(105.84), 111.04);            // chorus 2 billboard, up to the fly-in (v8_c en_v8c_flyin: the factory lights die on the beats)
-  span(172.62, 175.12);               // rap: AGI by spring
+  span(L(152.04), 175.12);           // rap: AGI by spring (from e23_loop's end: before it the native loop draws itself)
   span(178.16, L(160.10));            // «Writes your thesis»
   span(183.52, 185.84);               // «All I want from that god-tier brain»
   span(185.84, 188.32);               // «Is a calorie tracker»
@@ -82,7 +82,7 @@
     const ru = (i, vt, Tc = 236) => dt => { const [t0, fn] = sun.shots[i], v = vt(dt); window.REAL_CH = false; T = Tc; fn(v, v - t0, end(sun, i) - t0); };
     const fv = i => dt => { const [t0, fn] = fin.shots[i], t = V32EN(EN2V3(t0) + dt); T = t; fn(t, t - t0, end(fin, i) - t0); };
     const G = 238.94;                                                           // sCredit: the gag (strike + new name + nod) is over
-    const LIST = [[OUTCU, ru(7, dt => 224.2 + .25 * dt)], [B1, ru(7, dt => 225.0 + dt)], [B2, ru(8, dt => 227.2 + dt)]];
+    const LIST = [[OUTCU, ru(7, dt => 224.2 + .25 * dt)], [B1, ru(7, dt => 225.0 + dt)], [B2, ru(8, dt => 227.28 + dt)]];
     let b = BT.indexOf(B2) + 5;                                                 // [beats on screen, shot]: the blast 5, the hall 5, riot 5/5, data center 6, 4, 4
     for (const [n, fn] of [[5, ru(9, dt => 229.15 + dt)], [5, fv(0)], [5, fv(1)], [6, fv(2)], [4, fv(3)], [4, fv(4)],
       [0, ru(10, dt => Math.min(237.95 + 1.8 * dt, G) + Math.max(0, dt - (G - 237.95) / 1.8), 244)]]) { LIST.push([BT[b], fn]); b += n; }

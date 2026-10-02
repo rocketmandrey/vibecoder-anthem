@@ -115,8 +115,8 @@
     pop();
   }
   const v = N2O;
-  reg('v8b_bull', B4.a, B4.b, bullScene, [
-    [B4.a, 960, 570, 1080], [v(B4.crack), 960, 585, 1050, 1], [v(B4.burst) - .002, 960, 630, 960, 1],   // a slow push to the trio through the rumble
+  reg('v8b_bull', B4.a, B4.b, bullScene, [   // first key on the real cut (v1 40.064: en_hold_42.420 keeps the website up to there)
+    [40.07, 960, 570, 1080], [v(B4.crack), 960, 585, 1050, 1], [v(B4.burst) - .002, 960, 630, 960, 1],   // a slow push to the trio through the rumble
     [v(B4.burst), 960, 600, 1120], [B4.b - .001, 960, 590, 1060, 1],                                  // cut wide on the bull, eased push through the pounding
   ], [[v(46.38), 5], [v(46.72), 6], [v(B4.crack2), 9], [v(47.04), 8], ...SLAM.map(b => [v(b), 13]), [v(B4.last), 17]]);
 

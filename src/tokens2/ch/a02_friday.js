@@ -325,7 +325,7 @@
     for (let k = 1; k <= 3; k++) { const pts = []; for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2, rr = r * k / 3.4 * (i % 4 ? .88 : 1); pts.push([x + sx * Math.cos(a) * rr, y + sy * Math.sin(a) * rr]); } inkLine(pts, .45, col, 'inkfine', .5); }
   }
   function arcade(t, lt) {
-    if (R && t >= window.EN2V2(36.78)) return siteR(t, T);                            // EN «Build me a website»: clean cut inside the arcade shot
+    if (R && T >= 36.78) return siteR(t, T);                            // EN «Build me a website»: clean cut inside the arcade shot
     paint(rectPts(-100, -100, W + 200, H + 200), { wash: C.gunDk, fill: C.gunmetal, fillOp: 90, bleed: .1, tex: .6, ink: null });
     if (R) camBegin(); else camBegin(960, 520 - lt * 10, 1.02 + lt * .04);
     paint(rectPts(-100, 880, W + 200, 400), { wash: '#2A2D33', fill: C.steel, fillOp: 70, tex: .6, ink: INK, sw: .7 });
@@ -486,6 +486,6 @@
   // EN 3:4 reels camera (EN song time): office 18.16–20.8 + screen –23.54 + park –26.38 + burn –29.08; arcade 34.52–39.78 (29.08–34.52 is the coordinator's)
   if (window.RU34) RU34.push(
     [18.16, 29.08, [[18.16, 960, 500, 860], [20.8, 960, 520, 860], [23.54, 960, 500, 860], [26.38, 960, 480, 860], [27.7, 960, 400, 860], [29.079, 960, 360, 820, 1]]],   // the burn: calendar whole, the floor and its ash out of frame
-    [34.52, 39.78, [[34.52, 960, 480, 780], [36.77, 960, 515, 700, 1], [36.78, 960, 500, 790], [39.77, 960, 490, 740, 1]]],   // arcade push-in | cut at «Build» → the website push-in
+    [34.52, 40.07, [[34.52, 960, 480, 780], [36.77, 960, 515, 700, 1], [36.78, 960, 500, 790], [39.77, 960, 490, 740, 1], [40.069, 960, 490, 740, 1]]],   // arcade push-in | cut at «Build» → the website push-in
   );
 })();
