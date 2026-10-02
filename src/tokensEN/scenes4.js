@@ -53,12 +53,14 @@
     const [px, py, ps] = agentAt(a.parent, a.born), e = easeOut(clamp(age / .3));
     return [lerp(px, x, e), lerp(py, y, e), lerp(ps, s, e), e];
   }
+  const GC = .27;                                                // GPU card scale per drone unit (was .2)
   function drone(x, y, sc, t, o = {}) {                        // a little quadcopter, body centre (x, y); o.card: GPU card slung o.cable below
     push(); translate(x, y); rotate(o.tilt || 0);
     if (o.card) {
       const cy = o.cable;
       for (const d of [-1, 1]) inkLine([[d * 10 * sc, 8 * sc], [d * 26 * sc, cy - 10 * sc]], .7, '#C8D2E6', 'inkfine', 0);
-      gpuCard(0, cy, .2 * sc, t, { fans: false });
+      glowAt(0, cy, 48 * sc, '#7DFFAE', 120);                                    // v14: backlit, bigger cards (they sank into the night)
+      gpuCard(0, cy, GC * sc, t, { fans: false, glow: .8 });
     }
     paint(rectPts(-6 * sc, 6 * sc, 12 * sc, 6 * sc), { wash: '#1A2236', ink: INK, sw: .6 });                         // camera pod
     for (const [ax, ay, far] of [[-27, -8, 1], [27, -8, 1], [-46, -2, 0], [46, -2, 0]]) {
@@ -131,7 +133,7 @@
     // the drones: arc in from off-frame, lower the card into the raised hands, let go and zip up and away; the card goes into the rack
     for (const c of CR) {
       if (t < c.t0 || t > c.land + .6) continue;
-      const [sl] = c.slot, catchY = sl.y - 9 * sl.s, sc = 2.3, cable = 104, hy = catchY - cable;
+      const [sl] = c.slot, catchY = sl.y - 9 * sl.s, sc = 2.3, cable = 130, hy = catchY - cable;
       let x, y, tilt;
       if (t < c.land) {                                                                       // fly in on a bezier arc, slow to a hover
         const u = easeOut(clamp((t - c.t0) / FL)), [fx, fy] = c.from, x0 = sl.x + fx * 900, y0 = hy + fy * 700 - 200;
@@ -150,7 +152,8 @@
       if (t < c.land || t > c.plug) continue;
       const [sl] = c.slot, catchY = sl.y - 9 * sl.s;
       const y = c.hold ? catchY + Math.sin(t * 9 + c.k) * 3 : lerp(catchY, RACKY - RACKH * .45, easeIn(clamp((t - c.land) / (c.plug - c.land))));
-      gpuCard(sl.x, y, .2 * 2.3, t, { fans: false, glow: c.hold ? .5 : 0 });
+      glowAt(sl.x, y, 100, '#7DFFAE', 90);
+      gpuCard(sl.x, y, GC * 2.3, t, { fans: false, glow: c.hold ? .8 : .5 });
     }
     for (const c of CR) if (!c.hold) { const x = c.slot[0].x; sparks(x, RACKY - RACKH * .5, t - c.plug, c.slot[1] * 7, 14, 150); }
     flash(.18 * kick(t, [MA.compute + .8], .12), A2.hazard);
