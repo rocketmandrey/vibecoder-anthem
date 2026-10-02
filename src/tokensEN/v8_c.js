@@ -290,7 +290,6 @@
     const spot = s < 126.4 ? seg(s, 123.4, 124.6) : Math.max(outK, dj ? 0 : .25 * seg(s, 141, 141.6) * (1 - seg(s, 151.0, 151.5)));
     if (spot > .02) A06.beam(960, 960, 60, 260, 880, (s < 126.4 ? .55 : .4) * spot * (1 - djK));
     if (winK > .3 && !dj) for (const [cx, sd] of WIN) A06.beam(cx, cx + sd * -220, 50, 150, 1150, .22 * winK * (1 - outK) * (sd > 0 && cu > .1 ? 1.4 : 1), sd > 0 && cu > .1 ? '#FFC890' : '#C8D8FF');
-    if (dj && djAge < .066) paint(rectPts(-800, -800, W + 1600, H + 3200), { wash: '#00FF6A', washOp: 110 * (1 - djAge / .066), ink: null });   // ≤ 2 frames
   }
   // ---- real 111.04–113.70: the fly-in. The night factory, its lights switching OFF block by block on the beats (the downbeat 112.36 kills
   // the chimney fires), the camera pushing in toward the dark until the cut into the dark cathedral on the 113.68 downbeat ----
