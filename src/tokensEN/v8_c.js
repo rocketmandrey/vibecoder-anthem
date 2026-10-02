@@ -139,18 +139,19 @@
     }
   }
   // a price tag on a string from the vault; d = how far it is lowered (0 up out of the frame, 1 in place)
+  const TK2 = 2.1;                                                            // v12: the price tags read on a phone (were 180 px wide)
   function tag(s, x, y, d, label, sub, col, icon) {
     if (d <= .01) return;
     const yy = y - 760 * (1 - easeOut(d));
     inkLine([[x, -400], [x, yy - 80]], 1, '#8A8480', 'inkfine', 0);
-    push(); translate(x, yy); rotate(Math.sin(s * 2.3 + x) * .05);
+    push(); translate(x, yy); rotate(Math.sin(s * 2.3 + x) * .05); scale(TK2);
     paint([[-90, -60], [0, -92], [90, -60], [90, 80], [-90, 80]], { wash: '#FFF5E2', fill: '#E8AA38', fillOp: 40, tex: .4, ink: INK, sw: 1 });
     paint(ellPts(0, -66, 8, 8, 10), { wash: '#2B2233', ink: null });
     icon(0, -26);
     pop();
-    if (yy < 150) return;                                                       // letters are not clipped by the picture: none above it
-    if (sub) { letter(sub, x, yy + 18, 34, '#59636E', { font: ruFont(34), ink: false }); inkLine([[x - 44, yy + 22], [x + 44, yy + 12]], 2.5, '#D8262A', 'ink', 0); }
-    letter(label, x, yy + (sub ? 56 : 36), 44, col, { font: ruFont(44), ink: false });
+    if (yy < 100) return;                                                       // letters are not clipped by the picture: none above it
+    if (sub) { letter(sub, x, yy + 18 * TK2, 52, '#59636E', { font: ruFont(52), ink: false }); inkLine([[x - 44 * TK2, yy + 22 * TK2], [x + 44 * TK2, yy + 12 * TK2]], 2.5 * TK2, '#D8262A', 'ink', 0); }
+    letter(label, x, yy + (sub ? 56 : 36) * TK2, 62, col, { font: ruFont(62), ink: false });   // letters ≥ 64 px are dropped (R34)
   }
   const brainIcon = (x, y) => { paint(ellPts(x, y, 30, 22, 16), { wash: '#F2A0B8', ink: INK, sw: .6 }); inkLine([[x, y - 20], [x, y + 20]], .7, INK, 'inkfine', 0); for (const d of [-1, 1]) inkLine([[x + d * 8, y - 14], [x + d * 20, y - 4], [x + d * 10, y + 8]], .6, INK, 'inkfine', .5); };
   const gpuIcon = (x, y) => { paint(rectPts(x - 36, y - 16, 72, 32), { wash: '#1F6B3A', ink: INK, sw: .6 }); for (const d of [-16, 16]) paint(ellPts(x + d, y, 11, 11, 12), { wash: '#16181C', ink: INK, sw: .4 }); };
@@ -244,9 +245,9 @@
     // ---- the sermon tags ----
     const pe = ease(seg(s, C.cheap1, C.cheap1 + .8)), ge = ease(seg(s, C.cheap2, C.cheap2 + .8));
     const tagUp = easeIn(seg(s, 151.0, 151.7));
-    tag(s, 565, 330, seg(s, 140.5, 141.4) * (1 - tagUp), money(20 * Math.pow(10, -4 * pe)), pe > .05 ? '$20' : null, pe > .05 ? '#D8262A' : '#2B2233', brainIcon);
-    tag(s, 1355, 330, seg(s, C.and - .2, C.and + .6) * (1 - tagUp), money(40000 * Math.pow(10, ge)), ge > .05 ? '$40K' : null, ge > .05 ? '#1F8A4A' : '#2B2233', gpuIcon);
-    if (pe > .99 && s < 151) stamp('-99.99%', 565, 470, 40, s, C.cheap1 + .8, { col: '#2FBF71', rot: .1 });
+    tag(s, 650, 240, seg(s, 140.5, 141.4) * (1 - tagUp), money(20 * Math.pow(10, -4 * pe)), pe > .05 ? '$20' : null, pe > .05 ? '#D8262A' : '#2B2233', brainIcon);
+    tag(s, 1270, 240, seg(s, C.and - .2, C.and + .6) * (1 - tagUp), money(40000 * Math.pow(10, ge)), ge > .05 ? '$40K' : null, ge > .05 ? '#1F8A4A' : '#2B2233', gpuIcon);
+    if (pe > .99 && s < 151) stamp('-99.99%', 650, 560, 56, s, C.cheap1 + .8, { col: '#2FBF71', rot: .1 });
     // ---- the preacher ----
     const rise = ease(seg(s, 123.6, 125.5)), m = mouthAt(s);
     const lift = s < 137.6 ? kf(s, [[133.1, .3], [133.4, 1.05], [136.7, 1.05], [137.05, .3]], backOut) : .3;
