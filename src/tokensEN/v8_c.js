@@ -21,6 +21,7 @@
 
   // ---- real-time cues (seconds of the new track) ----
   const WD = EN_WORDS.map(([v, w], i) => ({ s: O2N(v), w, n: EN_WORDS[i + 1] ? O2N(EN_WORDS[i + 1][0]) : 1e9 }));
+  const TALKW = WD.filter(x => x.s > 126 && x.s < 155).map(x => x.s), talk = s => kick(s, TALKW, .25);   // an arm beat on every spoken word
   const rw = (w, near) => { const k = x => x.toLowerCase().replace(/[^a-z]/g, ''), m = WD.filter(q => k(q.w) === k(w)); return m.reduce((b, q) => Math.abs(q.s - near) < Math.abs(b.s - near) ? q : b).s; };
   const C = { elec: rw('electricity', 127.34), more1: rw('More', 129.2), copper: rw('copper', 129.54), water1: rw('water', 132.24), water2: rw('water', 137.6),
     why: rw('Why', 138.68), cheap1: rw('cheaper', 142.9), and: rw('And', 146.06), cheap2: rw('cheaper', 147.84), need: rw('need', 152.12), gpus: rw('More', 155.74) };
@@ -254,6 +255,7 @@
     else if (!dj) { const p = ease(seg(s, 151.7, 152.4)), down = ease(seg(s, 152.6, 155.3)); aL = aR = .5 + .5 * p - .4 * down; eyes = down > .3 ? 'narrow' : 'normal'; mouth = m || (down > .3 ? 'flat' : 'smile'); }
     else { const up = backOut(seg(s, C.gpus, C.gpus + .2)); aL = aR = .3 + 1.7 * up; if (djAge > .7) { aL = -.2 + .25 * Math.sin(s * 14); aR = 1.9 + .15 * Math.sin(s * 5); } mouth = m || 'grin'; }
     const take = dj && djAge < .25 ? -.08 * Math.sin(djAge / .25 * Math.PI) : 0;
+    if (!dj) { aL = .5 + (aL - .5) * 1.7 + .25 * talk(s); aR = .5 + (aR - .5) * 1.7 + .25 * talk(s + .17); }   // bigger sermon gestures (v8 note)
     A06.pulpit(s, { eyes, lookX, mouth, aL, aR, dy: 9 * (1 - rise), take, sq: sipping ? .03 * Math.sin(s * 11) : 0,
       armL: s > 133 && s < 137.6 ? cup(s, lift) : undefined, hat: dj ? 'shades' : null, click: kick(s, BT, .15) * (dj ? 1 : .4), draw: dj ? phones : undefined });
     decks(s, backOut(seg(s, C.gpus + .05, C.gpus + .45)), djAge > .7 ? Math.sin(s * 14) * .8 : 0);
@@ -282,7 +284,7 @@
     const spot = s < 126.4 ? seg(s, 123.4, 124.6) : Math.max(outK, dj ? 0 : .25 * seg(s, 141, 141.6) * (1 - seg(s, 151.0, 151.5)));
     if (spot > .02) A06.beam(960, 960, 60, 260, 880, (s < 126.4 ? .55 : .4) * spot * (1 - djK));
     if (winK > .3 && !dj) for (const [cx, sd] of WIN) A06.beam(cx, cx + sd * -220, 50, 150, 1150, .22 * winK * (1 - outK) * (sd > 0 && cu > .1 ? 1.4 : 1), sd > 0 && cu > .1 ? '#FFC890' : '#C8D8FF');
-    if (dj && djAge < .3) paint(rectPts(-800, -800, W + 1600, H + 3200), { wash: '#00FF6A', washOp: 110 * (1 - djAge / .3), ink: null });
+    if (dj && djAge < .066) paint(rectPts(-800, -800, W + 1600, H + 3200), { wash: '#00FF6A', washOp: 110 * (1 - djAge / .066), ink: null });   // ≤ 2 frames
   }
   const shake0 = window.CAM_SHAKE;                                              // a still camera for the whole set (CALM ends at v1 135.22)
   if (shake0) window.CAM_SHAKE = t => t >= A && t < B ? [0, 0] : shake0(t);

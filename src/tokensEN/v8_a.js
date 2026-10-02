@@ -63,9 +63,9 @@
     token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // Clawd right behind it, leaning in; after the lift he steps back under the press and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .6);
-    const [fx, fy] = [lerp(bx - SL.r - 80 - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
+    const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
     const slip = SLIPS.some(d => t > d && t < d + .5), heave = kick(t, HV, .25);
-    clawd(fx, fy, 12, { walk: pushing && !slip ? t * (1.6 + 2.4 * heave) : null, rot: lerp(pushing ? .2 + .12 * heave : 0, .3, ov), sq: -.06 * heave + (t > SLAM ? .08 * hit : 0),
+    clawd(fx, fy, cu, { walk: pushing && !slip ? t * (1.6 + 2.4 * heave) : null, rot: lerp(pushing ? .2 + .12 * heave : 0, .3, ov), sq: -.06 * heave + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }

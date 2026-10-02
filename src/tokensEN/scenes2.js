@@ -188,7 +188,7 @@
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
-  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 2.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
+  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 3.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
   // hamster-Clawd v4 (draft 5, the user's pick from sandbox/hamster): side view, galloping right on all fours on the rim; th = rim angle
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
   function hamster(th, t, rate, n, wk, spin, fly) {
