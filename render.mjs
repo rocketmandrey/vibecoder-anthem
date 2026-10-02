@@ -4,6 +4,7 @@
 //   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio (streamed, no frame dump; --fade: hook-style audio fades)
 //   node render.mjs --song=tokensENr --clip=39.78:62.54 --fade --out=out/reels/btt_h1_pilot.mp4   BURN THE TOKENS reels hook H1
 //   scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4        the same on Colab GPUs (docs/COLAB.md)
+//   --var=A|B|C: pick a variant of a scene under approval (tokensEN intro, v8_a.js; default A)
 //   node render.mjs --frames=0:156.6 --workers=4                                full-res JPEG frames → out/frames (resumable)
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
@@ -51,7 +52,7 @@ async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(resolve(S.page)).href + '?render' + (S.q || ''), { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(resolve(S.page)).href + '?render' + (S.q || '') + (args.var ? '&var=' + args.var : ''), { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   // every @font-face subset now: setup() only loads the ones its probe text needs, so the first frames of a fresh page drew Latin
   // Russo One in a fallback font (a mid-song chunk/part started with a wrong-font title and subtitles)
