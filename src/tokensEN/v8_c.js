@@ -95,15 +95,15 @@
       paint(ellPts(x + 12, top, 12, 4, 12), { wash: '#F2B27A', ink: INK, sw: .5 });
     }
   }
-  // ---- v12 variants: ?var_church=a|b|c (render.mjs --var=church:b), default a ----
+  // ---- v12 variants: ?var_church=a|b|c (render.mjs --var=church:b), default c (v13 verdict) ----
   //   a: rack COLONNADE in strict perspective + a raised data-centre floor whose tile rows light toward the altar on the downbeats;
   //      sermon: two lancets (left the city going dark = electricity, right the town reservoir draining = water)
   //   b: an ORGAN WALL of racks whose LED cells are stained glass, lit from the centre outward one tower pair per downbeat;
   //      sermon: one window (the token rose) + a brass RESERVOIR gauge plaque that drains
   //   c: PEWS of racks with candle LEDs lit row by row toward the altar, the preacher lit from behind by a halo;
-  //      sermon: two abstract mosaic lancets (POWER flares, WATER panes drain from the top)
+  //      sermon (v13): the next town's lake in a tall window left, the chalice's straw drinks it dry; a POWER mosaic lancet right
   // all three: copper organ pipes grow behind the preacher, one intelligence price tag that really gets cheaper on each line
-  const VAR = new URLSearchParams(location.search).get('var_church') || (window.BTT_VAR || {}).church || 'a';
+  const VAR = new URLSearchParams(location.search).get('var_church') || (window.BTT_VAR || {}).church || 'c';
   window.BTT_VAR = { ...(window.BTT_VAR || {}), church: VAR };
   const VP = [960, 560], FY = 830;                                              // vanishing point, the wall / floor line
   const on = (s, t0) => t0 == null ? 0 : clamp((s - t0) / .12);                // a light switching on at t0
@@ -272,6 +272,58 @@
     paint(arch(cx, WT, WW, WH), { ink: '#15131C', sw: 1.4 });
   }
 
+  // c (v13): the NEXT TOWN by its lake, a tall picture window left of the pulpit; the chalice's long straw runs out into the lake and
+  // every sip on the break beats pulls a quarter of it (lvlC), the boats settle on the mud, a fish flops
+  const lvlC = s => clamp(1 - GULPS.reduce((a, g) => a + .25 * ease(seg(s, g - .1, g + .25)), 0));
+  const LK = { cx: 540, top: 150, w: 210, h: 650 }, LK_W0 = 585, LK_W1 = 785;   // the lake's full / empty surface y
+  const lakeY = l => lerp(LK_W1, LK_W0, l);
+  function townLake(s, L, lvl) {
+    const { cx, top, w, h } = LK, hw = w / 2, bot = top + h, sy = top + .866 * w, D = c => mixCol('#15131C', c, .35 + .65 * L);
+    glowAt(cx, top + h * .6, w * 1.1, '#8EC3E6', 45 * L);
+    paint(arch(cx, top - 16, w + 32, h + 24), { wash: '#3B3F4A', fill: '#1C1F24', fillOp: 90, tex: .5, ink: INK, sw: .9 });
+    paint(arch(cx, top, w, h), { wash: D('#9CCBEA'), ink: null });                                   // sky
+    paint(ellPts(cx + 55, sy - 40, 26, 26, 16), { wash: D('#FFD866'), ink: null });                     // sun
+    paint([[cx - hw, 500], [cx - 40, 455], [cx + 30, 480], [cx + hw, 445], [cx + hw, 600], [cx - hw, 600]], { wash: D('#6E9A52'), ink: INK, sw: .5 });   // the hill
+    [[-88, 470, '#E8AA38'], [-52, 458, '#F1E8D2'], [-16, 466, '#E27A92'], [22, 472, '#E8AA38'], [60, 462, '#F1E8D2']].forEach(([dx, y, c], i) => {   // the little town
+      const x = cx + dx; paint(rectPts(x, y, 30, 30), { wash: D(c), ink: INK, sw: .5 });
+      paint([[x - 4, y], [x + 15, y - 18], [x + 34, y]], { wash: D('#B4302A'), ink: INK, sw: .5 });
+      paint(rectPts(x + 11, y + 14, 8, 16), { wash: D('#5A3A22'), ink: null });
+    });
+    paint([[cx + 92, 470], [cx + 100, 410], [cx + 108, 470]], { wash: D('#D8DEE6'), ink: INK, sw: .5 });   // a spire
+    letter('NEXT TOWN', cx, 538, 24, '#F1E8D2', { font: ruFont(24), ink: false });
+    paint(rectPts(cx - hw, 572, w, bot - 572), { wash: D('#A47A4E'), fill: D('#7A5232'), fillOp: 60, tex: .5, ink: null });   // the basin: mud
+    if (lvl < .6) for (let i = 0; i < 8; i++) { const x = cx - hw + 20 + hash(i) * (w - 40), y = 610 + hash(i + 3) * 170; inkLine([[x - 16, y], [x, y + 9], [x + 18, y - 4]], .8, '#4A2E18', 'inkfine', 0); }
+    const wy = lakeY(lvl);
+    if (lvl > .005) {
+      paint(rectPts(cx - hw, wy, w, bot - wy), { wash: D('#2E9FE8'), fill: D('#1B5FB0'), fillOp: 60, tex: .3, ink: null });
+      for (let i = 0; i < 3; i++) inkLine([[cx - hw + 20 + i * 70, wy + 18 + i * 6], [cx - hw + 50 + i * 70, wy + 18 + i * 6]], .9, D('#BFE8FF'), 'inkfine', 0);
+      inkLine([[cx - hw + 2, wy], [cx + hw - 2, wy]], 2.2, D('#DFF4FF'), 'ink', 0);
+    }
+    [[-60, 0], [45, 1]].forEach(([dx, i]) => {                                                         // two boats float, then sit on the mud
+      const fl = lvl > .1, by = fl ? wy - 4 + Math.sin(s * 3 + i) * 3 : bot - 14 - i * 8, tilt = fl ? Math.sin(s * 2 + i) * .05 : (i ? .3 : -.25);
+      push(); translate(cx + dx, by); rotate(tilt);
+      paint([[-28, -8], [28, -8], [18, 8], [-18, 8]], { wash: D(i ? '#F1E8D2' : '#E8AA38'), ink: INK, sw: .5 });
+      inkLine([[0, -8], [0, -34]], 1, INK, 'ink', 0); paint([[2, -32], [2, -12], [18, -12]], { wash: D('#FFF5E2'), ink: INK, sw: .4 });
+      pop();
+    });
+    if (lvl < .1) { const fx = cx + 5, fy = bot - 30, f = Math.sin(s * 20) * 6;                          // a stranded fish
+      paint([[fx - 20, fy], [fx, fy - 9 + f * .3], [fx + 14, fy], [fx + 24, fy - 10 + f], [fx + 24, fy + 10 - f], [fx + 14, fy], [fx, fy + 9]], { wash: '#8EC3E6', ink: INK, sw: .5 }); }
+    inkLine([[cx - hw, sy], [cx + hw, sy]], 1.2, '#15131C', 'ink', 0);
+    paint(arch(cx, top, w, h), { ink: '#15131C', sw: 1.6 });
+  }
+  // the chalice's straw: a pink hose from the cup out through the glass into the lake, the gulps run up it on the beats
+  const CUPW = [704, 478];                                                      // the raised chalice's bowl, world (measured at lift 1.05)
+  function lakeStraw(s, lvl) {
+    const k = ease(seg(s, 133.35, 133.75)) * (1 - ease(seg(s, 136.75, 137.0))); if (k < .01) return;
+    const end = [LK.cx + 30, Math.max(lakeY(lvl) + 22, LK_W0 + 20)];
+    const pts = [CUPW, [640, 430], [590, 520], [end[0], lerp(CUPW[1], end[1], k)]].slice(0, 4);
+    inkLine(pts, 5, '#E27A92', 'ink', .5); inkLine(pts, 1.4, '#FFC6D4', 'inkfine', .5);
+    for (const g of GULPS) {
+      const p = seg(s, g - .55, g - .2); if (p <= 0 || p >= 1 || k < .99) continue;
+      const q = 1 - p, i = Math.min(2, Math.floor(q * 3)), f = q * 3 - i, a = pts[3 - i], b = pts[2 - i];   // lake → cup
+      paint(ellPts(lerp(a[0], b[0], f), lerp(a[1], b[1], f), 9, 9, 10), { wash: '#2E9FE8', ink: INK, sw: .4 });
+    }
+  }
   // ---- the intelligence price tag: it REALLY gets cheaper, one step down on every line ----
   const PRICE = [[141.4, '$20'], [C.cheap1, '$2'], [145.74, '$0.20'], [C.cheap2, '$0.02'], [149.12, '$0.002']];
   const TK2 = 2.1;
@@ -390,16 +442,16 @@
       const pk = [4, 3, 2, 1, 0].map(i => st(P(i)));
       paint([[seamX(-.55, 1000), 1000], [seamX(.55, 1000), 1000], [seamX(.55, 2000), 2000], [seamX(-.55, 2000), 2000]], { wash: '#5A1A26', ink: INK, sw: .6 });   // the aisle carpet
       backlight(s, (pre ? ease(seg(s, P(6), P(7) + .4)) : .7) * (1 - outK) * (1 - djK));
-      mosaic(565, s, L, ['#E8AA38', '#D8622A', '#FFD21F', '#B4302A'], null, elec);
-      mosaic(1355, s, L, ['#1E3F9A', '#2E6FD8', '#3A9C98', '#15606A'], lvl, 0);
+      townLake(s, L, lvlC(s));
+      mosaic(1355, s, L, ['#E8AA38', '#D8622A', '#FFD21F', '#B4302A'], null, elec);
       A06.rose(s, L);
       organ(s, Math.max(cu * cuGlow * .8, dj ? .3 : 0));
       lights = () => pews(s, 2, pk);
       front = () => pews(s, 1, pk);
     }
     if (plates && VAR !== 'b') {
-      plate(565, 592, 'CITY POWER', pct(1 - taken), taken > .5 ? '#D8262A' : '#FFD21F');
-      if (s > C.water1 - .5) plate(1355, 592, 'TOWN WATER', pct(lvl), lvl > .3 ? '#2E9FE8' : '#D8262A');
+      plate(VAR === 'c' ? 1355 : 565, 592, 'CITY POWER', pct(1 - taken), taken > .5 ? '#D8262A' : '#FFD21F');
+      if (VAR === 'a' && s > C.water1 - .5) plate(1355, 592, 'TOWN WATER', pct(lvl), lvl > .3 ? '#2E9FE8' : '#D8262A');
     }
     lasers(s, djK);
     // ---- the sermon tag ----
@@ -413,7 +465,7 @@
     if (s < 126.4) { eyes = 'narrow'; }
     else if (s < 129) { const up = ease(seg(s, C.elec - .3, C.elec + .2)); aL = aR = .5 + 1.1 * up + .1 * Math.sin(s * 6) * up; eyes = up > .5 ? 'happy' : 'normal'; }
     else if (s < 133.1) { eyes = 'happy'; mouth = m || 'grin'; }
-    else if (s < 139.4) { eyes = sipping ? 'closed' : 'look'; mouth = sipping ? 'o' : (s > C.why ? 'flat' : 'smile'); lookX = sipping ? 0 : (VAR === 'b' ? -1 : 1); aR = s > C.why ? 1.2 : .5; }
+    else if (s < 139.4) { eyes = sipping ? 'closed' : 'look'; mouth = sipping ? 'o' : (s > C.why ? 'flat' : 'smile'); lookX = sipping ? 0 : (VAR === 'a' ? 1 : -1); aR = s > C.why ? 1.2 : .5; }
     else if (s < 146) { const p = ease(seg(s, C.cheap1 - .4, C.cheap1)); aL = .5 + .7 * p + ease(seg(s, 141.7, 142.1)) * (1 - p) * .9; aR = .5 + .9 * ease(seg(s, 141.7, 142.1)) * (1 - p); lookX = -p; }
     else if (s < 151.6) { const p = ease(seg(s, C.cheap2 - .4, C.cheap2)); aR = .5 + .7 * p + ease(seg(s, 146.4, 146.8)) * (1 - p) * .9; aL = .5 + .9 * ease(seg(s, 146.4, 146.8)) * (1 - p); lookX = -p; }
     else if (!dj) { const p = ease(seg(s, 151.7, 152.4)), down = ease(seg(s, 152.6, 155.3)); aL = aR = .5 + .5 * p - .4 * down; eyes = down > .3 ? 'narrow' : 'normal'; mouth = m || (down > .3 ? 'flat' : 'smile'); }
@@ -424,6 +476,7 @@
       armL: s > 133 && s < 137.6 ? cup(s, lift) : undefined, hat: dj ? 'shades' : null, click: kick(s, BT, .15) * (dj ? 1 : .4), draw: dj ? phones : undefined });
     decks(s, backOut(seg(s, C.gpus + .05, C.gpus + .45)), djAge > .7 ? Math.sin(s * 14) * .8 : 0);
     if (dj && djAge < .35) paint(starPts(960 - 3.2 * 32, 700 - 6.8 * 32, 26 * (1 - djAge / .35) + 6, .2), { wash: '#E6FFE8', ink: null });
+    if (VAR === 'c') lakeStraw(s, lvlC(s));
     // ---- the choir: three angels each side ----
     const sing = inSpan(s, SING), singK = sing ? .7 + .3 * kick(s, BT, .3) : 0, whyK = seg(s, C.why, C.why + .25) * (1 - seg(s, 140.6, 141.2));
     ANG.forEach(([x, nn]) => {
