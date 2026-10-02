@@ -68,7 +68,7 @@ const LY = [
   [165.12, 167.444, "Is a calorie tracker. Nice and plain."],
   [167.58, 170.212, "A hundred thousand GPUs, the whole AI craze —"],
   [170.311, 172.172, "Just to scan my lunch and find the mayonnaise."],
-  [172.172, 178.744, "…mayonnaise"],
+  [172.172, 175.55, "…mayonnaise"],                // real 195.6 + the 0.2 s fade = gone on the 195.80 cut
   [178.84, 181.413, "BURN THE TOKENS! BURN THE TOKENS!"],
   [181.44, 183.301, "'Til the limit hits the floor!"],
   [183.74, 186.02, "REVENUE? LATER! PROFIT? HOW?!"],
