@@ -17,7 +17,9 @@
   reels: { ar: 4 / 3, py: 170, title: 'BURN THE TOKENS', titleY: 92, subY: 1690, censor: true } };   // ?reels: title 0–170, 3:4 picture 170–1610, subtitles 1625–1760 right under it
   // R34: the 3:4 reels picture — chapters re-lay their elements for it (never in the 16:9 / RU pages); RU34: [enA, enB, keys] a chapter's own 3:4 camera
   // keys (EN song time, [t, cx, cy, w, glide]) that replace every other key in [enA, enB) — see tokensEN/scenes.js SQSHOTS_X
-  window.R34 = /[?&]reels\b/.test(location.search); window.RU34 = [];</script>
+  window.R34 = /[?&]reels\b/.test(location.search); window.RU34 = [];
+  // scene variants for approval: ?var_<scene>=<v> → window.BTT_VAR[scene] (render.mjs --var=sis:b,…)
+  window.BTT_VAR = Object.assign(window.BTT_VAR || {}, Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => k.startsWith('var_')).map(([k, v]) => [k.slice(4), v])));</script>
 <script src="node_modules/p5/lib/p5.min.js"></script>
 <script src="node_modules/p5.brush/dist/p5.brush.js"></script>
 </head>
@@ -65,6 +67,7 @@
 <script src="src/tokensEN/v8_b.js"></script>
 <script src="src/tokensEN/v8_a.js"></script>
 <script src="src/tokensEN/v8_d.js"></script>
+<script src="src/tokensEN/v8_sis.js"></script>
 <script src="src/tokensEN/v8_e.js"></script>
 <script src="src/tokens3/square.js"></script>
 </body>

@@ -20,7 +20,7 @@
   // track v2 outro chant «Oh! Burn! Burn! Burn! Burn! Hey!» ×4 over the b10 riot finale (v1 237.02–241.5): a hard punch on every shouted word
   for (const [w, x] of EN_WORDS) { const k = x.toLowerCase().replace(/[^a-z]/g, ''); if (w > 237.0 && w < 241.5 && /^(oh|burn|hey|a+g*h*)$/.test(k)) PUNCH.push([w, k === 'burn' ? 14 : 22]); }
   let HITPX = null;                                                        // built on first use, after scenes2.js has added its punches
-  const CALM = [[112.6, 135.22], [210, 237.0], [241.6, 1e9]];              // the preacher and the deadpan outro: a still camera
+  const CALM = [[112.6, 135.22], [210.24, 237.0], [241.6, 1e9]];              // the preacher and the deadpan outro: a still camera
   window.CAM_SHAKE = t => {
     if (CALM.some(([a, b]) => t >= a && t < b)) return [0, 0];
     HITPX = HITPX || [...EN_HITS.map(([t, s]) => [t, s * 1.3]).filter(([t]) => secPx(t) > 0), ...PUNCH].sort((a, b) => a[0] - b[0]);
