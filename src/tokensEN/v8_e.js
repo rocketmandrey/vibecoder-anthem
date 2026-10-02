@@ -1,10 +1,7 @@
-// tokensEN/v8_e.js: G2 of PLAN_v8 — playback rate 0.9–1.1 everywhere. A span is cut into segments at its sync points (the warp's chapter
-// cues, the RETIME word anchors, the real downbeats); each segment re-syncs exactly on its first frame, then plays the shot that is on screen
-// at its own pace in its own time domain (EN scene → v1, RU v2 chapter → v2, v3-real chapter → v3):
-//   old/new length within 0.9–1.1 → that rate (ends in sync);
-//   old shorter (the new track holds the moment longer): 1x live continuation if the next sync point is a cut to another shot,
-//     else 0.9x and a short hold before it (1x would run past it and the re-sync jump BACK);
-//   old longer: 1.1x and a jump forward on the next sync point (a cue / downbeat).
+// tokensEN/v8_e.js: G2 of PLAN_v8. A span is cut into segments at its sync points (the warp's chapter cues, the RETIME word anchors);
+// each segment plays the shot that is on screen in its own time domain (EN scene → v1, RU v2 chapter → v2, v3-real chapter → v3) at
+// rate old/new length (before a cut: up to 1x while the old shot has frames left), so every cue lands and the motion never stops or jumps (v13: the 0.9x + hold and 1.1x + jump rules read as
+// stutters). Clamped to 0.4–2.5x (beyond that: a short hold / skip at the segment end).
 // Spans are REAL seconds of track v2; loaded last.
 (() => {
   const idx = (shots, x) => { let i = 0; while (i + 1 < shots.length && x >= shots[i + 1][0]) i++; return i; };
@@ -28,8 +25,8 @@
         const sh = shotAt(a + 1e-4), nx = shotAt(b + 1e-4);                   // after the segment: same shot → a cue inside it; another → a cut
         if (!sh) S = 0; else {
           const s0 = sh.st(a + 1e-4), dOld = sh.st(b - 1e-4) - s0, D = rb - ra, r = dOld / D, same = nx && nx.key === sh.key;
-          const hold = r < .9 && same;                                          // the same shot goes on after: 0.9x + a short hold (1x would run past and the re-sync jump BACK — the 233.48 outro pull-back replay)
-          S = { sh, rate: r >= .9 && r <= 1.1 ? r : r > 1.1 ? 1.1 : hold ? .9 : 1, s0, cap: hold ? dOld - 1e-3 : sh.endS - s0 - 1e-3 };   // never run on past the shot's own end (the next old shot leaked in)
+          const room = sh.endS - s0;                                            // a cut follows: up to 1x, as long as the old shot has frames left
+          S = { sh, rate: clamp(same || r > 1 ? r : Math.max(r, Math.min(1, room / D)), .4, 2.5), s0, cap: (same ? dOld : room) - 1e-3 };   // never past the next sync / the shot's own end (the next old shot leaked in)
         }
       }
       const dt = O2N(t) - ra, T0 = T;
@@ -38,22 +35,15 @@
     }]], { real: true });
     CH.find(c => c.name === name).hold = true;
   }
-  // sync points inside [ra, rb]: chapter cues (warp TAB) + downbeats (the jumps land there), ≥ .3 s apart; in EN scenes also the word anchors
-  const TABR = EN_TAB.map(([v]) => O2N(v)), WORDR = RETIME.map(([r]) => r), DB = EN_DOWNBEATS.map(O2N);
+  // sync points inside [ra, rb]: chapter cues (warp TAB), ≥ .3 s apart; in EN scenes also the word anchors
+  const TABR = EN_TAB.map(([v]) => O2N(v)), WORDR = RETIME.map(([r]) => r);
   function span(ra, rb) {
     const en = (() => { const c = CH.find(c => c.real && !c.hold && N2O(ra + .05) >= c.start && N2O(ra + .05) < c.end); return c && /^en_/.test(c.name); })();
-    const cue = new Set(TABR.filter(x => x > ra + .3 && x < rb - .3).map(x => +x.toFixed(4)));
     const P = [ra, rb];
-    const add = (x, isCue) => { if (P.every(y => Math.abs(y - x) >= .3)) { P.push(x); if (isCue) cue.add(+x.toFixed(4)); } };
-    for (const x of TABR) if (x > ra && x < rb) add(x, true);
-    if (en) for (const x of WORDR) if (x > ra && x < rb) add(x, true);
-    for (const d of DB) if (d > ra && d < rb) add(d, false);
+    const add = x => { if (P.every(y => Math.abs(y - x) >= .3)) P.push(x); };
+    for (const x of TABR) if (x > ra && x < rb) add(x);
+    if (en) for (const x of WORDR) if (x > ra && x < rb) add(x);
     P.sort((p, q) => p - q);
-    // a downbeat inside one shot where the old take is shorter (< 0.9x): 1x would run past it and the re-sync there jumps BACK (the
-    // 54.32 shredder hitch) — drop that sync point, the segment then runs on to the next cue
-    const slow = (p, q) => { const sh = shotAt(N2O(p) + 1e-4), nx = shotAt(N2O(q) + 1e-4);
-      return sh && nx && nx.key === sh.key && (sh.st(N2O(q) - 1e-4) - sh.st(N2O(p) + 1e-4)) / (q - p) < .9; };
-    for (let k = 1; k + 1 < P.length; k++) if (!cue.has(+P[k].toFixed(4)) && slow(P[k - 1], P[k])) P.splice(k--, 1);
     for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1]);
   }
   const L = v1 => O2N(v1), OUTCU = 247.2;                                  // OUTCU: the a10 cut to the close-up
