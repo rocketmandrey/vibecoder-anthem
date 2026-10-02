@@ -106,7 +106,7 @@
     app: rw('app,', 33.60), bot: rw('bot.', 34.84), still: rw('still', 35.30), tokens: 35.805, so: rw('so', 36.50), why: rw('why', 36.66), not: rw('not?', 37.34) };
   const THROWS = [W8.every, W8.last, W8.token, W8.has, W8.to].map(w => w - .12), FLY = .36;
   const STACK = [665, 840], SCR = [1200, 700], CX = 905, DY = 840, LX = 1200;
-  const CAL = { x: 600, y: 368, w: 236, h: 262 }, CHH = CAL.h * .2, CPY = CAL.y + CHH, CPH = CAL.h - CHH;
+  const CAL = { x: 1040, y: 350, w: 290, h: 252 }, CHH = CAL.h * .2, CPY = CAL.y + CHH, CPH = CAL.h - CHH;
   const IG = W8.die, BURN = [IG, IG + 2.9];                                  // the page is eaten bottom-up by 35.1
   const APP_IN = W8.app + .4, BOT_IN = W8.bot + .36, FEED = [APP_IN, BOT_IN];
   const SWING = [RDB.find(d => d > W8.not - .4), W8.not];                    // the 37.1 downbeat → «not?»
@@ -147,7 +147,7 @@
       }
     }
     paint(rectPts(x - 6, y, w + 12, CHH, 1), { wash: mixCol(TK.ember, '#3A2A22', .6 * b), ink: INK, sw: 1.2 });                // the header stays, scorched
-    letter('SEPTEMBER', x + w / 2, y + CHH * .58, 26, PAL.cream, { font: ruFont(26), ink: false });
+    letter('SEPTEMBER', x + w / 2, y + CHH * .58, 34, PAL.cream, { font: ruFont(34), ink: false });
     for (let i = 0; i < 4; i++) paint(ellPts(x + w * (.2 + i * .2), y + 3, 7, 11, 8), { wash: A2.steelLt, ink: INK, sw: .5 });
     flushLetters();
     if (k > .02) {
@@ -161,7 +161,7 @@
     }
     if (s > IG) for (let i = 0; i < 14; i++) {                                                                                    // charred flakes crumble off and fall to the desk
       const born = IG + .1 + i * (BURN[1] - IG) / 14, q = seg(s, born, born + 1.1); if (q <= 0 || q >= 1) continue;
-      const fx = x + 20 + hash(i + 31) * (w - 40) + Math.sin(q * 6 + i) * 22, fyy = lerp(edgeY(born) + 6, DY - 8, q * q), r = 10 + 6 * hash(i + 5);
+      const fx = lerp(x + 20 + hash(i + 31) * (w - 40), 1010, q * q) + Math.sin(q * 6 + i) * 22, fyy = lerp(edgeY(born) + 6, DY - 8, q * q), r = 10 + 6 * hash(i + 5);
       push(); translate(fx, fyy); rotate(q * 5 * (hash(i) - .5) * 2);
       paint([[-r, -r * .4], [r * .7, -r * .6], [r, r * .3], [-r * .5, r * .6]], { wash: i % 3 ? '#2A2422' : '#4A403C', ink: null }); pop();
     }
@@ -252,7 +252,7 @@
     paint(rectPts(-200, DY, W + 400, 900), { wash: '#6E5A4A', fill: A2.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: 1 });
     inkLine([[-200, DY + 22], [W + 200, DY + 22]], .6, A2.gunDk, 'inkfine', 0);
     const ash = seg(s, IG + .6, BURN[1] + .8);
-    if (ash > 0) paint([[700 - 90 * ash, DY + 2], [700 - 30 * ash, DY - 26 * ash], [700 + 25 * ash, DY - 30 * ash], [700 + 90 * ash, DY + 2]], { wash: '#4A4442', ink: INK, sw: .6, curv: .4 });
+    if (ash > 0) paint([[1010 - 90 * ash, DY + 2], [1010 - 30 * ash, DY - 26 * ash], [1010 + 25 * ash, DY - 30 * ash], [1010 + 90 * ash, DY + 2]], { wash: '#4A4442', ink: INK, sw: .6, curv: .4 });
     const slot = s >= W8.not ? 1 : 0, hop = backOut(seg(s, W8.so - .05, W8.so + .25));
     laptop8(LX, DY + 4, 1.25, s, { glow: kick(s, THROWS.map(w => w + FLY), .2), hop, slot });
     // the stack (shrinks as tokens hop off) — then the sack bursts up on «tokens», swings over the laptop on the downbeat, upended on «not?»
