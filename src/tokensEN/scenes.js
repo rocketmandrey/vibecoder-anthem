@@ -302,7 +302,8 @@
       const [sx, sy] = SPOTS[i], ride = 3.4, o = { n: i + 2, rot: NOTXT };
       let x, y, u = 13;
       const [b0, b1, off] = [L3.b0, L3.b1, L3.off];
-      if (a < .25) { const f = a / .25; x = lerp(b0[0] - 80, b0[0], f); y = b0[1] - Math.sin(f * Math.PI) * 70; Object.assign(o, { sy: 1 + .3 * (1 - f), sx: 1 - .2 * (1 - f), eyes: 'x', mouth: 'O' }); }
+      if (a < .25) { const f = a / .25; x = lerp(b0[0] - 80, b0[0], f); y = b0[1] - Math.sin(f * Math.PI) * 70; u *= .25 + .75 * easeOut(clamp(a / .16));   // v12: grows out of the slot (it popped in full-size: a snap)
+        Object.assign(o, { sy: 1 + .3 * (1 - f), sx: 1 - .2 * (1 - f), eyes: 'x', mouth: 'O' }); }
       else if (a < ride) { const f = (a - .25) / (ride - .25); x = lerp(b0[0], b1[0], f); y = lerp(b0[1], b1[1], f); Object.assign(o, { eyes: 'happy', aL: .5, aR: .5, dy: -Math.abs(Math.sin(a * 9)) * .4 }); }
       else if (a < ride + .4) { const f = (a - ride) / .4; x = lerp(b1[0], off[0], f); y = lerp(b1[1], off[1], f * f) - Math.sin(f * Math.PI) * 80; Object.assign(o, { aL: 1.5, aR: 1.5, mouth: 'O' }); }
       else if (a < ride + 1.4) { const f = ease((a - ride - .4) / 1); x = lerp(off[0], sx, f); y = lerp(off[1], sy, f); Object.assign(o, move('walk', t, i), { flip: true, rot: NOTXT }); }
