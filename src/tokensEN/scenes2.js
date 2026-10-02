@@ -57,7 +57,7 @@
     clawd(1130, TW.floor + 2, 9, { eyes: 'look', lookY: -1, mouth: t > TW.top ? 'o' : 'flat', emote: t > TW.top ? 'sweat' : null, aL: .2, aR: .2 });
   }
   scene('e12_tower', 76.72, 81.98, tower, [
-    [76.72, 1000, 860, 560], [77.7, 990, 830, 620, 1], [78.6, 980, 790, 680, 1], [79.6, 960, 660, 920, 1], [80.4, 960, 580, 1000, 1], [81.979, 960, 560, 1000, 1],   // whole tower top to floor from 80.4, tiny Clawd in frame from the start
+    [76.80, 1000, 860, 560], [77.7, 990, 830, 620, 1], [78.6, 980, 790, 680, 1], [79.6, 960, 660, 920, 1], [80.4, 960, 580, 1000, 1], [81.979, 960, 560, 1000, 1],   // whole tower top to floor from 80.4, tiny Clawd in frame from the start
   ], [[81.42, 10]]);
 
   // ======== E13 NEW (81.98–87.60) «A report: how to cut our AI spend. Nobody read it in the end.» ========
