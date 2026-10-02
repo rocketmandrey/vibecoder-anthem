@@ -118,10 +118,11 @@
     sub('win', () => windowMoon(110, 120, 450, 440, t, o));
     paint(R ? [[520, 233], [830, 233], [1000, 1070], [560, 1070]] : [[140, 590], [560, 590], [800, 1000], [240, 1000]], { wash: '#DDE6F2', washOp: 14 + 22 * (o.moonK || 0), ink: null });  // moonlight on the floor
     for (const [k, gr, x, y, r] of [[lit.games, 'games', 770, 330, 220], [lit.sites, 'sites', 1165, 285, 280], [lit.agents, 'agents', 1670, 640, 300]]) if (k > .02) { const [cx, cy] = at(gr, x, y); glowAt(cx, cy, r * (R ? L34[gr][2] : 1), '#FFD27A', 70 * k); }
-    sub('games', () => games(t, g.games || 0, D * (1 - (lit.games || 0))));
-    sub('sites', () => sites(t, g.sites || 0, D * (1 - (lit.sites || 0))));
+    const pp = o.pop || {}, popAt = (gr, x, y, fn) => { const k = pp[gr] || 0; if (!k) return fn(); const [cx, cy] = at(gr, x, y); push(); translate(cx, cy); scale(1 + k); translate(-cx, -cy); try { fn(); } finally { pop(); } };
+    popAt('games', 770, 330, () => sub('games', () => games(t, g.games || 0, D * (1 - (lit.games || 0)))));
+    popAt('sites', 1165, 285, () => sub('sites', () => sites(t, g.sites || 0, D * (1 - (lit.sites || 0)))));
     sub('clock', () => clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0));
-    sub('agents', () => agents(t, g.agents || 0, D * (1 - (lit.agents || 0))));
+    popAt('agents', 1670, 640, () => sub('agents', () => agents(t, g.agents || 0, D * (1 - (lit.agents || 0)))));
     sub('desk', () => roomDesk(t, o));
   }
   function roomDesk(t, o) {
@@ -197,10 +198,11 @@
     const lit = { games: seg(t, 207.6, 207.8), sites: seg(t, 208.8, 209.0), agents: seg(t, 210.16, 210.4) };
     const grey = { games: seg(t, 212.28, 212.6), sites: seg(t, 213.06, 213.3), agents: seg(t, 213.36, 213.95) };
     for (const k of ['games', 'sites', 'agents']) lit[k] *= 1 - grey[k];
-    if (R) {                                                                  // R34: clean cuts between three held medium shots, then the eased pull back
-      const C3 = [[750, 640, 1.8], [1255, 95, 1.9], [1256, 520, 2.0]], i = t < 208.8 ? 0 : t < 210.16 ? 1 : 2, t0 = [207.6, 208.8, 210.16][i], c = C3[i];
-      const b = ease(seg(t, 212.28, 212.8)), z = c[2] * (1 + .015 * (Math.min(t, 212.28) - t0));
-      camBegin(lerp(c[0], 960, b), lerp(c[1], 540, b), lerp(z, 1, b));
+    if (R) {                                                                  // R34 (v12): one held shot — games, websites, agents and the whole Clawd; each pops on its word
+      camBegin(965, 560, kf(t, [[207.6, 1.15], [213.95, 1.08]]));
+      const pop = {}; for (const [k, a] of [['games', 207.6], ['sites', 208.8], ['agents', 210.16]]) pop[k] = Math.sin(Math.PI * seg(t, a, a + .35)) * .14;
+      room(t, { lit, grey, pop, clawd: sitClawd(t, { eyes: t > 212.3 ? 'narrow' : 'look', lookX: 1 }) });
+      return camEnd();
     } else camBegin(cam[0], cam[1], cam[2]);
     room(t, { lit, grey, clawd: sitClawd(t, { eyes: t > 212.3 ? 'narrow' : 'look', lookX: 1 }) });
     // the count stamps, one per group

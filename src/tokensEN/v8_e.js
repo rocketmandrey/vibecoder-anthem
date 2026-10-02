@@ -3,7 +3,7 @@
 // at its own pace in its own time domain (EN scene → v1, RU v2 chapter → v2, v3-real chapter → v3):
 //   old/new length within 0.9–1.1 → that rate (ends in sync);
 //   old shorter (the new track holds the moment longer): 1x live continuation if the next sync point is a cut to another shot,
-//     else 0.9x up to the next cue and a short hold before it (the cue never plays twice);
+//     else 0.9x and a short hold before it (1x would run past it and the re-sync jump BACK);
 //   old longer: 1.1x and a jump forward on the next sync point (a cue / downbeat).
 // Spans are REAL seconds of track v2; loaded last.
 (() => {
@@ -21,14 +21,14 @@
     const i = idx(ch.shots, x2), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end;
     return { key: ch.name + i, st: TIME_WARP, endS: end, draw: t2 => { window.REAL_CH = false; fn(t2, t2 - t0, end - t0); } };
   }
-  function seg(ra, rb, cueEnd) {
+  function seg(ra, rb) {
     const a = N2O(ra), b = N2O(rb), name = 'en_hold_' + ra.toFixed(3); let S = null;
     chapter(name, a, b, [[a, t => {
       if (S === null) {
         const sh = shotAt(a + 1e-4), nx = shotAt(b + 1e-4);                   // after the segment: same shot → a cue inside it; another → a cut
         if (!sh) S = 0; else {
           const s0 = sh.st(a + 1e-4), dOld = sh.st(b - 1e-4) - s0, D = rb - ra, r = dOld / D, same = nx && nx.key === sh.key;
-          const hold = r < .9 && same && cueEnd;                                // a chapter cue ahead in this very shot: 0.9x + a short anticipation hold
+          const hold = r < .9 && same;                                          // the same shot goes on after: 0.9x + a short hold (1x would run past and the re-sync jump BACK — the 233.48 outro pull-back replay)
           S = { sh, rate: r >= .9 && r <= 1.1 ? r : r > 1.1 ? 1.1 : hold ? .9 : 1, s0, cap: hold ? dOld - 1e-3 : sh.endS - s0 - 1e-3 };   // never run on past the shot's own end (the next old shot leaked in)
         }
       }
@@ -40,7 +40,7 @@
   }
   // sync points inside [ra, rb]: chapter cues (warp TAB) + downbeats (the jumps land there), ≥ .3 s apart; in EN scenes also the word anchors
   const TABR = EN_TAB.map(([v]) => O2N(v)), WORDR = RETIME.map(([r]) => r), DB = EN_DOWNBEATS.map(O2N);
-  function span(ra, rb, calm = false) {
+  function span(ra, rb) {
     const en = (() => { const c = CH.find(c => c.real && !c.hold && N2O(ra + .05) >= c.start && N2O(ra + .05) < c.end); return c && /^en_/.test(c.name); })();
     const cue = new Set(TABR.filter(x => x > ra + .3 && x < rb - .3).map(x => +x.toFixed(4)));
     const P = [ra, rb];
@@ -54,8 +54,7 @@
     const slow = (p, q) => { const sh = shotAt(N2O(p) + 1e-4), nx = shotAt(N2O(q) + 1e-4);
       return sh && nx && nx.key === sh.key && (sh.st(N2O(q) - 1e-4) - sh.st(N2O(p) + 1e-4)) / (q - p) < .9; };
     for (let k = 1; k + 1 < P.length; k++) if (!cue.has(+P[k].toFixed(4)) && slow(P[k - 1], P[k])) P.splice(k--, 1);
-    const rbCue = TABR.some(x => Math.abs(x - rb) < .05);
-    for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1], !calm && (k + 2 === P.length ? rbCue : cue.has(+P[k + 1].toFixed(4))));
+    for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1]);
   }
   const L = v1 => O2N(v1), OUTCU = 247.2;                                  // OUTCU: the a10 cut to the close-up
   span(22.40, 29.00);                 // verse 1 (a02 friday)
@@ -76,8 +75,8 @@
   span(195.81, 210.081);              // last chorus (a09) up to «Worth half a trillion more»
   // the deadpan outro (a10): each spoken line from its own start (the reset → close-up → «Fuck» run is a cut sequence, left on its cues)
   const OUT = [218.64, 223.90, 227.34, 233.48, 237.00, 239.56, 241.96, 244.10];
-  for (let k = 0; k + 1 < OUT.length; k++) span(OUT[k], OUT[k + 1], true);   // calm: a still room lives on at 1x, no anticipation holds
-  span(L(230.82), OUTCU, true);       // reset notification (starts on its own cut), up to the close-up
+  for (let k = 0; k + 1 < OUT.length; k++) span(OUT[k], OUT[k + 1]);
+  span(L(230.82), OUTCU);      // reset notification (starts on its own cut), up to the close-up
   // v10 outro, cut by hand on the beats: the shut-eyed close-up through «Fuck.» → the 1st beat after it the eyes snap open, red (once) →
   // the 2nd beat the madness: the room blast, the server hall, the b10 riot (the data center +2 beats) → the credit card, its gag written 1.8x
   (() => {
