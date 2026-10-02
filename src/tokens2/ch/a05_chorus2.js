@@ -256,16 +256,7 @@ function a05_gauge(t, lt, dur) {
   else a05_cam(t, 1130, lerp(470, 360, ease(lt / dur)), lerp(2.3, 2.6, lt / dur), 4);
   a05_noSign = a05_R; a05_world(t, L); a05_noSign = false;
   camEnd();
-  const v = a05_limit(t);
-  if (a05_R) {                                                                   // labels to the left of the chimney, inside the band
-    letter('ЛИМИТ', 700, 380, 56, A5.white, { font: ruFont(56), rot: -.06, stroke: A2.gunDk });
-    letter(Math.round(v * 100) + '% left', 700, 450, 40, A2.hazard, { font: ruFont(40), rot: -.06, stroke: A2.gunDk });
-    inkLine([[790, 470], [860, 540], [905, 560]], 3, A5.white, 'marker', .5);
-    return;
-  }
-  letter('ЛИМИТ', 1320, 300, 64, A5.white, { font: ruFont(64), rot: -.06, stroke: A2.gunDk });
-  inkLine([[1250, 330], [1180, 420], [1080, 460]], 3, A5.white, 'marker', .5);
-  letter('ещё ' + Math.round(v * 100) + '%', 1330, 380, 40, A2.hazard, { font: ruFont(40), rot: -.06, stroke: A2.gunDk });
+  // no caption beside it: the % on the chimney gauge is the only limit readout
 }
 // 96.86 from the city: rooftops in front, windows dim as the factory flares, pulses stream in
 function a05_city2(t, lt, dur) {

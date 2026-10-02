@@ -420,12 +420,14 @@ function a04_rep(t, lt) {
   const vk = backOut(seg(t, 81.08, 81.3));
   if (vk > .02) {
     const [nx, ny, q] = R ? [930, 330, 1.3] : [460, 360, 1];          // R: the sticky note above the binder, bigger
-    push(); translate(nx, ny); rotate(-.05); scale(vk * q);
+    push(); translate(nx, ny); scale(vk * q);                          // level sticker, level text, a clean symmetric eye
     paint(rectPts(-172, -60, 372, 120), { wash: TK.yellowLt, fill: TK.yellow, fillOp: 70, tex: .5, ink: PAL.ink, sw: .8 });
     pop();
-    paint(ellPts(nx - 138 * q, ny + 7 * q, 26 * vk * q, 15 * vk * q, 16), { wash: '#FFFFFF', ink: PAL.ink, sw: .8 });
-    paint(ellPts(nx - 138 * q, ny + 7 * q, 9 * vk * q, 9 * vk * q, 10), { wash: PAL.ink, ink: null });
-    letter('ПРОЧТЕНИЙ: 0', nx + 34 * q, ny - 2 * q, 34 * vk * q, TK.soot, { font: ruFont(34 * vk * q), ink: false, rot: -.05 });
+    const ex = nx - 128 * q, er = 28 * vk * q, eh = 16 * vk * q, eye = [];
+    for (let k = 0; k < 24; k++) { const u = k < 12 ? -1 + k / 6 : 1 - (k - 12) / 6; eye.push([ex + er * u, ny + (k < 12 ? -1 : 1) * eh * (1 - u * u)]); }   // almond, mirror-symmetric
+    paint(eye, { wash: '#FFFFFF', ink: PAL.ink, sw: .9 });
+    paint(ellPts(ex, ny, 9 * vk * q, 9 * vk * q, 24), { wash: PAL.ink, ink: null });
+    letter('ПРОЧТЕНИЙ: 0', nx + 40 * q, ny, 34 * vk * q, TK.soot, { font: ruFont(34 * vk * q), ink: false, rot: 0 });
   }
   camEnd();
 }

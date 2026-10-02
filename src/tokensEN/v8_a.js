@@ -11,19 +11,20 @@
   const dropPunch = (a, b) => { for (let i = EN_PUNCH.length - 1; i >= 0; i--) if (EN_PUNCH[i][0] >= a && EN_PUNCH[i][0] < b) EN_PUNCH.splice(i, 1); };
 
   // ======== 1. INTRO real 0–22.40 (instrumental): Sisyphus ========
-  // Clawd heaves one giant token up a 45° slope, one heave per downbeat (slips back on the 1.0 drop and on the 5.22 section change), rolls it
-  // along the plateau onto the bed of a huge press, steps back and waits under it while the sky goes ember and three
-  // factory chimneys shoot up on the beats; the 13.24 downbeat SLAMS it + the title, then the press hammers on every downbeat to 22.40.
+  // Clawd heaves one giant token up a 45° slope, one heave per downbeat (two big knock-backs: the 5.22 section hit and the 7.92 downbeat roll it back down), rolls it
+  // along the plateau onto the bed of a huge press, steps back and waits under it while far away on the horizon a factory
+  // skyline rises out of the haze, its windows switching on beat by beat; the 13.24 downbeat SLAMS it + the title, then the press hammers on every downbeat to 22.40.
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
-  const SLIPS = [DROP, 5.22], SLAM = 13.24, TOP = 9.7;
-  const HV = RDB.filter((d, i, a) => d > 1.2 && d < 9.3 && Math.abs(d - 5.22) > .2 && !(i && d - a[i - 1] < .3));   // heave downbeats
+  const SLIPS = [5.22, 7.92], SLAM = 13.24, TOP = 9.7;
+  const HV = RDB.filter((d, i, a) => d > 1.2 && d < 9.3 && SLIPS.every(s => Math.abs(d - s) > .2) && !(i && d - a[i - 1] < .3));   // heave downbeats
   const INH = [...RDB.filter(d => d >= SLAM - .05 && d < IB - .3), ...RBT.filter(b => b > 21.3 && b < IB - .1)];      // slams; last bar every beat
-  const CHIM = [[1105, 11.92, -150], [1775, 12.24, -110], [1640, 12.58, -330]];                                        // [x, rise beat, top y]
+  const FAR = Array.from({ length: 16 }, (_, i) => ({ x: 520 + i * 105 + hash(i + 40) * 40, w: 60 + hash(i + 41) * 70, h: 80 + hash(i + 42) * 130, ch: hash(i + 43) > .5 ? 110 + hash(i + 44) * 140 : 0, at: 11.15 + hash(i + 45) * .9 }));
+  const LIT = RBT.filter(b => b > 11.1 && b < SLAM + .05);                                                            // window switch-on beats
   const SL = { A: [180, 1700], B: [1150, 730], r: 110, px: 1440, top: TOP, lift: [10.6, 11.1] };
   const SLD = [.7071, -.7071], SLN = [-.7071, -.7071], SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]);
   const climb = t => Math.max(0, .25 * Math.min(1, t / TOP) + HV.reduce((a, h) => a + .75 / HV.length * easeOut(seg(t, h - .1, h + .45)), 0)
-    - SLIPS.reduce((a, d) => { const g = t - d; return a + (g < 0 ? 0 : g < .3 ? .05 * easeOut(g / .3) : .05 * Math.max(0, 1 - (g - .3) / 1.4)); }, 0));
+    - SLIPS.reduce((a, d) => { const g = t - d; return a + (g < 0 ? 0 : g < .25 ? .13 * easeOut(g / .25) : .13 * Math.max(0, 1 - ease(Math.min(1, (g - .45) / 1.2)) * (g > .45))); }, 0));
   const slopeAt = t => { const u = .15 + .85 * Math.min(1, climb(t));   // starts a bit up the slope: the camera can't see left of x 0
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
     const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
@@ -31,16 +32,22 @@
     const t = O2N(tv), hit = kick(t, INH, .25);
     back('#16181D');
     for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);            // the wall of the pit
-    // while Clawd waits the sky behind goes ember and four striped factory chimneys shoot up on the beats, puffing on every slam
+    // while Clawd waits the sky goes ember and FAR AWAY a factory skyline rises out of the haze on the horizon, windows switching on beat by beat
     const sky = easeOut(seg(t, 11.3, 13.1));
-    if (sky > 0) glowAt(SL.px, 250, 1000, TK.ember, 40 * sky + 25 * hit);
-    for (const [cx, rb, top] of CHIM) {
-      const k = backOut(seg(t, rb, rb + .35)); if (k <= 0) continue;
-      const base = 900, y = lerp(base, top, k);
-      paint(rectPts(cx - 44, y, 88, base - y + 200, 1), { wash: '#B8B0A4', fill: '#7A7268', fillOp: 70, tex: .5, ink: INK, sw: 1 });
-      for (let j = 0; j < 5; j++) paint(rectPts(cx - 44, y + 40 + j * 150, 88, 44), { wash: '#C8412E', ink: null });
-      paint(rectPts(cx - 54, y - 18, 108, 26, 1), { wash: '#5A5048', ink: INK, sw: .8 });
-      if (t > rb + .2) { glowAt(cx, y - 10, 70 + 40 * hit, TK.orange, 50 + 50 * hit); smoke(cx, y - 30, t + cx, { r: 40 + 30 * hit, h: 380, n: 6, per: 2, seed: cx, col: '#4A4E56' }); }
+    if (sky > 0) {
+      glowAt(SL.px, 640, 1100, TK.ember, 30 * sky + 15 * hit);
+      FAR.forEach((b, i) => {
+        const k = easeOut(seg(t, b.at, b.at + .9)); if (k <= 0) return;
+        const top = 735 - b.h * k;
+        if (b.ch) { const cx = b.x + b.w * .7, ct = top - b.ch * k; paint(rectPts(cx - 7, ct, 14, 735 - ct), { wash: '#4A3A3A', ink: null });
+          if (k > .9) smoke(cx, ct - 6, t + i, { r: 10 + 6 * hit, h: 120, n: 4, per: 2.4, seed: 70 + i, col: '#8A6A5A' }); }
+        paint(rectPts(b.x, top, b.w, 735 - top), { wash: '#3E3238', fill: '#2E262C', fillOp: 80, ink: null });
+        for (let r = 0; r * 22 + 18 < b.h * k - 10; r++) for (let c = 0; c * 18 + 14 < b.w - 8; c++) {
+          const on = LIT[Math.floor(hash(i * 31 + r * 7 + c) * LIT.length)]; if (on == null || t < on || hash(i * 13 + r * 5 + c * 3) > .55) continue;
+          paint(rectPts(b.x + 8 + c * 18, top + 12 + r * 22, 9, 12), { wash: "#FFE08A", washOp: 110 + 60 * kick(t, [on], .3), ink: null });
+        }
+      });
+      paint(rectPts(400, 560, 1900, 200), { wash: '#C8724A', washOp: 18 * sky, ink: null });                               // horizon haze over the far skyline
     }
     for (const [lx, ly, on] of [[520, 700, DROP], [980, 250, 5.22], [1440, -520, 5.22]]) {                       // hanging lamps bang on with the drops
       inkLine([[lx, -1400], [lx, ly - 30]], .8, INK, 'inkfine', 0); paint([[lx - 30, ly - 30], [lx + 30, ly - 30], [lx + 70, ly + 20], [lx - 70, ly + 20]], { wash: A2.gunDk, ink: INK, sw: .6 });
@@ -64,7 +71,7 @@
     // Clawd right behind it, leaning in; after the lift he steps back under the press and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .6);
     const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
-    const slip = SLIPS.some(d => t > d && t < d + .5), heave = kick(t, HV, .25);
+    const slip = SLIPS.some(d => t > d && t < d + .7), heave = kick(t, HV, .25);
     clawd(fx, fy, cu, { walk: pushing && !slip ? t * (1.6 + 2.4 * heave) : null, rot: lerp(pushing ? .2 + .12 * heave : 0, .3, ov), sq: -.06 * heave + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
@@ -78,7 +85,7 @@
   if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], [N2O(IB) - .001, 1380, 350, 1050, 1]]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
-  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
+  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...SLIPS.map(d => [N2O(d), 12]), ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
 
   // ======== 2+3. real 30.42–38.34: one take at the desk, Sunday night ========
   // «Every last token has to die»: a stack of six tokens by the desk; on each word one hops over Clawd into the laptop screen (flare, the wall

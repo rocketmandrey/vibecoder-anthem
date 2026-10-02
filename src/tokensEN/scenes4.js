@@ -131,7 +131,7 @@
     // the drones: arc in from off-frame, lower the card into the raised hands, let go and zip up and away; the card goes into the rack
     for (const c of CR) {
       if (t < c.t0 || t > c.land + .6) continue;
-      const [sl] = c.slot, catchY = sl.y - 9 * sl.s, sc = 1.7, cable = 78, hy = catchY - cable;
+      const [sl] = c.slot, catchY = sl.y - 9 * sl.s, sc = 2.3, cable = 104, hy = catchY - cable;
       let x, y, tilt;
       if (t < c.land) {                                                                       // fly in on a bezier arc, slow to a hover
         const u = easeOut(clamp((t - c.t0) / FL)), [fx, fy] = c.from, x0 = sl.x + fx * 900, y0 = hy + fy * 700 - 200;
@@ -150,7 +150,7 @@
       if (t < c.land || t > c.plug) continue;
       const [sl] = c.slot, catchY = sl.y - 9 * sl.s;
       const y = c.hold ? catchY + Math.sin(t * 9 + c.k) * 3 : lerp(catchY, RACKY - RACKH * .45, easeIn(clamp((t - c.land) / (c.plug - c.land))));
-      gpuCard(sl.x, y, .2 * 1.7, t, { fans: false, glow: c.hold ? .5 : 0 });
+      gpuCard(sl.x, y, .2 * 2.3, t, { fans: false, glow: c.hold ? .5 : 0 });
     }
     for (const c of CR) if (!c.hold) { const x = c.slot[0].x; sparks(x, RACKY - RACKH * .5, t - c.plug, c.slot[1] * 7, 14, 150); }
     flash(.18 * kick(t, [MA.compute + .8], .12), A2.hazard);
