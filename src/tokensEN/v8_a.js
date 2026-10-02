@@ -11,20 +11,24 @@
   const dropPunch = (a, b) => { for (let i = EN_PUNCH.length - 1; i >= 0; i--) if (EN_PUNCH[i][0] >= a && EN_PUNCH[i][0] < b) EN_PUNCH.splice(i, 1); };
 
   // ======== 1. INTRO real 0–22.40 (instrumental): Sisyphus ========
-  // Clawd heaves one giant token up a 45° slope, one heave per downbeat (two big knock-backs: the 5.22 section hit and the 7.92 downbeat roll it back down), rolls it
+  // Clawd heaves one giant token up a 45° slope, a shove per beat (three hard knock-backs on the 5.28 / 7.92 / 10.6 downbeats roll it back down), rolls it
   // along the plateau onto the bed of a huge press, steps back and waits under it while far away on the horizon a factory
   // skyline rises out of the haze, its windows switching on beat by beat; the 13.24 downbeat SLAMS it + the title, then the press hammers on every downbeat to 22.40.
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
-  const SLIPS = [5.22, 7.92], SLAM = 13.24, TOP = 9.7;
-  const HV = RDB.filter((d, i, a) => d > 1.2 && d < 9.3 && SLIPS.every(s => Math.abs(d - s) > .2) && !(i && d - a[i - 1] < .3));   // heave downbeats
+  // v11 (user: «slide back ON the beat, crawl up longer»): 3 hard knock-backs exactly on downbeats, the top reached on 11.92
+  const SLIPS = [5.28, 7.92, 10.6], SLAM = 13.24, TOP = 11.92, SLIP_L = .13, SLIP_D = .22;
+  const HV = RDB.filter((d, i, a) => d > 1.2 && d < TOP - .2 && SLIPS.every(s => Math.abs(d - s) > .2) && !(i && d - a[i - 1] < .3));   // heave downbeats
+  const HB = RBT.filter(b => b > 1.2 && b < TOP - .25 && SLIPS.every(d => b < d - .05 || b > d + .4)).map(b => [b, HV.some(h => Math.abs(h - b) < .05) ? 2.5 : 1]);   // a shove every beat, the downbeat ones big
+  const HW = HB.reduce((a, [, w]) => a + w, 0), CREEP = .3;
   const INH = [...RDB.filter(d => d >= SLAM - .05 && d < IB - .3), ...RBT.filter(b => b > 21.3 && b < IB - .1)];      // slams; last bar every beat
   const FAR = Array.from({ length: 16 }, (_, i) => ({ x: 520 + i * 105 + hash(i + 40) * 40, w: 60 + hash(i + 41) * 70, h: 80 + hash(i + 42) * 130, ch: hash(i + 43) > .5 ? 110 + hash(i + 44) * 140 : 0, at: 11.15 + hash(i + 45) * .9 }));
   const LIT = RBT.filter(b => b > 11.1 && b < SLAM + .05);                                                            // window switch-on beats
-  const SL = { A: [180, 1700], B: [1150, 730], r: 110, px: 1440, top: TOP, lift: [10.6, 11.1] };
+  const SL = { A: [180, 1700], B: [1150, 730], r: 110, px: 1440, top: TOP, lift: [12.35, 12.75] };
   const SLD = [.7071, -.7071], SLN = [-.7071, -.7071], SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]);
-  const climb = t => Math.max(0, .25 * Math.min(1, t / TOP) + HV.reduce((a, h) => a + .75 / HV.length * easeOut(seg(t, h - .1, h + .45)), 0)
-    - SLIPS.reduce((a, d) => { const g = t - d; return a + (g < 0 ? 0 : g < .25 ? .13 * easeOut(g / .25) : .13 * Math.max(0, 1 - ease(Math.min(1, (g - .45) / 1.2)) * (g > .45))); }, 0));
+  // progress: a slow creep + a shove on every beat (they pay back the knock-backs), minus a snappy SLIP_L backslide in SLIP_D from each slip downbeat
+  const climb = t => Math.max(0, CREEP * Math.min(1, t / TOP) + HB.reduce((a, [b, w]) => a + (1 - CREEP + SLIP_L * SLIPS.length) * w / HW * easeOut(seg(t, b - .03, b + .28)), 0)
+    - SLIPS.reduce((a, d) => a + SLIP_L * easeOut(seg(t, d, d + SLIP_D)), 0));
   const slopeAt = t => { const u = .15 + .85 * Math.min(1, climb(t));   // starts a bit up the slope: the camera can't see left of x 0
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
     const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
@@ -69,45 +73,134 @@
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
     token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // Clawd right behind it, leaning in; after the lift he steps back under the press and stares up
-    const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .6);
+    const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .42);
     const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
-    const slip = SLIPS.some(d => t > d && t < d + .7), heave = kick(t, HV, .25);
-    clawd(fx, fy, cu, { walk: pushing && !slip ? t * (1.6 + 2.4 * heave) : null, rot: lerp(pushing ? .2 + .12 * heave : 0, .3, ov), sq: -.06 * heave + (t > SLAM ? .08 * hit : 0),
+    const slip = SLIPS.some(d => t >= d && t < d + .5), heave = kick(t, HV, .25), bump = kick(t, SLIPS, .12);
+    clawd(fx, fy, cu, { walk: pushing && !slip ? t * (1.6 + 2.4 * heave) : null, rot: lerp(pushing ? .2 + .12 * heave : 0, .3, ov), sq: -.06 * heave + .22 * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
+    for (const d of SLIPS) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, 10, 200); }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
     flash(Math.min(.3, kick(t, [SLAM], .2) * .3), TK.yellowLt);
   }
   dropCh('en_intro');
   chapter('en_v8_intro', N2O(IA), N2O(IB), [[N2O(IA), native(intro)]], { real: true });
-  const IK = [0, 1.5, 3, 4.5, 6, 7.5, 9, SL.top].map((k, i) => { const [x, y] = slopeAt(k); return [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
+  const IK = [0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5, SL.top].map((k, i) => { const [x, y] = slopeAt(k); return [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], [N2O(IB) - .001, 1380, 350, 1050, 1]]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
-  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...SLIPS.map(d => [N2O(d), 12]), ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
+  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...SLIPS.map(d => [N2O(d), 16]), ...HV.map(h => [N2O(h), 4]), ...INH.slice(1).map(h => [N2O(h), 9]));
 
   // ======== 2+3. real 30.42–38.34: one take at the desk, Sunday night ========
-  // «Every last token has to die»: a stack of six tokens by the desk; on each word one hops over Clawd into the laptop screen (flare, the wall
-  // limit bar ticks up), the last one on «die». «Don't need an app»: an app tile pops out of the screen, swatted off on «app»; «don't need a
-  // bot»: a bot peeks up behind the laptop, flicked away on «bot». «Still got tokens»: a fat sack of tokens bursts up from under the desk on
-  // the 35.8 slam; «so why the hell not?»: Clawd shrugs, the sack tips and a stream of tokens arcs into the laptop, the bar hits 100% on «not?».
+  // v11 (user: «let the CALENDAR burn, just fix the effect»). «Every last token has to»: on each word a token hops off the stack into the
+  // laptop, the wall clock ticks to midnight; «die»: 12:00, the SUNDAY wall calendar catches fire — flat layered cartoon flames on the
+  // page's burning edge (pulsing on the beats), embers up, charred flakes crumbling down into an ash heap on the desk. «Don't need an
+  // app»: an app tile pops out of the screen, Clawd swats it into the fire on «app»; «don't need a bot»: a bot pops up from behind the
+  // desk, flicked into the fire on «bot» (each feeds a flare). «Still got tokens»: a fat sack bursts up on «tokens»; «so»: a coin hopper
+  // springs out of the laptop lid; «why the hell»: a big shrug, brows up; the 37.1 downbeat he heaves the sack over the laptop, on «not?»
+  // it's upended — a cascade of tokens pours into the hopper, the laptop rattles and lights up like a slot machine, the reels stop on the
+  // beats (three tokens), the camera pushes into the screen → the arcade cabinet at 38.34.
   const DA = rw('every', 30.42), DB = 38.34;
   const W8 = { every: DA, last: rw('last', 30.68), token: rw('token', 31.04), has: rw('has', 31.68), to: rw('to', 32.02), die: rw('die.', 32.20),
     app: rw('app,', 33.60), bot: rw('bot.', 34.84), still: rw('still', 35.30), tokens: 35.805, so: rw('so', 36.50), why: rw('why', 36.66), not: rw('not?', 37.34) };
-  const THROWS = [W8.every, W8.last, W8.token, W8.has, W8.to, W8.die].map(w => w - .12), FLY = .36;
+  const THROWS = [W8.every, W8.last, W8.token, W8.has, W8.to].map(w => w - .12), FLY = .36;
   const STACK = [665, 840], SCR = [1200, 700], CX = 905, DY = 840, LX = 1200;
-  const STREAM = []; for (let s = W8.so + .05; s < DB; s += .075) STREAM.push(s);
+  const CAL = { x: 600, y: 368, w: 236, h: 262 }, CHH = CAL.h * .2, CPY = CAL.y + CHH, CPH = CAL.h - CHH;
+  const IG = W8.die, BURN = [IG, IG + 2.9];                                  // the page is eaten bottom-up by 35.1
+  const APP_IN = W8.app + .4, BOT_IN = W8.bot + .36, FEED = [APP_IN, BOT_IN];
+  const SWING = [RDB.find(d => d > W8.not - .4), W8.not];                    // the 37.1 downbeat → «not?»
+  const HOP = [LX, 540], MOUTH8 = [LX, 528];                                 // the hopper's mouth on the laptop lid; the upended sack's mouth
+  const POUR = []; for (let q = W8.not; q < DB - .05; q += .035) POUR.push(q);
+  const REEL = RBT.filter(b => b > W8.not + .05 && b < DB - .1).slice(0, 3);  // the reels stop one per beat
   const arcPt = (p, q, h, u) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u) - Math.sin(u * Math.PI) * h];
   const landed = s => THROWS.filter(w => s >= w + FLY).length;
-  function laptop8(x, y, s, flare) {                                      // open laptop facing us on the desk; the screen flares orange as tokens go in
-    push(); translate(x, y); scale(s);
+  const burnB = s => ease(seg(s, BURN[0], BURN[1]));
+  const edgeY = s => CPY + CPH * (1 - burnB(s));
+  const fireK = s => s < IG ? 0 : Math.min(1, backOut(seg(s, IG, IG + .22))) * (1 - ease(seg(s, BURN[1], BURN[1] + .5))) + 1.1 * kick(s, FEED, .25) * (s < BURN[1] + .3);
+  const wav = (x, s, i) => Math.sin(x * .061 + s * 3.1 + i) * 6 + Math.sin(x * .17 - s * 4.3) * 3;
+  // one flat flame tongue: a teardrop with a swaying tip
+  const tongue = (cx, y, w, h, sway) => [[cx - w / 2, y + 10], [cx - w * .5, y - h * .22], [cx - w * .28 + sway * .35, y - h * .6], [cx + sway, y - h],
+    [cx + w * .3 + sway * .35, y - h * .55], [cx + w * .5, y - h * .18], [cx + w / 2, y + 10]];
+  function flames(x0, x1, y, hgt, s, pulse) {                              // a row of tongues, three flat layers drawn back to front
+    const n = 6, tw = (x1 - x0) / (n - 1);
+    const T8 = Array.from({ length: n }, (_, i) => {
+      const ph = hash(i + 61) * TAU, f = .62 + .22 * Math.sin(s * (8 + 3 * hash(i + 3)) + ph) + .16 * Math.sin(s * 13.7 + ph * 2);
+      return { cx: x0 + i * tw + Math.sin(s * 2.3 + ph) * 6, h: hgt * f * (.6 + .4 * Math.sin((i + .5) / n * Math.PI)) * (1 + .4 * pulse), sw: Math.sin(s * 5.1 + ph) * tw * .35 };
+    });
+    for (const [k, col, ink] of [[1, '#E0442A', INK], [.68, '#FF8A1E', null], [.38, '#FFE07A', null]])
+      for (const f of T8) paint(tongue(f.cx, y, tw * 1.35 * (.55 + .45 * k), f.h * k, f.sw * k), { wash: col, ink, sw: .8, curv: .4 });
+  }
+  function calendar8(s) {
+    const { x, y, w, h } = CAL, yb = edgeY(s), b = burnB(s), k = fireK(s), pulse = kick(s, RBT, .12);
+    paint(rectPts(x + 10, y + 12, w, Math.max(CHH, yb - y)), { wash: INK, washOp: 70, ink: null });                              // shadow (burns away with the page)
+    if (yb > CPY + 3) {                                                                                                           // what's left of the page
+      const edge = []; for (let i = 0; i <= 12; i++) { const ex = x + i * w / 12; edge.push([ex, yb + (s > IG ? wav(ex, s, 0) : 0)]); }
+      paint([[x, CPY], [x + w, CPY], ...edge.slice().reverse()], { wash: mixCol(PAL.cream, '#E9B07A', .5 * k), ink: INK, sw: 1.1 });
+      if (yb > CPY + CPH * .72) letter('27', x + w / 2, CPY + CPH * .4, CPH * .5, TK.ember, { font: ruFont(CPH * .5), ink: false });
+      if (yb > CPY + CPH * .95) letter('SUNDAY', x + w / 2, CPY + CPH * .82, 34, TK.ember, { font: ruFont(34), ink: false });
+      flushLetters();                                                                                                             // flames go over the lettering
+      if (s > IG) {                                                                                                               // the charred, glowing edge
+        const up = edge.map(([ex, ey]) => [ex, ey - 16 - 6 * Math.sin(ex * .3)]);
+        paint([...up, ...edge.slice().reverse()], { wash: '#3A2A22', ink: null });
+        inkLine(edge, 4, '#FF9A2A', 'ink', 0);
+      }
+    }
+    paint(rectPts(x - 6, y, w + 12, CHH, 1), { wash: mixCol(TK.ember, '#3A2A22', .6 * b), ink: INK, sw: 1.2 });                // the header stays, scorched
+    letter('SEPTEMBER', x + w / 2, y + CHH * .58, 26, PAL.cream, { font: ruFont(26), ink: false });
+    for (let i = 0; i < 4; i++) paint(ellPts(x + w * (.2 + i * .2), y + 3, 7, 11, 8), { wash: A2.steelLt, ink: INK, sw: .5 });
+    flushLetters();
+    if (k > .02) {
+      const fy = Math.max(yb, CPY + 4);
+      paint(ellPts(x + w / 2, fy - 60, 260, 200, 20), { wash: '#FFB060', washOp: 38 * Math.min(1, k), ink: null });                // flat warm light on the wall
+      flames(x - 4, x + w + 4, fy, 175 * Math.min(1.4, k), s, pulse);
+      for (let i = 0; i < 16; i++) {                                                                                              // embers rising
+        const q = frac(s * (.7 + .4 * hash(i + 7)) + hash(i)), ex = x + hash(i + 11) * w + Math.sin(s * 3 + i * 1.7) * 26 * q, ey = fy - 60 - q * 420, r = 6 * (1 - q) + 2;
+        paint([[ex, ey - r], [ex + r, ey], [ex, ey + r], [ex - r, ey]], { wash: q < .5 ? TK.yellowLt : TK.orange, washOp: 255 * (1 - q) * Math.min(1, k), ink: null });
+      }
+    }
+    if (s > IG) for (let i = 0; i < 14; i++) {                                                                                    // charred flakes crumble off and fall to the desk
+      const born = IG + .1 + i * (BURN[1] - IG) / 14, q = seg(s, born, born + 1.1); if (q <= 0 || q >= 1) continue;
+      const fx = x + 20 + hash(i + 31) * (w - 40) + Math.sin(q * 6 + i) * 22, fyy = lerp(edgeY(born) + 6, DY - 8, q * q), r = 10 + 6 * hash(i + 5);
+      push(); translate(fx, fyy); rotate(q * 5 * (hash(i) - .5) * 2);
+      paint([[-r, -r * .4], [r * .7, -r * .6], [r, r * .3], [-r * .5, r * .6]], { wash: i % 3 ? '#2A2422' : '#4A403C', ink: null }); pop();
+    }
+  }
+  function laptop8(x, y, s0, sc, o = {}) {                                 // open laptop facing us; screen pulses as tokens go in; o.slot → a slot machine
+    const rat = o.slot ? Math.sin(sc * 70) * 4 * o.slot : 0;
+    push(); translate(x + rat, y); scale(s0); rotate(rat * .004);
     paint([[-120, 0], [120, 0], [104, -16], [-104, -16]], { wash: A2.steelLt, ink: INK, sw: .9 });
     paint(rectPts(-104, -176, 208, 160, 3), { wash: '#3A4450', ink: INK, sw: 1 });
-    paint(rectPts(-92, -164, 184, 136), { wash: mixCol('#1A2436', TK.orange, Math.min(1, flare)), ink: null });
-    for (let k = 0; k < 4; k++) paint(rectPts(-76, -150 + k * 18, 70 + 50 * hash(k), 7), { wash: '#4A6A9A', washOp: 200 * (1 - Math.min(1, flare)), ink: null });
-    paint(ellPts(0, -96, 34, 34, 14), { wash: TK.ember, washOp: 255 * Math.min(1, flare), ink: null });
-    if (flare > .05) { glowAt(0, -96, 130, TK.orange, 45 * Math.min(1, flare)); paint(flamePts(0, -72, 50, 70 * Math.min(1, flare), T, 3, 3), { wash: TK.yellow, ink: null, curv: .35 }); }
+    const g = Math.min(1, o.glow || 0);
+    if (!o.slot) {
+      paint(rectPts(-92, -164, 184, 136), { wash: mixCol('#1A2436', '#9AD8FF', .6 * g), ink: null });
+      for (let k = 0; k < 4; k++) paint(rectPts(-76, -150 + k * 18, 70 + 50 * hash(k), 7), { wash: '#4A6A9A', washOp: 200 * (1 - g), ink: null });
+    } else {                                                                     // three reels: spinning strips → stop one per beat on a token
+      paint(rectPts(-92, -164, 184, 136), { wash: '#2A0E3A', ink: null });
+      for (let r = 0; r < 3; r++) {
+        const rx = -62 + r * 62, stop = REEL[r] ?? 1e9, spin = sc < stop, off = spin ? frac(sc * 9 + r * .37) : 0;
+        paint(rectPts(rx - 26, -150, 52, 108, 3), { wash: PAL.cream, ink: INK, sw: .6 });
+        for (let j = -1; j <= 1; j++) {
+          const sy = -96 + (j + off) * 46; if (sy < -140 || sy > -52) continue;
+          const sym = spin ? (j + Math.floor(sc * 9 + r)) & 3 : 0;
+          if (sym === 0 || sym === 2) token(rx, sy, 17, { spin: .02 });
+          else if (sym === 1) { paint(ellPts(rx - 8, sy + 5, 9, 9, 10), { wash: TK.ember, ink: INK, sw: .4 }); paint(ellPts(rx + 8, sy + 5, 9, 9, 10), { wash: TK.ember, ink: INK, sw: .4 }); inkLine([[rx - 6, sy - 3], [rx + 2, sy - 16], [rx + 8, sy - 3]], 2, '#2E7A3A', 'inkfine', 0); }
+          else paint(rectPts(rx - 18, sy - 7, 36, 14, 2), { wash: '#3A2A6A', ink: INK, sw: .4 });
+        }
+        if (!spin) paint(rectPts(rx - 26, -150, 52, 108, 3), { wash: TK.yellowLt, washOp: 90 * kick(sc, [stop], .2), ink: null });
+      }
+      for (let k = 0; k < 14; k++) {                                             // marquee bulbs around the screen, chasing
+        const u = k / 14, [bx, by] = u < .5 ? [-100 + u * 2 * 200, -172] : [100 - (u - .5) * 2 * 200, -8];
+        paint(ellPts(bx, by, 6, 6, 8), { wash: (k + Math.floor(sc * 12)) % 2 ? TK.yellowLt : '#7A5A2A', ink: INK, sw: .4 });
+      }
+    }
+    if (o.hop > .01) {                                                           // the coin hopper sprung out of the lid
+      push(); translate(0, -176); scale(1, o.hop);
+      paint([[-22, 0], [22, 0], [62, -64], [-62, -64]], { wash: A2.steelLt, fill: A2.steel, fillOp: 60, ink: INK, sw: 1 });
+      paint(ellPts(0, -64, 62, 12, 16), { wash: '#1A1718', ink: INK, sw: .8 });
+      paint(rectPts(-30, -34, 60, 8, 3), { wash: o.slot ? TK.yellow : '#1A1718', ink: null });
+      pop();
+    }
     pop();
   }
   function sack(x, y, s, tilt, burst) {                                    // a fat burlap sack of tokens, mouth up (tilt rotates it toward +x)
@@ -131,65 +224,70 @@
     for (let i = 0; i < 6; i++) { const bx = 600 + i * 54, bh = 60 + hash(i + 3) * 90; paint(rectPts(bx, 336 - bh, 46, bh), { wash: '#2E3446', ink: null });
       for (let k = 0; k < 3; k++) if (hash(i * 5 + k) > .45) paint(rectPts(bx + 8 + (k % 2) * 18, 336 - bh + 14 + k * 20, 10, 9), { wash: TK.yellowLt, ink: null }); }
     inkLine([[755, 60], [755, 346]], 3, INK, 'ink', 0); inkLine([[588, 200], [922, 200]], 3, INK, 'ink', 0);
-    // the wall clock: 11:56 → 11:59 on the words
-    const CK = [1205, 190], min = 56 + Math.min(3, landed(s) * .5);
+    // the wall clock: 11:56 → midnight on «die»
+    const CK = [1205, 190], min = s >= W8.die ? 60 : 56 + .7 * landed(s);
     paint(ellPts(CK[0], CK[1], 88, 88, 24), { wash: PAL.cream, fill: '#E9DCC4', fillOp: 70, ink: INK, sw: 1.6 });
     for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; inkLine([[CK[0] + Math.cos(a) * 70, CK[1] + Math.sin(a) * 70], [CK[0] + Math.cos(a) * 80, CK[1] + Math.sin(a) * 80]], 2, INK, 'inkfine', 0); }
     const hand = (a, l, w, c) => inkLine([[CK[0], CK[1]], [CK[0] + Math.sin(a) * l, CK[1] - Math.cos(a) * l]], w, c, 'ink', 0);
     hand((11 + min / 60) / 12 * TAU, 44, 5, INK); hand(min / 60 * TAU, 66, 3.4, INK); hand(s * TAU / 2, 70, 1.2, TK.ember);
-    // the limit bar on the wall: 50% → +3.5% a token → 100% on «not?»
-    const v = Math.min(1, .5 + .035 * landed(s) + .29 * eased(s, W8.so + .3, W8.not));
-    const full = s >= W8.not;
-    limitBar(600, 440, 640, v, { label: 'WEEKLY LIMIT', glow: full ? .15 : 0 });
-    // the bot peeks up behind the laptop, flicked off on «bot»
-    const bk = seg(s, W8.bot, W8.bot + .7);
+    calendar8(s);
+    // the bot pops up from behind the desk left of Clawd, flicked up into the fire on «bot»
+    const bk = seg(s, W8.bot, BOT_IN);
     if (s > W8.bot - .8 && bk < 1) {
-      const up = easeOut(seg(s, W8.bot - .8, W8.bot - .45)), x = 1150 + easeIn(bk) * 520, y = lerp(880, 640, up) - Math.sin(bk * Math.PI * .8) * 360;
-      agentBot(x, y, 11, s, { n: 7, rot: NOTXT + bk * 9, flip: true, eyes: bk > 0 ? 'x' : 'happy', mouth: bk > 0 ? 'O' : 'smile', aL: 1.4, aR: 1.4, noShadow: true });
+      const up = easeOut(seg(s, W8.bot - .8, W8.bot - .5)), [x, y] = bk > 0 ? arcPt([650, 760], [CAL.x + CAL.w / 2, edgeY(s) + 10], 120, easeOut(bk)) : [650, lerp(1000, 760, up)];
+      agentBot(x, y, 11 * (1 - .75 * bk * bk), s, { n: 7, rot: NOTXT + bk * 7, eyes: bk > 0 ? 'x' : 'happy', mouth: bk > 0 ? 'O' : 'smile', aL: 1.4, aR: 1.4, noShadow: true });
     }
     // Clawd behind the desk
-    const sw1 = seg(s, W8.app - .15, W8.app + .25), fl = seg(s, W8.bot - .12, W8.bot + .22), thr = kick(s, THROWS, .18);
-    const shrug = eased(s, W8.why - .1, W8.why + .15) * (1 - eased(s, W8.not - .05, W8.not + .1)), win = s >= W8.not;
+    const swA = seg(s, W8.app - .15, W8.app + .25), fl = seg(s, W8.bot - .12, W8.bot + .22), thr = kick(s, THROWS, .18);
+    const shrug = eased(s, W8.why - .1, W8.why + .12) * (1 - eased(s, SWING[0] - .05, SWING[0] + .05)), heaveS = seg(s, SWING[0] - .05, SWING[1] + .1), win = s >= W8.not;
     const pre = s < W8.die + .1, gaze = s >= W8.still && s < W8.so ? -1 : 1;
     clawd(CX, 882, 30, {
-      rot: -.22 * Math.sin(sw1 * Math.PI) + .18 * Math.sin(fl * Math.PI) + .04 * Math.sin(s * 7) * (win ? 1 : 0), noShadow: true,
-      eyes: win ? 'spark' : s > W8.tokens && s < W8.so ? 'spark' : pre || s < W8.bot + .3 ? 'narrow' : 'look', lookX: gaze,
-      mouth: win ? 'grin' : shrug > .3 ? 'O' : s > W8.die && s < W8.die + .6 ? 'grin' : 'flat', flip: gaze < 0,
-      aL: win ? 1.9 : .3 + 1.2 * thr + 1.6 * Math.sin(sw1 * Math.PI) + 1.5 * shrug, aR: win ? 1.9 : .3 + 1.4 * Math.sin(fl * Math.PI) + 1.5 * shrug,
+      rot: .2 * Math.sin(swA * Math.PI) - .18 * Math.sin(fl * Math.PI) + .06 * shrug * Math.sin(s * 9) + .04 * Math.sin(s * 7) * (win ? 1 : 0), noShadow: true,
+      sq: -.1 * shrug, dy: -1.4 * shrug, eyes: win ? 'spark' : s > W8.tokens && s < W8.so ? 'spark' : shrug > .3 ? 'look' : pre || s < W8.bot + .3 ? 'narrow' : 'look', lookX: gaze, lookY: shrug > .3 ? -.4 : 0,
+      mouth: win ? 'grin' : shrug > .3 ? 'wobble' : s > W8.die && s < W8.die + .6 ? 'O' : 'flat', flip: gaze < 0,
+      aL: win || heaveS > 0 ? 1.9 : .3 + 1.2 * thr + 1.6 * Math.sin(fl * Math.PI) + 1.5 * shrug, aR: win || heaveS > 0 ? 1.9 : .3 + 1.6 * Math.sin(swA * Math.PI) + 1.5 * shrug,
+      draw: shrug > .05 ? (u, sw) => { const r = .7 * u * shrug; for (const ex of [-3, 2]) inkLine([[ex * u - .4 * u, -7.4 * u - r], [ex * u + .5 * u, -7.9 * u - r], [ex * u + 1.4 * u, -7.4 * u - r]], sw * 1.1, PAL.ink, 'ink', .5); } : null,
     });
-    // the desk (Clawd's legs behind it), the laptop on it
+    // the desk (Clawd's legs behind it), the ash heap, the laptop on it
     paint(rectPts(-200, DY, W + 400, 900), { wash: '#6E5A4A', fill: A2.gunmetal, fillOp: 90, tex: .6, ink: INK, sw: 1 });
     inkLine([[-200, DY + 22], [W + 200, DY + 22]], .6, A2.gunDk, 'inkfine', 0);
-    const arrive = [...THROWS.map(w => w + FLY), ...STREAM.map(w => w + FLY)], glow = Math.min(1.2, kick(s, arrive, .2) + (full ? .6 : 0));
-    laptop8(LX, DY + 4, 1.25, glow);
-    // the stack (shrinks as tokens hop off) — then the sack bursts up on «tokens»
-    const left = 6 - THROWS.filter(w => s >= w).length;
+    const ash = seg(s, IG + .6, BURN[1] + .8);
+    if (ash > 0) paint([[700 - 90 * ash, DY + 2], [700 - 30 * ash, DY - 26 * ash], [700 + 25 * ash, DY - 30 * ash], [700 + 90 * ash, DY + 2]], { wash: '#4A4442', ink: INK, sw: .6, curv: .4 });
+    const slot = s >= W8.not ? 1 : 0, hop = backOut(seg(s, W8.so - .05, W8.so + .25));
+    laptop8(LX, DY + 4, 1.25, s, { glow: kick(s, THROWS.map(w => w + FLY), .2), hop, slot });
+    // the stack (shrinks as tokens hop off) — then the sack bursts up on «tokens», swings over the laptop on the downbeat, upended on «not?»
+    const left = THROWS.length - THROWS.filter(w => s >= w).length;
     for (let i = 0; i < left; i++) { push(); translate(STACK[0], STACK[1] - 10 - i * 15); scale(1, .36); token(0, 0, 34, { spin: .02 }); pop(); }
     const sk = backOut(seg(s, W8.tokens - .2, W8.tokens + .15));
-    if (sk > 0) { push(); translate(STACK[0], DY); scale(.85); translate(-STACK[0], -DY); sack(STACK[0], lerp(DY + 260, DY + 6, sk), s, .55 * eased(s, W8.so - .1, W8.so + .25), seg(s, W8.tokens, W8.tokens + .7)); pop(); }
-    // flying tokens: the six hops, then the stream out of the sack's mouth
+    if (sk > 0) {
+      const sw8 = ease(seg(s, SWING[0], SWING[1])), [sx, sy] = arcPt([STACK[0], DY], [MOUTH8[0], MOUTH8[1] - 190 * .85], 260, sw8);
+      push(); translate(sx, lerp(lerp(DY + 260, DY + 6, sk), sy, sw8)); scale(.85);
+      sack(0, 0, s, lerp(.55 * eased(s, W8.so - .1, W8.so + .25), Math.PI + .1 * Math.sin(s * 30) * slot, sw8), sw8 > 0 ? 0 : seg(s, W8.tokens, W8.tokens + .7)); pop();
+    }
+    // flying tokens: the hops into the laptop, then the cascade out of the upended sack into the hopper
     for (const w of THROWS) { const u = seg(s, w, w + FLY); if (u > 0 && u < 1) { const [x, y] = arcPt([STACK[0], STACK[1] - 100], SCR, 330, easeOut(u)); token(x, y, 36 * (1 - .5 * u), { spin: s * 3 + w }); } }
-    const MOUTH = [STACK[0] + 120, DY - 190];
-    for (const w of STREAM) { const u = seg(s, w, w + FLY); if (u > 0 && u < 1) { const [x, y] = arcPt(MOUTH, SCR, 260 + hash(w * 9) * 120, u); token(x, y, 28 * (1 - .4 * u), { spin: s * 4 + w * 7 }); } }
-    // screen flares on arrival (a ring of sparks out of the screen), the big one on «die» and on «not?»
-    for (const a of [...THROWS.map(w => w + FLY), W8.not]) sparks(SCR[0] - 10, SCR[1], s - a, a * 7, a === W8.not || a === THROWS[5] + FLY ? 16 : 8, a === W8.not ? 320 : 180);
-    // the app tile: pops out of the screen, swatted off on «app»
-    const off1 = seg(s, W8.app, W8.app + .55);
+    for (const w of POUR) { const u = seg(s, w, w + .2); if (u > 0 && u < 1) token(MOUTH8[0] + (hash(w * 31) - .5) * 70 * (1 - u), lerp(MOUTH8[1], HOP[1] + 6, u * u), 20, { spin: s * 4 + w * 7 }); }
+    if (slot) for (let i = 0; i < 6; i++) { const q = frac(s * 2.2 + i / 6), dx = (i - 2.5) * 40; inkLine([[HOP[0] + dx * .8, HOP[1] - 30 - q * 60], [HOP[0] + dx * 1.1, HOP[1] - 46 - q * 80]], 3 * (1 - q), TK.yellowLt, 'ink', 0); }   // jackpot rays
+    // the app tile: pops out of the screen, swatted into the fire on «app»
+    const off1 = seg(s, W8.app, APP_IN);
     if (s > W8.app - .75 && off1 < 1) {
-      const pk = backOut(seg(s, W8.app - .75, W8.app - .45)), x = lerp(SCR[0], 1130, pk) - easeIn(off1) * 760, y = lerp(SCR[1], 520, pk) - easeIn(off1) * 420 + Math.sin(s * 3) * 8;
-      push(); translate(x, y); rotate(-off1 * 5 - .08); scale(Math.max(.01, .8 * Math.min(1, pk)));
+      const pk = backOut(seg(s, W8.app - .75, W8.app - .45)), p0 = [lerp(SCR[0], 1130, pk), lerp(SCR[1], 520, pk) + Math.sin(s * 3) * 8];
+      const [x, y] = off1 > 0 ? arcPt([1130, 520], [CAL.x + CAL.w / 2, edgeY(s) - 10], 160, off1) : p0;
+      push(); translate(x, y); rotate(off1 * 6 - .08); scale(Math.max(.01, .8 * Math.min(1, pk) * (1 - .7 * off1 * off1)));
       paint(rrPts(-95, -95, 190, 190, 44), { wash: TK.green, fill: TK.greenDk, fillOp: 60, ink: INK, sw: 1.4 });
       paint(rrPts(-38, -62, 76, 124, 14), { wash: PAL.cream, ink: INK, sw: .9 });
       paint(ellPts(0, 44, 9, 9, 10), { wash: TK.green, ink: null });
       paint(ellPts(78, -78, 30, 30, 16), { wash: '#E0302A', ink: INK, sw: .8 });
       pop();
-      if (off1 > 0) for (let k = 0; k < 3; k++) inkLine([[1010 - k * 40, 600 + k * 50], [910 - k * 60, 560 + k * 60]], 3 * (1 - off1), PAL.cream, 'ink', 0);
+      if (off1 > 0 && off1 < .5) for (let k = 0; k < 3; k++) inkLine([[1150 + k * 30, 470 + k * 40], [1230 + k * 40, 450 + k * 50]], 3 * (1 - 2 * off1), PAL.cream, 'ink', 0);
     }
-    if (full) flash(.3 * Math.exp(-(s - W8.not) * 8), TK.yellowLt);
+    for (const f of FEED) if (s > f && s < f + .5) sparks(CAL.x + CAL.w / 2, edgeY(f) - 40, s - f, f * 7, 12, 220);   // the fire gulps it: an ember burst
+    flash(.25 * Math.exp(-(s - IG) * 9) * (s > IG), '#FFB060');
+    if (slot) flash(.25 * Math.exp(-(s - W8.not) * 8), TK.yellowLt);
   }
   dropCh('en_v1_swat');
   chapter('en_v8_desk', N2O(DA), N2O(DB), [[N2O(DA), native(desk8)]], { real: true });
-  if (window.RU34) RU34.push([N2O(DA), N2O(DB), [[N2O(DA), 960, 500, 900], [N2O(W8.still), 960, 505, 880, 1], [N2O(DB) - .001, 960, 515, 850, 1]]]);
+  if (window.RU34) RU34.push([N2O(DA), N2O(DB), [[N2O(DA), 960, 500, 900], [N2O(W8.still), 960, 505, 880, 1], [N2O(REEL[1] ?? W8.not + .4), 1010, 530, 840, 1], [N2O(DB) - .001, 1200, 720, 400, 1]]]);
   dropPunch(N2O(DA), N2O(DB));
-  EN_PUNCH.push(...THROWS.slice(0, 5).map(w => [N2O(w + FLY), 3]), [N2O(THROWS[5] + FLY), 8], [N2O(W8.app), 7], [N2O(W8.bot), 8], [N2O(W8.tokens), 10], [N2O(W8.not), 10]);
+  EN_PUNCH.push(...THROWS.map(w => [N2O(w + FLY), 3]), [N2O(IG), 12], [N2O(W8.app), 7], [N2O(APP_IN), 5], [N2O(W8.bot), 8], [N2O(BOT_IN), 5], [N2O(W8.tokens), 10], [N2O(SWING[0]), 8], [N2O(W8.not), 12], ...REEL.map(r => [N2O(r), 6]));
 })();
