@@ -8,6 +8,7 @@
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
 //   node render.mjs --loop=recursion [--out=out/loop_recursion]                 one cycle of a standalone loop (PNGs)
+//   --var=church:b[,scene:x]   scene variants → ?var_church=b (read as window.BTT_VAR by the scenes)
 //   (--loop also works with --sheet, where the times are loop time)
 //   --var=sis:b[,scene:v…]  scene variants for approval (→ ?var_sis=b → window.BTT_VAR.sis)
 import puppeteer from 'puppeteer-core';
