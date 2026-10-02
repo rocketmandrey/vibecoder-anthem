@@ -52,7 +52,7 @@
     const rbCue = TABR.some(x => Math.abs(x - rb) < .05);
     for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1], !calm && (k + 2 === P.length ? rbCue : cue.has(+P[k + 1].toFixed(4))));
   }
-  const L = v1 => O2N(v1);
+  const L = v1 => O2N(v1), OUTCU = 247.2;                                  // OUTCU: the a10 cut to the close-up
   span(22.40, 29.00);                 // verse 1 (a02 friday)
   span(38.34, 43.60);                 // arcade → website
   span(L(45.46), L(55.64));           // chorus 1 shredder take (incl. the odometer tail before «MORE AGENTS»)
@@ -62,7 +62,7 @@
   span(L(85.02), 93.12);              // the report
   span(93.13, L(102.88));             // chorus 2 factory, up to the drone one-shot
   span(L(102.88), L(105.84));         // the drone one-shot
-  span(L(105.84), 113.70);            // chorus 2 billboard + the a05 clicks, up to the cathedral
+  span(L(105.84), 111.04);            // chorus 2 billboard, up to the fly-in (v8_c en_v8c_flyin: the factory lights die on the beats)
   span(172.62, 175.12);               // rap: AGI by spring
   span(178.16, L(160.10));            // «Writes your thesis»
   span(183.52, 185.84);               // «All I want from that god-tier brain»
@@ -72,10 +72,27 @@
   // the deadpan outro (a10): each spoken line from its own start (the reset → close-up → «Fuck» run is a cut sequence, left on its cues)
   const OUT = [218.64, 223.90, 227.34, 233.48, 237.00, 239.56, 241.96, 244.10];
   for (let k = 0; k + 1 < OUT.length; k++) span(OUT[k], OUT[k + 1], true);   // calm: a still room lives on at 1x, no anticipation holds
-  span(L(230.82), 249.34, true);      // reset notification (starts on its own cut) → close-up
-  span(249.34, 250.37, true);         // «Fuck.»
-  span(250.37, 259.40);               // the riot finale (b10, v3) at its own 1x
-  span(259.40, EN_REAL_DUR - .01, true);   // end card
+  span(L(230.82), OUTCU, true);       // reset notification (starts on its own cut), up to the close-up
+  // v10 outro, cut by hand on the beats: the shut-eyed close-up through «Fuck.» → the 1st beat after it the eyes snap open, red (once) →
+  // the 2nd beat the madness: the room blast, the server hall, the b10 riot (the data center +2 beats) → the credit card, its gag written 1.8x
+  (() => {
+    const BT = EN_BEATS.map(O2N), F = 249.34, B1 = BT.find(b => b > F + .2), B2 = BT.find(b => b > B1 + .1);
+    const sun = CH.find(c => c.name === 'sunday'), fin = CH.find(c => c.name === 'finale');
+    const end = (c, i) => c.shots[i + 1] ? c.shots[i + 1][0] : c.end;
+    const ru = (i, vt, Tc = 236) => dt => { const [t0, fn] = sun.shots[i], v = vt(dt); window.REAL_CH = false; T = Tc; fn(v, v - t0, end(sun, i) - t0); };
+    const fv = i => dt => { const [t0, fn] = fin.shots[i], t = V32EN(EN2V3(t0) + dt); T = t; fn(t, t - t0, end(fin, i) - t0); };
+    const G = 238.94;                                                           // sCredit: the gag (strike + new name + nod) is over
+    const LIST = [[OUTCU, ru(7, dt => 224.2 + .25 * dt)], [B1, ru(7, dt => 225.0 + dt)], [B2, ru(8, dt => 227.2 + dt)]];
+    let b = BT.indexOf(B2) + 5;                                                 // [beats on screen, shot]: the blast 5, the hall 5, riot 5/5, data center 6, 4, 4
+    for (const [n, fn] of [[5, ru(9, dt => 229.15 + dt)], [5, fv(0)], [5, fv(1)], [6, fv(2)], [4, fv(3)], [4, fv(4)],
+      [0, ru(10, dt => Math.min(237.95 + 1.8 * dt, G) + Math.max(0, dt - (G - 237.95) / 1.8), 244)]]) { LIST.push([BT[b], fn]); b += n; }
+    const A = N2O(OUTCU), name = 'en_hold_v10out';
+    chapter(name, A, N2O(EN_REAL_DUR) + 1, [[A, t => {
+      const r = O2N(t); let k = 0; while (k + 1 < LIST.length && r >= LIST[k + 1][0]) k++;
+      const T0 = T; try { LIST[k][1](r - LIST[k][0]); } finally { T = T0; }
+    }]], { real: true });
+    CH.find(c => c.name === name).hold = true;
+  })();
   // drawWorld takes the FIRST real chapter covering T (CH is sorted by start): the holds go in front of the scenes they sit inside
   const H = CH.filter(c => c.hold); for (const c of H) CH.splice(CH.indexOf(c), 1); CH.unshift(...H);
 })();

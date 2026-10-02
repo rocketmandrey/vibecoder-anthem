@@ -180,7 +180,7 @@
     [[v(T5.bonus), 9], [v(T5.why), 5]]);
 
   // ======== 6. «No one's working, including you.» (real 180.82–183.65, v1 160.10–162.86) ========
-  // A city sidewalk. Clawd dozes on an upturned crate, laptop on his knees. «working»: he nods off too far and topples off the crate onto a flat
+  // A city sidewalk. Clawd dozes in a striped deckchair, laptop on his knees. «working»: the deckchair folds under him and he tumbles out onto a flat
   // cardboard box by the wall. «including»: a cardboard sign WORK FOR TOKENS slaps down against the wall beside him, a tin cup at his feet;
   // he sleeps on under a newspaper. «you.»: a passing agent drops a token into the cup without stopping.
   const ce = CH.find(c => c.name === 'en_e26_thesis'); if (ce) ce.end = 160.10;
@@ -204,16 +204,24 @@
     // the lamp post
     paint(rectPts(560, 300, 22, 960), { wash: '#2E3238', ink: INK, sw: .8 });
     paint(rectPts(530, 280, 82, 34, 1), { wash: '#2E3238', ink: INK, sw: .8 });
-    // cardboard box flattened against the wall (his bed), and the crate he dozes on
+    // cardboard box flattened against the wall (his bed), and the deckchair he dozes in: wooden folding frame + striped canvas sling;
+    // on «working» it folds flat with a clack (each joint eases to its folded spot on the pavement)
     paint(rectPts(830, 1080, 260, 24, 1), { wash: '#C09A62', fill: '#A07A42', fillOp: 60, ink: INK, sw: .9 });
-    paint(rectPts(640, 1010, 120, 100), { wash: '#8A6A3A', fill: '#6A4A22', fillOp: 60, tex: .5, ink: INK, sw: 1 });
-    for (let i = 1; i < 4; i++) inkLine([[640, 1010 + i * 25], [760, 1010 + i * 25]], 1, '#4A3218', 'inkfine', 0);
-    // Clawd: dozing on the crate, nodding on the beat; on «working» he nods off the edge, somersaults and lands slumped on the cardboard
+    const fold = easeIn(seg(s, T6.work - .04, T6.work + .22)), J = (u, v) => [lerp(760 + (u[0] - 700) * 1.2, v[0] + 60, fold), lerp(1104 + (u[1] - 1104) * 1.3, v[1], fold)];
+    const bar = (p, q, w, col) => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1, nx = -(q[1] - p[1]) / d * w / 2, ny = (q[0] - p[0]) / d * w / 2;
+      paint([[p[0] + nx, p[1] + ny], [q[0] + nx, q[1] + ny], [q[0] - nx, q[1] - ny], [p[0] - nx, p[1] - ny]], { wash: col, ink: INK, sw: .6 }); };
+    const bF = J([600, 1104], [560, 1100]), bT = J([672, 872], [800, 1094]), fF = J([800, 1104], [820, 1102]), fT = J([636, 1004], [590, 1096]);
+    const sF = J([782, 1012], [780, 1088]);                                                 // front end of the sling (seat rail)
+    bar(fF, fT, 16, '#8A5C2A'); bar(J([650, 1004], [600, 1094]), sF, 13, '#9A6A34');          // front rail, seat rail
+    const sag = 60 * (1 - fold), sl = u => [lerp(bT[0], sF[0], u) - 10 * Math.sin(u * Math.PI) * (1 - fold), lerp(bT[1], sF[1], u) + sag * Math.sin(u * Math.PI)];
+    for (let i = 0; i < 6; i++) bar(sl(i / 6), sl((i + 1) / 6), 24, i % 2 ? '#F2EEE4' : '#D8463A');   // red/white striped canvas
+    bar(bF, bT, 16, '#9A6A34');                                                               // back rail in front of the sling
+    // Clawd: reclined in the deckchair, nodding on the beat; on «working» it folds under him, he somersaults out and lands slumped on the cardboard
     const f = seg(s, T6.work, T6.land), down = f >= 1, SX = 950, SY = 1090;
     if (!down) {
-      const nod = s < T6.work ? .12 * hop(s) : 0, tip = ease(f);
-      const x = lerp(700, SX, tip), y = lerp(1010, SY, tip) - Math.sin(f * Math.PI) * 110;
-      clawd(x, y - 8 * 18 * Math.sin(tip * Math.PI) * .5, 18, { rot: .15 + nod + tip * (TAU - .15), eyes: f > 0 ? 'scared' : 'closed', mouth: f > 0 ? 'O' : 'flat', aL: f > 0 ? 1.6 : -.3, aR: f > 0 ? 1.6 : -.3, noShadow: f > 0 });
+      const nod = s < T6.work ? .1 * hop(s) : 0, tip = ease(f);
+      const x = lerp(790, SX, tip), y = lerp(968, SY, tip) - Math.sin(f * Math.PI) * 130;
+      clawd(x, y - 8 * 18 * Math.sin(tip * Math.PI) * .5, 18, { rot: -.38 + nod + tip * (TAU + .38), eyes: f > 0 ? 'scared' : 'closed', mouth: f > 0 ? 'O' : 'flat', aL: f > 0 ? 1.6 : -.3, aR: f > 0 ? 1.6 : -.3, noShadow: f > 0 });
       if (f === 0) {                                                       // the laptop on his knees, screen glowing; zzz
         paint([[x - 10, y - 40], [x + 100, y - 40], [x + 110, y - 28], [x, y - 28]], { wash: '#C8CCD4', ink: INK, sw: .6 });
         paint([[x + 100, y - 40], [x + 130, y - 115], [x + 142, y - 112], [x + 112, y - 40]], { wash: '#9AD0FF', ink: INK, sw: .6 });

@@ -358,10 +358,9 @@
     if (t >= TH.tick) { const k = backOut(seg(t, TH.tick, TH.tick + .2)); push(); translate(bx + bw - 150, by + 150); scale(k); paint([[-56, -6], [-40, -20], [-14, 12], [50, -66], [66, -52], [-14, 44]], { wash: '#FF6A5A', ink: INK, sw: .8 }); pop(); chalk = [bx + bw - 90, by + 90]; }
     if (t >= TH.cap) { const k = backOut(seg(t, TH.cap, TH.cap + .25)); push(); translate(bx + bw - 110, by + bh - 110); scale(k); rotate(.2); paint(starPts(0, 0, 70, .45, 5), { wash: TK.yellow, fill: TK.gold, fillOp: 60, ink: INK, sw: 1 }); pop(); }
     if (t < TH.cap + .4) { push(); translate(chalk[0], chalk[1]); rotate(-.7 + .15 * Math.sin(t * 30)); paint(rectPts(-6, -34, 12, 34), { wash: '#F4F4EE', ink: INK, sw: .6 }); pop(); }
-    // the teacher's desk (left), the teacher asleep on it, glasses pushed up
+    // the teacher's desk (left), the teacher asleep on it (the floating 'glasses' bars read as a black blob: dropped)
     tdesk(500, 900, 180);
     clawd(500, 905, 12, { eyes: 'closed', mouth: 'flat', rot: .25, aL: -.4, aR: -.4, noShadow: true, dy: .3 * Math.sin(t * 1.3) });
-    paint(rectPts(445, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 }); paint(rectPts(510, 770, 50, 14, 1), { wash: '#2A2A30', ink: INK, sw: .5 });
     emote('zzz', 570, 750, 22, 1);
     // the students: two rows, asleep face-down
     for (const [x, y, n] of [[780, 930, 1], [1010, 930, 2], [1240, 930, 3], [680, 1040, 4], [910, 1040, 5], [1140, 1040, 6]]) {
@@ -490,15 +489,19 @@
     for (const b of PBEATS) { if (t < b) break; const s = (PDOWN.has(b) ? 2 : 1) * unit, a = t - b; k += s * (a > .25 ? 1 : 1 + .6 * Math.sin(a / .25 * Math.PI) * (1 - a / .25) + (easeOut(clamp(a / .12)) - 1)); }
     return k;
   };
-  function mound(t) { const k = pileK(t), H = 300 + 520 * k, sg = 170 + 40 * k; return x => 1060 - H * Math.exp(-Math.pow((x - 960) / sg, 2)); }
+  // v10 (user): an ENDLESS climb — the pile is a cone at its angle of repose (slope PS, rounded top PR) that keeps rising 300 → 980 and widening;
+  // Clawd keeps pace a fixed slope-distance below the summit, so he climbs and climbs and the top stays out of reach
+  const PS = .85, PR = 140, pileH = t => 300 + 680 * pileK(t);
+  const mound = t => { const H = pileH(t); return x => 1060 - Math.max(0, H - PS * (Math.hypot(x - 960, PR) - PR)); };
+  const below = gap => 960 - Math.sqrt((gap / PS + PR) ** 2 - PR ** 2);   // x on the left slope `gap` px under the summit
   function bench(t) {
     back('#1C1F24');
     A03.hall(t, { lamps: [560, 1360], floor: 1060 });
     paint(rectPts(-400, 1060, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     // the pile
-    const h = mound(t), pts = [[420, 1100]]; for (let x = 420; x <= 1500; x += 30) pts.push([x, h(x)]); pts.push([1500, 1100]);
+    const h = mound(t), HW = pileH(t) / PS + PR, pts = [[-400, 1100]]; for (let x = -400; x <= 2320; x += 30) pts.push([x, h(x)]); pts.push([2320, 1100]);
     paint(pts, { wash: TK.gold, fill: TK.goldDk, fillOp: 70, tex: .6, ink: INK, sw: 1.2 });
-    for (let i = 0; i < 70; i++) { const x = 500 + hash(i) * 920, y = lerp(h(x), 1080, hash(i + 9) * .9) + 6; if (y < 1075) token(x, y, 14 + hash(i + 3) * 10, { spin: hash(i) }); }
+    for (let i = 0; i < 90; i++) { const x = 960 + (hash(i) - .5) * 1.8 * HW, y = lerp(h(x), 1080, hash(i + 9) * .9) + 6; if (y < 1075) token(x, y, 14 + hash(i + 3) * 10, { spin: hash(i) }); }
     const lb = PBEATS.filter(b => t >= b).pop(), la = lb == null ? 9 : t - lb;          // coins bouncing on the last beat
     if (la < .5) for (let i = 0; i < 8; i++) { const x = 960 + (hash(i + lb * 7) - .5) * 360, v = 300 + hash(i + 2) * 300; token(x, h(x) - v * la + 1400 * la * la, 15, { spin: t * 5 + i }); }
     // draft 4: no counter, no medic, no singers — the pile, two agents shovelling coins onto it on every beat,
@@ -506,9 +509,9 @@
     const lbi = PBEATS.filter(b => t >= b).length, la2 = lb == null ? 9 : t - lb;
     // v8 (PLAN_v8 #7): two «capitalists» at the right foot — fat-cat Clawds in tailcoats, top hats, monocles, cigars — shovel money onto the
     // pile in rhythm: blade down scooping between beats, swung up and flung ON the beat; coins, tokens and banknotes arc onto the slope
-    [[1085, 0], [1250, 1]].forEach(([x, n]) => {
-      const u = 15, la3 = n ? la2 - .04 : la2, a = -.55 + 1.9 * (la3 < 0 ? 0 : la3 < .12 ? easeOut(la3 / .12) : 1 - ease(clamp((la3 - .12) / .34))), cg = frac(t * .7 + n * .5);
-      clawd(x, 1066, u, { flip: true, col: '#F2C9AE', dk: '#C9937A', lt: '#FFE4D2', eyes: 'narrow', mouth: 'grin', aL: .3, aR: a, rot: -.08 * (1 - (a + .55) / 1.9) + .04 * (a + .55) / 1.9, noShadow: true,
+    [[1190, 0], [1320, 1]].forEach(([x, n]) => {                             // v10: they stand on the right slope and ride it up as it grows
+      const fy = h(x) + 6, u = 15, la3 = n ? la2 - .04 : la2, a = -.55 + 1.9 * (la3 < 0 ? 0 : la3 < .12 ? easeOut(la3 / .12) : 1 - ease(clamp((la3 - .12) / .34))), cg = frac(t * .7 + n * .5);
+      clawd(x, fy, u, { flip: true, col: '#F2C9AE', dk: '#C9937A', lt: '#FFE4D2', eyes: 'narrow', mouth: 'grin', aL: .3, aR: a, rot: -.08 * (1 - (a + .55) / 1.9) + .04 * (a + .55) / 1.9, noShadow: true,
         armR: (uu, sw) => {                                                     // the shovel along the arm
           inkLine([[-2.4 * uu, 0], [6.4 * uu, 0]], sw * 2.2, '#7A5A3A', 'ink', 0);
           paint([[6 * uu, -1.6 * uu], [9 * uu, -1.3 * uu], [9.4 * uu, 0], [9 * uu, 1.3 * uu], [6 * uu, 1.6 * uu]], { wash: '#8A93A0', fill: '#5A626E', fillOp: 70, tex: .4, ink: INK, sw: sw * .8 });
@@ -527,10 +530,10 @@
           tophat(uu, sw);
         } });
       for (let q = 0; q < 3; q++) { const v = frac(cg + q / 3);                  // cigar smoke (flip: the cigar points left)
-        paint(ellPts(x - 4 * u - v * 30, 1066 - 4.6 * u - v * 90, 6 + v * 14, 5 + v * 10, 10), { wash: '#C8CCD6', washOp: 150 * (1 - v), ink: null }); }
+        paint(ellPts(x - 4 * u - v * 30, fy - 4.6 * u - v * 90, 6 + v * 14, 5 + v * 10, 10), { wash: '#C8CCD6', washOp: 150 * (1 - v), ink: null }); }
       if (lb != null && la3 >= 0 && la3 < .6) for (let q = 0; q < 6; q++) {    // the load: from the blade at the top of the swing onto the slope
         const k = clamp((la3 - .08 - q * .03) / .45); if (k <= 0 || k >= 1) continue;
-        const sx = x - 15 * u * .55, sy = 1066 - 4.5 * u - 12 * u * .8, ex = 1020 - n * 50 - q * 18, ey = h(ex) - 8;
+        const sx = x - 15 * u * .55, sy = fy - 4.5 * u - 12 * u * .8, ex = 1020 - n * 50 - q * 18, ey = h(ex) - 8;
         const px = lerp(sx, ex, k), py = lerp(sy, ey, k) - Math.sin(k * Math.PI) * 140;
         if (q % 3 === 2) paint(rotPts(rectPts(px - 16, py - 8, 32, 16), px, py, t * 6 + q), { wash: '#7FB069', ink: INK, sw: .7 });   // a banknote
         else if (q % 2) token(px, py, 15, { spin: t * 7 + q }); else paint(ellPts(px, py, 13, 6, 10, 0, t * 5 + q), { wash: TK.gold, ink: INK, sw: .7 });
@@ -539,9 +542,10 @@
     // Clawd + his token (draft-6 note: true Sisyphus): one shove per beat up the left slope, ALMOST at the top on the last downbeat of the break
     // (RB) — and there the token gets away from him, hops over his head and rolls all the way down; he spins round to watch it go and slumps.
     const RB = [...PDOWN].filter(b => b < BN.end - .6).pop(), NBr = PBEATS.filter(b => b <= RB).length, lbr = Math.min(lbi, NBr);
-    const pp = .9 * Math.min(1, (lbr - 1 + (lb == null || t >= RB ? (t >= RB ? 1 : 0) : 1.25 * easeOut(clamp(la2 / .3)) - .25 * ease(clamp((la2 - .3) / .3)))) / Math.max(1, NBr - 1)), cxp = lerp(680, 850, Math.max(0, pp));
-    const sl = Math.atan2(h(cxp + 10) - h(cxp - 10), 20), r0 = 64, x0 = cxp + 105 * Math.cos(sl), ra = t - RB, roll = ra > 0 ? easeIn(clamp(ra / 1.1)) : 0;
-    const tkx = lerp(x0, 300, roll), hop = Math.max(0, 1 - Math.abs(tkx - cxp) / 140) * 190, tky = Math.min(h(tkx), 1060) - r0 - hop;
+    const tR = Math.min(t, RB), lag = lb == null ? 0 : 1 - easeOut(clamp((t >= RB ? 9 : la2) / .3));   // the pile jumps on the beat, his shove catches up
+    const cxp = below(lerp(170, 240, pileK(tR)) + 45 * lag);   // kept inside the frame's left edge as the cone widens
+    const sl = Math.atan2(h(cxp + 10) - h(cxp - 10), 20), r0 = 64, x0 = cxp + 105 * Math.cos(sl), ra = t - RB, roll = ra > 0 ? easeIn(clamp(ra / .9)) : 0;
+    const tkx = lerp(x0, 420, roll), hop = Math.max(0, 1 - Math.abs(tkx - cxp) / 140) * 190, tky = Math.min(h(tkx), 1060) - r0 - hop;
     push(); translate(tkx, tky); rotate(ra > 0 ? t * 1.5 - (x0 - tkx) / r0 : t * 1.5); token(0, 0, r0, { spin: .02 }); pop();
     if (ra > 0 && ra < 1.4) for (let q = 0; q < 6; q++) { const u = frac(q / 6 + t * 2); paint(ellPts(tkx + 40 + u * 90, Math.min(h(tkx + 60), 1060) - 10 - u * 30, 10 + u * 16, 6 + u * 9, 8), { wash: '#B8A58C', washOp: 160 * (1 - u), ink: null }); }
     const turned = ra > .45, slump = eased(t, RB + .9, RB + 1.3);
@@ -557,7 +561,8 @@
         paint([[hx + dx, hy + dy - 9], [hx + dx + 6, hy + dy + 3], [hx + dx, hy + dy + 7], [hx + dx - 6, hy + dy + 3]], { wash: '#BFE3F7', washOp: 255 * (1 - v), ink: INK, sw: .5 }); }
     }
   }
-  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 960, 770, 900], [BN.end - .01, 960, 630, 1000, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
+  const pcam = t => [930, Math.min(770, 1060 - pileH(t + .3) - 220 + .4 * 1.485 * 1000), 1000];   // tilts up with the summit once it nears the title
+  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, ...pcam(BN.a)], ...[...PDOWN].filter(b => b > BN.a + .3).map(b => [b, ...pcam(b), 1]), [BN.end - .01, ...pcam(BN.end), 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
   const SH = { games: 217.08, sites: 218.18, agents: 219.60, grey: 222.32 };

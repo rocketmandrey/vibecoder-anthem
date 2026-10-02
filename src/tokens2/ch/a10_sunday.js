@@ -262,7 +262,7 @@
       if (fill > .01) tokenRain(t, { n: 14, r: 20, seed: 4, area: R ? [520, 1400] : [300, 1620] });
       if (full) stamp('+1 000 000', 960, 740, 64, t, 223.18, { col: '#2FBF71', rot: -.08 });
       const jx = mx > .1 ? (hash(Math.floor(t * 24)) - .5) * 40 * mx : 0;
-      uiCard(cx0 + jx, cy0, cw, ch, { title: 'Ваш недельный лимит восстановлен', body: 'Приятной недели! · 1 000 000 токенов', icon: 'token', time: '00:00', k: seg(t, 220.72, 221.0), accent: A2.matrix });
+      uiCard(cx0 + jx, cy0, cw, ch, { title: 'Ваш недельный лимит восстановлен', body: 'Приятной недели! · 1 000 000 токенов', icon: 'token', time: '00:00', timeLow: R, k: seg(t, 220.72, 221.0), accent: A2.matrix });
       if (mx > .01) {
         matrixRain(t, { area: R ? [480, -116, 960, 1316] : [262, 96, 1396, 786], bg: mx > .5, k: .35 + .55 * mx, size: 30, seed: 7, speed: 1.4 });
         if (mx > .5) letter('ВАШ НЕДЕЛЬНЫЙ ЛИМИТ ВОССТАНОВЛЕН', 960 + jx * 2, R ? 480 : 235, R ? 36 : 44, A2.matrix, { font: ruFont(R ? 36 : 44), ink: false, alpha: .9 });
@@ -279,6 +279,7 @@
   // his head, the back of the laptop in front of him; the eyes sit at ~45% height so the red snap reads
   const lidBack = (glow) => {
     glowAt(960, 980, 420, glow, 90);
+    if (window.NO_LID) return;                                               // EN v10: no laptop in the «Fuck» close-ups
     paint(rrPts(690, 960, 540, 340, 22, 1), { wash: '#3A4252', fill: '#232A36', fillOp: 90, tex: .5, ink: glow, sw: 1 });
     token(960, 1110, 42, { ink: false });
   };

@@ -103,10 +103,14 @@
     }
   }
   // copper organ pipes behind the pulpit, tallest at the sides, they grow on «More» / «copper»
+  // …and keep GROWING after «copper»: on every downbeat to the lights-out all pipes stretch and a new pair sprouts outside (to 11 a side)
+  const OGROW = DB.filter(d => d > C.copper + .3 && d < 151.7);
   function organ(s, glow) {
-    for (const sd of [-1, 1]) for (let i = 5; i >= 0; i--) {
-      const t0 = i < 3 ? C.more1 : C.copper, g = backOut(seg(s, t0 + i % 3 * .06, t0 + i % 3 * .06 + .32)); if (g <= 0) continue;
-      const x = 960 + sd * (46 + i * 33) - 13, top = 640 - g * (170 + i * 46);
+    const up = OGROW.reduce((a, d) => a + backOut(seg(s, d, d + .3)), 0);
+    for (const sd of [-1, 1]) for (let i = 10; i >= 0; i--) {
+      const t0 = i < 3 ? C.more1 : i < 6 ? C.copper : OGROW[(i - 6) * 2], g = t0 == null ? 0 : backOut(seg(s, t0 + i % 3 * .06, t0 + i % 3 * .06 + .32)); if (g <= 0) continue;
+      const own = i < 6 ? up : OGROW.slice((i - 6) * 2 + 1).reduce((a, d) => a + backOut(seg(s, d, d + .3)), 0);
+      const x = 960 + sd * (46 + i * 33) - 13, top = Math.max(i < 4 ? 330 : 120, 640 - g * (170 + Math.min(i, 5) * 46) - 14 * own);
       if (glow > .05) glowAt(x + 13, top + 20, 40, '#FF9A3A', 60 * glow);
       paint(rectPts(x, top, 26, 640 - top), { wash: mixCol('#8A4A22', '#D8873A', .5 + .5 * glow), fill: '#6A3418', fillOp: 60, tex: .4, ink: INK, sw: .6 });
       paint(rectPts(x + 5, top + 6, 5, 640 - top - 10), { wash: '#FFC890', washOp: 120 + 100 * glow, ink: null });
@@ -115,11 +119,12 @@
     }
   }
   // the pews of racks with a candle on each (ex scenes5.js powerup, the user loves it)
-  const ROWS = [[1990, 270], [1800, 225], [1630, 185], [1480, 150], [1370, 120]];
+  const ROWS = [[1990, 470], [1800, 390], [1630, 320], [1480, 260], [1370, 205]];   // tall racks (user: the servers were too small)
   function pew(s, y, h, r, lit, k) {
-    const w = h * .62, hw = 170 + (y - 1240) * .3, gap = w * .18;
+    const w = h * .5, hw = 150 + (y - 1240) * .25, gap = w * .12;
     for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
       const x = 960 + sd * (hw + i * (w + gap)) - (sd < 0 ? w : 0), seed = r * 7 + i + (sd > 0 ? 3 : 0);
+      if (x < 960 - 590 || x + w > 960 + 590) continue;                          // whole racks only, none cut by the frame edge
       paint(ellPts(x + w / 2, y + 4, w * .62, h * .06, 14), { wash: '#05060E', washOp: 140, ink: null });
       if (lit) glowAt(x + w / 2, y - h * .5, w * (1.1 + .5 * k), TK.green, 35 + 70 * k);
       serverRack(x, y - h, w, h, lit ? s : 0, { units: 5, seed });
@@ -286,6 +291,25 @@
     if (winK > .3 && !dj) for (const [cx, sd] of WIN) A06.beam(cx, cx + sd * -220, 50, 150, 1150, .22 * winK * (1 - outK) * (sd > 0 && cu > .1 ? 1.4 : 1), sd > 0 && cu > .1 ? '#FFC890' : '#C8D8FF');
     if (dj && djAge < .066) paint(rectPts(-800, -800, W + 1600, H + 3200), { wash: '#00FF6A', washOp: 110 * (1 - djAge / .066), ink: null });   // ≤ 2 frames
   }
+  // ---- real 111.04–113.70: the fly-in. The night factory, its lights switching OFF block by block on the beats (the downbeat 112.36 kills
+  // the chimney fires), the camera pushing in toward the dark until the cut into the dark cathedral on the 113.68 downbeat ----
+  const FA = 111.04, OFF = BT.filter(b => b > FA + .1 && b < RA - .1);         // 111.38 … 113.36: one block per beat
+  const offK = (i, s) => OFF[i] == null || s < OFF[i] ? 1 : s < OFF[i] + .08 && frac(s * 40) < .5 ? .6 : 0;   // flicker, then dark
+  function flyIn(t) {
+    const s = O2N(t), p = ease(seg(s, FA, RA)), tv = 114.0 + (s - FA) * .3;     // a05 time for the flames/smoke, kept before its own blackout
+    const L = { sky: offK(6, s), fire: offK(3, s), facade: offK(5, s), banner: offK(4, s), city: Math.max(offK(0, s), offK(1, s), offK(2, s)),
+      cityAt: i => offK(i < 10 ? 2 : i < 18 ? 1 : 0, s) };          // far-right block, near-right, left
+    back('#05060E');
+    a05_cam(tv, 960, lerp(430, 400, p), lerp(.62, 1.5, p), 0);
+    a05_world(tv, L);
+    camEnd();
+    flushLetters();
+    const n = OFF.filter(b => s >= b).length;                                   // each block that dies takes a step of the night with it
+    if (n) paint(rectPts(-60, -60, W + 120, H + 120), { wash: '#000000', washOp: 255 * .11 * n, ink: null });
+  }
+  const cb = CH.find(c => c.name === 'en_c2_billboard'); if (cb && cb.end > N2O(FA)) cb.end = N2O(FA);   // the billboard cuts on the 111.04 downbeat
+  chapter('en_v8c_flyin', N2O(FA), A, [[N2O(FA), native(flyIn)]], { real: true });
+  if (window.RU34) RU34.push([N2O(FA), A, [[N2O(FA), 960, 540, 790], [A - .001, 960, 540, 790, 1]]]);
   const shake0 = window.CAM_SHAKE;                                              // a still camera for the whole set (CALM ends at v1 135.22)
   if (shake0) window.CAM_SHAKE = t => t >= A && t < B ? [0, 0] : shake0(t);
   chapter('en_v8c_cathedral', A, B, [[A, native(cathedral)]], { real: true });

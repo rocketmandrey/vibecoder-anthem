@@ -400,7 +400,7 @@ function uiCard(x, y, w, h, o = {}) {
   if (o.title) letter(o.title, tx, y + pad + ts * .5, ts, '#1E1E24', { font: ruFont(ts), align: 'left', ink: false });
   const body = o.body == null ? [] : Array.isArray(o.body) ? o.body : [o.body];
   body.forEach((line, i) => letter(line, tx, y + pad + ts * 1.4 + bs * (.6 + i * 1.3), bs, '#55555F', { font: `${bs}px "Helvetica Neue", Arial, sans-serif`, align: 'left', ink: false }));
-  if (o.time) letter(o.time, x + w - pad, y + pad + ts * .4, bs, '#8A8A95', { font: `${bs}px "Helvetica Neue", Arial, sans-serif`, align: 'right', ink: false });
+  if (o.time) letter(o.time, x + w - pad, o.timeLow ? y + h - pad - bs * .5 : y + pad + ts * .4, bs, '#8A8A95', { font: `${bs}px "Helvetica Neue", Arial, sans-serif`, align: 'right', ink: false });
 }
 function slide(x, y, w, h, o = {}) {
   const sw = clamp(w / 800, .5, 1.4), k = o.k ?? 1, bg = o.bg || '#FBF8F2';

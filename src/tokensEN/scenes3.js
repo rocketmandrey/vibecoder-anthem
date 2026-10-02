@@ -449,13 +449,9 @@ else {
   RU_CAM.push([165.12, 194.32], [210.0, 241.5], [243.0, 1e9]);
   CH.find(c => c.name === 'en_rap_brain').end = 165.12;              // the RU phone close-up takes «Is a calorie tracker»
   for (let i = EN_PUNCH.length - 1; i >= 0; i--) if (RU_CAM.some(([a, b]) => EN_PUNCH[i][0] >= a && EN_PUNCH[i][0] < b)) EN_PUNCH.splice(i, 1);
-  // the second «Fuck.» (241.92): back to the a10 close-up, the calm shut-eyed face, and on the word the eyes snap open, red (a10 sSnap, v2 225.0,
-  // which the b10 break skips in the RU cut); it also covers b10's white-out. The RU credits resume at 243.0.
+  // v10: no second «Fuck.» close-up (the red-eye snap plays once, v8_e's hand-cut outro); the riot runs on to the card
   CH.find(c => c.name === 'finale').end = 241.5;
-  const sun = CH.find(c => c.name === 'sunday');
-  const ruAt = v => { let i = 0; while (i + 1 < sun.shots.length && v >= sun.shots[i + 1][0]) i++; const t0 = sun.shots[i][0], e = sun.shots[i + 1] ? sun.shots[i + 1][0] : sun.end; sun.shots[i][1](v, v - t0, e - t0); };
-  chapter('en_fuck2', 241.5, 243.0, [[241.5, t => { const r = window.REAL_CH; window.REAL_CH = false; try { ruAt(t < 241.92 ? 224.95 : 225.0 + (t - 241.92)); } finally { window.REAL_CH = r; } }]], { real: true });
-  EN_KEYS.push([241.5, 960, 540, 1500], [241.92, 960, 540, 1800]);
+  window.NO_LID = true;
 }
 
 // BURN THE TOKENS keeps the moon out of every reused RU sky (a05 factory, a10 office window)

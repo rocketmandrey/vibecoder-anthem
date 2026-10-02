@@ -84,10 +84,10 @@ function a05_city(t, L) {
     const left = i < 10, x = left ? -620 + i * 80 : 1360 + (i - 10) * 72, w = 60 + hash(i * 2.3) * 50;
     const h = 70 + hash(i * 5.7) * (left ? 150 : 190), y = a05_HY - h; if (!a05_vis(x, x + w)) continue;
     paint(rectPts(x, y, w, h + 4), { wash: i % 2 ? A5.city : A5.cityDk, ink: null });
-    if (L.city < .02) continue;
+    const lc = L.cityAt ? L.cityAt(i) : L.city; if (lc < .02) continue;           // L.cityAt: per-block switch-off (EN fly-in)
     for (let r = 0; r < Math.floor(h / 34); r++) for (let c = 0; c < 2; c++) {
       const hh = hash(i * 13 + r * 3 + c * 7); if (hh < .45) continue;
-      const on = L.city * (hh > .85 ? .6 + .4 * pk : 1);
+      const on = lc * (hh > .85 ? .6 + .4 * pk : 1);
       paint(rectPts(x + 12 + c * (w - 36) * .9, y + 14 + r * 34, 12, 14), { wash: A5.win, washOp: 220 * on, ink: null });
     }
   }
