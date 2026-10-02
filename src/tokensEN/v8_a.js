@@ -14,25 +14,31 @@
   // Clawd heaves one giant token up a 45° slope, a shove per beat (three hard knock-backs on the 5.28 / 7.92 / 10.6 downbeats roll it back down), rolls it
   // along the plateau onto the bed of a huge press, steps back and waits under it while far away on the horizon a factory
   // skyline rises out of the haze, its windows switching on beat by beat; the SLAM + the title land on a drum hit, then the press hammers to 22.40 (v12c below).
-  // v12c «Golgotha» (user: «ONLY the drum hits knock him back, three hits push back once, he's at the top at 15 s, no speaker»):
-  // the knock-backs sit on the real DRUM hits, measured off the track (sharp 5–10 kHz snare/crash transients, < 90 Hz kicks; the analysed
-  // beat grid follows the guitar here). A cluster of hits (each < .5 s after the previous one: the 6.08–6.58 snare roll, 8.73/8.90/9.23,
-  // 12.64–13.72) is ONE knock-back on its first hit; they grow one by one. Between them he only pushes. After the 14.30 one a heroic last
-  // push puts him on top at 15.0, the token is rolled onto the bed and lifted, the SLAM + title land on the 15.87 snare, then the press
-  // hammers on the strong drum hits, the last bar on every beat.
+  // v12d «Golgotha» (user: «only the DRUMS knock him back — not the choir, not the guitars; the press must not start hammering at once;
+  // 3 variants»). The hits come from a demucs (htdemucs) drum stem of the track, kick + snare onsets only: the drums play just in
+  // 1.2–1.8 (a fill), 6.09–6.83, 8.73–9.23, the 13.40–19.86 snare-roll build and the 22.18 hit; in between it's choir + guitars only.
+  // A cluster of hits (< .5 s apart) is ONE knock-back on its first hit → 4 knock-backs, growing; between them he only pushes.
+  // The snare roll from 13.40 drives a heroic last push: on top at 15.0, the token rolled onto the bed and lifted, the SLAM + title on
+  // the 16.21 roll accent; the press then rests (ram up, steam hissing) and only starts hammering at 19.11, on the roll's accents
+  // 19.11 / 19.69 / 19.86, holds through the drum-less gap and hits once more on the 22.18 drum entry.
+  // Variants (render.mjs --var=intro:a|b|c → window.BTT_VAR.intro, default a):
+  //   a — side tracking shot, each knock-back a skid back down the slope, growing
+  //   b — WIDE: the whole mountain + press + skyline in frame, each knock-back a backward tumble (a full flip) and he catches the token
+  //   c — a low heroic close-up on a steeper slope, each knock-back the token bouncing back and squashing him flat
+  const V = ((window.BTT_VAR || {}).intro || 'a').toLowerCase();
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
-  const SLAM = 15.874, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
-  const KN = [1.392, 2.632, 4.275, 5.106, 6.084, 7.605, 8.73, 10.601, 11.893, 12.644, 14.298];
-  const KL = KN.map((d, i) => .03 + .12 * Math.pow(i / (KN.length - 1), 1.5)), LASTK = KN[KN.length - 1];
+  const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
+  const KN = [1.217, 6.086, 8.73, 13.395];
+  const KL = { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
   const HB = RBT.filter((b, i, a) => b > 1.2 && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
     .map(b => [b, (b > VOX[0] && b < VOX[1] ? 1.8 : 1) * (b > LASTK ? 4 : 1)]);                          // a shove every beat, bigger while the gang sings
   const HV = HB.filter(([, w]) => w > 1.5).map(([b]) => b);
   const HW = HB.reduce((a, [, w]) => a + w, 0), KSUM = KL.reduce((a, l) => a + l, 0);
-  const INH = [SLAM, 16.408, 17.069, 17.755, 19.104, 19.603, 20.182, 20.68, 21.025, ...RBT.filter(b => b > 21.3 && b < IB - .1)];   // slams on the strong drum hits; last bar every beat
+  const INH = [SLAM, 19.107, 19.69, 19.86, 22.175];                                                                   // the slam; the rest; then the drum-stem accents
   const FAR = Array.from({ length: 16 }, (_, i) => ({ x: 520 + i * 105 + hash(i + 40) * 40, w: 60 + hash(i + 41) * 70, h: 80 + hash(i + 42) * 130, ch: hash(i + 43) > .5 ? 110 + hash(i + 44) * 140 : 0, at: 13.8 + hash(i + 45) * .9 }));
   const LIT = RBT.filter(b => b > 13.7 && b < SLAM + .05);                                                            // window switch-on beats
-  const SL = { A: [180, 1700], B: [1150, 730] };
+  const SL = V === 'c' ? { A: [420, 1900], B: [1150, 700] } : { A: [180, 1700], B: [1150, 730] };
   Object.assign(SL, { r: 110, px: 1440, top: TOP, lift: [15.30, 15.55] });
   const SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]), SLD = [(SL.B[0] - SL.A[0]) / SLL, (SL.B[1] - SL.A[1]) / SLL], SLN = [SLD[1], -SLD[0]];
   const SK = (SL.A[1] - SL.B[1]) / (SL.B[0] - SL.A[0]), hillY = x => x < SL.B[0] ? SL.A[1] - (x - SL.A[0]) * SK : SL.B[1];
@@ -43,7 +49,7 @@
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
     const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
   const lastLE = (arr, t) => { let r = null; for (const x of arr) { if (x > t) break; r = x; } return r; };
-  const kAmp = d => KL[KN.indexOf(d)] / .08;                                                                           // .4 → 1.9 (the last one)
+  const kAmp = d => KL[KN.indexOf(d)] / .08;                                                                           // ~.6 → 2.5 (the last one)
   function intro(tv) {
     const t = O2N(tv), hit = kick(t, INH, .25);
     back('#16181D');
@@ -78,14 +84,16 @@
     const PW = 520, PH = 1000, wob = t > SL.lift[0] && t < SLAM - .05 ? Math.sin(t * 40) * 3 * seg(t, SL.lift[0], SLAM) : 0;
     const PX = SL.px - PW / 2 + wob, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
     press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : INH, { seed: 3, token: false });
+    if (t > SLAM + 1.2 && t < INH[1] - .1) for (const sd of [-1, 1]) steam(SL.px + sd * 230, PY + PH * .3, t, { dir: sd < 0 ? Math.PI + .4 : -.4, k: .45 + .2 * Math.sin(t * 3), len: 260, seed: 90 + sd, n: 3, per: 1.1 });   // the rest: it hisses
     // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
     const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= SLAM ? .2 : 1;
     const ov = 1 - eased(t, SL.top - .15, SL.top + .25);
-    const bx = gx0 + SLN[0] * SL.r * ov, by = lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);
+    const tk = V === 'c' && lastLE(KN, t) != null ? kick(t, KN, .14) * kAmp(lastLE(KN, t)) : 0;   // c: the token bounces back onto him
+    const bx = gx0 + SLN[0] * SL.r * ov - SLD[0] * 70 * tk, by = -SLD[1] * 70 * tk + lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
     token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // the heroic last push — an ember aura + speed streaks behind him from the last knock to the bed
-    const hero = seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
+    const hero = (V !== 'b') * seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .18);
     const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
@@ -93,7 +101,7 @@
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: lerp(pushing ? .2 + .12 * heave - .25 * bump : 0, .3, ov), sq: -.06 * heave + .22 * bump + (t > SLAM ? .08 * hit : 0),
+    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: lerp(pushing ? (V === 'c' ? .32 : .2) + .12 * heave - .25 * bump : 0, .3, ov) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
@@ -105,8 +113,9 @@
   chapter('en_v8_intro', N2O(IA), N2O(IB), [[N2O(IA), native(intro)]], { real: true });
   // the 3:4 camera follows the climb, a key per bar; pushes in on the heroic last push
   const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, 13.24, 14.3, 14.6, SL.top];
-  const IK = KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
-    return k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
+  const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
+    : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
+      return V === 'c' ? [N2O(k), x + 40, y - 110, 600, i ? 1 : 0] : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], [N2O(IB) - .001, 1380, 350, 1050, 1]]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));

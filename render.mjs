@@ -9,6 +9,7 @@
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
 //   node render.mjs --loop=recursion [--out=out/loop_recursion]                 one cycle of a standalone loop (PNGs)
 //   (--loop also works with --sheet, where the times are loop time)
+//   --var=sis:b[,scene:v…]  scene variants for approval (→ ?var_sis=b → window.BTT_VAR.sis)
 import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, statSync, renameSync, readdirSync } from 'node:fs';
@@ -51,7 +52,7 @@ async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(resolve(S.page)).href + '?render' + (S.q || ''), { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(resolve(S.page)).href + '?render' + (S.q || '') + (args.var ? String(args.var).split(',').map(p => '&var_' + p.replace(':', '=')).join('') : ''), { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   // every @font-face subset now: setup() only loads the ones its probe text needs, so the first frames of a fresh page drew Latin
   // Russo One in a fallback font (a mid-song chunk/part started with a wrong-font title and subtitles)
