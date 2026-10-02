@@ -407,16 +407,16 @@
     const ax = 700, vy = v => 260 + (88.5 - v) / 1.5 * 460, base = kf(t, [[192.45, 720], [192.55, 800], [193.09, 800], [193.19, 870]], easeOut);
     for (const v of [88.5, 88.0, 87.5]) {
       inkLine([[ax, vy(v)], [1290, vy(v)]], .5, '#B8AE98', 'inkfine', 0);
-      letter(v.toFixed(1), ax + 14, vy(v) - 20, 30, INK, { font: ruFont(30), ink: false, align: 'left' });
+      letter(v.toFixed(1), ax + 14, vy(v) - 24, 40, INK, { font: ruFont(40), ink: false, align: 'left' });
     }
     inkLine([[ax, 240], [ax, base]], 2, INK, 'ink', 0);
     paint([[ax - 12, base - 70], [ax + 12, base - 82], [ax - 12, base - 94], [ax + 12, base - 106]], { ink: INK, sw: 1.2 });
-    letter('87.0', ax + 14, base - 22, 30, '#E0302A', { font: ruFont(30), ink: false, align: 'left' });
+    letter('87.0', ax + 14, base - 26, 40, '#E0302A', { font: ruFont(40), ink: false, align: 'left' });
     for (const [x, v, lab, col] of [[800, 87.1, 'было', '#8A95A1'], [1060, 88.1, 'стало', '#2F9F5A']]) {
       const top = vy(v);
       paint(rectPts(x, top, 210, base - top, 1), { wash: col, fill: mixCol(col, INK, .3), fillOp: 70, tex: .5, ink: INK, sw: 1 });
-      letter(v.toFixed(1) + '%', x + 105, top - 30, 40, INK, { font: ruFont(40), ink: false });
-      letter(lab, x + 105, base - 30, 32, A2.cream, { font: ruFont(32), ink: false });
+      letter(v.toFixed(1) + '%', x + 105, top - 40, 62, INK, { font: ruFont(62), ink: false });
+      if (base - top > 110) letter(lab, x + 105, base - 36, 44, A2.cream, { font: ruFont(44), ink: false });   // not under the value on the squashed bar
     }
     hazard(620, base, 680, 26);
     for (const px of [640, 1280]) {
