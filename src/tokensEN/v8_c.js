@@ -110,12 +110,13 @@
     for (const sd of [-1, 1]) for (let i = 10; i >= 0; i--) {
       const t0 = i < 3 ? C.more1 : i < 6 ? C.copper : OGROW[(i - 6) * 2], g = t0 == null ? 0 : backOut(seg(s, t0 + i % 3 * .06, t0 + i % 3 * .06 + .32)); if (g <= 0) continue;
       const own = i < 6 ? up : OGROW.slice((i - 6) * 2 + 1).reduce((a, d) => a + backOut(seg(s, d, d + .3)), 0);
-      const x = 960 + sd * (46 + i * 33) - 13, top = Math.max(i < 4 ? 330 : 120, 640 - g * (170 + Math.min(i, 5) * 46) - 14 * own);
-      if (glow > .05) glowAt(x + 13, top + 20, 40, '#FF9A3A', 60 * glow);
-      paint(rectPts(x, top, 26, 640 - top), { wash: mixCol('#8A4A22', '#D8873A', .5 + .5 * glow), fill: '#6A3418', fillOp: 60, tex: .4, ink: INK, sw: .6 });
+      const x = 960 + sd * (46 + i * 24) - 12,   // ponytail: 24 px pitch so all 11 a side stay between the lancets (inner frame 661 / 1259)
+       top = Math.max(i < 4 ? 330 : 120, 640 - g * (170 + Math.min(i, 5) * 46) - 14 * own);
+      if (glow > .05) glowAt(x + 12, top + 20, 40, '#FF9A3A', 60 * glow);
+      paint(rectPts(x, top, 24, 640 - top), { wash: mixCol('#8A4A22', '#D8873A', .5 + .5 * glow), fill: '#6A3418', fillOp: 60, tex: .4, ink: INK, sw: .6 });
       paint(rectPts(x + 5, top + 6, 5, 640 - top - 10), { wash: '#FFC890', washOp: 120 + 100 * glow, ink: null });
-      paint(ellPts(x + 13, top + 52, 9, 6, 10), { wash: '#2A1408', ink: INK, sw: .4 });
-      paint(ellPts(x + 13, top, 13, 4, 12), { wash: '#F2B27A', ink: INK, sw: .5 });
+      paint(ellPts(x + 12, top + 52, 8, 6, 10), { wash: '#2A1408', ink: INK, sw: .4 });
+      paint(ellPts(x + 12, top, 12, 4, 12), { wash: '#F2B27A', ink: INK, sw: .5 });
     }
   }
   // the pews of racks with a candle on each (ex scenes5.js powerup, the user loves it)
