@@ -1,7 +1,7 @@
 // tokensEN/v8_sis.js: v12 #268 — the money-pile Sisyphus, «Worth half a trillion more!» + the break, real 210.08–218.64 (replaces scenes2.js e31_bench).
 // Clawd really PUSHES his token up a small pile of money (the intro's push pose, one shove per beat); just as he nears the top the capitalists
 // on the right throw money on in rhythm, the summit climbs away from him; he keeps pushing. 217.18 the token gets away and rolls back over him,
-// he tumbles down, flat on the floor on the 217.84 downbeat; 218.60 a last spill of coins. Three variants for approval (?var_sis=a|b|c):
+// he tumbles down, flat on the floor on the 217.84 downbeat; 218.60 a last spill of coins. Three variants (?var_sis=a|b|c); the user picked b (default):
 //   a: side view, two fat cats shovel on every beat, the summit creeps up and away, the camera pulls back gradually
 //   b: the fat cats stand on a cliff edge high up and drop money SACKS on the downbeats — the pile jumps in steps, the summit leaves the frame,
 //      the camera tilts up after it each time
@@ -9,19 +9,19 @@
 //      the end is a token avalanche that sweeps him down, the camera pulls back to the whole tower
 (() => {
   const INK = PAL.ink, { kick, back } = ENK;
-  const V = ((window.BTT_VAR || {}).sis || 'a').toLowerCase();
+  const V = ((window.BTT_VAR || {}).sis || 'b').toLowerCase();
   const A = 210.08, B = 218.64, G = 1060, SLIP = 217.18, FLOOR = 217.84, LAST = 218.60;
   const near = (x, L) => L.some(y => Math.abs(x - y) < .02);
   const RDB = EN_DOWNBEATS.map(O2N), BT = EN_BEATS.map(O2N).filter(b => b > A + .3 && b < B);
   const DOWN = BT.filter(b => near(b, RDB));
-  const PS = .8, PR = 110, TR = 66, CU = 13;
+  const PS = .8, PR = 110, TR = 76, CU = 15;
   const surfOf = P => x => G - Math.max(0, P.H - PS * (Math.hypot(x - P.X, PR) - PR));
   const stepE = a => a < 0 ? 0 : a > .25 ? 1 : 1 + .6 * Math.sin(a / .25 * Math.PI) * (1 - a / .25) + (easeOut(clamp(a / .12)) - 1);   // a step with an overshoot bump
 
   // ---- per-variant plan: THROWS [beat, weight] (the load LANDS on the beat), pile X/H ranges, Clawd's foot x(t) ----
   const CFG = {
     a: { throws: BT.filter(b => b > 211 && b <= SLIP + .01).map(b => [b, 1]), X: [760, 1460], H: [300, 1000], x0: 420, xa: 540, ta: 211.26, v: 55, sv: 12 },
-    b: { throws: [...DOWN.filter(b => b > 212 && b < SLIP), SLIP].map(b => [b, b === SLIP ? .4 : 1]), X: [820, 1320], H: [300, 1300], x0: 440, xa: 610, ta: 212.5, v: 30, sv: 10 },
+    b: { throws: [...DOWN.filter(b => b > 212 && b < SLIP), SLIP].map(b => [b, b === SLIP ? .4 : 1]), X: [820, 1320], H: [300, 1300], x0: 440, xa: 610, ta: 212.5, v: 14, sv: 26 },
     c: { throws: BT.filter(b => b > 210.5 && b <= SLIP + .01).map(b => [b, 1]), X: [800, 1180], H: [300, 1500], x0: 440, xa: 480, ta: 210.6, v: 40, sv: 10 },
   }[V] || null;
   if (!CFG) return;
@@ -124,14 +124,14 @@
 
     // ---- Clawd + the token ----
     const ra = t - SLIP;
-    const fx0 = footXc(t), sl0 = Math.atan2(surf(fx0 + 10) - surf(fx0 - 10), 20), D = TR + 78;
+    const fx0 = footXc(t), sl0 = Math.atan2(surf(fx0 + 10) - surf(fx0 - 10), 20), D = TR + 92;
     // pushing: the token rides D ahead along the slope, rolling (angle from distance)
     const gx = fx0 + D * Math.cos(sl0), gy = surf(gx);
     const heave = kick(t, PUSHB, .25);
     const botX = Math.max(180, P.X - P.H / PS - 60);                         // where he ends up: the foot of the slope, kept in frame
     if (ra <= 0) {
-      push(); translate(gx + Math.sin(sl0) * TR, gy - Math.cos(sl0) * TR); rotate(gx / TR); token(0, 0, TR, { spin: .02 }); pop();
-      clawd(fx0, surf(fx0) + 4, CU, { walk: fx0 / 55 + (V === 'c' ? t * 1.6 : 0), rot: .22 + .12 * heave, sq: -.06 * heave,
+      push(); translate(gx + Math.sin(sl0) * TR, gy - Math.cos(sl0) * TR); rotate(gx / (TR * .8)); token(0, 0, TR, { spin: .02 }); pop();   // a wheel on its edge: the spin follows the distance rolled
+      clawd(fx0, surf(fx0) + 4, CU, { walk: fx0 / 55 + (V === 'c' ? t * 1.6 : 0), rot: sl0 + .3 + .14 * heave,   // square to the slope + leaning in: hands at the coin's centre height sq: -.06 * heave,
         eyes: 'narrow', mouth: heave > .3 ? 'O' : 'flat', aL: 1.3, aR: 1.3, emote: 'sweat', noShadow: true });
       const hx = fx0 + 20, hy = surf(fx0) - 170;                               // strain marks + sweat flung back on every shove
       for (let q = 0; q < 3; q++) { const a = -2.3 + q * .45, e = 52 + 14 * heave; inkLine([[hx + Math.cos(a) * 34, hy + Math.sin(a) * 34], [hx + Math.cos(a) * e, hy + Math.sin(a) * e]], 2.2, '#FBF8F1', 'inkfine', 0); }
@@ -142,8 +142,8 @@
       const fxS = footXc(SLIP), PS0 = pileC(SLIP), sS = surfOf(PS0), slS = Math.atan2(sS(fxS + 10) - sS(fxS - 10), 20), gx0 = fxS + D * Math.cos(slS);
       const rk = easeIn(seg(t, SLIP + .05, FLOOR - .1)), tkx = lerp(gx0, botX - 260, rk) - 260 * Math.max(0, t - FLOOR + .1);
       const hop = Math.max(0, 1 - Math.abs(tkx - fxS) / 120) * 120;
-      const tky = Math.min(surf(tkx), G) - TR - hop;
-      push(); translate(tkx, tky); rotate((tkx - gx0) / TR + gx0 / TR); token(0, 0, TR, { spin: .02 }); pop();
+      const slT = Math.atan2(surf(tkx + 10) - surf(tkx - 10), 20), tky = Math.min(surf(tkx), G) - Math.cos(slT) * TR - hop;
+      push(); translate(tkx + Math.sin(slT) * TR, tky); rotate(tkx / (TR * .8)); token(0, 0, TR, { spin: .02 }); pop();
       if (ra < 1.4) for (let q = 0; q < 6; q++) { const u = frac(q / 6 + t * 2); paint(ellPts(tkx + 40 + u * 90, Math.min(surf(tkx + 60), G) - 10 - u * 30, 10 + u * 16, 6 + u * 9, 8), { wash: '#B8A58C', washOp: 160 * (1 - u), ink: null }); }
       // c: the avalanche — a sheet of tokens pouring down the left slope, overtaking him
       if (V === 'c') for (let i = 0; i < 90; i++) { const u = frac(hash(i) + (t - SLIP) * (.9 + .5 * hash(i + 1))); if (t - SLIP < .3 * i / 90) continue;
@@ -173,10 +173,11 @@
   let K = [];
   if (V === 'a') { for (let r = A; r < SLIP + .2; r += .25) K.push([r, ...fit(r)]); K.push([FLOOR, 720, 860, 1440], [B - .01, 720, 870, 1420]); }
   if (V === 'b') {
-    const low = r => { const P = pileC(r), x = footXc(Math.min(r, SLIP)); return [x + 280, surfOf(P)(x) - 170, 820]; };   // tight on Clawd, the summit near the top edge: each sack throws it out of frame, then the tilt up
-    K.push([A, LEDGE.x + 40, LEDGE.y + 300, 1000], [A + .55, LEDGE.x + 40, LEDGE.y + 300, 1000], [211.5, ...low(211.5)]);
+    const low = r => { const P = pileC(r), x0 = footXc(Math.min(r, SLIP)) - 220, x1 = LEDGE.x + 340, y0 = Math.min(LEDGE.y - 300, G - P.H - 200), y1 = surfOf(P)(x0 + 220) + 240;   // wide: pile, Clawd and the fat cats on the cliff together
+      const w = Math.max(1150, x1 - x0, (y1 - y0) * .75); return [(x0 + x1) / 2, (y0 + y1) / 2, w]; };   // holds on each sack, then tilts/pulls up
+    K.push([A, LEDGE.x + 40, LEDGE.y + 380, 1100], [A + .45, LEDGE.x + 40, LEDGE.y + 380, 1100], [211.3, ...low(211.3)]);
     for (const [b] of CFG.throws) K.push([b + .02, ...low(b - .1)], [b + .6, ...low(b + .6)]);
-    K.push([SLIP + .2, ...low(SLIP + .2)], [FLOOR, 800, 560, 1500], [B - .01, 800, 570, 1480]);
+    K.push([SLIP + .2, ...low(SLIP + .2)], [FLOOR, 870, 400, 1600], [B - .01, 870, 410, 1580]);
   }
   if (V === 'c') {
     for (let r = A; r < SLIP; r += .2) { const x = footXc(r), y = surfOf(pileC(r))(x); K.push([r, x + 120, y - 60, 880]); }
