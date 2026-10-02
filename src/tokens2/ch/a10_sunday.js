@@ -246,7 +246,7 @@
 
   function sSilence(t) {                                                      // 213.95 «Тишина…»: he gets up, walks to the window
     const z = kf(t, [[213.95, 1.05], [216.8, .98]]), up = seg(t, 214.4, 214.7), wk = seg(t, 214.7, 216.6);
-    const x = lerp(900, R ? 640 : 420, ease(wk)), gy = lerp(760, 840, up);
+    const x = lerp(900, R ? 700 : 420, ease(wk)), gy = lerp(760, 840, up);
     if (R) camBegin(960, 540, 1); else camBegin(kf(t, [[213.95, 1060], [216.8, 900]]), 480, z);
     room(t, {
       grey: { games: 1, sites: 1, agents: 1 }, moonK: seg(t, 215.5, 216.8) * .5, glow: .7,
@@ -263,7 +263,7 @@
   }
 
   function sHappy(t) {                                                        // 216.8 «Я счастлив.» under the moon
-    const z = kf(t, [[216.8, 1.4], [218.45, 1.5]]), hx = R ? 640 : 420;
+    const z = kf(t, [[216.8, 1.4], [218.45, 1.5]]), hx = R ? 700 : 420;   // R34: off the left frame edge
     if (R) camBegin(960, 540, kf(t, [[216.8, 1], [218.45, 1.03]])); else camBegin(400, 560, z);
     room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: 1, glow: .5,
       front: () => {

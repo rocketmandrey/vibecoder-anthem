@@ -108,10 +108,10 @@
     const hover = Math.sin(t * 7) * 10, press = kf(t, [[TAP - .2, 0], [TAP, 1], [TAP + .16, .85], [TAP + .4, 0]], ease);
     const come = easeOut(seg(t, S2, 176.4)), fx = lerp(1450, 1030, come) - press * 50, fy = lerp(1250, 800, come) - press * 110 + (1 - press) * hover;
     if (R) {                                                                       // R34 (user): Clawd himself peeks in and taps «+» with his stubby arm
-      const u = 44, gx = 1175, gy = 1060 + (1 - come) * 460, done = seg(t, TAP + .1, TAP + .3), hop = done * Math.max(0, Math.sin((t - TAP - .1) * 9)) * (1 - seg(t, TAP + .5, TAP + 1));
+      const u = 44, gx = 1150, gy = 1060 + (1 - come) * 460, done = seg(t, TAP + .1, TAP + .3), hop = done * Math.max(0, Math.sin((t - TAP - .1) * 9)) * (1 - seg(t, TAP + .5, TAP + 1));
       const aL = .35 + .85 * (1 - press) + (1 - press) * Math.sin(t * 7) * .06;     // hovering paw; aL .35 puts the paw on the button
-      clawd(gx, gy, u, done > .5 ? { eyes: 'happy', blush: true, dy: -hop * 1.2, aL: aL + hop * .3, aR: -1.1 }
-        : { eyes: 'look', lookX: -.8, lookY: .5, aL, aR: -1.1, rot: -.04 * press,
+      clawd(gx, gy, u, done > .5 ? { eyes: 'happy', blush: true, dy: -hop * 1.2, aL: aL + hop * .3, aR: -1.45 }
+        : { eyes: 'look', lookX: -.8, lookY: .5, aL, aR: -1.45, rot: -.04 * press,
             armL: (uu, sw) => paint(ellPts(0, 0, uu * .72, uu * .72, 14), { wash: PAL.clay, fill: PAL.clayDk, fillOp: 50, ink: INK, sw: sw * .8 }) });
     }
     push(); translate(fx, fy); rotate(-.55);
