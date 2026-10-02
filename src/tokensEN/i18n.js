@@ -80,6 +80,7 @@
   // one moment re-worded: [ru, en, from, to (EN song time), { fit }]
   const AT = [
     ['ЖГИ!', 'IS THAT ALL\nYOU GOT?!', 43.5, 45.5, { fit: 1250 }],       // E06: Wall Street's shout (a03 talk)
+    ['СОЖЖЕНО ТОКЕНОВ', 'TOKENS FACTORY', 88, 115],                      // v13: the chorus 2 factory sign (a05, also the 111 fly-in)
   ];
   const FIT = { 'BURN THE TOKENS!': 1000, 'BURN THE TOKENS': 860, 'MON 12:00 AM': 300, 'SUN 11:59 PM': 300, 'SUN 11:58 PM': 300 };   // the a10 clock box is 340 wide                            // explicit max widths (world px) for the 4:5 window
   const SLACK = 1.25;
