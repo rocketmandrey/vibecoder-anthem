@@ -14,14 +14,14 @@
   const near = (x, L) => L.some(y => Math.abs(x - y) < .02);
   const RDB = EN_DOWNBEATS.map(O2N), BT = EN_BEATS.map(O2N).filter(b => b > A + .3 && b < B);
   const DOWN = BT.filter(b => near(b, RDB));
-  const PS = .8, PR = 110, TR = 76, CU = 15;
+  const PS = .8, PR = 110, TR = 110, CU = 12;   // TR/CU: the intro's coin and Clawd
   const surfOf = P => x => G - Math.max(0, P.H - PS * (Math.hypot(x - P.X, PR) - PR));
   const stepE = a => a < 0 ? 0 : a > .25 ? 1 : 1 + .6 * Math.sin(a / .25 * Math.PI) * (1 - a / .25) + (easeOut(clamp(a / .12)) - 1);   // a step with an overshoot bump
 
   // ---- per-variant plan: THROWS [beat, weight] (the load LANDS on the beat), pile X/H ranges, Clawd's foot x(t) ----
   const CFG = {
     a: { throws: BT.filter(b => b > 211 && b <= SLIP + .01).map(b => [b, 1]), X: [760, 1460], H: [300, 1000], x0: 420, xa: 540, ta: 211.26, v: 55, sv: 12 },
-    b: { throws: [...DOWN.filter(b => b > 212 && b < SLIP), SLIP].map(b => [b, b === SLIP ? .4 : 1]), X: [820, 1320], H: [300, 1300], x0: 440, xa: 610, ta: 212.5, v: 14, sv: 26 },
+    b: { throws: [...DOWN.filter(b => b > 212 && b < SLIP), SLIP].map(b => [b, b === SLIP ? .4 : 1]), X: [940, 1440], H: [300, 1000], x0: 300, xa: 540, ta: 212.5, v: 14, sv: 26 },   // x0: on the floor at the very foot of the small pile
     c: { throws: BT.filter(b => b > 210.5 && b <= SLIP + .01).map(b => [b, 1]), X: [800, 1180], H: [300, 1500], x0: 440, xa: 480, ta: 210.6, v: 40, sv: 10 },
   }[V] || null;
   if (!CFG) return;
@@ -65,7 +65,7 @@
   }
   const smokeOf = (x, fy, u, t, n) => { for (let q = 0; q < 3; q++) { const v = frac(t * .7 + n * .5 + q / 3); paint(ellPts(x - 4 * u - v * 30, fy - 4.6 * u - v * 90, 6 + v * 14, 5 + v * 10, 10), { wash: '#C8CCD6', washOp: 150 * (1 - v), ink: null }); } };
   const coinBit = (px, py, q, t) => { if (q % 3 === 2) paint(rotPts(rectPts(px - 16, py - 8, 32, 16), px, py, t * 6 + q), { wash: '#7FB069', ink: INK, sw: .7 }); else if (q % 2) token(px, py, 15, { spin: t * 7 + q }); else paint(ellPts(px, py, 13, 6, 10, 0, t * 5 + q), { wash: TK.gold, ink: INK, sw: .7 }); };
-  const LEDGE = { x: 1400, y: -170 };                                       // b: the cliff edge the fat cats stand on
+  const LEDGE = { x: 1540, y: -170 };                                       // b: the cliff edge the fat cats stand on
   const sack = (x, y, s, rot) => { push(); translate(x, y); rotate(rot); scale(s);
     paint([[-70, 10], [-80, -40], [-50, -95], [-18, -110], [18, -110], [50, -95], [80, -40], [70, 10], [0, 22]], { wash: '#B8925A', fill: '#8A6A3A', fillOp: 60, tex: .5, ink: INK, sw: 1.4 });
     paint([[-22, -108], [22, -108], [30, -140], [-30, -140]], { wash: '#B8925A', ink: INK, sw: 1.2 }); inkLine([[-26, -116], [26, -116]], 5, '#6A4022', 'ink', 0);
@@ -122,39 +122,36 @@
       });
     }
 
-    // ---- Clawd + the token ----
-    const ra = t - SLIP;
-    const fx0 = footXc(t), sl0 = Math.atan2(surf(fx0 + 10) - surf(fx0 - 10), 20), D = TR + 92;
-    // pushing: the token rides D ahead along the slope, rolling (angle from distance)
-    const gx = fx0 + D * Math.cos(sl0), gy = surf(gx);
-    const heave = kick(t, PUSHB, .25);
-    const botX = Math.max(180, P.X - P.H / PS - 60);                         // where he ends up: the foot of the slope, kept in frame
+    // ---- Clawd + the token: the intro's push exactly (v8_a.js: feet r+80 behind the coin's contact along the slope, cu 12 / r 110,
+    // rot .2 + .12·heave, walk 1.6·t + .7·heave, arms 1.3, narrow eyes, sweat) — and the coin rolls as a wheel (spin = distance rolled) ----
+    const ra = t - SLIP, heave = kick(t, PUSHB, .25);
+    const contact = (fx, sf) => { const sl = Math.atan2(sf(fx + 10) - sf(fx - 10), 20); return fx + (TR + 80) * Math.cos(sl); };
+    const wheel = (gx, sf, hop = 0) => { const sl = Math.atan2(sf(gx + 10) - sf(gx - 10), 20); push(); translate(gx + Math.sin(sl) * TR, Math.min(sf(gx), G) - Math.cos(sl) * TR - hop); rotate(gx / TR); token(0, 0, TR, { spin: .02 }); pop(); };
+    const botX = Math.max(190, P.X - P.H / PS + 120);                        // where he lands: the foot of the slope, kept in frame
     if (ra <= 0) {
-      push(); translate(gx + Math.sin(sl0) * TR, gy - Math.cos(sl0) * TR); rotate(gx / (TR * .8)); token(0, 0, TR, { spin: .02 }); pop();   // a wheel on its edge: the spin follows the distance rolled
-      clawd(fx0, surf(fx0) + 4, CU, { walk: fx0 / 55 + (V === 'c' ? t * 1.6 : 0), rot: sl0 + .3 + .14 * heave,   // square to the slope + leaning in: hands at the coin's centre height sq: -.06 * heave,
+      const fx0 = footXc(t), gx = contact(fx0, surf);
+      wheel(gx, surf);
+      clawd(fx0, Math.min(surf(fx0), G) + 4, CU, { walk: 1.6 * t + .7 * heave, rot: .2 + .12 * heave, sq: -.06 * heave,
         eyes: 'narrow', mouth: heave > .3 ? 'O' : 'flat', aL: 1.3, aR: 1.3, emote: 'sweat', noShadow: true });
-      const hx = fx0 + 20, hy = surf(fx0) - 170;                               // strain marks + sweat flung back on every shove
-      for (let q = 0; q < 3; q++) { const a = -2.3 + q * .45, e = 52 + 14 * heave; inkLine([[hx + Math.cos(a) * 34, hy + Math.sin(a) * 34], [hx + Math.cos(a) * e, hy + Math.sin(a) * e]], 2.2, '#FBF8F1', 'inkfine', 0); }
-      if (la < .5) for (let q = 0; q < 4; q++) { const v = la / .5, dx = -40 - (60 + 40 * hash(q + (lb | 0))) * v, dy = -30 - 120 * v + 260 * v * v;
-        paint([[hx + dx, hy + dy - 9], [hx + dx + 6, hy + dy + 3], [hx + dx, hy + dy + 7], [hx + dx - 6, hy + dy + 3]], { wash: '#BFE3F7', washOp: 255 * (1 - v), ink: INK, sw: .5 }); }
     } else {
-      // the token gets away: it rolls back down OVER him and off to the left; he is knocked over and tumbles to the bottom by FLOOR
-      const fxS = footXc(SLIP), PS0 = pileC(SLIP), sS = surfOf(PS0), slS = Math.atan2(sS(fxS + 10) - sS(fxS - 10), 20), gx0 = fxS + D * Math.cos(slS);
-      const rk = easeIn(seg(t, SLIP + .05, FLOOR - .1)), tkx = lerp(gx0, botX - 260, rk) - 260 * Math.max(0, t - FLOOR + .1);
-      const hop = Math.max(0, 1 - Math.abs(tkx - fxS) / 120) * 120;
-      const slT = Math.atan2(surf(tkx + 10) - surf(tkx - 10), 20), tky = Math.min(surf(tkx), G) - Math.cos(slT) * TR - hop;
-      push(); translate(tkx + Math.sin(slT) * TR, tky); rotate(tkx / (TR * .8)); token(0, 0, TR, { spin: .02 }); pop();
-      if (ra < 1.4) for (let q = 0; q < 6; q++) { const u = frac(q / 6 + t * 2); paint(ellPts(tkx + 40 + u * 90, Math.min(surf(tkx + 60), G) - 10 - u * 30, 10 + u * 16, 6 + u * 9, 8), { wash: '#B8A58C', washOp: 160 * (1 - u), ink: null }); }
-      // c: the avalanche — a sheet of tokens pouring down the left slope, overtaking him
+      // 217.18 the last sack lands, the coin gets away and rolls back down OVER him (a hop at his spot), off to the left; flattened, he is flipped
+      // onto his back, slides down with one somersault and lands flat on the 217.84 downbeat; stars circle till the handoff, 218.60 a last spill
+      const fxS = footXc(SLIP), gx0 = contact(fxS, surfOf(pileC(SLIP)));
+      const tkx = lerp(gx0, -400, easeIn(seg(t, SLIP + .04, FLOOR)));
+      const over = Math.max(0, 1 - Math.abs(tkx - fxS) / 170);
+      if (tkx > -300) wheel(tkx, surf, Math.sin(over * Math.PI / 2) * 95);
+      if (ra < 1.2) for (let q = 0; q < 6; q++) { const u = frac(q / 6 + t * 2); paint(ellPts(tkx + 60 + u * 90, Math.min(surf(tkx + 60), G) - 10 - u * 30, 10 + u * 16, 6 + u * 9, 8), { wash: '#B8A58C', washOp: 160 * (1 - u), ink: null }); }
       if (V === 'c') for (let i = 0; i < 90; i++) { const u = frac(hash(i) + (t - SLIP) * (.9 + .5 * hash(i + 1))); if (t - SLIP < .3 * i / 90) continue;
         const x = lerp(P.X - 40, botX - 200, u) + (hash(i + 5) - .5) * 60, y = Math.min(surf(x), G) - 20 - hash(i + 7) * 70 * (1 - u); token(x, y, 18 + hash(i + 2) * 14, { spin: t * 4 + i }); }
-      const hit = SLIP + .18, fk = easeIn(seg(t, hit, FLOOR)), bx = lerp(fxS, botX + 60, fk), by = t < FLOOR ? Math.min(surf(bx), G) + 4 - Math.sin(fk * Math.PI) * 60 : G + 4;
-      const lying = t >= FLOOR, landK = kick(t, [FLOOR], .2);
-      clawd(bx, by, CU, { rot: t < hit ? .22 - 1.2 * seg(t, SLIP, hit) : lying ? -1.45 : .22 - 1.2 - 9 * fk, sq: lying ? .18 * landK : 0,
-        eyes: lying ? 'closed' : 'scared', mouth: lying ? 'flat' : 'O', aL: lying ? .1 : 1.4, aR: lying ? .1 : 1.4, dy: lying ? -.3 : 0, noShadow: true });
-      if (lying) { sparks(bx, G - 30, t - FLOOR, 7, 12, 220); for (let q = 0; q < 3; q++) { const a = t * 4 + q * TAU / 3; paint(ellPts(bx - 40 + Math.cos(a) * 60, G - 150 + Math.sin(a) * 18, 10, 10, 6), { wash: TK.yellow, ink: INK, sw: .6 }); } }   // circling stars
-      // LAST: one more scoop of coins lands on him
-      if (t > LAST - .4) for (let i = 0; i < 10; i++) { const a = clamp((t - (LAST - .4)) / .4), x = bx - 80 + hash(i + 3) * 160, y = lerp(-600 + (G - 1060), G - 30 - hash(i) * 40, easeIn(a)); if (a < 1 || hash(i + 9) > .3) token(x, y, 16, { spin: t * 6 + i }); }
+      const hit = SLIP + .04 + .66 * Math.sqrt(clamp((gx0 - fxS) / (gx0 + 400))), fk = ease(seg(t, hit + .06, FLOOR)), lying = t >= FLOOR, landK = kick(t, [FLOOR], .2);
+      const bx = lerp(fxS, botX, fk), by = lying ? Math.min(surf(bx), G) + 4 : Math.min(surf(bx), G) + 4 - Math.sin(fk * Math.PI) * 70;
+      const flat = kick(t, [hit], .12);
+      clawd(bx, by, CU, { rot: t < hit ? .2 - .5 * seg(t, SLIP, hit) : lying ? -Math.PI + .1 + .12 * landK : -.3 - (Math.PI - .4 + TAU) * fk,   // lands on his back, legs up
+        sq: t < hit + .3 ? .35 * flat : lying ? .2 * landK : 0, eyes: lying ? 'closed' : 'scared', mouth: lying ? 'wobble' : 'O',
+        aL: lying ? .2 : 1.5, aR: lying ? .2 : 1.5, noShadow: true });
+      if (lying) { const yb = Math.min(surf(bx), G); sparks(bx, yb - 30, t - FLOOR, 7, 14, 240);
+        for (let q = 0; q < 3; q++) { const a = t * 4 + q * TAU / 3; paint(ellPts(bx + Math.cos(a) * 70, yb - 110 + Math.sin(a) * 20, 12, 12, 6), { wash: TK.yellow, ink: INK, sw: .6 }); } }   // circling stars
+      if (t > LAST - .4) for (let i = 0; i < 10; i++) { const a = clamp((t - (LAST - .4)) / .4), yb = Math.min(surf(bx), G), x = bx - 80 + hash(i + 3) * 160, y = lerp(yb - 1400, yb - 30 - hash(i) * 40, easeIn(a)); token(x, y, 16, { spin: t * 6 + i }); }
     }
   }
 
@@ -173,11 +170,11 @@
   let K = [];
   if (V === 'a') { for (let r = A; r < SLIP + .2; r += .25) K.push([r, ...fit(r)]); K.push([FLOOR, 720, 860, 1440], [B - .01, 720, 870, 1420]); }
   if (V === 'b') {
-    const low = r => { const P = pileC(r), x0 = footXc(Math.min(r, SLIP)) - 220, x1 = LEDGE.x + 340, y0 = Math.min(LEDGE.y - 300, G - P.H - 200), y1 = surfOf(P)(x0 + 220) + 240;   // wide: pile, Clawd and the fat cats on the cliff together
-      const w = Math.max(1150, x1 - x0, (y1 - y0) * .75); return [(x0 + x1) / 2, (y0 + y1) / 2, w]; };   // holds on each sack, then tilts/pulls up
-    K.push([A, LEDGE.x + 40, LEDGE.y + 380, 1100], [A + .45, LEDGE.x + 40, LEDGE.y + 380, 1100], [211.3, ...low(211.3)]);
-    for (const [b] of CFG.throws) K.push([b + .02, ...low(b - .1)], [b + .6, ...low(b + .6)]);
-    K.push([SLIP + .2, ...low(SLIP + .2)], [FLOOR, 870, 400, 1600], [B - .01, 870, 410, 1580]);
+    const low = r => { const P = pileC(r), x0 = footXc(Math.min(r, SLIP)) - 260, x1 = LEDGE.x + 360, y0 = Math.min(LEDGE.y - 300, G - P.H - 200), y1 = surfOf(P)(x0 + 220) + 240;   // wide: pile, Clawd and the fat cats on the cliff together
+      const w = Math.max(1350, x1 - x0, (y1 - y0) * .75); return [(x0 + x1) / 2, (y0 + y1) / 2, w]; };   // holds on each sack, then tilts/pulls up
+    K.push([A, ...low(A)], [211.3, ...low(211.3)]);   // wide from the first frame: Clawd at the foot + the fat cats on the cliff
+    for (const [b] of CFG.throws.filter(([b]) => b < SLIP)) K.push([b + .02, ...low(b - .1)], [b + .6, ...low(b + .6)]);
+    K.push([SLIP + .04, ...low(SLIP)], [SLIP + .45, 900, 440, 1700], [B - .01, 900, 450, 1680]);   // settle on the fall early, then hold: no camera move while he lands
   }
   if (V === 'c') {
     for (let r = A; r < SLIP; r += .2) { const x = footXc(r), y = surfOf(pileC(r))(x); K.push([r, x + 120, y - 60, 880]); }
