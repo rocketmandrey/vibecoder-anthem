@@ -115,9 +115,10 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   const FONT = s => `${s}px "Russo One", "Arial Black", sans-serif`;
 
   // subtitle: the current LY line, ≤ 2 balanced lines in x 90–900, soft fade in/out, no per-word highlight
-  function subtitle(t) {
-    const L = LY.find(l => t >= l[0] - .12 && t < l[1] + .2); if (!L) return;
-    const [a, b, raw] = L, txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
+  function subtitle(tv) {
+    const R = typeof O2N === 'function' ? O2N : x => x, t = R(tv);             // fades in real seconds (tokensEN: tables are v1 time, see truth.js RETIME)
+    const L = LY.find(l => t >= R(l[0]) - .12 && t < R(l[1]) + .2); if (!L) return;
+    const [a, b, raw] = [R(L[0]), R(L[1]), L[2]], txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
     const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
     const maxW = 810; let size = 66, lines;
     for (;; size -= 3) {

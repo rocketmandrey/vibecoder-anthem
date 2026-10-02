@@ -15,10 +15,6 @@ const EN_WORDS = [[4.27,"Burn"],[4.51,"the"],[4.75,"tokens!"],[5.23,"Hey-ho!"],[
 // the sung word nearest `near` whose text matches (case/punctuation-blind): scenes anchor on words, so a re-timed track only needs truth.json
 const enWord = (w, near) => { const k = s => s.toLowerCase().replace(/[^a-z0-9]/g, ''), m = EN_WORDS.filter(x => k(x[1]) === k(w)); return m.length ? m.reduce((b, x) => Math.abs(x[0] - near) < Math.abs(b[0] - near) ? x : b)[0] : near; };
 const LY = [
-  [4.27, 5.71, "BURN THE TOKENS! HEY-HO!"],
-  [5.71, 7.321, "BURN THE TOKENS! HEY-HO!"],
-  [7.321, 8.908, "BURN THE TOKENS! HEY-HO!"],
-  [8.908, 10.871, "BURN THE TOKENS! HEY-HO!"],
   [18.336, 20.462, "Friday night, I'm off the clock,"],
   [20.8, 23.388, "Half my weekly tokens still in stock."],
   [23.54, 25.824, "Could touch grass — but Sunday night"],

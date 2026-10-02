@@ -175,8 +175,10 @@
   // blurs. On «WORKING» the wheel over-spins, carries him up the rim and FLINGS him off-frame tumbling, and the top bar goes *pyn'k* off the board.
   // Drawn in REAL song time (s = O2N(t)): the words come from truth.js (enWord, v1 nears), so a re-timed track only needs a new truth.json.
   const wv1 = [['gpus', 137.38], ['tokens', 138.64], ['tokens', 139.94], ['agents', 141.34], ['agents', 142.62], ['tasks', 143.84], ['tasks', 145.14], ['tokens', 146.40]].map(([w, n]) => enWord(w, n));
-  const RG = { x: 690, y: 600, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
-  const FC = [1080, 150, 340, 520], NB = 12;                               // flipchart x, y, w, h; bars on it
+  // v8 (PLAN_v8 #13): the wheel sits inside a huge WHEEL OF SAMSARA (radius RS): tokens → GPUs → tasks → agents → tokens ride round it; the whole
+  // set is recomposed for the 3:4 view (x 200..1700, floor FLY), the flipchart + CEO stand at its lower right.
+  const RG = { x: 920, y: 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
+  const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
   const RATE = [.15, .25, .35, .45, .58, .72, .9, 1.15, 2.2, 7];         // wheel rev/s before the first word, after each word, after WORKING
   const spinOf = s => {                                                   // integrated wheel angle (real time)
     const e = [RG.a, ...RG.words, RG.work, 1e9]; let a = 0;
@@ -186,7 +188,7 @@
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
-  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 2.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 });
+  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 2.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
   // hamster-Clawd v4 (draft 5, the user's pick from sandbox/hamster): side view, galloping right on all fours on the rim; th = rim angle
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
   function hamster(th, t, rate, n, wk, spin, fly) {
@@ -212,8 +214,8 @@
   // the flipchart MORE TOKENS on an easel: NB revenue bars, one more per TB wheel turns; on «WORKING» the top one pops off the board
   function flipchart(s, turns, wk) {
     const [X, Y, Wd, Hd] = FC, a = s - RG.work - .06, popped = a >= 0, base = Y + Hd - 40, H = k => (Hd - 150) * .07 * Math.pow(1.26, k);
-    inkLine([[X + 70, Y + Hd], [X + 10, 1204]], 9, '#6A4A30', 'ink', 0); inkLine([[X + Wd - 70, Y + Hd], [X + Wd - 10, 1204]], 9, '#6A4A30', 'ink', 0);
-    inkLine([[X + Wd / 2, Y + Hd], [X + Wd / 2 + 40, 1204]], 7, '#5A3C26', 'ink', 0);
+    inkLine([[X + 70, Y + Hd], [X + 10, FLY + 4]], 9, '#6A4A30', 'ink', 0); inkLine([[X + Wd - 70, Y + Hd], [X + Wd - 10, FLY + 4]], 9, '#6A4A30', 'ink', 0);
+    inkLine([[X + Wd / 2, Y + Hd], [X + Wd / 2 + 40, FLY + 4]], 7, '#5A3C26', 'ink', 0);
     paint(rrPts(X - 14, Y - 14, Wd + 28, Hd + 28, 10), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
     paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FBF8F1', ink: null });
     paint(rectPts(X, Y, Wd, 64), { wash: '#2FBF71', ink: null });
@@ -238,16 +240,48 @@
       if (a < .4) paint(starPts(x, base - hh, 110 * a / .4 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .4), ink: INK, sw: 1.2 });
     }
   }
+  // the WHEEL OF SAMSARA round the hamster wheel: a huge band turning clockwise with the wheel; 4 fixed stations (top token, right GPU,
+  // bottom task, left agent) — whatever rides past a station turns into the next thing; a station flares on its sung noun
+  const ST = [[-Math.PI / 2, 1, TK.yellow], [0, 0, '#2FBF71'], [Math.PI / 2, 3, TK.orange], [Math.PI, 2, '#6F8BE0']];   // [angle, itemOf type, glow]
+  const ST_W = ST.map(([, ty]) => RG.words.filter((w, i) => RG.ix[i] === ty));
+  const bigItem = (ty, x, y, k, s, r) => { push(); translate(x, y); scale(k); itemOf(ty, 0, ty === 2 ? -16 : 0, s, r); pop(); };
+  function samsara(s, ang, wk) {
+    const cx = RG.x, cy = RG.y, ra = ang * .08, NQ = 72, R0 = RS - 62, R1 = RS + 62;
+    for (let j = 0; j < 8; j++) { const a = ra + j * TAU / 8;                                                     // spokes to the hamster wheel
+      inkLine([[cx + Math.cos(a) * (RG.R + 30), cy + Math.sin(a) * (RG.R + 30)], [cx + Math.cos(a) * R0, cy + Math.sin(a) * R0]], 7, '#7A5A34', 'ink', 0); }
+    for (let q = 0; q < NQ; q++) {                                                                                // the band, tinted per sector
+      const a0 = q * TAU / NQ - Math.PI / 2, a1 = a0 + TAU / NQ + .004, k = Math.floor(q / (NQ / 4)), c = mixCol(['#6A4E1A', '#1F5A3A', '#6A3A1A', '#2A3A72'][k], '#241E2A', .25 + .1 * (q % 2));
+      paint([[cx + Math.cos(a0) * R0, cy + Math.sin(a0) * R0], [cx + Math.cos(a0) * R1, cy + Math.sin(a0) * R1], [cx + Math.cos(a1) * R1, cy + Math.sin(a1) * R1], [cx + Math.cos(a1) * R0, cy + Math.sin(a1) * R0]], { wash: c, ink: null });
+    }
+    for (const r of [R0, R1, R1 + 10]) paint(ellPts(cx, cy, r, r, 120), { ink: '#C9A24A', sw: r > R1 ? 1.6 : 2.6 });
+    for (let j = 0; j < 16; j++) { const a = ra * 1.5 + j * TAU / 16, rr = RS + 40, d = .035;                      // clockwise chevrons on the outer lane
+      const p = (ad, r2) => [cx + Math.cos(a + ad) * r2, cy + Math.sin(a + ad) * r2];
+      inkLine([p(-d, rr - 12), p(d, rr), p(-d, rr + 12)], 3, '#E8C870', 'inkfine', 0); }
+    for (let j = 0; j < 16; j++) {                                                                                 // the riders: morph at each station
+      const a = ra + j * TAU / 16, u = ((a + Math.PI / 2) % TAU + TAU) % TAU, k = Math.floor(u / (Math.PI / 2)), near = Math.min(u % (Math.PI / 2), Math.PI / 2 - u % (Math.PI / 2));
+      const x = cx + Math.cos(a) * (RS - 14), y = cy + Math.sin(a) * (RS - 14);
+      bigItem(ST[k][1], x, y, 2.7 * (1 + .12 * wk), s, ST[k][1] === 1 ? .1 * Math.sin(s * 4 + j) : a * .5 + j);
+      if (near < .09) paint(starPts(x, y, 46 * (1 - near / .09) + 10, .35, 8), { wash: '#FFF3B0', washOp: 200 * (1 - near / .09), ink: null });
+    }
+    ST.forEach(([a, ty, gc], i) => {                                                                                // the stations
+      const x = cx + Math.cos(a) * RS, y = cy + Math.sin(a) * RS, lit = kick(s, ST_W[i], .7), been = ST_W[i].length && s >= ST_W[i][0], k = 1 + .3 * lit;
+      if (lit > .02) glowAt(x, y, 230 * lit, gc, 170 * lit);
+      paint(ellPts(x, y, 96 * k, 96 * k, 40), { wash: '#1C1A22', fill: gc, fillOp: been ? 60 + 120 * lit : 0, tex: .3, ink: '#E8C870', sw: 3 });
+      bigItem(ty, x, y + (ty === 3 ? 0 : 4), 3.6 * k, s, .1 * Math.sin(s * 3));
+      if (!been) paint(ellPts(x, y, 96, 96, 40), { wash: '#1C1A22', washOp: 150, ink: null });
+    });
+  }
   function ringScene(t) {
     const s = O2N(t);
     back(A2.gunDk);
-    A03.hall(t, { lamps: [560, 1360], floor: 1200 });
-    paint(rectPts(-400, 1200, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
+    A03.hall(t, { lamps: [420, 1480], floor: FLY });
+    paint(rectPts(-400, FLY, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     const cx = RG.x, cy = RG.y, R = RG.R, ang = spinOf(s), n = nWords(s), wa = s - RG.work;
     const blur = seg(s, RG.words[7], RG.words[7] + .5), spin = seg(s, RG.words[7], RG.words[7] + .3);
     const rate = RATE[n + (wa >= 0 ? 1 : 0)], wk = kick(s, RG.words, .12);
+    samsara(s, ang, wk);
     // the stand: an A-frame from the axle to the floor
-    for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 300, 1204]], 16, A2.steel, 'ink', 0);
+    for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 330, FLY + 4]], 18, A2.steel, 'ink', 0);
     // the wheel: dark drum behind, spokes, the hamster, then the rim (two hoops + rungs) and its outer gear teeth
     paint(gearPts(cx, cy, R + 26, 44, ang, 14), { wash: A2.gunmetal, ink: INK, sw: 1.4 });
     paint(ellPts(cx, cy, R + 26, R + 26, 64), { wash: A2.steel, ink: INK, sw: 1.6 });
@@ -275,7 +309,7 @@
       itemOf(typ, cx + dx * u - nx * 1.6, cy + dy * u - ny * 1.6, s, ang * .3 + k); }
     flipchart(s, ang / TAU, wk);
     // the CEO under the chart, pointer up at the bars
-    ceoClawd(1250, 1196, 20, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2) });
+    ceoClawd(1160, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2) });
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
       hamster(THR, s, 2.6, n, 0, 1, { x: cx + Math.cos(THR) * FR + ux * V * fa, y: cy + Math.sin(THR) * FR + uy * V * fa + 900 * fa * fa, r: THR - Math.PI / 2 + fa * 14 }); }
@@ -287,7 +321,7 @@
     }
   }
   // one take v1 137.00 → 152.04 (a08 starts on the 152.04 slam); camera keys and punches in v1 time (the scene table's), on the sung words
-  scene('e23_loop', 137.0, 152.04, ringScene, [[137.0, 890, 680, 1180], [wv1[7], 885, 680, 1160, 1], [enWord("working", 149.60), 890, 670, 1180, 1], [152.039, 895, 650, 1200, 1]],
+  scene('e23_loop', 137.0, 152.04, ringScene, [[137.0, 940, 960, 1500], [wv1[7], 940, 955, 1480, 1], [enWord("working", 149.60), 940, 960, 1500, 1], [152.039, 945, 950, 1520, 1]],
     [...wv1.map((w, i) => [w, i === 7 ? 18 : 9]), [enWord('working', 149.60), 16]]);
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
@@ -470,31 +504,60 @@
     // draft 4: no counter, no medic, no singers — the pile, two agents shovelling coins onto it on every beat,
     // and Clawd pushing his token up the left slope (the intro's Sisyphus), on the summit on the last beat
     const lbi = PBEATS.filter(b => t >= b).length, la2 = lb == null ? 9 : t - lb;
-    // draft 5: two hard-hat agents (Codex shovScoop / shovFling) at the right foot: scoop between beats, fling ON the beat, coins and tokens arc onto the pile
-    [[1120, 0], [1250, 1]].forEach(([x, n]) => {
-      const fl = la2 < .28, k = fl ? 1 - la2 / .28 : 0, key = fl ? 'shovFling' : 'shovScoop', w = 230, g = PROP_ART[key], hh = w * g[1] / g[0];
-      ENK.layer(key, x, 1066 - hh / 2 - (fl ? 8 * k : 0), w, { rot: fl ? -.06 * k : .02 * Math.sin(t * 9 + n) });
-      if (lb != null && la2 < .6) for (let q = 0; q < 6; q++) {               // the load: from the blade (upper-left in the fling pose) onto the slope
-        const u = clamp((la2 - q * .03) / .5); if (u <= 0 || u >= 1) continue;
-        const sx = x - w * .3, sy = 1066 - hh * .85, ex = 1020 - n * 50 - q * 18, ey = h(ex) - 8;
-        const px = lerp(sx, ex, u), py = lerp(sy, ey, u) - Math.sin(u * Math.PI) * 140;
-        if (q % 2) token(px, py, 15, { spin: t * 7 + q }); else paint(ellPts(px, py, 13, 6, 10, 0, t * 5 + q), { wash: TK.gold, ink: INK, sw: .7 });
+    // v8 (PLAN_v8 #7): two «capitalists» at the right foot — fat-cat Clawds in tailcoats, top hats, monocles, cigars — shovel money onto the
+    // pile in rhythm: blade down scooping between beats, swung up and flung ON the beat; coins, tokens and banknotes arc onto the slope
+    [[1085, 0], [1250, 1]].forEach(([x, n]) => {
+      const u = 15, la3 = n ? la2 - .04 : la2, a = -.55 + 1.9 * (la3 < 0 ? 0 : la3 < .12 ? easeOut(la3 / .12) : 1 - ease(clamp((la3 - .12) / .34))), cg = frac(t * .7 + n * .5);
+      clawd(x, 1066, u, { flip: true, col: '#F2C9AE', dk: '#C9937A', lt: '#FFE4D2', eyes: 'narrow', mouth: 'grin', aL: .3, aR: a, rot: -.08 * (1 - (a + .55) / 1.9) + .04 * (a + .55) / 1.9, noShadow: true,
+        armR: (uu, sw) => {                                                     // the shovel along the arm
+          inkLine([[-2.4 * uu, 0], [6.4 * uu, 0]], sw * 2.2, '#7A5A3A', 'ink', 0);
+          paint([[6 * uu, -1.6 * uu], [9 * uu, -1.3 * uu], [9.4 * uu, 0], [9 * uu, 1.3 * uu], [6 * uu, 1.6 * uu]], { wash: '#8A93A0', fill: '#5A626E', fillOp: 70, tex: .4, ink: INK, sw: sw * .8 });
+          if (a < .2) for (let q = 0; q < 3; q++) paint(ellPts((7 + q) * uu, -.4 * uu, .8 * uu, .5 * uu, 8), { wash: TK.gold, ink: INK, sw: sw * .4 });   // a scoop of coins
+        },
+        draw: (uu, sw) => {
+          paint(rectPts(-5 * uu, -3.6 * uu, 10 * uu, 1.6 * uu), { wash: TK.soot, fill: TK.sootLt, fillOp: 60, tex: .5, ink: INK, sw: sw * .7 });   // tailcoat
+          paint([[5 * uu, -3.6 * uu], [6.6 * uu, -.6 * uu], [5.4 * uu, -.9 * uu], [5 * uu, -2 * uu]], { wash: TK.soot, ink: INK, sw: sw * .6 });       // the tail
+          paint([[-1.2 * uu, -3.6 * uu], [1.2 * uu, -3.6 * uu], [0, -2.2 * uu]], { wash: '#FBF8F1', ink: null });                                      // shirt front
+          paint([[-1.1 * uu, -3.9 * uu], [0, -3.5 * uu], [-1.1 * uu, -3.1 * uu]], { wash: '#B0202A', ink: INK, sw: sw * .4 });
+          paint([[1.1 * uu, -3.9 * uu], [0, -3.5 * uu], [1.1 * uu, -3.1 * uu]], { wash: '#B0202A', ink: INK, sw: sw * .4 });                          // bow tie
+          paint(ellPts(2.5 * uu, -6 * uu, 1.1 * uu, 1.1 * uu, 14), { ink: '#E8C870', sw: sw * .7 });                                                    // monocle
+          inkLine([[3.4 * uu, -5.4 * uu], [4 * uu, -3.2 * uu]], sw * .3, '#E8C870', 'inkfine', .3);
+          paint(rectPts(1.1 * uu, -4.75 * uu, 2.8 * uu, .7 * uu), { wash: '#6A4022', ink: INK, sw: sw * .4 });                                          // cigar
+          paint(ellPts(4 * uu, -4.4 * uu, .4 * uu, .4 * uu, 8), { wash: TK.ember, ink: null });
+          tophat(uu, sw);
+        } });
+      for (let q = 0; q < 3; q++) { const v = frac(cg + q / 3);                  // cigar smoke (flip: the cigar points left)
+        paint(ellPts(x - 4 * u - v * 30, 1066 - 4.6 * u - v * 90, 6 + v * 14, 5 + v * 10, 10), { wash: '#C8CCD6', washOp: 150 * (1 - v), ink: null }); }
+      if (lb != null && la3 >= 0 && la3 < .6) for (let q = 0; q < 6; q++) {    // the load: from the blade at the top of the swing onto the slope
+        const k = clamp((la3 - .08 - q * .03) / .45); if (k <= 0 || k >= 1) continue;
+        const sx = x - 15 * u * .55, sy = 1066 - 4.5 * u - 12 * u * .8, ex = 1020 - n * 50 - q * 18, ey = h(ex) - 8;
+        const px = lerp(sx, ex, k), py = lerp(sy, ey, k) - Math.sin(k * Math.PI) * 140;
+        if (q % 3 === 2) paint(rotPts(rectPts(px - 16, py - 8, 32, 16), px, py, t * 6 + q), { wash: '#7FB069', ink: INK, sw: .7 });   // a banknote
+        else if (q % 2) token(px, py, 15, { spin: t * 7 + q }); else paint(ellPts(px, py, 13, 6, 10, 0, t * 5 + q), { wash: TK.gold, ink: INK, sw: .7 });
       }
     });
     // Clawd + his token (draft-6 note: true Sisyphus): one shove per beat up the left slope, ALMOST at the top on the last downbeat of the break
     // (RB) — and there the token gets away from him, hops over his head and rolls all the way down; he spins round to watch it go and slumps.
     const RB = [...PDOWN].filter(b => b < BN.end - .6).pop(), NBr = PBEATS.filter(b => b <= RB).length, lbr = Math.min(lbi, NBr);
-    const pp = .9 * Math.min(1, (lbr - 1 + (lb == null || t >= RB ? (t >= RB ? 1 : 0) : easeOut(clamp(la2 / .3)))) / Math.max(1, NBr - 1)), cxp = lerp(680, 850, Math.max(0, pp));
+    const pp = .9 * Math.min(1, (lbr - 1 + (lb == null || t >= RB ? (t >= RB ? 1 : 0) : 1.25 * easeOut(clamp(la2 / .3)) - .25 * ease(clamp((la2 - .3) / .3)))) / Math.max(1, NBr - 1)), cxp = lerp(680, 850, Math.max(0, pp));
     const sl = Math.atan2(h(cxp + 10) - h(cxp - 10), 20), r0 = 64, x0 = cxp + 105 * Math.cos(sl), ra = t - RB, roll = ra > 0 ? easeIn(clamp(ra / 1.1)) : 0;
     const tkx = lerp(x0, 300, roll), hop = Math.max(0, 1 - Math.abs(tkx - cxp) / 140) * 190, tky = Math.min(h(tkx), 1060) - r0 - hop;
     push(); translate(tkx, tky); rotate(ra > 0 ? t * 1.5 - (x0 - tkx) / r0 : t * 1.5); token(0, 0, r0, { spin: .02 }); pop();
     if (ra > 0 && ra < 1.4) for (let q = 0; q < 6; q++) { const u = frac(q / 6 + t * 2); paint(ellPts(tkx + 40 + u * 90, Math.min(h(tkx + 60), 1060) - 10 - u * 30, 10 + u * 16, 6 + u * 9, 8), { wash: '#B8A58C', washOp: 160 * (1 - u), ink: null }); }
     const turned = ra > .45, slump = eased(t, RB + .9, RB + 1.3);
-    clawd(cxp, h(cxp) + 6, 13, { walk: ra > 0 ? null : t * 4, flip: turned, rot: ra > 0 ? sl * .8 + (turned ? -.1 * slump : -.25 * Math.sin(clamp(ra / .45) * Math.PI)) : sl + .25,
-      eyes: ra > 0 ? (slump > .5 ? 'closed' : 'scared') : 'narrow', mouth: ra > 0 ? (slump > .5 ? 'flat' : 'O') : 'flat',
-      aL: ra > 0 ? 1.3 - 1.2 * slump : 1.3, aR: ra > 0 ? 1.3 - 1.2 * slump : 1.3, emote: pp > .45 && ra <= 0 ? 'sweat' : null, dy: .5 * slump, sq: .08 * slump, noShadow: true });
+    // v8: visible EFFORT — one heavy step per beat, leaning hard into it, eyes squeezed, a squash on every shove, sweat flying off, strain marks
+    const shove = ra > 0 || lb == null ? 0 : 1 - clamp(la2 / .3);
+    clawd(cxp, h(cxp) + 6, 14, { walk: ra > 0 ? null : lbi * .5 + .5 * easeOut(clamp(la2 / .4)), flip: turned, rot: ra > 0 ? sl * .8 + (turned ? -.1 * slump : -.25 * Math.sin(clamp(ra / .45) * Math.PI)) : sl + .5 + .06 * shove,
+      eyes: ra > 0 ? (slump > .5 ? 'closed' : 'scared') : 'closed', mouth: ra > 0 ? (slump > .5 ? 'flat' : 'O') : 'wobble',
+      aL: ra > 0 ? 1.3 - 1.2 * slump : 1.1, aR: ra > 0 ? 1.3 - 1.2 * slump : 1.1, emote: ra <= 0 ? 'sweat' : null, dy: .5 * slump, sq: ra > 0 ? .08 * slump : .1 * shove, noShadow: true });
+    if (ra <= 0) {
+      const hx = cxp - 30, hy = h(cxp) - 150;
+      for (let q = 0; q < 3; q++) { const a = -2.3 + q * .45; inkLine([[hx + Math.cos(a) * 34, hy + Math.sin(a) * 34], [hx + Math.cos(a) * (52 + 14 * shove), hy + Math.sin(a) * (52 + 14 * shove)]], 2.2, '#FBF8F1', 'inkfine', 0); }
+      if (lb != null && la2 < .5) for (let q = 0; q < 4; q++) { const v = la2 / .5, dx = -40 - (60 + 40 * hash(q + lbi)) * v, dy = -30 - 120 * v + 260 * v * v;   // sweat flung back off his head
+        paint([[hx + dx, hy + dy - 9], [hx + dx + 6, hy + dy + 3], [hx + dx, hy + dy + 7], [hx + dx - 6, hy + dy + 3]], { wash: '#BFE3F7', washOp: 255 * (1 - v), ink: INK, sw: .5 }); }
+    }
   }
-  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 960, 790, 900], [BN.end - .01, 960, 640, 1000, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
+  scene('e31_bench', BN.a, 210.0, bench, [[BN.a, 960, 770, 900], [BN.end - .01, 960, 630, 1000, 1]], PBEATS.map(b => [b, PDOWN.has(b) ? 7 : 3]));   // odometer, peak, CEO and shareholders whole
 
   // ======== E33 NEW (216.68–224.72) «Three games. Seven websites. Forty-two agents. Didn't need a single one.» ========
   const SH = { games: 217.08, sites: 218.18, agents: 219.60, grey: 222.32 };

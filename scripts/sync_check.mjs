@@ -14,11 +14,8 @@ const down = W.EN_DOWNBEATS;
 
 // [label, chapter (v2) cue, EN target word (first word with this text within ±1.5 s of `near`), near]
 const PLAN = [
-  ['a07 drop 1 hit (HIT1)', 132.55, 'More', 135.22],
   ['a08 calendar 2024', 158.42, 'say', 153.24],
   ['a08 calendar 2025', 159.02, 'year.', 154.08],
-  ['a08 LOADING 99%', 159.3, 'Every', 154.46],
-  ['a08 LOADING 99.999%', 160.86, "it's", 156.06],
   ['a09 press (Burn)', 180.92, 'Burn', 178.84],
   ['a09 press (burn)', 182.44, 'burn', 179.82],
   ['a09 press (tokens)', 183.0, 'tokens.', 180.46],

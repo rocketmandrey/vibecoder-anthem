@@ -49,10 +49,12 @@ def N2O(t):
     for (a, x), (b, y) in zip(RT, RT[1:]):
         if t <= b: return x + (y - x) * (t - a) / (b - a)
     return RT[-1][1] + t - RT[-1][0]
-LYFIX = {0: "BURN THE TOKENS! HEY-HO!", 1: "BURN THE TOKENS! HEY-HO!", 2: "BURN THE TOKENS! HEY-HO!", 3: "BURN THE TOKENS! HEY-HO!", 38: "More water. Why?"}   # what is sung, where the lyric sheet differs
+LYFIX = {38: "More water. Why?"}
+DROP = {0, 1, 2, 3}                                     # the intro «Burn the tokens! Hey-ho!» is a Scribe hallucination: 0–22.4 is instrumental   # what is sung, where the lyric sheet differs
 STRENGTH = {"slam": 12, "drop": 8, "stop": 5}          # truth hits have a kind, not a loudness; v2 chapters want [t, strength]
 ly, seen = [], set()
 for l in d["lines"]:
+    if l["i"] in DROP: continue
     lyric = l["lyric"]
     if l["i"] in LYFIX: txt = LYFIX[l["i"]]
     elif l["i"] in seen:                                  # a held tail of the previous line (mayonnaise…, more…)
