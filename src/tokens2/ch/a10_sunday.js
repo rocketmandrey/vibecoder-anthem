@@ -180,16 +180,46 @@
 
   function sZero(t) {                                                         // 205.65 «Ноль токенов»
     const grey = t > 205.9, flick = !R && t > 205.72 && t < 205.9 && frac(t * 30) < .5;   // R34: no flicker (read as a half-drawn panel)
-    if (R) return screenCU(t, () => {                                         // R34: «0 tokens» small enough to stay (< 64), bar 80% wide, the message under it
-      letter('0 токенов', 960, 330, 62, grey ? '#6A6E78' : '#FF5A4A', { font: ruFont(62), ink: false, pop: seg(t, 205.72, 205.95) * 1.2 + (t < 205.72 ? -1 : 0) });
-      limitBar(530, 520, 860, 0, { h: 100, grey });
-      noLimitMsg(grey, 720);
-    });
+    if (R) return zeroGag(O2N(T));                                           // R34 (v12): a picture, not the «0 tokens» tablet
     screenCU(t, () => {
       if (!flick) limitBar(460, 400, 1000, 0, { h: 92, grey });
       letter('0 токенов', 960, 270, 110, grey ? '#6A6E78' : '#FF5A4A', { font: ruFont(110), ink: false, pop: seg(t, 205.72, 205.95) * 1.2 + (t < 205.72 ? -1 : 0) });
       noLimitMsg(grey);
     });
+  }
+
+  // R34 «Zero tokens left.» (EN real time s): Clawd shakes the empty token sack upside down over his head on «zero tokens»; on «left» one
+  // last tiny coin and a puff of dust drop out, he watches it land, slumps; the sack hangs limp. The limit bar stays small up top.
+  function zeroGag(s) {
+    const SH = [223.9, 224.9], DROP = 224.95, LAND = DROP + .45, sad = ease(seg(s, LAND + .1, LAND + .6)), limp = ease(seg(s, LAND + .9, LAND + 1.5));
+    const shake = s > SH[0] && s < SH[1] ? Math.sin(s * 46) : 0, X = 850, GY = 1060, u = 50;
+    camBegin(884, 640, 1.2);
+    bgFill(WALL, WALL2);
+    paint(rectPts(-400, GY, W + 800, 700), { wash: FLOOR, fill: '#0A0D15', fillOp: 90, tex: .5, ink: null });
+    inkLine([[-300, GY + 2], [W + 300, GY]], 1, '#07080C', 'ink', 0);
+    limitBar(620, 330, 530, 0, { h: 36, grey: true });
+    const aR = lerp(.35, -.2, limp) + .12 * shake, hx = X + 4.9 * u + 2.2 * u * Math.cos(aR), hy = GY - 4.5 * u - 2.2 * u * Math.sin(aR) - .4 * sad * u;
+    clawd(X, GY, u, { eyes: sad > .5 ? 'closed' : 'look', lookX: s > LAND ? .9 : .7, lookY: s > DROP ? Math.min(1, (s - DROP) * 3) : -.5, mouth: sad > .3 ? 'wobble' : 'flat',
+      aL: -.2 + .3 * Math.abs(shake), aR, dy: .4 * sad, sq: .08 * sad, rot: shake * .03, seed: 3 });
+    const bx = hx, by = hy, tilt = shake * .14 + .2 * limp;
+    push(); translate(bx, by); rotate(Math.PI + tilt);                       // the empty sack held by its bottom, mouth down
+    paint([[-95, 0], [-112, -70], [-98, -150], [-60, -190], [60, -190], [98, -150], [112, -70], [95, 0]].map(([x, y]) => [x * (1 - .25 * limp) * 1.15, y * (1 - .15 * limp) * 1.15]),
+      { wash: '#B8925E', fill: '#8A6A3E', fillOp: 80, tex: .7, ink: PAL.ink, sw: 1.2, curv: .3 });
+    paint(rectPts(-78, -218, 156, 18, 1), { wash: '#6A4A28', ink: PAL.ink, sw: .8 });
+    paint(ellPts(0, -110, 38, 38, 14), { wash: TK.gold, ink: TK.goldDk, sw: .8 });
+    pop();
+    paint(ellPts(hx, hy, .55 * u, .5 * u, 12), { wash: PAL.clay, ink: PAL.ink, sw: .9 });   // the fist over the sack
+    const mouth = [bx - Math.sin(tilt) * 218, by + 218];
+    if (s > SH[0]) for (let i = 0; i < 12; i++) {                            // dust puffs out of the sack on each shake
+      const b = SH[0] + i * .12, q = seg(s, b, b + .8); if (q <= 0 || q >= 1) continue;
+      paint(ellPts(mouth[0] + (hash(i) - .5) * 120 * q, mouth[1] + 160 * q, 8 + 22 * q, 8 + 22 * q, 10), { wash: '#8A8478', washOp: 150 * (1 - q), ink: null });
+    }
+    if (s > DROP) {                                                           // the last coin: falls, lands, a tiny bounce, lies there
+      const q = seg(s, DROP, LAND), y = s < LAND ? lerp(mouth[1], GY - 14, q * q) : GY - 14 - 30 * Math.max(0, Math.sin((s - LAND) * 9)) * Math.exp(-(s - LAND) * 5);
+      token(mouth[0], y, 22, { spin: s < LAND ? s * 6 : .02 });
+      if (s > LAND && s < LAND + .4) paint(ellPts(mouth[0], GY - 4, 30 * seg(s, LAND, LAND + .4), 6, 10), { wash: '#8A8478', washOp: 160 * (1 - seg(s, LAND, LAND + .4)), ink: null });
+    }
+    camEnd();
   }
 
   function sTour(t) {                                                         // 207.6 3 games, 7 sites, 42 agents → «ни один не нужен»
