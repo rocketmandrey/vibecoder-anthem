@@ -240,9 +240,10 @@
       if (a < .4) paint(starPts(x, base - hh, 110 * a / .4 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .4), ink: INK, sw: 1.2 });
     }
   }
-  // the WHEEL OF SAMSARA round the hamster wheel: a huge band turning clockwise with the wheel; 4 fixed stations (top token, right GPU,
-  // bottom task, left agent) — whatever rides past a station turns into the next thing; a station flares on its sung noun
-  const ST = [[-Math.PI / 2, 1, TK.yellow], [0, 0, '#2FBF71'], [Math.PI / 2, 3, TK.orange], [Math.PI, 2, '#6F8BE0']];   // [angle, itemOf type, glow]
+  // the WHEEL OF SAMSARA round the hamster wheel: a huge band turning clockwise with the wheel; 4 fixed stations in the sung order, clockwise
+  // from the top (v14): GPU → token → agent → task — whatever rides past a station turns into the next thing; a station flares on its sung noun
+  const ST = [[-Math.PI / 2, 0, '#2FBF71'], [0, 1, TK.yellow], [Math.PI / 2, 2, '#6F8BE0'], [Math.PI, 3, TK.orange]];   // [angle, itemOf type, glow]
+  const SECT = ['#1F5A3A', '#6A4E1A', '#2A3A72', '#6A3A1A'], STR = 124;                                         // band tint after each station; station radius
   const ST_W = ST.map(([, ty]) => RG.words.filter((w, i) => RG.ix[i] === ty));
   const bigItem = (ty, x, y, k, s, r) => { push(); translate(x, y); scale(k); itemOf(ty, 0, ty === 2 ? -16 : 0, s, r); pop(); };
   function samsara(s, ang, wk) {
@@ -250,7 +251,7 @@
     for (let j = 0; j < 8; j++) { const a = ra + j * TAU / 8;                                                     // spokes to the hamster wheel
       inkLine([[cx + Math.cos(a) * (RG.R + 30), cy + Math.sin(a) * (RG.R + 30)], [cx + Math.cos(a) * R0, cy + Math.sin(a) * R0]], 7, '#7A5A34', 'ink', 0); }
     for (let q = 0; q < NQ; q++) {                                                                                // the band, tinted per sector
-      const a0 = q * TAU / NQ - Math.PI / 2, a1 = a0 + TAU / NQ + .004, k = Math.floor(q / (NQ / 4)), c = mixCol(['#6A4E1A', '#1F5A3A', '#6A3A1A', '#2A3A72'][k], '#241E2A', .25 + .1 * (q % 2));
+      const a0 = q * TAU / NQ - Math.PI / 2, a1 = a0 + TAU / NQ + .004, k = Math.floor(q / (NQ / 4)), c = mixCol(SECT[k], '#241E2A', .25 + .1 * (q % 2));
       paint([[cx + Math.cos(a0) * R0, cy + Math.sin(a0) * R0], [cx + Math.cos(a0) * R1, cy + Math.sin(a0) * R1], [cx + Math.cos(a1) * R1, cy + Math.sin(a1) * R1], [cx + Math.cos(a1) * R0, cy + Math.sin(a1) * R0]], { wash: c, ink: null });
     }
     for (const r of [R0, R1, R1 + 10]) paint(ellPts(cx, cy, r, r, 120), { ink: '#C9A24A', sw: r > R1 ? 1.6 : 2.6 });
@@ -263,12 +264,15 @@
       bigItem(ST[k][1], x, y, 2.7 * (1 + .12 * wk), s, ST[k][1] === 1 ? .1 * Math.sin(s * 4 + j) : a * .5 + j);
       if (near < .09) paint(starPts(x, y, 46 * (1 - near / .09) + 10, .35, 8), { wash: '#FFF3B0', washOp: 200 * (1 - near / .09), ink: null });
     }
+  }
+  function stations(s) {                                                                                         // drawn over the wheel stand
+    const cx = RG.x, cy = RG.y;
     ST.forEach(([a, ty, gc], i) => {                                                                                // the stations
       const x = cx + Math.cos(a) * RS, y = cy + Math.sin(a) * RS, lit = kick(s, ST_W[i], .7), been = ST_W[i].length && s >= ST_W[i][0], k = 1 + .3 * lit;
-      if (lit > .02) glowAt(x, y, 230 * lit, gc, 170 * lit);
-      paint(ellPts(x, y, 96 * k, 96 * k, 40), { wash: '#1C1A22', fill: gc, fillOp: been ? 60 + 120 * lit : 0, tex: .3, ink: '#E8C870', sw: 3 });
-      bigItem(ty, x, y + (ty === 3 ? 0 : 4), 3.6 * k, s, .1 * Math.sin(s * 3));
-      if (!been) paint(ellPts(x, y, 96, 96, 40), { wash: '#1C1A22', washOp: 150, ink: null });
+      if (lit > .02) glowAt(x, y, 300 * lit, gc, 170 * lit);
+      paint(ellPts(x, y, STR * k, STR * k, 40), { wash: '#1C1A22', fill: gc, fillOp: been ? 60 + 120 * lit : 0, tex: .3, ink: been ? '#FFE08A' : '#8A7A50', sw: been ? 4 : 2 });
+      bigItem(ty, x, y + (ty === 3 ? 0 : 5), 4.7 * k, s, .1 * Math.sin(s * 3));
+      if (!been) paint(ellPts(x, y, STR, STR, 40), { wash: '#1C1A22', washOp: 150, ink: null });
     });
   }
   function ringScene(t) {
@@ -282,6 +286,7 @@
     samsara(s, ang, wk);
     // the stand: an A-frame from the axle to the floor
     for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 330, FLY + 4]], 18, A2.steel, 'ink', 0);
+    stations(s);
     // the wheel: dark drum behind, spokes, the hamster, then the rim (two hoops + rungs) and its outer gear teeth
     paint(gearPts(cx, cy, R + 26, 44, ang, 14), { wash: A2.gunmetal, ink: INK, sw: 1.4 });
     paint(ellPts(cx, cy, R + 26, R + 26, 64), { wash: A2.steel, ink: INK, sw: 1.6 });
@@ -321,7 +326,7 @@
     }
   }
   // one take v1 137.00 → 152.04 (a08 starts on the 152.04 slam); camera keys and punches in v1 time (the scene table's), on the sung words
-  scene('e23_loop', 137.0, 152.04, ringScene, [[137.0, 940, 960, 1500], [wv1[7], 940, 955, 1480, 1], [enWord("working", 149.60), 940, 960, 1500, 1], [152.039, 945, 950, 1520, 1]],
+  scene('e23_loop', 137.0, 152.04, ringScene, [[137.0, 940, 900, 1500], [wv1[7], 940, 895, 1480, 1], [enWord("working", 149.60), 940, 900, 1500, 1], [152.039, 945, 890, 1520, 1]],   // v14: 60 up, the top station clear of the title band
     [...wv1.map((w, i) => [w, i === 7 ? 18 : 9]), [enWord('working', 149.60), 16]]);
 
   // ======== E26 NEW (157.46–162.86) «Writes your thesis. Grades it too. No one's working. Including you.» ========
