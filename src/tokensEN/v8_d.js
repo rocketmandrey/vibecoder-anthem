@@ -26,7 +26,7 @@
     const x = SX, y = SY, w = SW, n = nSlip(s);
     letter('AGI: LOADING…', x + 50, y + 62, 50, '#1E1E24', { align: 'left', ink: false });
     paint(rectPts(x + 50, y + 100, 180, 8), { wash: A2.sodium, ink: null });
-    const bx = x + 90, bw = w - 180, by = y + 300, bh = 66;
+    const bx = x + 90, bw = w - 180, by = y + 270, bh = 130;               // v12: a fat bar that reads on a phone
     // finish line: at the bar end, then each slip slides it right out of the bar (the bar «grows»), fill falls back
     const slipK = SLIP.reduce((a, v) => a + backOut(clamp((s - v) / .35)), 0);
     const fill0 = ease(seg(s, A - .3, WD.release + .5)) * .99;               // 0.6 → 99% by «release»
@@ -42,7 +42,7 @@
     paint([[fx + 6, by - 110 - hop], [fx + 70, by - 92 - hop], [fx + 6, by - 74 - hop]], { wash: '#D8262A', ink: INK, sw: .8 });
     letter('100%', fx + 10, by - 136 - hop, 28, '#D8262A', { ink: false });
     const pct = n === 0 ? Math.min(99, Math.round(fillN * 100)) + '%' : n === 1 ? '64%' : '41%';
-    letter(pct, x + w / 2, y + 470, 56 * (1 + .25 * kick(s, SLIP, .2)), '#1E1E24', { ink: false });
+    letter(pct, x + w / 2, y + 520, 120 * (1 + .25 * kick(s, SLIP, .2)), '#1E1E24', { ink: false });
     // release sticker: 5.0 → 6.0 → 7.0, slapped on over the old one
     const pk = backOut(clamp((s - (n ? SLIP[n - 1] : WD.release)) / .16));
     if (s >= WD.release) {

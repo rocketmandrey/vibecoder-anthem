@@ -198,7 +198,7 @@
     const R = window.R34, pk = a08_cam(t, lt, 520, R);
     a08_stage(t, (x, y, w, h) => {
       a08_slideTitle(x, y, w, 'AGI — К ВЕСНЕ!');
-      const cx = x + w * .5, cy = y + h * .56, pw = 320, ph = 380;
+      const cx = x + w * (R ? .56 : .5), cy = y + h * (R ? .54 : .56), pw = R ? 470 : 320, ph = R ? 560 : 380;   // R34 (v12): the page fills the slide height
       paint(rectPts(cx - pw / 2 + 12, cy - ph / 2 + 14, pw, ph), { wash: '#C9C0AE', ink: null });                          // stack edge
       for (let i = 0; i < 5; i++) paint(ellPts(cx - pw * .36 + i * pw * .18, cy - ph / 2 - 4, 9, 12, 10), { ink: '#555', sw: 1.2 });
       // the current page is the first one not yet torn

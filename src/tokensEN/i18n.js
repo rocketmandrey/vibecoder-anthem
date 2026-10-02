@@ -114,7 +114,7 @@
   const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
   // [from, to, max size]: the reused a04 report shot (its small EN labels may stay: cover, sticky note); the chorus 2 CANNED TOKENS billboard
   // (user: the slogan in huge type)
-  const LABEL_OK = [[81.9, 87.6, 100], [105.84, 110.55, 400], [191.8, 194.32, 140]];   // + the a09 puppets' «tokens burned» counter
+  const LABEL_OK = [[81.9, 87.6, 100], [105.84, 110.55, 400], [152.04, 157.46, 260], [191.8, 194.32, 140]];   // 152–157: the AGI calendar year + the loading %   // + the a09 puppets' «tokens burned» counter
   const bigAt = () => (LABEL_OK.find(([a, b]) => T >= a && T < b) || [0, 0, BIG])[2];
   const quiet = (en, size) => CYR.test(en) || (!titleOk() && !/^(SUN|MON) \d/.test(en) && size >= bigAt() && !/^\d{1,2}$/.test(en.trim()));   // 1–2 digits: calendar dates stay; the a10 clock readout (SUN 11:59 PM) is a prop, it stays
   const _counter = counter;
