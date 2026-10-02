@@ -244,7 +244,17 @@
     camEnd();
   }
 
+  // R34 (v14) «Silence. … I'm at peace.» (EN real 237.00–241.96): one calm close-up of Clawd at his desk, eyes closing, a small smile;
+  // the camera only creeps in (real time, so the shot boundary and the retime segments can't jerk it)
+  function calmCU() {
+    const s = O2N(T), k = seg(s, 237.0, 241.96), eyes = s < 237.7 ? 'narrow' : 'closed', br = Math.sin(s * 2.2) * .12;
+    camBegin(880, 850 - 10 * k, lerp(1.85, 2.25, k));
+    room(s, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .3 + .6 * seg(s, 237.0, 239.5), glow: .45,
+      clawd: sitClawd(s, { eyes, lookX: 0, mouth: s > 239.56 ? 'smile' : 'flat', blush: s > 239.9, aL: .15, aR: .3, dy: br, sq: -br * .2 }) });
+    camEnd();
+  }
   function sSilence(t) {                                                      // 213.95 «Тишина…»: he gets up, walks to the window
+    if (R) return calmCU();
     const z = kf(t, [[213.95, 1.05], [216.8, .98]]), up = seg(t, 214.4, 214.7), wk = seg(t, 214.7, 216.6);
     const x = lerp(900, R ? 700 : 420, ease(wk)), gy = lerp(760, 840, up);
     if (R) camBegin(960, 540, 1); else camBegin(kf(t, [[213.95, 1060], [216.8, 900]]), 480, z);
@@ -263,6 +273,7 @@
   }
 
   function sHappy(t) {                                                        // 216.8 «Я счастлив.» under the moon
+    if (R) return calmCU();
     const z = kf(t, [[216.8, 1.4], [218.45, 1.5]]), hx = R ? 700 : 420;   // R34: off the left frame edge
     if (R) camBegin(960, 540, kf(t, [[216.8, 1], [218.45, 1.03]])); else camBegin(400, 560, z);
     room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: 1, glow: .5,
