@@ -49,6 +49,11 @@
     if (en) for (const x of WORDR) if (x > ra && x < rb) add(x, true);
     for (const d of DB) if (d > ra && d < rb) add(d, false);
     P.sort((p, q) => p - q);
+    // a downbeat inside one shot where the old take is shorter (< 0.9x): 1x would run past it and the re-sync there jumps BACK (the
+    // 54.32 shredder hitch) — drop that sync point, the segment then runs on to the next cue
+    const slow = (p, q) => { const sh = shotAt(N2O(p) + 1e-4), nx = shotAt(N2O(q) + 1e-4);
+      return sh && nx && nx.key === sh.key && (sh.st(N2O(q) - 1e-4) - sh.st(N2O(p) + 1e-4)) / (q - p) < .9; };
+    for (let k = 1; k + 1 < P.length; k++) if (!cue.has(+P[k].toFixed(4)) && slow(P[k - 1], P[k])) P.splice(k--, 1);
     const rbCue = TABR.some(x => Math.abs(x - rb) < .05);
     for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1], !calm && (k + 2 === P.length ? rbCue : cue.has(+P[k + 1].toFixed(4))));
   }
