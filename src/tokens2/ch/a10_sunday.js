@@ -386,7 +386,8 @@
       token(1220 + Math.cos(a) * v * p, 620 + Math.sin(a) * v * p + 600 * p * p, 22 + hash(i + 2) * 14, { spin: t * 2 + i, burn: clamp(p * 1.2) });
     }
     if (t >= CRASH) burnBar(t);
-    if (t >= CRASH) flash(Math.max(1 - seg(t, CRASH, CRASH + .35), .75 * h2), '#FFF3C8');
+    if (t >= CRASH) R ? flash(.45 * Math.max(1 - seg(t, CRASH, CRASH + .08), hitK(t, [HEY2], .035)), '#FFB060')   // R34 (v12): 2 warm frames, no bleached frame
+      : flash(Math.max(1 - seg(t, CRASH, CRASH + .35), .75 * h2), '#FFF3C8');
     glitchCut(t, 227.2, { span: .06, k: .6 });
   }
 

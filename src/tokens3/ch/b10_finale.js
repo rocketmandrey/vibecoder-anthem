@@ -15,6 +15,8 @@
   const b10_fist = col => (u, sw) => { paint(rectPts(-.2 * u, -.42 * u, 1.9 * u, .84 * u), { wash: col, ink: INK, sw: sw * .6 }); paint(rrPts(1.5 * u, -.7 * u, 1.35 * u, 1.4 * u, .45 * u), { wash: col, ink: INK, sw: sw * .6 }); };
   const hop = (t, ph = 0) => Math.abs(Math.sin((bpOf(t) + ph) * Math.PI));
   const R = window.R34;                                                             // EN reels 3:4 picture (view x 420–1500, y -180..1260; RU34 keys at the end)
+  // EN reels (v12): beat flashes 1–2 frames, warm and half-strength — the long cream wash bleached the frame
+  const bflash = (k, col) => flash(R ? .5 * k : k, R ? '#FFB060' : col), hk = (t, l, d) => hitK(t, l, R ? .035 : d);
 
   // the laptop (Clawd-local, u units, centre at 0,0), from a10 sHall
   function b10_laptop(u, glow = 1) {
@@ -43,7 +45,7 @@
     (R ? [[640, 1160, 30, 42], [1280, 1170, 31, 17]] : [[400, 1090, 36, 42], [1540, 1100, 38, 17]]).forEach(([x, y, u, n]) => b10_agent(x, y, u, t, n, { jump: 1.6 }));
     camEnd();
     sfx('ЭЙ!', 560, 260, 110, A2.hazard, t - S1 + .08, { life: .5, rot: -.12, font: ruFont(110), stroke: SOOT });
-    flash(.18 * k + .6 * hitK(t, [S1], .1), '#FFF3C8');
+    bflash(.18 * k + .6 * hk(t, [S1], .1), '#FFF3C8');
   }
 
   // ---------- 235.36 stage dive + crowd-surf on the agents' hands ----------
@@ -99,7 +101,7 @@
     pop();
     camEnd();
     sfx('БУМ', 960, 300, 160, A2.hazard, bl, { life: .7, rot: .05, font: ruFont(160), stroke: SOOT });
-    flash(.6 * hitK(t, [BOOM], .1), '#FFF3C8');
+    bflash(.6 * hk(t, [BOOM], .1), '#FFF3C8');
   }
 
   // ---------- 237.34 orbit: the planet's weekly limit burns to 0%, the Earth flips into a token ----------
@@ -127,7 +129,7 @@
     const v = lerp(.07, 0, ease(seg(t, S4 + .1, MID)));
     limitBar(R ? 540 : 460, R ? -20 : 110, R ? 840 : 1000, v, { h: 62, burn: 1, glow: .5, label: 'НЕДЕЛЬНЫЙ ЛИМИТ · ПЛАНЕТА ЗЕМЛЯ' });
     if (t >= MID) stamp('0%', 1560, 820, 120, t, MID, { rot: -.12 });
-    flash(.4 * hitK(t, [S4], .12) + .35 * hitK(t, [MID], .1), '#FFF3C8');
+    bflash(.4 * hk(t, [S4], .12) + .35 * hk(t, [MID], .1), '#FFF3C8');
   }
 
   // ---------- 238.66 the smash: wind up, SMASH on the beat, tokens + sparks, fists up, white flash → black ----------
@@ -165,7 +167,7 @@
     camEnd();
     if (post) stamp('0%', 520, 300, 170, t, SMASH, { rot: -.1, punch: .1 });
     if (t > B[10]) punkText('ЖГИ!', 1420, 300, 130, t, B[10], { step: .04 });
-    flash(.7 * hitK(t, [SMASH], .1) + .3 * k * (t > B[10]), '#FFF3C8');
+    bflash(.7 * hk(t, [SMASH], .1) + .3 * k * (t > B[10]), '#FFF3C8');
     // the end: white flash → black by the cut to the credit
     flushLetters();
     const wf = seg(t, FLASH, FLASH + .12), bl = seg(t, TO_BLACK - .06, TO_BLACK);   // black straight over the full white-out (no crossfade: the scene must not show through grey)
