@@ -29,11 +29,11 @@
   // v12e: the ending (16.2–22.4) — the PRESS is the engine that switches the city on: every stroke lights the skyline behind it.
   // Strokes only on drum-stem hits: the 16.21 slam, a rest (ram up, steam), then the roll's accents 19.11 · 19.69 → 19.86 (a «da-DUM»),
   // a slow heave through the drum-less 20–22 gap (no strokes, the press shivers and hisses), the 22.18 drum entry the final big one.
-  // Ending variants (render.mjs --var=introend:a|b|c → window.BTT_VAR.introend, default a):
+  // Ending variants (render.mjs --var=introend:a|b|c → window.BTT_VAR.introend, default b):
   //   a — a steam engine: a flywheel turns per stroke, power runs along sagging cables, the city lights in a wave outward from the press
   //   b — each stroke sends a shockwave ring along the ground, the windows light as the rings pass; the camera pulls back to the whole skyline
   //   c — the press pumps glowing token-liquid through pipes into the factories, chimneys start smoking one by one, the last stroke lights all
-  const VE = ((window.BTT_VAR || {}).introend || 'a').toLowerCase();
+  const VE = ((window.BTT_VAR || {}).introend || 'b').toLowerCase();          // the user picked b
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
   const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
@@ -124,15 +124,18 @@
       });
       paint(rectPts(400, 560, 1900, 200), { wash: '#C8724A', washOp: 18 * sky, ink: null });                               // horizon haze over the far skyline
     }
+    const pools = [];                                                                                   // light pools, drawn on the hill below
     // hanging lamps (bang on with the drops): a shaded enamel cone, a rim highlight, a glowing bulb with a halo, a beam + a light pool on
     // the slope, a slow sway on the long cord
     [[520, 700, DROP], [980, 250, 5.22], [1440, -520, 5.22]].forEach(([lx0, ly0, on], i) => {
       const a = .012 * Math.sin(t * 1.1 + i * 2.1), L = ly0 + 1400, lx = lx0 + Math.sin(a) * L, ly = ly0 - (1 - Math.cos(a)) * L, lit = t > on ? 1 - clamp(2 * sky) : 0;
       inkLine([[lx0, -1400], [lx, ly - 36]], .8, INK, 'inkfine', 0);
-      if (lit > 0) { const G = hillY(lx) - 10, h = G - ly, wb = .32 * h, sx = Math.tan(a) * h;
-        paint([[lx - 46, ly + 18], [lx + 46, ly + 18], [lx + sx + wb, G], [lx + sx - wb, G]], { wash: '#FFE2A8', washOp: 26 * lit, ink: null });
-        paint([[lx - 26, ly + 18], [lx + 26, ly + 18], [lx + sx + wb * .5, G], [lx + sx - wb * .5, G]], { wash: '#FFF0C8', washOp: 26 * lit, ink: null });
-        paint(ellPts(lx + sx, G, wb * .9, wb * .14, 20), { wash: '#FFE2A8', washOp: 40 * lit, ink: null }); }
+      // v12f (user: «the beams don't reach the ground»; diagnosed with Codex/Astra): the beam's bottom corners sit ON the slope surface
+      // (they were both at the lamp's own ground height, so on the steep slope one corner hung in the air and the other went underground)
+      if (lit > 0) { const h = hillY(lx) - ly, wb = .32 * h, sx = Math.tan(a) * h, foot = x => [x, hillY(x) + 4];
+        paint([[lx - 46, ly + 18], [lx + 46, ly + 18], foot(lx + sx + wb), foot(lx + sx - wb)], { wash: '#FFE2A8', washOp: 26 * lit, ink: null });
+        paint([[lx - 26, ly + 18], [lx + 26, ly + 18], foot(lx + sx + wb * .5), foot(lx + sx - wb * .5)], { wash: '#FFF0C8', washOp: 26 * lit, ink: null });
+        pools.push([lx + sx, wb, lit]); }
       paint(rectPts(lx - 9, ly - 46, 18, 14), { wash: A2.steel, ink: INK, sw: .5 });                                    // the cap
       paint([[lx - 22, ly - 34], [lx, ly - 34], [lx, ly + 18], [lx - 72, ly + 18]], { wash: '#262A31', ink: null });    // the shade, shadow half
       paint([[lx, ly - 34], [lx + 22, ly - 34], [lx + 72, ly + 18], [lx, ly + 18]], { wash: '#59616C', ink: null });    // lit half
@@ -146,6 +149,8 @@
     const edge = []; for (let x = -600; x <= 2400; x += 50) edge.push([x, hillY(x)]);   // dense: brush clamps far vertices
     paint([...edge, [2400, 2800], [-600, 2800]], { wash: '#6A5A4A', fill: '#3A3028', fillOp: 90, tex: .6, ink: INK, sw: 2 });
     inkLine(edge.filter(([x]) => x > -300 && x < 2200), 7, '#D8B880', 'ink', 0);
+    for (const [cx, wb, lit] of pools) { const on = cx < SL.B[0], r = on ? -Math.atan(SK) : 0;   // the pool lies along the slope (ellPts' rot only shifts the start angle)
+      paint(ellPts(0, 0, wb * (on ? 1.15 : .9), wb * .16, 24).map(([x, y]) => [cx + x * Math.cos(r) - y * Math.sin(r), hillY(cx) + 6 + x * Math.sin(r) + y * Math.cos(r)]), { wash: '#FFE2A8', washOp: 55 * lit, ink: null }); }
     for (let k = 0; k < 9; k++) { const u = hash(k + 4), x = lerp(-300, SL.B[0], u), y = hillY(x) + 40 + hash(k) * 120; paint(ellPts(x, y, 26 + hash(k + 1) * 30, 14 + hash(k + 2) * 12, 8, 4, k), { wash: '#3A3F48', ink: INK, sw: .6 }); }
     // the press (bed on the plateau): idle, a creak shiver while the token is loaded, then the slams
     const PW = 520, PH = 1000, wob = t > SL.lift[0] && t < SLAM - .05 ? Math.sin(t * 40) * 3 * seg(t, SL.lift[0], SLAM) : t > 21.3 && t < FINAL ? Math.sin(t * 47) * 6 * seg(t, 21.3, FINAL - .05) : 0;   // + the slow heave before the last stroke
