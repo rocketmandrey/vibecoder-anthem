@@ -87,8 +87,8 @@
     const fv = i => dt => { const [t0, fn] = fin.shots[i], t = V32EN(EN2V3(t0) + dt); T = t; fn(t, t - t0, end(fin, i) - t0); };
     const G = 238.94;                                                           // sCredit: the gag (strike + new name + nod) is over
     const LIST = [[OUTCU, ru(7, dt => 224.2 + .25 * dt)], [B1, ru(7, dt => 225.0 + dt)], [B2, ru(8, dt => 227.28 + dt)]];
-    let b = BT.indexOf(B2) + 5;                                                 // [beats on screen, shot]: the blast 5, the hall 5, riot 5/5, data center 6, 4, 4
-    for (const [n, fn] of [[5, ru(9, dt => 229.15 + dt)], [5, fv(0)], [5, fv(1)], [6, fv(2)], [4, fv(3)], [4, fv(4)],
+    let b = BT.indexOf(B2) + 5;                                                 // [beats on screen, shot]: the blast 5, the hall 5, riot 5/5, data center 5, the planet 5, 4 (v12: data center −1 beat, planet +1)
+    for (const [n, fn] of [[5, ru(9, dt => 229.15 + dt)], [5, fv(0)], [5, fv(1)], [5, fv(2)], [5, fv(3)], [4, fv(4)],
       [0, ru(10, dt => Math.min(237.95 + 1.8 * dt, G) + Math.max(0, dt - (G - 237.95) / 1.8), 244)]]) { LIST.push([BT[b], fn]); b += n; }
     const A = N2O(OUTCU), name = 'en_hold_v10out';
     chapter(name, A, N2O(EN_REAL_DUR) + 1, [[A, t => {
