@@ -1,6 +1,6 @@
 #!/bin/bash
 # colab_render.sh <render.mjs clip args>: `node render.mjs --clip=…` split over Colab GPU VMs (docs/COLAB.md).
-#   scripts/colab_render.sh --song=tokensENr --clip=0:249.216 --out=out/reels/btt_full.mp4
+#   scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4
 #   env: VMS="L4 L4 A100 A100" (Colab allows 2 per type), JOBS=6 (Chromes per VM), MAXMIN=45 (hard cap, minutes),
 #        CHROME_VERSION (default: the Mac's Chrome), CHROME_GL
 # Each VM renders a contiguous frame range as JOBS `render.mjs --part` chunks (video only, same x264 params as the local

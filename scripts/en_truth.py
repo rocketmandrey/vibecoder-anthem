@@ -1,31 +1,91 @@
 """BURN THE TOKENS: assets/tokensEN/truth.json (clipforge audio truth: beats, downbeats, hits, Scribe lines) -> src/tokensEN/truth.js.
-usage: python3 scripts/en_truth.py   (re-run whenever truth.json changes; the page loads the .js, file:// can't fetch JSON)"""
-import json
+usage: python3 scripts/en_truth.py   (re-run whenever truth.json changes; the page loads the .js, file:// can't fetch JSON)
+
+Re-timing: every scene / warp anchor in src/ is authored on the FIRST track (truth_v1.json, 249.2 s) = "v1 time". A new track only needs a
+new truth.json: its sung words are aligned to the v1 words (difflib), the alignment is thinned (RDP, 60 ms = 2 frames) into RETIME [[real, v1], ...],
+and the page draws real time t at v1 time N2O(t) (core.js renderAt, SONG.tmap). Every array below is emitted in v1 time, so subtitles,
+hits, beats and words land where the NEW track has them. Structural differences (new chant, cut pre-chorus, long break…) are CUTS below."""
+import json, re, difflib
 
 d = json.load(open("assets/tokensEN/truth.json"))
+v1 = json.load(open("assets/tokensEN/truth_v1.json"))
+key = lambda s: re.sub(r"[^a-z0-9]", "", s.lower()).replace("dpus", "gpus")
+words = lambda t: [(w["s"], key(w["w"])) for l in t["lines"] for w in l.get("words", [])]
+wn, wo = words(d), words(v1)
+auto = []
+for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, [x[1] for x in wn], [x[1] for x in wo], autojunk=False).get_opcodes():
+    if tag == "equal" or (tag == "replace" and i2 - i1 == j2 - j1):
+        auto += [(wn[i][0], wo[j][0]) for i, j in zip(range(i1, i2), range(j1, j2))]
+def rdp(P, eps=.06):                                    # thin on the offset curve (real − v1): keeps every word within eps
+    if len(P) < 3: return P
+    (a, oa), (b, ob) = (P[0][0], P[0][0] - P[0][1]), (P[-1][0], P[-1][0] - P[-1][1])
+    dev = [abs((x - y) - (oa + (ob - oa) * (x - a) / (b - a))) for x, y in P[1:-1]]
+    i = max(range(len(dev)), key=dev.__getitem__) + 1
+    return rdp(P[:i + 1], eps)[:-1] + rdp(P[i:], eps) if dev[i - 1] > eps else [P[0], P[-1]]
+# [real, v1] structure (track v2, 264.8 s): the auto word anchors are dropped inside each (a, b) real span and the hand anchors used instead
+CUTS = [
+    ((0, 22.3), [(0, 0), (22.2, 18.16)]),                                   # new «Burn the tokens! Hey-ho!» intro → the Sisyphus intro (scenes3, real time)
+    ((93.05, 93.4), [(93.12, 86.9), (93.1205, 92.86)]),                      # the 2nd pre-chorus is gone: verse 2 → chorus 2 straight
+    ((110.0, 126.3), [(111.04, 109.90), (113.70, 112.556)]),                # a05 clicks, then the long break (EN scene «powerup», real time)
+    ((195.7, 195.95), [(195.80, 175.80), (195.8005, 178.60)]),              # rap → last chorus without the v1 gap
+    ((210.0, 218.5), [(210.08, 191.83), (210.0805, 194.32), (217.84, 202.08), (217.8405, 210.0)]),   # «Worth half a trillion more» = the money pile
+    ((249.5, 1e9), [(250.37, 237.02), (259.40, 241.5), (259.4005, 242.2), (d["duration"], v1["duration"])]),   # chant = b10 finale riot, end card
+]
+anch = [p for p in auto if not any(a <= p[0] < b for (a, b), _ in CUTS)] + [p for _, h in CUTS for p in h]
+anch.sort()
+RT = [anch[0]]
+for p in anch[1:]:                                      # strictly increasing both ways (a hand cut wins over a stray word)
+    if p[0] > RT[-1][0] and p[1] > RT[-1][1]: RT.append(p)
+    elif any(p in h for _, h in CUTS): RT[-1] = p
+hand = {p for _, h in CUTS for p in h}
+segs, cur = [], [RT[0]]
+for p in RT[1:]:
+    cur.append(p)
+    if p in hand: segs.append(cur); cur = [p]
+segs.append(cur)
+RT = [RT[0]] + [q for s in segs for q in rdp(s)[1:]]
+def N2O(t):
+    if t <= RT[0][0]: return RT[0][1] + t - RT[0][0]
+    for (a, x), (b, y) in zip(RT, RT[1:]):
+        if t <= b: return x + (y - x) * (t - a) / (b - a)
+    return RT[-1][1] + t - RT[-1][0]
+LYFIX = {0: "BURN THE TOKENS! HEY-HO!", 1: "BURN THE TOKENS! HEY-HO!", 2: "BURN THE TOKENS! HEY-HO!", 3: "BURN THE TOKENS! HEY-HO!", 38: "More water. Why?"}   # what is sung, where the lyric sheet differs
 STRENGTH = {"slam": 12, "drop": 8, "stop": 5}          # truth hits have a kind, not a loudness; v2 chapters want [t, strength]
 ly, seen = [], set()
 for l in d["lines"]:
     lyric = l["lyric"]
-    if l["i"] in seen:                                  # a held tail of the previous line (mayonnaise…, more…)
+    if l["i"] in LYFIX: txt = LYFIX[l["i"]]
+    elif l["i"] in seen:                                  # a held tail of the previous line (mayonnaise…, more…)
         txt = "…" + l["text"].strip(" .").lower()
     else:
         txt = l["text"] if lyric.startswith(("*", "[")) else lyric   # the doubled choir line has no lyric of its own
     seen.add(l["i"])
-    ly.append([round(l["s"], 3), round(l["e"], 3), txt])
+    ly.append([round(N2O(l["s"]), 3), round(N2O(l["e"]), 3), txt])
 
-r = lambda xs: "[" + ",".join(f"{x:g}" for x in xs) + "]"
+m = lambda x: round(N2O(x), 3)
+r = lambda xs: "[" + ",".join(f"{m(x):g}" for x in xs) + "]"
 out = f"""// generated by scripts/en_truth.py from assets/tokensEN/truth.json ({d['timing_source']}, {d['duration']:.2f} s) — do not edit by hand.
+// ALL TIMES ARE v1 TIME (the first track, the one every scene is authored on): the page shows real time t at N2O(t). RETIME [[real, v1]]:
+const RETIME = [{",".join(f"[{round(a, 4)!r},{round(b, 4)!r}]" for a, b in RT)}];
+const N2O = t => lerpTab(RETIME, t, 0, 1), O2N = t => lerpTab(RETIME, t, 1, 0);   // real → v1, v1 → real (strictly monotonic)
+if (typeof SONG !== 'undefined') SONG.tmap = N2O;
+const EN_REAL_DUR = {d['duration']:.3f};
 // EN_BEATS / EN_DOWNBEATS: the tracked grid (the tracker sits ~0.1 s after the sung onsets); EN_HITS: [t, strength]; LY: [start, end, line] (English, one line at a time).
-const EN_DUR = {d['duration']:.3f};
+const EN_DUR = {m(d['duration']):.3f};
 const EN_BEATS = {r(d['beats'])};
 const EN_DOWNBEATS = {r(d['downbeats'])};
-const EN_HITS = [{",".join(f"[{h['t']:g},{STRENGTH[h['kind']]}]" for h in d['hits'])}];
-const EN_SECTIONS = [{",".join(f"[{x['s']:g},{x['e']:g},{json.dumps(x['label'])},{x['energy']:g}]" for x in d['sections'])}];   // [start, end, label, energy]
-const EN_SILENCES = [{",".join(f"[{s['s']:g},{s['e']:g}]" for s in d['silences'])}];
+const EN_HITS = [{",".join(f"[{m(h['t']):g},{STRENGTH[h['kind']]}]" for h in d['hits'])}];
+const EN_SECTIONS = [{",".join(f"[{m(x['s']):g},{m(x['e']):g},{json.dumps(x['label'])},{x['energy']:g}]" for x in d['sections'])}];   // [start, end, label, energy]
+const EN_SILENCES = [{",".join(f"[{m(s['s']):g},{m(s['e']):g}]" for s in d['silences'])}];
+const EN_WORDS = [{",".join(f"[{m(w['s']):g},{json.dumps(w['w'].strip(), ensure_ascii=False)}]" for l in d['lines'] for w in l.get('words', []))}];   // [start, word] (Scribe)
+// the sung word nearest `near` whose text matches (case/punctuation-blind): scenes anchor on words, so a re-timed track only needs truth.json
+const enWord = (w, near) => {{ const k = s => s.toLowerCase().replace(/[^a-z0-9]/g, ''), m = EN_WORDS.filter(x => k(x[1]) === k(w)); return m.length ? m.reduce((b, x) => Math.abs(x[0] - near) < Math.abs(b[0] - near) ? x : b)[0] : near; }};
 const LY = [
 {chr(10).join("  " + json.dumps(x, ensure_ascii=False) + "," for x in ly)}
 ];
 """
 open("src/tokensEN/truth.js", "w").write(out)
-print("src/tokensEN/truth.js", len(ly), "lines")
+print("src/tokensEN/truth.js", len(ly), "lines,", len(RT), "retime anchors")
+for (a, x), (b, y) in zip(RT, RT[1:]):
+    k = (y - x) / (b - a)
+    if not .7 < k < 1.4: print(f"  v1 speed {k:5.2f}x  real {a:7.2f}–{b:7.2f}  →  v1 {x:7.2f}–{y:7.2f}")

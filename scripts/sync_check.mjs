@@ -7,9 +7,9 @@ const src = f => fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8');
 const ctx = { console: { warn: (...a) => console.log('page:', ...a), log() {} }, Math };
 ctx.window = ctx; vm.createContext(ctx);
 vm.runInContext(['src/tokensEN/truth.js', 'src/tokens3/audio.js'].map(src).join('\n') + '\nconst HITS = [], CH = [];\n' + src('src/tokens3/warp.js')
-  + '\n' + src('src/tokensEN/warp.js') + '\nwindow.W = { EN_WORDS: typeof LY_WORDS !== "undefined" ? LY_WORDS : null, EN_DOWNBEATS };', ctx);
+  + '\n' + src('src/tokensEN/warp.js') + '\nwindow.W = { EN_WORDS, EN_DOWNBEATS, N2O };', ctx);
 const { EN2V2, W } = ctx;
-const words = JSON.parse(src('assets/tokensEN/truth.json')).lines.flatMap(l => l.words || []).map(w => [w.s ?? w.start, (w.w ?? w.word ?? '').trim()]);
+const words = W.EN_WORDS;                         // the new track's sung words, already in v1 (authoring) time — truth.js RETIME
 const down = W.EN_DOWNBEATS;
 
 // [label, chapter (v2) cue, EN target word (first word with this text within ±1.5 s of `near`), near]
@@ -22,7 +22,7 @@ const PLAN = [
   ['a09 press (Burn)', 180.92, 'Burn', 178.84],
   ['a09 press (burn)', 182.44, 'burn', 179.82],
   ['a09 press (tokens)', 183.0, 'tokens.', 180.46],
-  ['a09 drain (Till)', 183.76, 'Till', 181.44],
+  ['a09 drain (Till)', 183.76, "'til", 181.44],
   ['a09 ДОХОДЫ thrown', 185.68, 'Revenue?', 183.74],
   ['a09 ПОТОМ stamp 1', 186.66, 'Later.', 184.38],
   ['a09 ПРИБЫЛЬ thrown', 187.48, 'Profit?', 185.00],
@@ -34,7 +34,6 @@ const PLAN = [
   ['a09 benchmark cut', 191.7, 'One', 189.04],
   ['a09 axis press 1', 192.55, 'up', 189.76],
   ['a09 axis press 2', 193.19, 'score.', 190.90],
-  ['a09 + (puppets)', 193.32, 'Worth', 191.88],
 ];
 
 // EN time at which the cue first shows: the first frame-exact crossing of EN2V2 through the cue near the target (the warp can replay, so search locally)

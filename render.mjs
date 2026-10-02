@@ -3,7 +3,7 @@
 //   node render.mjs --stills=0.8,3,23.8 --out=out/test                          full-res PNG stills
 //   node render.mjs --clip=0:6 --fps=24 --out=out/test.mp4                      short clip with audio (streamed, no frame dump; --fade: hook-style audio fades)
 //   node render.mjs --song=tokensENr --clip=39.78:62.54 --fade --out=out/reels/btt_h1_pilot.mp4   BURN THE TOKENS reels hook H1
-//   scripts/colab_render.sh --song=tokensENr --clip=0:249.216 --out=out/reels/btt_full.mp4        the same on Colab GPUs (docs/COLAB.md)
+//   scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4        the same on Colab GPUs (docs/COLAB.md)
 //   node render.mjs --frames=0:156.6 --workers=4                                full-res JPEG frames → out/frames (resumable)
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --song=tokens3r --encode --from=25.07 --to=60.1 --out=…      a cut of the frames (Reels versions): audio fades in/out at the ends
@@ -18,7 +18,7 @@ import { pathToFileURL } from 'node:url';
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 const SONGS = { pdoom: { page: 'studio.html', audio: 'assets/pdoom.mp3', dur: 156.6 }, tokens: { page: 'tokens.html', audio: 'assets/tokens/tokens.m4a', dur: 204 }, tokens2: { page: 'tokens2.html', audio: 'assets/tokens2/tokens2.m4a', dur: 239 }, tokens3: { page: 'tokens3.html', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3v: { page: 'tokens3.html', q: '&vert', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3h: { page: 'tokens3.html', q: '&hamster', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
   tokens3sq: { page: 'tokens3.html', q: '&square', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 }, tokens3r: { page: 'tokens3.html', q: '&reels', audio: 'assets/tokens3/tokens3.m4a', dur: 242.23 },
-  tokensEN: { page: 'tokensEN.html', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENr: { page: 'tokensEN.html', q: '&reels', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENru: { page: 'tokensEN.html', q: '&reels&ru', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENw: { page: 'tokensEN.html', q: '&reels&ru&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 }, tokensENwe: { page: 'tokensEN.html', q: '&reels&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 249.216 } };
+  tokensEN: { page: 'tokensEN.html', audio: 'assets/tokensEN/tokensEN.m4a', dur: 264.811 }, tokensENr: { page: 'tokensEN.html', q: '&reels', audio: 'assets/tokensEN/tokensEN.m4a', dur: 264.811 }, tokensENru: { page: 'tokensEN.html', q: '&reels&ru', audio: 'assets/tokensEN/tokensEN.m4a', dur: 264.811 }, tokensENw: { page: 'tokensEN.html', q: '&reels&ru&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 264.811 }, tokensENwe: { page: 'tokensEN.html', q: '&reels&wide', audio: 'assets/tokensEN/tokensEN.m4a', dur: 264.811 } };
 const S = SONGS[args.song || 'pdoom'];
 const CHROME = args.chrome || process.env.CHROME || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : 'C:/Program Files/Google/Chrome/Application/chrome.exe');
 const DUR = S.dur, fps = +(args.fps || 24);

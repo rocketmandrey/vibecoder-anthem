@@ -232,13 +232,14 @@ function composite(t) {
 const finalC = () => window.SQ_C || window.VERT_C || outC;
 // SONG.shift: the tables are timed on an earlier master; clip time t shows table time t + shift (tokens3: new master = old − 0.18 s, assets/tokens3/master_offset.json)
 const SHIFT = SONG.shift ?? 0;
-window.renderAt = async (t, type = 'image/png', q = .92) => { T = t + SHIFT; await redraw(); composite(T); return finalC().toDataURL(type, q); };
+const TMAP = t => (SONG.tmap ? SONG.tmap(t) : t) + SHIFT;   // SONG.tmap: a re-timed track (tokensEN/truth.js N2O: real time → the tables' time)
+window.renderAt = async (t, type = 'image/png', q = .92) => { T = TMAP(t); await redraw(); composite(T); return finalC().toDataURL(type, q); };
 // Contact sheet of several times, for quick visual checks: returns { url, ms[] }.
 window.renderSheet = async (times, cols = 3, w = 640) => {
   const F = finalC(), h = Math.round(w * F.height / F.width), rows = Math.ceil(times.length / cols), sc = document.createElement('canvas');
   sc.width = cols * w; sc.height = rows * h; const c = sc.getContext('2d'), ms = [];
   for (let i = 0; i < times.length; i++) {
-    const t0 = performance.now(); T = times[i] + SHIFT; await redraw(); composite(T); ms.push(Math.round(performance.now() - t0));
+    const t0 = performance.now(); T = TMAP(times[i]); await redraw(); composite(T); ms.push(Math.round(performance.now() - t0));
     const x = (i % cols) * w, y = Math.floor(i / cols) * h;
     c.drawImage(F, x, y, w, h); c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x, y, 96, 26); c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.fillText(times[i].toFixed(2) + 's', x + 6, y + 18);
   }

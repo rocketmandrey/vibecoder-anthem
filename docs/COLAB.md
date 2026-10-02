@@ -4,8 +4,8 @@
 Результат ложится в тот же `--out` и по формату совпадает с локальным рендером: h264 High, yuvj420p (pc), crf 19 medium, 24 fps, AAC 192k.
 
 ```bash
-scripts/colab_render.sh --song=tokensENr --clip=0:249.216 --out=out/reels/btt_full.mp4                 # 2xL4 + 2xA100: ~16 мин, ~3.7 CU
-VMS="L4 L4" scripts/colab_render.sh --song=tokensENr --clip=0:249.216 --out=out/reels/btt_full.mp4     # ~31 мин, ~1.6 CU
+scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4                 # 2xL4 + 2xA100: ~16 мин, ~3.7 CU
+VMS="L4 L4" scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4     # ~31 мин, ~1.6 CU
 ```
 
 Переменные окружения:

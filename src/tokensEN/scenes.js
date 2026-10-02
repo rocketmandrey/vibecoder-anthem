@@ -17,6 +17,8 @@
     return base * (.6 + .8 * en);                                          // gang vocals .52 → 9 px, the last chorus .8 → 11 px, verse 1 → 2 px
   };
   const PUNCH = window.EN_PUNCH = [[43.68, 24], [49.30, 20], [53.90, 14], [55.20, 16], [60.46, 9]];   // picture punches [EN t, px]; scenes2.js adds its own
+  // track v2 outro chant «Oh! Burn! Burn! Burn! Burn! Hey!» ×4 over the b10 riot finale (v1 237.02–241.5): a hard punch on every shouted word
+  for (const [w, x] of EN_WORDS) { const k = x.toLowerCase().replace(/[^a-z]/g, ''); if (w > 237.0 && w < 241.5 && /^(oh|burn|hey|a+g*h*)$/.test(k)) PUNCH.push([w, k === 'burn' ? 14 : 22]); }
   let HITPX = null;                                                        // built on first use, after scenes2.js has added its punches
   const CALM = [[112.6, 135.22], [210, 237.0], [241.6, 1e9]];              // the preacher and the deadpan outro: a still camera
   window.CAM_SHAKE = t => {
