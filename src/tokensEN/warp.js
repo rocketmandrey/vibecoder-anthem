@@ -113,5 +113,5 @@
     c.shots = c.shots.map(([t0, fn]) => [V32EN(t0), (t, lt, d) => { const r = EN2V3(t); fn(r, r - t0, d); }]);
   }
   CH.sort((a, b) => a.start - b.start);
-  Object.assign(window, { EN2V2, EN2V3, V32EN, EN_GRID: GRID, beatEN });
+  Object.assign(window, { EN2V2, EN2V3, V32EN, EN_GRID: GRID, beatEN, EN_TAB: TAB });
 })();
