@@ -464,7 +464,7 @@
     glitchCut(t, 132.55);
   }
 
-  window.A06 = { reservoir: a06_reservoir, mini: a06_mini, nave: a06_nave, angel: a06_angel, beam: a06_beam, pulpit: a06_pulpit, dark: a06_dark };   // for tokensEN/scenes2.js
+  window.A06 = { rose: a06_rose, reservoir: a06_reservoir, mini: a06_mini, nave: a06_nave, angel: a06_angel, beam: a06_beam, pulpit: a06_pulpit, dark: a06_dark };   // for tokensEN/scenes2.js
   chapter('bridge', 116.3, 132.55, [[116.3, preach], [120.8, sip], [123.7, why], [125.15, prophecy], [127.15, shades]]);
   // R34 reels keys (EN time): one steady wide frame on the tag / pulpit / bill, a slow creep; a clean cut to the preacher on «we're gonna need…»
   // with headroom for the shades coming down, a slow creep in; the a07 «MORE GPUs!» drop (a07_acid.js) keeps its own keys from 135.22
