@@ -198,7 +198,7 @@
 
   function sZero(t) {                                                         // 205.65 «Ноль токенов»
     const grey = t > 205.9, flick = !R && t > 205.72 && t < 205.9 && frac(t * 30) < .5;   // R34: no flicker (read as a half-drawn panel)
-    if (R) return zeroGag(O2N(T));                                           // R34 (v12): a picture, not the «0 tokens» tablet
+    if (R) return zeroGag(window.RNOW ?? O2N(T));                                           // R34 (v12): a picture, not the «0 tokens» tablet
     screenCU(t, () => {
       if (!flick) limitBar(460, 400, 1000, 0, { h: 92, grey });
       letter('0 токенов', 960, 270, 110, grey ? '#6A6E78' : '#FF5A4A', { font: ruFont(110), ink: false, pop: seg(t, 205.72, 205.95) * 1.2 + (t < 205.72 ? -1 : 0) });
@@ -265,7 +265,8 @@
   // R34 (v14) «Silence. … I'm at peace.» (EN real 237.00–241.96): one calm close-up of Clawd at his desk, eyes closing, a small smile;
   // the camera only creeps in (real time, so the shot boundary and the retime segments can't jerk it)
   function calmCU() {
-    const s = O2N(T), k = seg(s, 237.0, 241.96), eyes = s < 237.7 ? 'narrow' : 'closed', br = Math.sin(s * 2.2) * .12;
+    // RNOW: the true real clock (O2N of the hold's shifted T jumped at the 239.56 segment boundary — the jerk before «I'm at peace»)
+    const s = window.RNOW ?? O2N(T), k = seg(s, 237.0, 241.96), eyes = s < 237.7 ? 'narrow' : 'closed', br = Math.sin(s * 2.2) * .12;
     camBegin(880, 850 - 10 * k, lerp(1.85, 2.25, k));
     room(s, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .3 + .6 * seg(s, 237.0, 239.5), glow: .45,
       clawd: sitClawd(s, { eyes, lookX: 0, mouth: s > 239.56 ? 'smile' : 'flat', blush: s > 239.9, aL: .15, aR: .3, dy: br, sq: -br * .2 }) });

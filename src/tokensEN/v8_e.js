@@ -40,7 +40,7 @@
       if (S === null) init();
       const dt = O2N(t) - ra, T0 = T;
       if (!S) { const c = CH.find(c => c.real && !c.hold && t >= c.start && t < c.end); if (c) { const i = idx(c.shots, t); c.shots[i][1](t, t - c.shots[i][0], 0); } return; }
-      T = a + dt; window.RNOW = ra + dt; try { S.sh.draw(S.s0 + S.rate * dt, S.lock); } finally { T = T0; }
+      T = a + dt; window.RNOW = ra + dt; try { S.sh.draw(S.s0 + S.rate * dt, S.lock); } finally { T = T0; window.RNOW = null; }   // RNOW: the true real time (O2N(T) of the shifted T is not)
     }]], { real: true });
     CH.find(c => c.name === name).hold = true;
   }
@@ -92,7 +92,7 @@
     const A = N2O(OUTCU), name = 'en_hold_v10out';
     chapter(name, A, N2O(EN_REAL_DUR) + 1, [[A, t => {
       const r = O2N(t); let k = 0; while (k + 1 < LIST.length && r >= LIST[k + 1][0]) k++;
-      const T0 = T; try { LIST[k][1](r - LIST[k][0]); } finally { T = T0; }
+      const T0 = T; window.RNOW = r; try { LIST[k][1](r - LIST[k][0]); } finally { T = T0; window.RNOW = null; }
     }]], { real: true });
     CH.find(c => c.name === name).hold = true;
   })();
