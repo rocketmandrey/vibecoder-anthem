@@ -196,22 +196,33 @@
   // (74.0 «Top burner gets a bonus» = the RU golden idol on its TOP BURNER pedestal, a04)
   const V2 = { pull: 65.18, on: 65.74, burn: 68.9, low: 71.34, laser: 72.0, end: 74.0 };
   const DESK = [720, 880, 1040, 1200], LOWI = 2, SCR = [600, 170, 720, 430];
+  // v15 (user: «the start looks frozen»): the intro beats run on REAL seconds R (the v8_e hold slows the old v1 take to 0.33x here):
+  // the CEO tugs the cord on the beats, «Brand-new» (72.80 downbeat) the screen SLAMS down, «KPI» the projector clicks on and the axis
+  // draws itself, the four bars shoot up one per kick, «wall» a red target line slams across the top. From «You get» (V2.burn) on: v1 as before.
+  const KP = { slam: 72.80, on: 73.02, bars: [73.47, 73.64, 74.13, 74.45], wall: 74.52, beats: [71.16, 71.48, 71.82, 72.14, 72.48, 72.80, 73.14, 73.46, 73.80, 74.12, 74.44, 74.78] };
+  const realT = t => { const r = O2N(t); return r >= 73 && window.RNOW >= 73.02 && window.RNOW <= 80.31 ? window.RNOW : r; };
   function verse2(t) {
+    const R = realT(t), early = R < O2N(V2.burn), bob = early ? kick(R, KP.beats, .12) : 0;
     back('#2E3440');
     paint(rectPts(-400, -600, 2720, 1660), { wash: '#C9C2B4', fill: '#A9A294', fillOp: 60, tex: .5, ink: null });            // office wall
     for (let x = 0; x < 1920; x += 240) inkLine([[x, -600], [x, 1060]], .6, '#B4AC9C', 'inkfine', 0);
     paint(rectPts(-400, 1060, 2720, 600), { wash: '#5A5F6A', fill: '#3E434C', fillOp: 70, tex: .5, ink: null });            // carpet
     // the pull-down screen and what the projector throws on it
-    const [sx, sy, sw, sh] = SCR, down = eased(t, V2.pull, V2.on - .1), on = t > V2.on;
+    const [sx, sy0, sw, sh] = SCR, u = clamp((R - KP.slam) / .12), down = u < 1 ? .06 + .94 * u * u : 1, on = R > KP.on;
+    const jolt = kick(R, [KP.slam, KP.wall], .1), sy = sy0 + jolt * 14;                                       // the case bangs on the slam
     paint(rrPts(sx - 20, sy - 30, sw + 40, 30, 12), { wash: A2.steel, ink: INK, sw: 1 });
     paint(rectPts(sx, sy, sw, sh * down), { wash: '#F4F1EA', ink: INK, sw: 1 });
-    if (down < 1) inkLine([[sx + sw / 2, sy + sh * down], [sx + sw / 2, sy + sh * down + 40]], 2, INK, 'inkfine', 0);
+    if (down < 1) { const sway = Math.sin(R * 5) * 18 * (1 - bob * .5), cy = sy + sh * down, tug = bob * 50;      // the cord swings, the CEO tugs it on the beats
+      inkLine([[sx + sw / 2, cy], [sx + sw / 2 + sway, cy + 120 + tug]], 2, INK, 'inkfine', 0); paint(ellPts(sx + sw / 2 + sway, cy + 128 + tug, 9, 9, 8), { wash: TK.ember, ink: INK, sw: .6 }); }
+    else if (R < KP.slam + .7) { const k = (R - KP.slam) / .7; for (let i = 0; i < 6; i++) { const d = (i - 2.5) / 2.5;                 // dust puffs off the bottom edge
+      paint(ellPts(sx + sw / 2 + d * (sw / 2 + 40 * k), sy + sh + 6 - k * 30 * (1 - Math.abs(d)), 18 + 30 * k, 12 + 20 * k, 10), { wash: '#E8E0D0', washOp: 200 * (1 - k), ink: null }); } }
     if (on) {
       const [lx, ly] = [635, 690];
       paint([[lx, ly - 10], [sx + sw, sy], [sx + sw, sy + sh], [lx, ly + 10]], { wash: '#FFF3C8', washOp: 70, ink: null });
       paint([[lx, ly - 10], [sx, sy], [sx, sy + sh]], { wash: '#FFF3C8', washOp: 70, ink: null });
       // the bar chart: one bar per desk, a little head under each, the leader gets a crown
-      const grow = i => i === LOWI ? .06 : (.25 + .1 * i % .3) * eased(t, V2.on, V2.on + .8) + (i === 0 ? .72 : .5 - i * .08) * eased(t, V2.burn, V2.low - .3);
+      const grow = i => { const p = backOut((R - KP.bars[i]) / .22); return i === LOWI ? .06 * p : (.25 + .1 * i % .3) * p + (i === 0 ? .72 : .5 - i * .08) * eased(t, V2.burn, V2.low - .3); };
+      if (R < KP.on + .12) flash(.35 * (1 - (R - KP.on) / .12), '#FFF3C8');                                              // the projector click
       DESK.forEach((_, i) => {
         const bw = 90, bx = sx + 90 + i * 150, base = sy + sh - 70, h = (sh - 130) * Math.min(1, grow(i));
         paint(rectPts(bx, base - h, bw, h), { wash: i === LOWI ? TK.ember : [TK.green, '#6F8BE0', null, TK.orange][i], ink: INK, sw: .8 });
@@ -219,7 +230,10 @@
         for (const d of [-1, 1]) paint(ellPts(bx + 45 + d * 11, base + 28, 4, 5, 6), { wash: INK, ink: null });
         if (i === 0 && t > V2.low - .3) paint(starPts(bx + 45, base - h - 30, 22), { wash: TK.yellow, ink: INK, sw: .6 });
       });
-      inkLine([[sx + 60, sy + sh - 70], [sx + sw - 40, sy + sh - 70]], 2, INK, 'inkfine', 0);
+      inkLine([[sx + 60, sy + sh - 70], [lerp(sx + 60, sx + sw - 40, easeOut((R - KP.on) / .35)), sy + sh - 70]], 2, INK, 'inkfine', 0);   // the axis draws itself
+      if (R > KP.wall) { const k = easeOut((R - KP.wall) / .15), ty = sy + 70, x1 = lerp(sx + sw + 200, sx + 40, k);           // «wall»: the target line slams in
+        for (let x = x1; x < sx + sw - 20; x += 44) inkLine([[x, ty], [Math.min(x + 26, sx + sw - 20), ty]], 5, '#FF2F4A', 'inkfine', 0);
+        paint(starPts(sx + sw - 50, ty, 16 + 10 * kick(R, [KP.wall + .15], .15)), { wash: '#FF2F4A', ink: INK, sw: .6 }); }
     }
     // the projector on its cart (left)
     paint(rectPts(520, 730, 110, 330), { wash: A2.steel, ink: INK, sw: 1 }); paint(rrPts(490, 650, 170, 80, 14), { wash: '#3A3F48', ink: INK, sw: 1 });
@@ -228,7 +242,7 @@
     DESK.forEach((x, i) => {
       const low = i === LOWI, busy = t > V2.burn && t < V2.low && !low, ph = frac((t - V2.burn) * 1.6 + i * .3);
       const caught = low && t > V2.laser;
-      agentBot(x, 995, 14, t, { n: 30 + i, rot: NOTXT, noShadow: true, eyes: caught ? 'scared' : busy ? 'narrow' : t > V2.low && !low ? 'look' : 'happy', lookX: x < 960 ? 1 : -1,
+      agentBot(x, 995 - kick(R, [KP.bars[i]], .15) * 26 - bob * 6, 14, t, { n: 30 + i, rot: NOTXT, noShadow: true, eyes: caught ? 'scared' : busy ? 'narrow' : t > V2.low && !low ? 'look' : 'happy', lookX: x < 960 ? 1 : -1,
         mouth: caught ? 'o' : busy ? 'grin' : 'smile', emote: caught ? 'sweat' : null, aL: busy ? .6 + Math.sin(ph * TAU) * .8 : .3, aR: busy ? .6 + Math.cos(ph * TAU) * .8 : .3 });
       if (busy) for (let k = 0; k < 2; k++) { const u = frac(ph + k * .5); const [cx, cy] = arc(x - 60, 900, x, 960, 70, u); token(cx, cy, 11, { spin: t * 6 + k }); }
       if (low && t > V2.burn) token(x + 60, 900, 11, {});                                                                  // his one coin, still in his hand
@@ -237,7 +251,7 @@
     for (const x of DESK) { paint(rectPts(x - 36, 948, 72, 44, 1), { wash: '#3A3F48', ink: INK, sw: .8 }); token(x, 970, 10, { spin: .02 }); }
     // the CEO (right): pulls the screen, clicks, then the laser pointer
     const cx = 1225, pointing = t > V2.low;
-    ceoClawd(cx, 1058, 16, { noShadow: true, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: t < V2.on ? 2.2 : pointing ? 1.2 : .5, aR: .4 });
+    ceoClawd(cx, 1058 - bob * 10, 16, { noShadow: true, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: R < KP.slam ? 2.2 - bob * .6 : pointing ? 1.2 : .5 + kick(R, KP.bars, .15) * .9, aR: .4 });
     if (pointing) {
       const [bx, by] = [SCR[0] + 90 + LOWI * 150 + 45, SCR[1] + SCR[3] - 90], k = eased(t, V2.laser, V2.laser + .5);
       const [dx, dy] = [lerp(bx, DESK[LOWI], k), lerp(by, 900, k)];
@@ -247,7 +261,7 @@
   }
   scene('v2_kpi', 65.18, 74.0, verse2, [
     [65.18, 960, 610, 1040], [73.999, 960, 630, 1000, 1],   // one slow creep, projector cart and CEO whole (audit: lens cut left, hero cut right, push-in at 72)
-  ], [[V2.on, 6], [V2.laser, 8]]);
+  ], [[N2O(KP.slam), 7], [V2.laser, 8]]);
 
   // ======== CHORUS 2 = chorus 1 again, word for word 47.42 s later (the shredder, the trucks, the hiring hall) ========
   // chorus 2 (92.86–112.60) is the RU a05 night factory again, not a repeat of chorus 1 (keys in RUK)

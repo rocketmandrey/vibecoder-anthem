@@ -418,7 +418,8 @@
     const tp = seg(e, 37.2, 39.5), twx = lerp(L - 6, L + Wd + 6, tp), twy = gy - 40 - Math.abs(Math.sin((e - 37.2) * 4.4)) * 70;
     for (let i = 1; i < 4; i++) if (twx - i * 55 > L + 30) paint(ellPts(twx - i * 55, gy - 8 - i * 2, 30 - i * 6, 8, 10), { fill: '#C9B48A', fillOp: 90 / i, bleed: .3, ink: null });
     if (tp > 0 && tp < 1) tumbleweed(twx, twy, 40, e * 6);
-    // the lonely cursor
+    // the lonely cursor (v15: over the button's lettering too — letters sit on their own layer until flushed)
+    flushLetters();
     const [ux, uy] = cur;
     paint([[ux, uy], [ux, uy + 40], [ux + 10, uy + 31], [ux + 18, uy + 48], [ux + 25, uy + 45], [ux + 17, uy + 28], [ux + 29, uy + 28]], { wash: '#FFFFFF', ink: INK, sw: .9 });
     // window chrome over everything: masks + title bar, URL, nav
