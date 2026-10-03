@@ -185,14 +185,17 @@
   const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();          // the user picked a (final)
   const RG = { x: { a: 920, b: 610, c: 720 }[WV] ?? 920, y: { a: 760, b: 980, c: 1160 }[WV] ?? 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
   const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
-  // v18 (user: «the hamster should gradually speed up»): wheel rev/s is a smooth ramp, not a step per word — R0 idle, then from the first
-  // «MORE GPUs» it accelerates (quadratic, so the last stretch before «WORKING» is the steepest) R1 → R2 (~3.3x), then RF after the fling
-  const RI = .3, R1 = .45, R2 = 1.5, RF = 7, W0 = RG.words[0], WD = RG.work - W0;
-  const rateOf = s => s < W0 ? RI : s < RG.work ? R1 + (R2 - R1) * ((s - W0) / WD) ** 2 : RF;
+  // v19 (user: «the hamster must build up speed gradually, not start at the max»): an EASE-IN (cubic) ramp — he WALKS (0.15 rev/s) for the
+  // first seconds, jogs, runs, and only the last ~2 s before «WORKING» is the sprint (blur); RF after the fling
+  const RI = .15, R1 = .15, R2 = 1.7, RF = 7, W0 = RG.words[0], WD = RG.work - W0;
+  const rateOf = s => s < W0 ? RI : s < RG.work ? R1 + (R2 - R1) * ((s - W0) / WD) ** 3 : RF;
   const spinOf = s => {                                                   // integrated wheel angle (real time), closed form of rateOf
     const p = Math.min(s, W0) - RG.a, u = clamp((s - W0) / WD);
-    return TAU * (Math.max(0, p) * RI + (s > W0 ? WD * (R1 * u + (R2 - R1) * u ** 3 / 3) : 0) + Math.max(0, s - RG.work) * RF);
+    return TAU * (Math.max(0, p) * RI + (s > W0 ? WD * (R1 * u + (R2 - R1) * u ** 4 / 4) : 0) + Math.max(0, s - RG.work) * RF);
   };
+  // v19 effect packs for the speed-up (--var=fx:a|b|c, default a): a cartoon (speed lines, sweat, dust), b heat (the rim glows orange →
+  // white-hot, sparks off his feet and the rim, smoke at the top), c comic (smear ghosts, impact stars on footfalls, the stand rattles, whoosh arcs)
+  const FX = ((window.BTT_VAR || {}).fx || 'a').toLowerCase(), effOf = rate => clamp((rate - .15) / 1.55);
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
@@ -201,19 +204,24 @@
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
   function hamster(th, t, rate, n, wk, spin, fly, rev = t * rate) {
     const BW = 440, g = PROP_ART.ham4Run0, BH = BW * g[1] / g[0], feetR = RG.R - 24;
-    const ph = 2 * t + 6 * rev, f = Math.floor(ph) % 4, bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
+    const e = effOf(rate), ph = 1.2 * t + 7 * rev, f = Math.floor(ph) % 4, bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
     push();
     if (fly) { translate(fly.x, fly.y); rotate(fly.r); translate(0, BH / 2); }
     else { translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .06 * Math.min(rate, 1.5)); }
-    if (!fly) for (let q = 0; q < 5; q++) { const v = frac(1.5 * t + rev + hash(q + 3)); paint(ellPts(-BW * .35 - v * 160, -10 - hash(q) * 12 - v * 20, 7 + v * 14, 7 + v * 14, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
-    if (rate > .5) for (let q = 0; q < 3 + Math.round(4 * Math.min(1, rate - .5)); q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
+    if (!fly && FX !== 'b') for (let q = 0; q < 2 + Math.round((FX === 'a' ? 7 : 3) * e); q++) { const v = frac(1.5 * t + rev + hash(q + 3)), z = 1 + (FX === 'a' ? 1.6 : .5) * e; paint(ellPts(-BW * .35 - v * 160 * z, -10 - hash(q) * 12 - v * 20 * z, (7 + v * 14) * z, (7 + v * 14) * z, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
+    if (!fly && FX === 'b') { for (let q = 0; q < Math.round(14 * e); q++) { const v = frac(2.4 * t + 1.5 * rev + hash(q + 60)), dx = -(80 + 260 * hash(q + 61)) * v, dy = -(60 + 220 * hash(q + 62)) * v + 380 * v * v;   // sparks off his feet
+        inkLine([[BW * .1 * hash(q) + dx, dy], [BW * .1 * hash(q) + dx + 22 * (1 - v), dy - 8]], 3, v < .4 ? '#FFF6D0' : TK.orange, 'inkfine', 0); }
+      if (e > .5) for (let q = 0; q < 6; q++) { const v = frac(.9 * t + hash(q + 70)), k = (e - .5) * 2; paint(ellPts(-BW * .3 - v * 220, -20 - v * 160, 18 + 40 * v, 16 + 34 * v, 12), { fill: '#5A5A5E', fillOp: 150 * k * (1 - v), ink: null }); } }   // smoke
+    if (FX === 'a' && rate > .5) for (let q = 0; q < 3 + Math.round(4 * Math.min(1, rate - .5)); q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
       inkLine([[x0 - 70 - 80 * m, y], [x0, y]], 4, '#F1E8D2', 'inkfine', 0); }                                        // speed lines
-    if (rate > .8 || spin > 0) for (let gh = 2; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 16 * Math.min(rate, 2), -BH / 2 + bob * .5, BW, { alpha: .15 / gh + .15 * spin });
+    if (FX === 'c' && rate > .4 && !fly) for (let gh = 4; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 30 * e, -BH / 2 + bob * .5, BW * (1 + .08 * e), { alpha: .3 * e / gh });   // the smear
+    else if (rate > .8 || spin > 0) for (let gh = 2; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 16 * Math.min(rate, 2), -BH / 2 + bob * .5, BW, { alpha: .15 / gh + .15 * spin });
+    if (FX === 'c' && !fly && f === 1 && e > .1) { const z = 30 + 70 * e; paint(starPts(BW * .32, -4, z, .45, 8), { wash: TK.yellow, ink: INK, sw: 1 }); paint(starPts(-BW * .2, -4, z * .7, .45, 8), { wash: '#FFFDF2', ink: INK, sw: 1 }); }   // impact stars on the footfall
     ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: 1 / sq, sy: sq });
     if (spin > 0) for (const dx of [.29, .37]) {                                                                          // dizzy spiral eyes over his
       const ex = dx * BW, ey = -BH * .66 + bob, pts = []; for (let s2 = 0; s2 <= 24; s2++) { const a = s2 * .5 + t * 16, r = s2 * .55 * spin; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); }
       paint(ellPts(ex, ey, 15 * spin, 15 * spin, 12), { wash: '#FFFDF2', ink: INK, sw: .8 }); inkLine(pts, 2, INK, 'inkfine', 0); }
-    for (let q = 0; q < 2 + n + Math.round(4 * Math.max(0, rate - 1)); q++) { const d = q % 2 ? 1 : -1, u = frac(1.2 * t + .8 * rev + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
+    for (let q = 0; q < (FX === 'a' ? 1 + Math.round(8 * e) : FX === 'c' ? 1 : 0); q++) { const d = q % 2 ? 1 : -1, u = frac(1.2 * t + .8 * rev + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
       paint([[x, y - 12], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', washOp: 255 * (1 - u * u), ink: INK, sw: .6 }); }
     for (let q = 0; q < Math.min(8, n + (spin > 0 ? 4 : 0)); q++) { const per = .9 + hash(q) * .5, v = frac((t + hash(q + 50) * per) / per);   // tokens squeezed out of his cheeks, flung back
       token(BW * .36 - v * (260 + hash(q + 2) * 200), -BH * .62 - (520 * v - 260 * v * v) * (.7 + hash(q + 9) * .5), 15, { spin: t * 8 + q }); }
@@ -502,13 +510,16 @@
     A03.hall(t, { lamps: [420, 1480], floor: FLY });
     paint(rectPts(-400, FLY, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     const cx = RG.x, cy = RG.y, R = RG.R, ang = spinOf(s), n = nWords(s), wa = s - RG.work;
-    const blur = seg(s, RG.words[7], RG.words[7] + .5), spin = seg(s, RG.words[7], RG.words[7] + .3);
-    const rate = rateOf(s), wk = kick(s, RG.words, .12);
+    const rate = rateOf(s), e = effOf(rate), blur = wa >= 0 ? 1 : clamp((rate - 1.05) / .5), spin = wa >= 0 ? 1 : clamp((rate - 1.45) / .25);
+    const rb = clamp((rate - .28) / .2), dA = rate * TAU / 24;   // v19 anti-aliasing: past ~0.3 rev/s the 36 rungs / 44 teeth strobe at 24 fps → smear them
+    const wk = kick(s, RG.words, .12);
     if (WV === 'a') cellsWheel(s, ang); else if (WV === 'b') rack(s); else ptable(s);
+    // fx c: the stand rattles and hops on the footfalls
+    const rat = FX === 'c' && wa < .3 ? e * e : 0; push(); translate(Math.sin(s * 53) * 7 * rat, -Math.abs(Math.sin(s * TAU * (1.2 + 3.5 * rate))) * 14 * rat);
     // the stand: an A-frame from the axle to the floor
     for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 330, FLY + 4]], 18, A2.steel, 'ink', 0);
     // the wheel: dark drum behind, spokes, the hamster, then the rim (two hoops + rungs) and its outer gear teeth
-    paint(gearPts(cx, cy, R + 26, 44, ang, 14), { wash: A2.gunmetal, ink: INK, sw: 1.4 });
+    paint(rb < 1 ? gearPts(cx, cy, R + 26, 44, ang, 14) : ellPts(cx, cy, R + 33, R + 33, 64), { wash: A2.gunmetal, ink: INK, sw: 1.4 });
     paint(ellPts(cx, cy, R + 26, R + 26, 64), { wash: A2.steel, ink: INK, sw: 1.6 });
     paint(ellPts(cx, cy, R - 26, R - 26, 48), { wash: '#1C1F24', ink: INK, sw: 2 });
     if (blur < 1) for (let k = 0; k < 8; k++) { const a = ang + k * TAU / 8; inkLine([[cx, cy], [cx + Math.cos(a) * (R - 26), cy + Math.sin(a) * (R - 26)]], 5, A2.steel, 'ink', 0); }
@@ -519,10 +530,25 @@
     if (fa < 0) hamster(th, s, Math.min(rate, 2.6), n, wk, spin, null, ang / TAU);
     paint(ellPts(cx, cy, 34, 34, 16), { wash: TK.yellow, ink: INK, sw: 1.2 });
     paint(ellPts(cx, cy, R + 12, R + 12, 64), { ink: A2.steelLt, sw: 3 });
+    if (rb > 0) paint([...ellPts(cx, cy, R + 10, R + 10, 64), ...ellPts(cx, cy, R - 24, R - 24, 64).reverse()], { fill: A2.steelLt, fillOp: 90 * rb, ink: null });   // the rungs smeared into a band
     for (let k = 0; k < 36; k++) { const a = ang + k * TAU / 36;
-      if (blur > .6 && k % 3) continue;
+      if (k % 9 && rb >= 1) continue;
+      if (k % 9 === 0 && rb > 0) for (let q = 1; q <= 3; q++) { const a2 = a - dA * q / 3; inkLine([[cx + Math.cos(a2) * (R - 24), cy + Math.sin(a2) * (R - 24)], [cx + Math.cos(a2) * (R + 10), cy + Math.sin(a2) * (R + 10)]], 4, mixCol(TK.yellow, A2.steel, q / 4), 'ink', 0); }   // the yellow rungs: a motion trail
       inkLine([[cx + Math.cos(a) * (R - 24), cy + Math.sin(a) * (R - 24)], [cx + Math.cos(a) * (R + 10), cy + Math.sin(a) * (R + 10)]], 4, k % 9 ? A2.steelLt : TK.yellow, 'ink', 0); }
     if (blur > 0) for (let k = 0; k < 5; k++) paint(ellPts(cx, cy, R - 20 + k * 10, R - 20 + k * 10, 48), { ink: [TK.yellow, TK.orange, TK.ember, TK.yellowLt, TK.orange][k], sw: 3 * blur });
+    if (FX === 'b' && e > .05) {                                                                         // heat: the rim glows orange → white-hot
+      const hc = e < .6 ? mixCol(TK.ember, TK.orange, e / .6) : mixCol(TK.orange, '#FFF6D0', (e - .6) / .4);
+      glowAt(cx, cy + R * .6, R * (.6 + .8 * e), hc, 120 * e); paint(ellPts(cx, cy, R, R, 64), { ink: hc, sw: 4 + 14 * e });
+      for (let q = 0; q < Math.round(12 * e * e); q++) { const a0 = ang * .5 + hash(q) * TAU, v = frac(s * 2.2 + hash(q + 5)), r = R + 20 + 160 * v;
+        inkLine([[cx + Math.cos(a0) * r, cy + Math.sin(a0) * r], [cx + Math.cos(a0 - .05) * (r - 26), cy + Math.sin(a0 - .05) * (r - 26)]], 3, v < .5 ? '#FFF6D0' : TK.orange, 'inkfine', 0); }
+      if (e > .7) for (let q = 0; q < 7; q++) { const v = frac(s * .7 + hash(q + 80)), k = (e - .7) / .3;
+        paint(ellPts(cx - 200 + 400 * hash(q + 81) + 60 * v, cy - R - 40 - 360 * v, 40 + 70 * v, 34 + 60 * v, 12), { fill: '#55565C', fillOp: 160 * k * (1 - v), ink: null }); }
+    }
+    if (FX === 'c' && e > .15 && wa < 0) for (let q = 0; q < 2 + Math.round(3 * e); q++) {                // whoosh arcs chasing the rim
+      const a0 = ang * .9 + q * TAU / (2 + Math.round(3 * e)), L = .4 + 1.1 * e, r = R + 50 + 30 * (q % 2), pts = [];
+      for (let k = 0; k <= 10; k++) { const a = a0 - L * k / 10; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+      inkLine(pts, 5 + 4 * e, '#F1E8D2', 'ink', 0); }
+    pop();
     if (CV === 'b') chartB(s, ang, wk, wa); else if (CV === 'c') chartC(s, ang, wk, wa, rate); else chartA(s, ang, wk, wa);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
