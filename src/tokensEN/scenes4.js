@@ -53,29 +53,47 @@
     const [px, py, ps] = agentAt(a.parent, a.born), e = easeOut(clamp(age / .3));
     return [lerp(px, x, e), lerp(py, y, e), lerp(ps, s, e), e];
   }
-  const GC = .27;                                                // GPU card scale per drone unit (was .2)
-  function drone(x, y, sc, t, o = {}) {                        // a little quadcopter, body centre (x, y); o.card: GPU card slung o.cable below
+  const GC = .32;                                                // GPU card scale per drone unit (was .2, .27)
+  function drone(x, y, sc, t, o = {}) {                        // v14: a proper quadcopter, body centre (x, y); o.card: GPU card slung o.cable below
+    if (y < 990) paint(ellPts(x, 1010, 60 * sc * (1 - (1010 - y) / 2400), 9 * sc, 16), { fill: '#000000', fillOp: 70, bleed: .3, tex: .2, border: .1, ink: null });   // its shadow on the yard
     push(); translate(x, y); rotate(o.tilt || 0);
     if (o.card) {
       const cy = o.cable;
-      for (const d of [-1, 1]) inkLine([[d * 10 * sc, 8 * sc], [d * 26 * sc, cy - 10 * sc]], .7, '#C8D2E6', 'inkfine', 0);
-      glowAt(0, cy, 48 * sc, '#7DFFAE', 120);                                    // v14: backlit, bigger cards (they sank into the night)
+      for (const d of [-1, 1]) inkLine([[d * 14 * sc, 16 * sc], [d * 28 * sc, cy - 12 * sc]], .8, '#C8D2E6', 'inkfine', 0);   // slings off the skids
+      glowAt(0, cy, 52 * sc, '#7DFFAE', 120);
       gpuCard(0, cy, GC * sc, t, { fans: false, glow: .8 });
     }
-    paint(rectPts(-6 * sc, 6 * sc, 12 * sc, 6 * sc), { wash: '#1A2236', ink: INK, sw: .6 });                         // camera pod
-    for (const [ax, ay, far] of [[-27, -8, 1], [27, -8, 1], [-46, -2, 0], [46, -2, 0]]) {
-      inkLine([[0, -2 * sc], [ax * sc, ay * sc]], far ? 2 : 3, far ? '#2A3044' : '#3A4258', 'ink', 0);               // arm
-      paint(rectPts((ax - 4) * sc, (ay - 6) * sc, 8 * sc, 7 * sc), { wash: '#2A3044', ink: INK, sw: .5 });          // motor
-      const rx = ax * sc, ry = (ay - 8) * sc, rw = (far ? 17 : 21) * sc;                                             // rotor disc + blur
-      paint(ellPts(rx, ry, rw, 3.6 * sc, 16), { wash: '#DCE4F4', washOp: far ? 70 : 105, ink: '#9AA6C0', sw: .4 });
-      const a = t * 37 + ax;
-      inkLine([[rx + Math.cos(a) * rw, ry + Math.sin(a) * 2 * sc], [rx - Math.cos(a) * rw, ry - Math.sin(a) * 2 * sc]], .8, '#F2F5FF', 'inkfine', 0);
+    const ARMS = [[-44, -14, 1], [44, -14, 1], [-52, 2, 0], [52, 2, 0]];       // back pair (higher, thinner), front pair
+    const rotor = (ax, ay, far) => {
+      const rx = ax * sc, ry = (ay - 9) * sc, rw = (far ? 20 : 25) * sc;
+      paint(rectPts(rx - 1.2 * sc, ry, 2.4 * sc, 9 * sc), { wash: '#1A2236', ink: null });                       // the shaft
+      paint(ellPts(rx, ry, rw, 4.2 * sc, 18), { wash: '#DCE4F4', washOp: far ? 60 : 90, ink: '#9AA6C0', sw: .4 });   // the blur disc
+      paint(ellPts(rx, ry, rw * .55, 2.4 * sc, 14), { wash: '#FFFFFF', washOp: far ? 40 : 60, ink: null });
+      for (const ph of [0, Math.PI]) { const a = t * 41 + ax + ph; inkLine([[rx, ry], [rx + Math.cos(a) * rw, ry + Math.sin(a) * 3.6 * sc]], .9, '#F2F5FF', 'inkfine', 0); }   // two blade streaks
+      paint(ellPts(rx, ry, 2.4 * sc, 1.6 * sc, 8), { wash: '#3A4258', ink: null });
+    };
+    for (const [ax, ay, far] of ARMS.filter(a => a[2])) {                        // back arms + rotors behind the body
+      inkLine([[0, -4 * sc], [ax * sc, ay * sc]], 2.4, '#2A3044', 'ink', 0);
+      paint(rrPts((ax - 5) * sc, (ay - 4) * sc, 10 * sc, 8 * sc, 2 * sc), { wash: '#2A3044', ink: INK, sw: .5 });
+      rotor(ax, ay, 1);
     }
-    paint(rrPts(-20 * sc, -9 * sc, 40 * sc, 16 * sc, 6 * sc, 1), { wash: '#E8ECF4', fill: '#9AA6C0', fillOp: 90, tex: .4, ink: INK, sw: .9 });  // body
-    paint(rectPts(-14 * sc, -2 * sc, 28 * sc, 3 * sc), { wash: TK.green, ink: null });                                                  // stripe
-    const led = Math.sin(t * 14 + x) > 0;                                                                                               // blinking LED
-    paint(ellPts(14 * sc, -5 * sc, 2.6 * sc, 2.6 * sc, 8), { wash: led ? '#FF4040' : '#5A1A1A', ink: null });
-    if (led) glowAt(14 * sc, -5 * sc, 10 * sc, '#FF4040', 140);
+    for (const d of [-1, 1]) {                                                   // landing skids
+      inkLine([[d * 12 * sc, 4 * sc], [d * 18 * sc, 15 * sc]], 1.6, '#3A4258', 'ink', 0);
+      inkLine([[d * 26 * sc, 16 * sc], [d * 8 * sc, 16 * sc]], 2.2, '#3A4258', 'ink', 0);
+    }
+    paint(rrPts(-22 * sc, -10 * sc, 44 * sc, 16 * sc, 7 * sc, 1), { wash: '#E8ECF4', fill: '#9AA6C0', fillOp: 90, tex: .4, ink: INK, sw: .9 });   // body
+    paint(ellPts(0, -10 * sc, 13 * sc, 5 * sc, 14), { wash: '#C8D2E6', ink: INK, sw: .6 });                                                     // top shell
+    paint(rectPts(-15 * sc, -1 * sc, 30 * sc, 3 * sc), { wash: TK.green, ink: null });                                                           // stripe
+    paint(ellPts(0, 8 * sc, 5 * sc, 4 * sc, 12), { wash: '#1A2236', ink: INK, sw: .5 }); paint(ellPts(1 * sc, 7.5 * sc, 1.6 * sc, 1.4 * sc, 8), { wash: '#7DC8FF', ink: null });   // camera
+    for (const [ax, ay] of ARMS.filter(a => !a[2])) {                            // front arms + rotors over the body
+      inkLine([[0, -1 * sc], [ax * sc, ay * sc]], 3.4, '#3A4258', 'ink', 0);
+      paint(rrPts((ax - 6) * sc, (ay - 5) * sc, 12 * sc, 9 * sc, 2 * sc), { wash: '#2A3044', ink: INK, sw: .5 });
+      rotor(ax, ay, 0);
+    }
+    const blink = Math.sin(t * 14 + x) > 0;                                       // nav LEDs: green / red on the front motors, a white strobe on the top
+    for (const [d, c] of [[-1, '#3DFF7A'], [1, '#FF4040']]) { paint(ellPts(d * 52 * sc, 4 * sc, 2.6 * sc, 2.6 * sc, 8), { wash: c, ink: null }); glowAt(d * 52 * sc, 4 * sc, 8 * sc, c, 110); }
+    paint(ellPts(0, -14 * sc, 2.4 * sc, 2.4 * sc, 8), { wash: blink ? '#FFFFFF' : '#5A5A6A', ink: null });
+    if (blink) glowAt(0, -14 * sc, 12 * sc, '#FFFFFF', 140);
     pop();
   }
   function more(t) {

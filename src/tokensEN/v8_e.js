@@ -75,11 +75,11 @@
     const end = (c, i) => c.shots[i + 1] ? c.shots[i + 1][0] : c.end;
     const ru = (i, vt, Tc = 236) => dt => { const [t0, fn] = sun.shots[i], v = vt(dt); window.REAL_CH = false; T = Tc; fn(v, v - t0, end(sun, i) - t0); };
     const fv = i => dt => { const [t0, fn] = fin.shots[i], t = V32EN(EN2V3(t0) + dt); T = t; fn(t, t - t0, end(fin, i) - t0); };
-    const G = 238.94;                                                           // sCredit: the gag (strike + new name + nod) is over
+    const G = 238.94, CR = .30;                                                // sCredit: the gag (strike + new name + nod) is over; v14: written at 0.3x (was 1.8x), it fills the card to the end
     const LIST = [[OUTCU, ru(7, dt => 224.2 + .25 * dt)], [B1, ru(7, dt => 225.0 + dt)], [B2, ru(8, dt => 227.28 + dt)]];
     let b = BT.indexOf(B2) + 5;                                                 // [beats on screen, shot]: the blast 5, the hall 5, riot 5/5, data center 5, the planet 5, 4 (v12: data center −1 beat, planet +1)
     for (const [n, fn] of [[5, ru(9, dt => 229.15 + dt)], [5, fv(0)], [5, fv(1)], [5, fv(2)], [5, fv(3)], [4, fv(4)],
-      [0, ru(10, dt => Math.min(237.95 + 1.8 * dt, G) + Math.max(0, dt - (G - 237.95) / 1.8), 244)]]) { LIST.push([BT[b], fn]); b += n; }
+      [0, ru(10, dt => Math.min(237.95 + CR * dt, G) + Math.max(0, dt - (G - 237.95) / CR), 244)]]) { LIST.push([BT[b], fn]); b += n; }
     const A = N2O(OUTCU), name = 'en_hold_v10out';
     chapter(name, A, N2O(EN_REAL_DUR) + 1, [[A, t => {
       const r = O2N(t); let k = 0; while (k + 1 < LIST.length && r >= LIST[k + 1][0]) k++;
