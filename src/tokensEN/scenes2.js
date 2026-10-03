@@ -177,7 +177,13 @@
   const wv1 = [['gpus', 137.38], ['tokens', 138.64], ['tokens', 139.94], ['agents', 141.34], ['agents', 142.62], ['tasks', 143.84], ['tasks', 145.14], ['tokens', 146.40]].map(([w, n]) => enWord(w, n));
   // v8 (PLAN_v8 #13): the wheel sits inside a huge WHEEL OF SAMSARA (radius RS): tokens → GPUs → tasks → agents → tokens ride round it; the whole
   // set is recomposed for the 3:4 view (x 200..1700, floor FLY), the flipchart + CEO stand at its lower right.
-  const RG = { x: 920, y: 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
+  // v16 (user: «the hamster is ugly — 3 versions where the tokens and agents appear in their own CELLS»): every sung «more» + noun drops its
+  // item into a CELL of its own (no more loose sticker bomb). Variants (render.mjs --var=wheel:a|b|c → window.BTT_VAR.wheel, default a):
+  //   a — the samsara band round the wheel is cut into 16 compartments; each item pops into the next one clockwise, the wheel fills up
+  //   b — a vending / sorting rack beside the wheel, a column per kind (GPU, token, agent, task): items drop down a chute into their column
+  //   c — a periodic-table board over the wheel, 16 tiles: each item rides up a feed tube from the wheel and lights its tile, in sung order
+  const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();
+  const RG = { x: { a: 920, b: 610, c: 720 }[WV] ?? 920, y: { a: 760, b: 980, c: 1160 }[WV] ?? 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
   const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
   const RATE = [.15, .25, .35, .45, .58, .72, .9, 1.15, 2.2, 7];         // wheel rev/s before the first word, after each word, after WORKING
   const spinOf = s => {                                                   // integrated wheel angle (real time)
@@ -305,6 +311,77 @@
       if (!been) paint(ellPts(x, y, STR, STR, 40), { wash: '#1C1A22', washOp: 150, ink: null });
     });
   }
+  // ---- v16 cells ----
+  const TYC = ['#2FBF71', TK.yellow, '#6F8BE0', TK.orange], TYL = ['#BDF2D2', '#FFE9A8', '#C9D6FF', '#FFD2B0'];   // per kind: glow, cell tint
+  const cellItem = (ty, x, y, k, s) => ty === 2 ? clawd(x, y + 14 * k, 3.3 * k, { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0', noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.2, aR: 1.2, seed: 3 })
+    : bigItem(ty, x, y, ty === 0 ? k * 1.1 : k, s, .1 * Math.sin(s * 3));
+  const CELLS = SLAPS.slice(0, 16);                                                                     // [word time, kind], in sung order
+  const popK = age => age < 0 ? 0 : backOut(clamp(age / .2)) * (1 + .08 * Math.exp(-age * 6) * Math.sin(age * 32));
+  const flare = (x, y, age, col) => { if (age >= 0 && age < .35) { glowAt(x, y, 160, col, 200 * (1 - age / .35)); paint(starPts(x, y, 30 + 160 * age, .4, 10), { wash: '#FFF3B0', washOp: 230 * (1 - age / .35), ink: null }); } };
+  function cellsWheel(s, ang) {                                                                         // a: the samsara band as 16 compartments
+    const cx = RG.x, cy = RG.y, ra = ang * .06, R0 = RS - 70, R1 = RS + 70, N = 16;
+    for (let j = 0; j < 8; j++) { const a = ra + j * TAU / 8;
+      inkLine([[cx + Math.cos(a) * (RG.R + 30), cy + Math.sin(a) * (RG.R + 30)], [cx + Math.cos(a) * R0, cy + Math.sin(a) * R0]], 7, '#7A5A34', 'ink', 0); }
+    const P = (a, r) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+    for (let j = 0; j < N; j++) {
+      const a0 = ra - Math.PI / 2 + j * TAU / N, a1 = a0 + TAU / N, am = (a0 + a1) / 2, [w, ty] = CELLS[j] || [1e9, 0], age = s - w;
+      const arc = (r, b0, b1) => Array.from({ length: 7 }, (_, q) => P(lerp(b0, b1, q / 6), r));
+      const pts = [...arc(R1, a0, a1), ...arc(R0, a1, a0)];
+      paint(pts, { wash: age >= 0 ? mixCol(TYL[ty], '#241E2A', .35 - .25 * kick(s, [w], .5)) : '#1C1A22', ink: '#C9A24A', sw: 3 });
+      const inner = [...arc(R1 - 12, a0 + .02, a1 - .02), ...arc(R0 + 12, a1 - .02, a0 + .02)];
+      paint(inner, { wash: '#000000', washOp: age >= 0 ? 0 : 60, ink: '#8A7A50', sw: 1 });
+      if (age >= 0) { const [x, y] = P(am, RS); cellItem(ty, x, y, 3.0 * popK(age), s); flare(x, y, age, TYC[ty]); }
+    }
+    for (const r of [R0 - 6, R1 + 6]) paint(ellPts(cx, cy, r, r, 120), { ink: '#C9A24A', sw: 2.2 });
+  }
+  // b: the sorting rack — a column per kind, items drop down the chute into the next free slot of their column (bottom up)
+  const RK = { x: 1020, y: 230, cw: 140, ch: 118, rows: 6 };
+  const RKSLOT = CELLS.map(([w, ty], i) => [w, ty, CELLS.slice(0, i).filter(c => c[1] === ty).length]);
+  function rack(s) {
+    const { x, y, cw, ch, rows } = RK, Wr = cw * 4, Hr = ch * rows, cx = RG.x;
+    inkLine([[cx, RG.y - RG.R - 40], [cx, 130], [x + Wr / 2, 130], [x + Wr / 2, y - 80]], 26, INK, 'ink', 0);    // the chute from the wheel
+    inkLine([[cx, RG.y - RG.R - 40], [cx, 130], [x + Wr / 2, 130], [x + Wr / 2, y - 80]], 18, A2.steel, 'ink', 0);
+    paint(rrPts(x - 24, y - 96, Wr + 48, Hr + 130, 16), { wash: '#C0392B', fill: '#8E2A20', fillOp: 70, tex: .4, ink: INK, sw: 1.6 });   // the cabinet
+    for (let c = 0; c < 4; c++) {                                                                                  // the column headers: pictures
+      paint(rrPts(x + c * cw + 8, y - 84, cw - 16, 66, 10), { wash: TYC[c], ink: INK, sw: 1 });
+      cellItem(c, x + c * cw + cw / 2, y - 50, 1.6, s);
+      for (let r = 0; r < rows; r++) {
+        const sx = x + c * cw, sy = y + (rows - 1 - r) * ch;
+        paint(rectPts(sx + 6, sy + 6, cw - 12, ch - 12, 1), { wash: '#1C1F26', fill: '#2A303A', fillOp: 60, ink: INK, sw: 1 });
+        for (let q = 0; q < 4; q++) inkLine([[sx + 20 + q * 30, sy + ch - 16], [sx + 32 + q * 30, sy + ch - 26]], 2, '#8A8F96', 'inkfine', 0);   // the coil
+      }
+    }
+    RKSLOT.forEach(([w, ty, r]) => {
+      const age = s - w, x0 = x + ty * cw + cw / 2, y1 = y + (RK.rows - 1 - Math.min(r, RK.rows - 1)) * ch + ch / 2 - 4; if (age < -.22) return;
+      const yy = age < 0 ? lerp(y - 70, y1, easeIn(1 + age / .22)) : y1, sq = age >= 0 ? Math.exp(-age * 9) * Math.sin(age * 40) * .25 : 0;
+      push(); translate(x0, yy); scale(1 + sq, 1 - sq); cellItem(ty, 0, 0, 2.3, s); pop();
+      flare(x0, y1, age, TYC[ty]);
+    });
+    for (let c = 0; c <= 4; c++) inkLine([[x + c * cw, y], [x + c * cw, y + Hr]], 3, '#5A1A12', 'ink', 0);
+    paint(rectPts(x - 6, y, Wr + 12, Hr, 1), { wash: '#BFE8FF', washOp: 22, ink: INK, sw: 1.4 });                 // the glass front
+  }
+  // c: the periodic table — 8 x 2 tiles over the wheel, each item rides up the feed tube and lights its tile in sung order
+  const PT = { x: 262, y: 190, cw: 168, ch: 196 };
+  function ptable(s) {
+    const { x, y, cw, ch } = PT, cx = RG.x, ty0 = RG.y - RG.R - 30, tubeTop = y + 2 * ch + 20;
+    inkLine([[cx, ty0], [cx, tubeTop]], 34, INK, 'ink', 0); inkLine([[cx, ty0], [cx, tubeTop]], 24, '#3A3F48', 'ink', 0);
+    paint(rrPts(x - 26, y - 26, cw * 8 + 52, ch * 2 + 52, 14), { wash: '#2A2D36', fill: '#1E2027', fillOp: 80, tex: .4, ink: INK, sw: 1.6 });
+    CELLS.forEach(([w, ty], i) => {
+      const c = i % 8, r = Math.floor(i / 8), tx = x + c * cw, ty2 = y + r * ch, age = s - w, mx = tx + cw / 2, my = ty2 + ch / 2;
+      const on = age >= 0, k = on ? 1 + .12 * kick(s, [w], .25) : 1;
+      push(); translate(mx, my); scale(k);
+      paint(rrPts(-cw / 2 + 8, -ch / 2 + 8, cw - 16, ch - 16, 8), { wash: on ? TYL[ty] : '#2E323C', ink: on ? INK : '#4A4F5A', sw: on ? 1.6 : 1 });
+      if (on) { paint(rectPts(-cw / 2 + 8, -ch / 2 + 8, cw - 16, 26), { wash: TYC[ty], ink: null });
+        for (let q = 0; q <= i % 4; q++) paint(ellPts(-cw / 2 + 24 + q * 14, -ch / 2 + 21, 4, 4, 8), { wash: INK, ink: null });   // the «number» (dots)
+        cellItem(ty, 0, 14, 2.6 * popK(age), s); }
+      pop();
+      if (on) flare(mx, my, age, TYC[ty]);
+      if (age > -.32 && age < 0) {                                                                                  // riding up the tube, then across to its tile
+        const u = 1 + age / .32, px = u < .6 ? cx : lerp(cx, mx, (u - .6) / .4), py = u < .6 ? lerp(ty0, tubeTop, u / .6) : lerp(tubeTop, my, (u - .6) / .4);
+        cellItem(ty, px, py, 1.6, s);
+      }
+    });
+  }
   function ringScene(t) {
     const s = O2N(t);
     back(A2.gunDk);
@@ -313,10 +390,9 @@
     const cx = RG.x, cy = RG.y, R = RG.R, ang = spinOf(s), n = nWords(s), wa = s - RG.work;
     const blur = seg(s, RG.words[7], RG.words[7] + .5), spin = seg(s, RG.words[7], RG.words[7] + .3);
     const rate = RATE[n + (wa >= 0 ? 1 : 0)], wk = kick(s, RG.words, .12);
-    samsara(s, ang, wk);
+    if (WV === 'a') cellsWheel(s, ang); else if (WV === 'b') rack(s); else ptable(s);
     // the stand: an A-frame from the axle to the floor
     for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 330, FLY + 4]], 18, A2.steel, 'ink', 0);
-    stations(s);
     // the wheel: dark drum behind, spokes, the hamster, then the rim (two hoops + rungs) and its outer gear teeth
     paint(gearPts(cx, cy, R + 26, 44, ang, 14), { wash: A2.gunmetal, ink: INK, sw: 1.4 });
     paint(ellPts(cx, cy, R + 26, R + 26, 64), { wash: A2.steel, ink: INK, sw: 1.6 });
@@ -345,7 +421,6 @@
     flipchart(s, ang / TAU, wk);
     // the CEO under the chart, pointer up at the bars
     ceoClawd(1160, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2) });
-    stickers(s);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
       hamster(THR, s, 2.6, n, 0, 1, { x: cx + Math.cos(THR) * FR + ux * V * fa, y: cy + Math.sin(THR) * FR + uy * V * fa + 900 * fa * fa, r: THR - Math.PI / 2 + fa * 14 }); }
