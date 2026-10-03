@@ -168,12 +168,30 @@
   const noLimitMsg = (grey, y = 640) => letter('Лимит исчерпан · сброс в ПН 00:00', 960, y, 34, grey ? '#6A6E78' : '#C9D3E6', { font: ruFont(34), ink: false });
 
   // ---------- shots ----------
+  // R34 (v15, user: «there is no 11:58 on the clock»): a big LED wall clock, the digits drawn as 7-segment bars (a picture, not a label)
+  const SEG7 = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'];
+  function digit7(x, y, h, d, col) {                                          // (x, y) top-left, digit height h
+    const w = h * .5, th = h * .12, P = { a: [0, 0, 1, 0], b: [1, 0, 1, .5], c: [1, .5, 1, 1], d: [0, 1, 1, 1], e: [0, .5, 0, 1], f: [0, 0, 0, .5], g: [0, .5, 1, .5] };
+    for (const k of SEG7[d]) { const [x0, y0, x1, y1] = P[k], hz = y0 === y1;
+      paint(hz ? rrPts(x + x0 * w + th * .6, y + y0 * h - th / 2, w - th * 1.2, th, th / 2) : rrPts(x + x0 * w - th / 2, y + y0 * h + th * .6, th, h / 2 - th * 1.2, th / 2), { wash: col, ink: null }); }
+  }
+  function ledClock(cx, cy, hh, mm, t, pulse) {
+    const H = 110, W2 = 470, x0 = cx - W2 / 2, y0 = cy - 95;
+    paint(rrPts(x0, y0, W2, 190, 22), { wash: '#0A0B10', fill: '#1E2029', fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.4 });
+    glowAt(cx, cy, 300, '#FF3B3B', 40 + 70 * pulse);
+    const col = '#FF4A40', dg = [Math.floor(hh / 10), hh % 10, Math.floor(mm / 10), mm % 10], xs = [x0 + 40, x0 + 115, x0 + 225, x0 + 300];
+    dg.forEach((d, i) => digit7(xs[i], cy - H / 2 - 10, H, d, col));
+    if (Math.floor(t * 2) % 2 === 0) for (const dy of [-26, 16]) paint(ellPts(x0 + 198, cy - 10 + dy, 7, 7, 10), { wash: col, ink: null });   // the blinking colon
+    letter('PM', x0 + 412, cy - 30, 40, col, { font: ruFont(40), ink: false });
+    letter('SUN', x0 + 412, cy + 22, 34, '#C8504A', { font: ruFont(34), ink: false });
+  }
   function sRoom(t) {                                                         // 197.9 «Воскресенье. 23:58»
     const z = kf(t, [[197.9, 1], [205.65, 1.14]]), cx = kf(t, [[197.9, 960], [205.65, 1040]]), cy = kf(t, [[197.9, 520], [205.65, 470]]);
     const fl = hitK(t, window.TIME_WARP ? hitsIn(197.9, 205.65, 10) : [198.26, 199.94, 202.61, 203.28, 204.93], .12);   // v3: the track's own hits
     if (R) camBegin(960, kf(t, [[197.9, 540], [205.65, 560]]), kf(t, [[197.9, 1], [205.65, 1.05]]));      // R34: the whole re-laid room, a slow push
     else camBegin(cx, cy, z);
-    room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: 1 }) });
+    room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: R ? 0 : 1, lookY: R ? -1 : 0 }) });
+    if (R) ledClock(990, 250, 11, 58, t, hitK(t, [200.88, 203.24], .5));
     camEnd();
     glitchCut(t, 197.9);
   }
