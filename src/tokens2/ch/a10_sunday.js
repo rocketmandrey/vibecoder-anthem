@@ -309,8 +309,9 @@
 
   function sMidnight(t) {                                                     // 218.45 «Полночь.»: ВС 23:59 → ПН 00:00 on the 219.18 hit
     const z = kf(t, [[218.45, 2.6], [220.7, 3.0]]), flip = t >= 219.18;
-    if (R) camBegin(1255, -20, kf(t, [[218.45, 2.5], [220.7, 2.75]])); else camBegin(1650, 215, z);   // R34: the re-laid clock, ~85% of the width
-    room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .6, glow: .5, clock: flip ? 'ПН 00:00' : 'ВС 23:59', clockGlow: hitK(t, [219.18], .6) });
+    if (R) camBegin(1000, 400, 1.3); else camBegin(1650, 215, z);   // R34 (v19): one static shot, the wall clock up top + Clawd asleep at the desk (static, so the 244.1 retime gap can't shift it)
+    room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .6, glow: .5, clock: flip ? 'ПН 00:00' : 'ВС 23:59', clockGlow: hitK(t, [219.18], .6),
+      clawd: R ? sitClawd(t, { eyes: 'closed', lookX: 0, mouth: 'smile', blush: true, aL: .15, aR: .3 }) : undefined });
     camEnd();
     if (Math.abs(t - 219.18) < .05) flash(.25, '#FF4A40');
   }

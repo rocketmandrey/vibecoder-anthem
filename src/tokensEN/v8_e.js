@@ -73,7 +73,7 @@
   span(L(170.30), 195.80);            // the held «mayonnaise» tunnel
   span(195.81, 210.081);              // last chorus (a09) up to «Worth half a trillion more»
   // the deadpan outro (a10): each spoken line from its own start (the reset → close-up → «Fuck» run is a cut sequence, left on its cues)
-  const OUT = [218.64, 223.90, 227.34, 233.48, 237.00, 239.56, 241.96, 244.10];
+  const OUT = [218.64, 223.90, 227.34, 233.48, 237.00, 239.56, 241.96, L(230.82)];   // v19: «Midnight.» holds up to the reset cut (ended at 244.10: the 0.1 s gap drew the native sunday chapter, a shifted clock frame)
   for (let k = 0; k + 1 < OUT.length; k++) span(OUT[k], OUT[k + 1]);
   span(L(230.82), OUTCU);      // reset notification (starts on its own cut), up to the close-up
   // v10 outro, cut by hand on the beats: the shut-eyed close-up through «Fuck.» → the 1st beat after it the eyes snap open, red (once) →

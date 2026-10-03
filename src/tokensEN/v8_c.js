@@ -625,4 +625,4 @@
 })();
 // v14 outro framing (user: «Midnight» / the reset / «Fuck.» were cropped): native 3:4 keys over the RU_CAM's fixed 1080 view
 // (keys are v1 time, N2O): «Midnight» the whole clock, the reset the whole tablet, «Fuck.» the whole face + the clock, centred; to the madness (250.1)
-if (window.RU34) RU34.push([N2O(241.96), N2O(250.1), [[N2O(241.96), 960, 560, 1080], [N2O(244.10), 970, 540, 1180], [N2O(247.2), 960, 600, 1120]]]);
+if (window.RU34) RU34.push([N2O(241.96), N2O(250.1), [[N2O(241.96), 970, 540, 1180], [N2O(247.2), 960, 600, 1120]]]);   // v19: «Midnight» shares the reset's crop (its own 244.10 key cut the crop ~0.1 s before the reset cut: the jerk)
