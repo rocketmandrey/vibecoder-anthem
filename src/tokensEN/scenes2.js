@@ -185,17 +185,19 @@
   const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();          // the user picked a (final)
   const RG = { x: { a: 920, b: 610, c: 720 }[WV] ?? 920, y: { a: 760, b: 980, c: 1160 }[WV] ?? 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
   const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
-  // v19 (user: «the hamster must build up speed gradually, not start at the max»): an EASE-IN (cubic) ramp — he WALKS (0.15 rev/s) for the
-  // first seconds, jogs, runs, and only the last ~2 s before «WORKING» is the sprint (blur); RF after the fling
-  const RI = .15, R1 = .15, R2 = 1.7, RF = 7, W0 = RG.words[0], WD = RG.work - W0;
+  // v20 (user: «not from zero — from the first frame he's already RUNNING at a moderate pace, then up to max before WORKING»): an ease-in
+  // (cubic) ramp 0.55 → 1.8 rev/s; the gait changes per stage (trot → gallop → legs-wheel blur → cartoon feet-circle), see hamster()
+  const RI = .55, R1 = .55, R2 = 1.8, RF = 7, W0 = RG.words[0], WD = RG.work - W0;
   const rateOf = s => s < W0 ? RI : s < RG.work ? R1 + (R2 - R1) * ((s - W0) / WD) ** 3 : RF;
   const spinOf = s => {                                                   // integrated wheel angle (real time), closed form of rateOf
     const p = Math.min(s, W0) - RG.a, u = clamp((s - W0) / WD);
     return TAU * (Math.max(0, p) * RI + (s > W0 ? WD * (R1 * u + (R2 - R1) * u ** 4 / 4) : 0) + Math.max(0, s - RG.work) * RF);
   };
-  // v19 effect packs for the speed-up (--var=fx:a|b|c, default a): a cartoon (speed lines, sweat, dust), b heat (the rim glows orange →
-  // white-hot, sparks off his feet and the rim, smoke at the top), c comic (smear ghosts, impact stars on footfalls, the stand rattles, whoosh arcs)
-  const FX = ((window.BTT_VAR || {}).fx || 'a').toLowerCase(), effOf = rate => clamp((rate - .15) / 1.55);
+  // v19 effect packs for the speed-up (--var=fx:a|b|c): a cartoon (speed lines, sweat, dust), b heat (the rim glows orange → white-hot, sparks,
+  // smoke), c comic (smear ghosts, impact stars on footfalls, the stand rattles, whoosh arcs) — the user picked c. v20: c1|c2|c3 (default c1) =
+  // the comic pack with a different YELLOW around the hamster: c1 rim trails + the rung under his feet flashes, c2 spark showers off his feet +
+  // a starburst round the feet-circle, c3 crackling yellow lightning round him + orbit rings round the feet-circle
+  const FXS = ((window.BTT_VAR || {}).fx || 'c1').toLowerCase(), FX = FXS[0], FV = FXS[1] || '1', effOf = rate => clamp((rate - .55) / 1.25);
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
@@ -204,20 +206,50 @@
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
   function hamster(th, t, rate, n, wk, spin, fly, rev = t * rate) {
     const BW = 440, g = PROP_ART.ham4Run0, BH = BW * g[1] / g[0], feetR = RG.R - 24;
-    const e = effOf(rate), ph = 1.2 * t + 7 * rev, f = Math.floor(ph) % 4, bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
+    const e = fly ? 0 : effOf(rate), ph = 2 * t + 7 * rev, f = Math.floor(ph) % 4;
+    // gait stages: k2 gallop (bigger bounds, stretch), k3 the legs blur into wheels, k4 the cartoon feet-circle (body up, leaning in)
+    const k2 = seg(e, .15, .3), k3 = seg(e, .4, .52), k4 = seg(e, .66, .76), lift = -BH * .1 * k4;
+    const bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)) * (1 + 1.2 * k2) * (1 - .75 * k3) + lift, sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
     push();
     if (fly) { translate(fly.x, fly.y); rotate(fly.r); translate(0, BH / 2); }
-    else { translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .06 * Math.min(rate, 1.5)); }
+    else { translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .06 * Math.min(rate, 1.5) + .08 * k2 + .1 * k4); }
     if (!fly && FX !== 'b') for (let q = 0; q < 2 + Math.round((FX === 'a' ? 7 : 3) * e); q++) { const v = frac(1.5 * t + rev + hash(q + 3)), z = 1 + (FX === 'a' ? 1.6 : .5) * e; paint(ellPts(-BW * .35 - v * 160 * z, -10 - hash(q) * 12 - v * 20 * z, (7 + v * 14) * z, (7 + v * 14) * z, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
     if (!fly && FX === 'b') { for (let q = 0; q < Math.round(14 * e); q++) { const v = frac(2.4 * t + 1.5 * rev + hash(q + 60)), dx = -(80 + 260 * hash(q + 61)) * v, dy = -(60 + 220 * hash(q + 62)) * v + 380 * v * v;   // sparks off his feet
         inkLine([[BW * .1 * hash(q) + dx, dy], [BW * .1 * hash(q) + dx + 22 * (1 - v), dy - 8]], 3, v < .4 ? '#FFF6D0' : TK.orange, 'inkfine', 0); }
       if (e > .5) for (let q = 0; q < 6; q++) { const v = frac(.9 * t + hash(q + 70)), k = (e - .5) * 2; paint(ellPts(-BW * .3 - v * 220, -20 - v * 160, 18 + 40 * v, 16 + 34 * v, 12), { fill: '#5A5A5E', fillOp: 150 * k * (1 - v), ink: null }); } }   // smoke
     if (FX === 'a' && rate > .5) for (let q = 0; q < 3 + Math.round(4 * Math.min(1, rate - .5)); q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
       inkLine([[x0 - 70 - 80 * m, y], [x0, y]], 4, '#F1E8D2', 'inkfine', 0); }                                        // speed lines
+    const rimP = (phi, rr) => [Math.sin(phi) * rr, -feetR + Math.cos(phi) * rr];                         // a point on the rim in his frame
+    if (FX === 'c' && !fly && FV === '1') {                                                              // c1: yellow trails along the rim behind him
+      for (let q = 0; q < 3; q++) { const L = .2 + 1.1 * e, pts = []; for (let k = 0; k <= 12; k++) pts.push(rimP(-.06 - L * k / 12 - q * .03, feetR + 6 + q * 12)); inkLine(pts, 6 - q * 1.5, mixCol(TK.yellow, '#FFF6D0', q / 3), 'ink', 0); }
+      const fl = 1 - frac(ph); if (fl > .4) { const a = rimP(.04, feetR), b = rimP(.04, feetR + 34); glowAt(a[0], a[1], 50 + 60 * e, TK.yellow, 160 * fl); inkLine([a, b], 9, TK.yellow, 'ink', 0); } }
+    if (FX === 'c' && !fly && FV === '2') for (let q = 0; q < 3 + Math.round(18 * e); q++) {                  // c2: yellow spark showers off his feet
+      const v = frac(2.6 * t + 1.2 * rev + hash(q + 60)), x0 = (hash(q + 63) - .4) * BW * .4, dx = -(60 + 300 * hash(q + 61)) * v, dy = -(80 + 260 * hash(q + 62)) * v + 420 * v * v;
+      inkLine([[x0 + dx, dy], [x0 + dx + 26 * (1 - v), dy - 10 * (1 - v)]], 4, v < .3 ? '#FFF6D0' : TK.yellow, 'inkfine', 0); }
     if (FX === 'c' && rate > .4 && !fly) for (let gh = 4; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 30 * e, -BH / 2 + bob * .5, BW * (1 + .08 * e), { alpha: .3 * e / gh });   // the smear
     else if (rate > .8 || spin > 0) for (let gh = 2; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 16 * Math.min(rate, 2), -BH / 2 + bob * .5, BW, { alpha: .15 / gh + .15 * spin });
     if (FX === 'c' && !fly && f === 1 && e > .1) { const z = 30 + 70 * e; paint(starPts(BW * .32, -4, z, .45, 8), { wash: TK.yellow, ink: INK, sw: 1 }); paint(starPts(-BW * .2, -4, z * .7, .45, 8), { wash: '#FFFDF2', ink: INK, sw: 1 }); }   // impact stars on the footfall
-    ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: 1 / sq, sy: sq });
+    // composite p5.brush's deferred washes/strokes NOW (the flushLetters trick: a tiny off-screen watercolor fill), so the native p5 shapes
+    // below land on top of the drum instead of under its late-composited wash
+    const flushB = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
+    const gs = 1 + .08 * k2 * (f === 3);                                                                 // gallop: the stretch at full extension
+    ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: gs / sq, sy: sq / gs });
+    if (!fly && k3 > 0 && k4 < 1) for (const lx of [-.2, .26]) {                                         // the legs blur into spinning wheels
+      const x = lx * BW, y = -30 + bob * .3, a0 = t * 30 + lx * 7, al = Math.min(1, 3 * k3) * (1 - Math.min(1, 3 * k4));
+      flushB(); noStroke(); fill(226, 135, 92, 245 * al); ellipse(x, y, 124 * (.6 + .4 * k3), 88 * (.6 + .4 * k3));   // native p5: lands right over the leg bitmap (brush washes are deferred and composite muddy here)
+      for (let q = 0; q < 3; q++) { const pts = []; for (let k = 0; k <= 8; k++) { const a = a0 + q * TAU / 3 + k * .22; pts.push([x + Math.cos(a) * 44, y + Math.sin(a) * 30]); } inkLine(pts, 1, INK, 'inkfine', 0); } }
+    if (!fly && k4 > 0) {                                                                                // max: the cartoon feet-circle
+      const r = BH * .3, rk = r * (.5 + .5 * k4), x = BW * .03, y = -rk * .62, a0 = t * 42;   // under his belly, standing on the rim (the body art covers its top)
+      if (FX === 'c' && FV === '3') for (let q = 0; q < 2; q++) paint(ellPts(x, y, r * (1.25 + .18 * q), r * (.55 + .1 * q), 40, 0), { ink: TK.yellow, sw: (5 - 2 * q) * k4 });   // c3 orbit rings
+      flushB();                                                                                          // native p5 shapes: they land in order over the drum
+      if (FX === 'c' && FV === '2') { noStroke(); fill(255, 214, 64); beginShape(); for (const [px, py] of starPts(x, y + rk * .2, rk * (1.45 + .2 * Math.sin(t * 40)), .55, 12)) vertex(px, py); endShape(CLOSE); }   // c2 starburst behind it
+      noStroke(); fill(34, 30, 38); ellipse(x, y, 2 * rk + 10, 1.56 * rk + 10); fill(226, 135, 92); ellipse(x, y, 2 * rk, 1.56 * rk);
+      for (let q = 0; q < 3; q++) { const pts = []; for (let k = 0; k <= 10; k++) { const a = a0 + q * TAU / 3 + k * .2, rr = rk * (.25 + .6 * k / 10); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr * .78]); } inkLine(pts, 1.1, INK, 'inkfine', 0); }
+    }
+    if (FX === 'c' && !fly && FV === '3' && e > .05) for (let q = 0; q < 1 + Math.round(5 * e); q++) {     // c3: crackling yellow lightning round him
+      const fr = Math.floor(t * 12), a = hash(q * 7 + fr) * Math.PI - Math.PI, r0 = BW * .38, pts = [];
+      for (let k = 0; k < 6; k++) { const rr = r0 + k * (16 + 26 * e), j = (hash(q + k * 13 + fr) - .5) * .35; pts.push([Math.cos(a + j) * rr * 1.1, -BH * .5 + Math.sin(a + j) * rr * .8]); }
+      inkLine(pts, 4, TK.yellow, 'ink', 0); }
     if (spin > 0) for (const dx of [.29, .37]) {                                                                          // dizzy spiral eyes over his
       const ex = dx * BW, ey = -BH * .66 + bob, pts = []; for (let s2 = 0; s2 <= 24; s2++) { const a = s2 * .5 + t * 16, r = s2 * .55 * spin; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); }
       paint(ellPts(ex, ey, 15 * spin, 15 * spin, 12), { wash: '#FFFDF2', ink: INK, sw: .8 }); inkLine(pts, 2, INK, 'inkfine', 0); }
@@ -510,7 +542,7 @@
     A03.hall(t, { lamps: [420, 1480], floor: FLY });
     paint(rectPts(-400, FLY, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     const cx = RG.x, cy = RG.y, R = RG.R, ang = spinOf(s), n = nWords(s), wa = s - RG.work;
-    const rate = rateOf(s), e = effOf(rate), blur = wa >= 0 ? 1 : clamp((rate - 1.05) / .5), spin = wa >= 0 ? 1 : clamp((rate - 1.45) / .25);
+    const rate = rateOf(s), e = effOf(rate), blur = wa >= 0 ? 1 : clamp((rate - 1.35) / .35), spin = wa >= 0 ? 1 : clamp((rate - 1.65) / .15);
     const rb = clamp((rate - .28) / .2), dA = rate * TAU / 24;   // v19 anti-aliasing: past ~0.3 rev/s the 36 rungs / 44 teeth strobe at 24 fps → smear them
     const wk = kick(s, RG.words, .12);
     if (WV === 'a') cellsWheel(s, ang); else if (WV === 'b') rack(s); else ptable(s);

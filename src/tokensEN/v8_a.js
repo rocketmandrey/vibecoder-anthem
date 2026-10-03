@@ -182,12 +182,12 @@
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true,
-      // sweat (v12h, user: «the blue drops fly off wrong»): drawn in his own rotated frame — each drop beads on the brow (front-top corner) and
-      // flicks a short arc up and back off him, faster while he heaves; a knock-back throws a burst of them
-      draw: pushing && t > 4 ? (u, sw) => { for (let i = 0; i < 3; i++) { const v = frac(t * (1.3 + .8 * heave) + i / 3 + hash(i + 90) * .2) * (1 + .6 * bump), a = clamp(v);
-        const x = (3.8 - 5.5 * a - 1.5 * hash(i + 91)) * u, y = (-8.3 - 3.2 * a + 4.2 * a * a) * u, r = (.55 + .2 * hash(i + 92)) * u * (1 - .4 * a);
-        if (a >= 1) continue;
-        paint([[x, y - 1.7 * r], [x + .9 * r, y + .2 * r], [x, y + .9 * r], [x - .9 * r, y + .2 * r]], { wash: '#9FD3F2', fill: '#FFFFFF', fillOp: 60, ink: INK, sw: sw * .6, curv: .7 }); } } : null });
+      emote: pushing && t > 4 ? 'sweat' : null });
+    // sweat spray (v12i, user: «the drops were fine, put them back in the right place — and they must SPLASH»): the classic emote drops sit on
+    // his head (clawd() now rotates them with him); copies of them flick off backwards in a short spray, harder on heaves and knock-backs
+    if (pushing && t > 4) { const r = gAng + .12 + .1 * heave - .25 * bump, hx = 5.4 * cu, hy = -8.6 * cu;
+      for (let i = 0; i < 2; i++) { const v = frac(t * (1.6 + 1.2 * heave) + i / 2 + .3 * bump), lx = hx - (2 + 9 * v) * cu, ly = hy - (3 * v - 6 * v * v) * cu;
+        emote('sweat', fx + lx * Math.cos(r) - ly * Math.sin(r), fy + lx * Math.sin(r) + ly * Math.cos(r), cu * .8 * (1 - .45 * v), 1 - seg(v, .7, 1)); } }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
