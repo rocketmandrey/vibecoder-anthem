@@ -354,8 +354,11 @@
         const q = i / 18 * TAU + hash(i) * .2, r0 = 300 + a * 700, r1 = r0 + 220 + hash(i + 3) * 160;
         inkLine([[960 + Math.cos(q) * r0 * .7, 480 + Math.sin(q) * r0], [960 + Math.cos(q) * r1 * .7, 480 + Math.sin(q) * r1]], 3.5 * k + .5, i % 2 ? '#FFD9A0' : TK.ember, 'ink', 0);
       }
+      camBegin(960, 1060 - 6 * u, 1.75 + .12 * k);                           // v15: the cover close-up, face fills the frame
       clawd(960 + sx, 1060 + sy, u, { eyes: 'red', squint: 1 - seg(a, 0, .06), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
+      for (const ex of [-1, 1]) glowAt(960 + sx + ex * 2.4 * u, 1060 + sy - 6 * u, 1.6 * u, '#FF2A1A', 120 * (.6 + .4 * k));   // the red eyes glow
       lidBack(TK.ember);
+      camEnd();
       return flash(.55 * Math.exp(-a / .1), '#FF7A3A');
     }
     bgFill('#2A0C08', '#5A1A0C', 90);
@@ -373,9 +376,14 @@
     bgFill(WALL, WALL2);
     glowAt(960, 1200, 900, '#9CFFB8', 90);
     if (R) {
+      // v15 (user: «Fuck — a much bigger close-up, like a YouTube cover»): a slow creep onto the face, then a punch on «Fuck» (v2 224.735)
+      // till the face fills the frame; sSnap holds it, eyes red
+      const z = lerp(1.05, 1.3, seg(t, 224.2, 224.73)) + .45 * backOut(seg(t, 224.735, 224.85));
+      camBegin(960, 1060 - 6 * u, z);
       clock(740, -90, 440, 190, 'ПН 00:00', t, .3);
       clawd(960, 1060, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
-      return lidBack('#9CFFB8');
+      lidBack('#9CFFB8');
+      return camEnd();
     }
     clawd(960, 540 + 6 * u, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -.6, aR: -.6, noShadow: true, seed: 3 });
     paint(ellPts(960, 1180, 900, 260, 24), { fill: '#9CFFB8', fillOp: 60, bleed: .3, tex: .2, ink: null });   // green screen light from below
