@@ -159,7 +159,8 @@ function a05_factory(t, L) {
   if (a05_R) {
     if (!a05_noSign) {                                                    // 3:4: the counter is gated out, so the sign is just a bigger lit label
     paint(rectPts(790, 482, 340, 64, 1), { wash: A2.gunDk, ink: PAL.ink, sw: .9 });
-    letter('СОЖЖЕНО ТОКЕНОВ', 960, 514, 30, f > .1 ? A2.hazard : '#4A4450', { font: ruFont(30), ink: false });
+    const sz = window.EN_TR ? 24 : 30;                                    // EN «TOKENS FACTORY» is wider: smaller, so it keeps clear of the sign's edges
+    letter('СОЖЖЕНО ТОКЕНОВ', 960, 514, sz, f > .1 ? A2.hazard : '#4A4450', { font: ruFont(sz), ink: false });
     }
   } else {
   paint(rectPts(772, 480, 376, 72, 1), { wash: A2.gunDk, ink: PAL.ink, sw: .9 });

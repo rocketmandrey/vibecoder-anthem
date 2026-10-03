@@ -285,7 +285,13 @@
 
   // c (v13): the NEXT TOWN by its lake, a tall picture window left of the pulpit; the chalice's long straw runs out into the lake and
   // every sip on the break beats pulls a quarter of it (lvlC), the boats settle on the mud, a fish flops
-  const lvlC = s => clamp(1 - GULPS.reduce((a, g) => a + .25 * ease(seg(s, g - .1, g + .25)), 0));
+  // v16 water variants (render.mjs --var=water:a|b → window.BTT_VAR.water, default a). a: he just sips through a plain striped straw, a
+  // little per sip; b: he doesn't drink at all, the lake drains by itself through a pipe into the data-center GPU under the pulpit.
+  // In both the second «water» (137.24, «Why?») takes the rest, the lake is dry.
+  const WV = (new URLSearchParams(location.search).get('var_water') || (window.BTT_VAR || {}).water || 'a').toLowerCase();
+  window.BTT_VAR = { ...(window.BTT_VAR || {}), water: WV };
+  const lvlC = s => clamp(1 - (WV === 'b' ? .2 * ease(seg(s, C.water1, C.water1 + .5)) : 0) - GULPS.reduce((a, g) => a + (WV === 'b' ? .07 : .06) * ease(seg(s, g - .1, g + .25)), 0)
+    - ease(seg(s, C.water2 - .1, C.water2 + .9)));
   const LK = { cx: 540, top: 150, w: 210, h: 650 }, LK_W0 = 585, LK_W1 = 785;   // the lake's full / empty surface y
   const lakeY = l => lerp(LK_W1, LK_W0, l);
   function townLake(s, L, lvl) {
@@ -324,17 +330,30 @@
   }
   // c (v13): no chalice, STRAW ONLY: a long pink straw from his mouth out through the window into the town lake, the gulps run up it
   const MOUTH = [948, 566];                                                     // the CEO's mouth, world
-  function lakeStraw(s, lvl) {
+  function lakeStraw(s, lvl) {                                                  // a: a plain white straw with red stripes, one bend at the mouth
     const k = ease(seg(s, 133.0, 133.4)) * (1 - ease(seg(s, 136.8, 137.1))); if (k < .01) return;
-    const end = [LK.cx + 20, Math.max(lakeY(lvl) + 24, LK_W0 + 24)];
-    const full = [MOUTH, [850, 590], [720, 548], [620, 560], end], n = full.length - 1;
-    const pts = full.map((p, i) => i === 0 ? p : [lerp(MOUTH[0], p[0], k), lerp(MOUTH[1], p[1], k)]);
-    inkLine(pts, 6, '#E27A92', 'ink', .5); inkLine(pts, 1.6, '#FFC6D4', 'inkfine', .5);
-    for (const g of GULPS) {
-      const p = seg(s, g - .55, g - .05); if (p <= 0 || p >= 1 || k < .99) continue;
-      const q = (1 - p) * n, i = Math.min(n - 1, Math.floor(q)), f = q - i, a = pts[i], b = pts[i + 1];   // lake → mouth
-      paint(ellPts(lerp(a[0], b[0], f), lerp(a[1], b[1], f), 10, 10, 10), { wash: '#2E9FE8', ink: INK, sw: .4 });
+    const m = [MOUTH[0] - 18, MOUTH[1] + 6], end = [LK.cx + 40, Math.max(lakeY(lvl) + 30, LK_W0 + 30)];
+    const full = [m, [m[0] - 60, m[1] + 14], end], pts = full.map((p, i) => i === 0 ? p : [lerp(m[0], p[0], k), lerp(m[1], p[1], k)]);
+    inkLine(pts, 4.2, INK, 'ink', 0); inkLine(pts, 3, '#FFFFFF', 'ink', 0);
+    for (let i = 0; i + 1 < pts.length; i++) { const [a, b] = [pts[i], pts[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.floor(L / 26);
+      for (let j = 0; j < n; j += 2) { const u0 = j / n, u1 = (j + 1) / n; inkLine([[lerp(a[0], b[0], u0), lerp(a[1], b[1], u0)], [lerp(a[0], b[0], u1), lerp(a[1], b[1], u1)]], 2.6, '#E0442A', 'ink', 0); } }
+    for (const g of GULPS) {                                                     // a small sip runs up it on each beat
+      const p = seg(s, g - .45, g - .05); if (p <= 0 || p >= 1 || k < .99) continue;
+      const a = pts[1], b = pts[2], f = 1 - p, [x, y] = f < .85 ? [lerp(a[0], b[0], f / .85), lerp(a[1], b[1], f / .85)] : [lerp(pts[0][0], a[0], (1 - f) / .15), lerp(pts[0][1], a[1], (1 - f) / .15)];
+      paint(ellPts(x, y, 5, 5, 8), { wash: '#2E9FE8', ink: null });
     }
+  }
+  // b: the drain pipe from the lake's floor along the wall into the GPU under the pulpit; water blobs run through it while the level drops
+  const PIPE = [[LK.cx + 30, 770], [760, 770], [760, 690], [880, 690]];
+  function drainPipe(s, lvl) {
+    const r = 7;                                                                 // crisp wash segments (a fat brush stroke read as a blob)
+    for (let i = 0; i + 1 < PIPE.length; i++) { const [a, b] = [PIPE[i], PIPE[i + 1]], x0 = Math.min(a[0], b[0]) - r, y0 = Math.min(a[1], b[1]) - r;
+      paint(rectPts(x0, y0, Math.abs(b[0] - a[0]) + 2 * r, Math.abs(b[1] - a[1]) + 2 * r), { wash: '#7A8290', ink: INK, sw: .6 }); }
+    paint(ellPts(PIPE[0][0], PIPE[0][1], 10, 10, 12), { wash: '#1A1D22', ink: INK, sw: .6 });                    // the drain mouth in the lake bed
+    const flow = s > C.water1 && s < C.water2 + 1 && lvl > .01; if (!flow) return;
+    const segs = PIPE.slice(1).map((p, i) => Math.hypot(p[0] - PIPE[i][0], p[1] - PIPE[i][1])), tot = segs.reduce((a, b) => a + b, 0);
+    for (let j = 0; j < 7; j++) { let d = frac(s * .9 + j / 7) * tot, i = 0; while (d > segs[i]) d -= segs[i++];
+      const a = PIPE[i], b = PIPE[i + 1], f = d / segs[i]; paint(ellPts(lerp(a[0], b[0], f), lerp(a[1], b[1], f), 5, 5, 8), { wash: '#5FC4FF', ink: null }); }
   }
   // c (v13): right, the same tall window: a city far away at night, all lit. «more electricity» raises a pylon whose wires run current
   // to the church and the city loses a chunk of its lights at once; every next line («copper», «water», «cheaper»…, «need») takes more blocks
@@ -516,7 +535,7 @@
     // ---- the preacher ----
     const rise = ease(seg(s, 123.6, 125.5)), m = mouthAt(s);
     const lift = s < 137.6 ? kf(s, [[133.1, .3], [133.4, 1.05], [136.7, 1.05], [137.05, .3]], backOut) : .3;
-    const sipping = s > 133.35 && s < 136.8;
+    const sipping = WV !== 'b' && s > 133.35 && s < 136.8;
     let aL = .5, aR = .5, eyes = 'normal', mouth = m || 'smile', lookX = 0;
     if (s < 126.4) { eyes = 'narrow'; }
     else if (s < 129) { const up = ease(seg(s, C.elec - .3, C.elec + .2)); aL = aR = .5 + 1.1 * up + .1 * Math.sin(s * 6) * up; eyes = up > .5 ? 'happy' : 'normal'; }
@@ -533,7 +552,7 @@
     A06.pulpit(s, pulpitO);
     decks(s, backOut(seg(s, C.gpus + .05, C.gpus + .45)), djAge > .7 ? Math.sin(s * 14) * .8 : 0);
     if (dj && djAge < .35) paint(starPts(960 - 3.2 * 32, 700 - 6.8 * 32, 26 * (1 - djAge / .35) + 6, .2), { wash: '#E6FFE8', ink: null });
-    if (VAR === 'c') lakeStraw(s, lvlC(s));
+    if (VAR === 'c') { if (WV === 'b') drainPipe(s, lvlC(s)); else lakeStraw(s, lvlC(s)); }
     // ---- the choir: three angels each side ----
     const sing = inSpan(s, SING), singK = sing ? .7 + .3 * kick(s, BT, .3) : 0, whyK = seg(s, C.why, C.why + .25) * (1 - seg(s, 140.6, 141.2));
     ANG.forEach(([x, nn]) => {
