@@ -1,4 +1,6 @@
 // Approved press-conference storyboard. All choreography is in real track seconds.
+// --var=capex:a|b|c|d|e → window.CAPEX_V[k](r) from src/tokensEN/v8_capex_<k>.js (default: this press conference)
+window.CAPEX_V = window.CAPEX_V || {};
 if (window.R34) {
   (() => {
     const INK = '#171C25', NAVY = '#27364D', BLUE = '#7894B2';
@@ -161,7 +163,7 @@ if (window.R34) {
     const A = N2O(201.6), B = N2O(207.26), name = 'en_hold_press';
     chapter(name, A, B, [[A, t => {
       const r = O2N(t); window.RNOW = r;
-      try { pressConf(r); } finally { window.RNOW = null; }
+      try { (CAPEX_V[(window.BTT_VAR || {}).capex] || pressConf)(r); } finally { window.RNOW = null; }
     }]], { real: true });
     const c = CH.find(c => c.name === name); c.hold = true;
     CH.splice(CH.indexOf(c), 1); CH.unshift(c);
