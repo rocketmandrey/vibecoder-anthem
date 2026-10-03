@@ -196,7 +196,7 @@
       // flush p5.brush's deferred strokes first (the flushLetters trick) so these native shapes land on top of Clawd and the coin
       brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill();
       const shape = (L, k = 1) => { const rb = .275 * L, c = L - rb; beginShape(); vertex(0, 0); for (let a = -1.9; a <= 1.9; a += .19) vertex(c + Math.cos(a) * rb * k, Math.sin(a) * rb * k); endShape(CLOSE); };
-      for (const [L, th, D] of [[4.3, 210, 8], [5.4, 180, 10.5], [3.4, 150, 7]]) {
+      for (const [L, th, D] of [[1.6, 232, 7], [2.0, 208, 8.5], [1.3, 168, 6]]) {
         const a = th * Math.PI / 180, dx = D * q * Math.cos(a) * u, dy = (D * q * Math.sin(a) + 6 * q * (q - 1)) * u, Lp = L * u;
         push(); translate(ex + dx, ey + dy); rotate(a); scale(sL, sW); translate(-Lp * .45, 0);           // bulb leads, tail trails toward him
         stroke(8, 125, 168, 255 * al); strokeWeight(.1 * u * 2); fill(7, 156, 221, 255 * al); shape(Lp);       // outline + the lower/right shadow

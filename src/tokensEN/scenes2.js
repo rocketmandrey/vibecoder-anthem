@@ -452,7 +452,7 @@
   // v21 «IS WORKING» on the flipchart, --var=working:a|b|c (default a): a the trend line rockets off the board; b the pages flip wildly and the
   // last page has a giant green arrow that rips up through the paper; c the whole board launches like a rocket, the CEO cheers, token confetti
   function chartA(s, ang, wk, wa) {
-    const WKV = ((window.BTT_VAR || {}).working || 'a').toLowerCase();
+    const WKV = ((window.BTT_VAR || {}).working || 'c').toLowerCase();   // v22: the user picked c
     const [X, Y, Wd, Hd] = FC, a = wa - .06, popped = a >= 0, lift = WKV === 'c' && popped ? 260 * a + 2600 * a * a : 0, base = Y + Hd - 40, BW = 15, BS = 17.2, H = k => 22 * Math.pow(1.2, k), FLT = .25;
     belt(RG.x, RG.y, [X - 34, Y + 300], ang);
     paint(rrPts(X - 84, Y + 328, 100, 60, 8), { wash: A2.gunmetal, ink: INK, sw: 1.2 });
@@ -581,7 +581,7 @@
     if (blur < 1) for (let k = 0; k < 8; k++) { const a = ang + k * TAU / 8; inkLine([[cx, cy], [cx + Math.cos(a) * (R - 26), cy + Math.sin(a) * (R - 26)]], 5, A2.steel, 'ink', 0); }
     if (blur > 0) paint(ellPts(cx, cy, R - 26, R - 26, 48), { fill: A2.steel, fillOp: 70 * blur, tex: .3, ink: null });
     // «WORKING»: the over-spun rim carries him up the left side (CARRY s), then lets go: he flies up-right off the frame, tumbling
-    const CARRY = .3, TH0 = Math.PI / 2 - Math.min(.3, rate * .12), THR = Math.PI * 1.25, FR = R - 24 + 60;
+    const CARRY = .3, TH0 = Math.PI / 2 - Math.min(.3, rate * .12), THR = Math.PI * 1.08, FR = R - 24 + 60;   // v22: released on the left side, flung to the upper-LEFT corner
     const th = wa < 0 ? TH0 : TH0 + (THR - TH0) * easeIn(Math.min(1, wa / CARRY)), fa = wa - CARRY;   // (the carry's lean stays .27, the fling picks it up)
     if (fa < 0) hamster(th, s, Math.min(rate, 2.6), n, wk, spin, null, ang / TAU);
     paint(ellPts(cx, cy, 34, 34, 16), { wash: TK.yellow, ink: INK, sw: 1.2 });
@@ -607,11 +607,11 @@
     pop();
     if (CV === 'b') chartB(s, ang, wk, wa); else if (CV === 'c') chartC(s, ang, wk, wa, rate); else chartA(s, ang, wk, wa);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
-    if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
+    if (fa >= 0) { const V = 2400, ux = -.55, uy = -.83;
       // v21 (user: «the animation at ~171 is broken»): he used to pop from inside the drum to OUTSIDE the rim (FR) with a flipped anchor at the
       // hand-off; now the flight starts exactly where the carry left his body centre, at the same angle, and only then tumbles away
       const HBH = 440 * PROP_ART.ham4Run0[1] / PROP_ART.ham4Run0[0], a0 = THR - Math.PI / 2 + .27, fx0 = cx + Math.cos(THR) * (R - 24) + Math.sin(a0) * HBH * .6, fy0 = cy + Math.sin(THR) * (R - 24) - Math.cos(a0) * HBH * .6;   // .6 = half his height + the feet-circle lift
-      hamster(THR, s, 2.6, n, 0, 1, { x: fx0 + ux * V * fa, y: fy0 + uy * V * fa + 900 * fa * fa, r: a0 + fa * 14 }); }
+      hamster(THR, s, 2.6, n, 0, 1, { x: fx0 + ux * V * fa, y: fy0 + uy * V * fa + 900 * fa * fa, r: a0 - fa * 14 }); }
     // on the blur: sparks off the rim and tokens flung out
     if (blur > 0) {
       for (let q = 0; q < 10; q++) { const a0 = hash(q) * TAU, age = frac(s * 1.6 + hash(q + 3)), th2 = a0 + ang, r = R + age * 300;
