@@ -181,13 +181,41 @@
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
-      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true,
-      emote: pushing && t > 4 ? 'sweat' : null });
-    // sweat spray (v12i, user: «the drops were fine, put them back in the right place — and they must SPLASH»): the classic emote drops sit on
-    // his head (clawd() now rotates them with him); copies of them flick off backwards in a short spray, harder on heaves and knock-backs
-    if (pushing && t > 4) { const r = gAng + .12 + .1 * heave - .25 * bump, hx = 5.4 * cu, hy = -8.6 * cu;
-      for (let i = 0; i < 2; i++) { const v = frac(t * (1.6 + 1.2 * heave) + i / 2 + .3 * bump), lx = hx - (2 + 9 * v) * cu, ly = hy - (3 * v - 6 * v * v) * cu;
-        emote('sweat', fx + lx * Math.cos(r) - ly * Math.sin(r), fy + lx * Math.sin(r) + ly * Math.cos(r), cu * .8 * (1 - .45 * v), 1 - seg(v, .7, 1)); } }
+      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true });
+    // sweat (v12j, user: «like anime / cartoon — they splash SIDEWAYS»), --var=sweat:a|b|c (default a), all in his ROTATED head frame,
+    // fired on the strain beats (HV) and harder on the knock-backs (KN):
+    //   a — the classic teardrops: a fan of 2–3 burst sideways off the head, popping out with a squash-stretch, arcing away, gone
+    //   b — one big comic drop on his temple that wobbles while he strains, flung off sideways on a knock-back with a little splash, then regrows
+    //   c — a rapid spray of many small drops shooting sideways in bursts, with tiny splash ticks at the head
+    if (pushing && t > 4) {
+      const r = gAng + .12 + .1 * heave - .25 * bump - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), cs = Math.cos(r), sn = Math.sin(r);
+      const W = (lx, ly) => [fx + lx * cs - ly * sn, fy + lx * sn + ly * cs];                                      // his local frame → world
+      // one classic teardrop (the emote's shape) at local (lx, ly), size z, its tip pointing along (vx, vy) — flying drops pass minus their velocity so the tip trails, stretched along it
+      const drop = (lx, ly, z, vx = 0, vy = -1, st = 1) => { const [x, y] = W(lx, ly), a = Math.atan2(vy, vx) + r - Math.PI / 2;
+        push(); translate(x, y); rotate(a); scale(1 / Math.sqrt(st), st);
+        paint([[0, 1.6 * z], [.9 * z, -.2 * z], [0, -.9 * z], [-.9 * z, -.2 * z]], { wash: PAL.sky, fill: '#FFFFFF', fillOp: 60, ink: INK, sw: .8, curv: .7 }); pop(); };
+      const EV = [...HV, ...KN].filter(e => e > 4).sort((a, b) => a - b), le = lastLE(EV, t), age = le == null ? 9 : t - le, hard = KN.includes(le) ? 1.7 : 1;
+      const SWV = ((window.BTT_VAR || {}).sweat || 'a').toLowerCase(), u = cu;
+      if (SWV === 'b') {
+        const lk = lastLE(KN, t), ka = lk == null ? 9 : t - lk, gone = ka < .55, grow = lk == null ? 1 : seg(ka, .55, .85);
+        if (!gone) drop(5.9 * u, -6.6 * u, 2.3 * u * grow * (1 + .1 * Math.sin(t * 15)), 0, -1, 1 + .12 * Math.sin(t * 15 + 1));   // big drop on the temple, wobbling
+        else { const v = ka / .55, lx = (5.6 + 14 * v) * u, ly = (-6.6 - 7 * v + 12 * v * v) * u;
+          drop(lx, ly, 2.3 * u * (1 - .3 * v), -1, 1 - 2 * v, 1.3);                                                        // flung off sideways
+          if (ka < .25) for (let k = 0; k < 4; k++) { const w = ka / .25, a = -1.2 + k * .5; drop((5.6 + Math.cos(a) * 4 * w) * u, (-6.6 + Math.sin(a) * 4 * w + 3 * w * w) * u, .7 * u * (1 - w), -Math.cos(a), -Math.sin(a), 1.4); } }
+      } else if (SWV === 'c') {
+        if (age < .4 * hard) for (let k = 0; k < (hard > 1 ? 14 : 7); k++) { const side = k % 3 ? 1 : -1, sp = (12 + 9 * hash(k + 40)) * hard, a = -.35 - .5 * hash(k + 41), v = age / (.4 * hard);
+          const vx = side * Math.cos(a), vy = Math.sin(a), lx = side * 4.8 * u + vx * sp * v * u, ly = -7.4 * u + vy * sp * v * u + 9 * v * v * u;
+          if (age > hash(k + 42) * .08) drop(lx, ly, (.55 + .35 * hash(k + 43)) * u * (1 - .5 * v), -vx, -(vy + 1.2 * v), 1.5); }
+        if (age < .12) for (const side of [-1, 1]) for (let k = 0; k < 3; k++) { const a = -.6 + k * .45, [x0, y0] = W(side * 5.3 * u, -7.6 * u), [x1, y1] = W(side * (5.3 + 1.6 * Math.cos(a)) * u, (-7.6 + 1.6 * Math.sin(a)) * u);
+          inkLine([[x0, y0], [x1, y1]], 2.4, PAL.sky, 'ink', 0); }                                                      // splash ticks
+      } else {
+        drop(4.2 * u, -9.4 * u, 1.1 * u);                                                                                    // the one that always hangs on his head
+        if (age < .5 * hard) for (let k = 0; k < (hard > 1 ? 3 : 2); k++) { const side = k === 1 ? -1 : 1, a = -.35 - k * .3, v = age / (.5 * hard), sp = 16 * hard;
+          const vx = side * Math.cos(a), vy = Math.sin(a), lx = side * 4.6 * u + vx * sp * v * u, ly = -8 * u + vy * sp * v * u + 12 * v * v * u;
+          const pop = backOut(seg(age, 0, .08)), st = age < .1 ? 1 + 2.5 * age : 1.25;                                     // pops out, stretched along its flight
+          drop(lx, ly, 1.3 * u * pop * (1 - .35 * v), -vx, -(vy + 1.5 * v), st); }
+      }
+    }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
