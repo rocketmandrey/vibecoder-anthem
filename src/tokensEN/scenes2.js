@@ -188,7 +188,7 @@
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
-  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? A06.mini(x, y + 16, 3.6, { n: 3, eyes: 'happy', mouth: 'O', aL: 1.2, aR: 1.2 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
+  const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? clawd(x, y + 14, 3.4, { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0', noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.2, aR: 1.2, seed: 3 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
   // hamster-Clawd v4 (draft 5, the user's pick from sandbox/hamster): side view, galloping right on all fours on the rim; th = rim angle
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
   function hamster(th, t, rate, n, wk, spin, fly) {
@@ -211,34 +211,63 @@
       token(BW * .36 - v * (260 + hash(q + 2) * 200), -BH * .62 - (520 * v - 260 * v * v) * (.7 + hash(q + 9) * .5), 15, { spin: t * 8 + q }); }
     pop();
   }
-  // the flipchart MORE TOKENS on an easel: NB revenue bars, one more per TB wheel turns; on «WORKING» the top one pops off the board
+  // the flipchart MORE TOKENS on an easel (v15, user: «the bars must GROW with every MORE TOKENS / MORE TASKS, fun»): one bar per sung noun
+  // shoots up out of the axis (overshoot), sparks off its top, the board jolts; the bars keep pumping with the wheel; on «WORKING» the top
+  // one pops off the board
+  const BARS = 8, BAR_H = k => 46 * Math.pow(1.33, k);
   function flipchart(s, turns, wk) {
-    const [X, Y, Wd, Hd] = FC, a = s - RG.work - .06, popped = a >= 0, base = Y + Hd - 40, H = k => (Hd - 150) * .07 * Math.pow(1.26, k);
+    const [X, Y, Wd, Hd] = FC, a = s - RG.work - .06, popped = a >= 0, base = Y + Hd - 40;
+    const jolt = Math.max(0, ...RG.words.map(w => { const d = s - w; return d > 0 && d < .6 ? Math.exp(-d * 7) * Math.sin(d * 40) : 0; }));
     inkLine([[X + 70, Y + Hd], [X + 10, FLY + 4]], 9, '#6A4A30', 'ink', 0); inkLine([[X + Wd - 70, Y + Hd], [X + Wd - 10, FLY + 4]], 9, '#6A4A30', 'ink', 0);
     inkLine([[X + Wd / 2, Y + Hd], [X + Wd / 2 + 40, FLY + 4]], 7, '#5A3C26', 'ink', 0);
+    push(); translate(X + Wd / 2, Y + Hd); rotate(.035 * jolt); translate(-(X + Wd / 2), -(Y + Hd) - 10 * Math.abs(jolt));
     paint(rrPts(X - 14, Y - 14, Wd + 28, Hd + 28, 10), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
     paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FBF8F1', ink: null });
     paint(rectPts(X, Y, Wd, 64), { wash: '#2FBF71', ink: null });
     letter('MORE TOKENS', X + Wd / 2, Y + 34, 40, '#FBF8F1', { ink: false });
     inkLine([[X + 30, Y + 90], [X + 30, base], [X + Wd - 16, base]], 2.4, INK, 'ink', 0);
-    const wob = popped ? Math.exp(-a * 5) * Math.sin(a * 30) * .05 : 0, tops = [];
-    for (let k = 0; k < NB; k++) {
-      const x = X + 42 + k * 23, hh = H(k) * ease(Math.min(1, Math.max(0, turns / TB - k))) * (1 + .05 * wk + wob);
-      if (hh < 2) break;
-      tops.push([x + 9, base - hh - 14]);
-      if (k === NB - 1 && popped) continue;
-      paint(rectPts(x, base - hh, 18, hh, 1), { wash: '#2FBF71', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: .9 });
+    const tops = [], pump = 1 + .04 * Math.sin(turns * TAU) + .08 * wk;
+    for (let k = 0; k < BARS; k++) {
+      const age = s - RG.words[k]; if (age < 0) break;
+      const x = X + 46 + k * 33, hh = BAR_H(k) * backOut(clamp(age / .35)) * pump;
+      tops.push([x + 13, base - hh - 12]);
+      if (age < .5) sparks(x + 13, base - hh, age, k + 40, 10, 150);
+      if (k === BARS - 1 && popped) continue;
+      paint(rectPts(x, base - hh, 26, hh, 1), { wash: k % 2 ? '#2FBF71' : '#3FD584', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: .9 });
     }
-    if (tops.length > 1) inkLine(popped ? tops.slice(0, -1) : tops, 3, '#E0302A', 'ink', 0);
+    if (tops.length > 1) inkLine(popped ? tops.slice(0, -1) : tops, 4, '#E0302A', 'ink', 0);
+    if (tops.length) { const [tx, ty] = tops[popped ? Math.max(0, tops.length - 2) : tops.length - 1];   // the arrow head riding the trend line
+      paint([[tx - 14, ty + 4], [tx + 16, ty - 16], [tx + 6, ty + 14]], { wash: '#E0302A', ink: INK, sw: .8 }); }
+    pop();
     if (popped) {                                                         // *pyn'k*: the top bar shoots straight up off the board and out of frame
-      const x = X + 42 + (NB - 1) * 23 + 9, hh = H(NB - 1), fy = base - hh / 2 - 700 * a - 1600 * a * a;
+      const x = X + 46 + (BARS - 1) * 33 + 13, hh = BAR_H(BARS - 1), fy = base - hh / 2 - 700 * a - 1600 * a * a;
       paint(ellPts(x, base, 20, 6, 10), { wash: '#3A3A3A', ink: null });
       push(); translate(x + 40 * a, fy); rotate(a * 1.6);
-      paint(rectPts(-9, -hh / 2, 18, hh, 1), { wash: '#2FBF71', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: .9 });
+      paint(rectPts(-13, -hh / 2, 26, hh, 1), { wash: '#2FBF71', fill: '#1E8A50', fillOp: 60, tex: .4, ink: INK, sw: .9 });
       pop();
       for (let k = 0; k < 3; k++) inkLine([[x - 8 + k * 8 + 40 * a, fy + hh / 2 + 24], [x - 8 + k * 8 + 40 * a, fy + hh / 2 + 110 + 40 * k]], 2, '#8A8480', 'inkfine', 0);
       if (a < .4) paint(starPts(x, base - hh, 110 * a / .4 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .4), ink: INK, sw: 1.2 });
     }
+  }
+  // v15 (user: «more stickers, like the first version»): a sticker bomb — every sung «more» and noun slaps a die-cut sticker
+  // onto the hall around the wheel (pop + wobble); they pile up and stay. No words on them (pictures, not text).
+  const MORES = EN_WORDS.filter(([t, w]) => t > 136.9 && t < 147.2 && /^more$/i.test(w.replace(/[^a-z]/gi, ''))).map(([t]) => O2N(t));
+  // every «more» slaps the noun it heralds, every sung noun slaps itself: 16 stickers by the last «tokens»
+  const SLAPS = [...MORES.map(m => { const nx = RG.words.find(w => w > m - .05); return [m, nx == null ? 1 : RG.ix[RG.words.indexOf(nx)]]; }),
+    ...RG.words.map((w, i) => [w, RG.ix[i]])].sort((p, q) => p[0] - q[0]);
+  const SLOTS = [[420, 250], [1480, 260], [400, 660], [1530, 560], [450, 1470], [1080, 1540], [680, 1690], [410, 1060], [1170, 140], [700, 130], [800, 1460], [440, 1760], [1560, 930], [930, 1740], [560, 1240], [640, 1560]];
+  function stickers(s) {
+    SLAPS.forEach(([m, ty], i) => {
+      const age = s - m; if (age < 0 || i >= SLOTS.length) return;
+      const [x, y] = SLOTS[i], k = backOut(clamp(age / .22)) * (1 + .06 * Math.exp(-age * 5) * Math.sin(age * 30)), r = (hash(i + 7) - .5) * .5;
+      push(); translate(x, y); rotate(r); scale(1.45 * k);
+      paint(rrPts(-74, -66, 160, 144, 34), { wash: '#000000', washOp: 70, ink: null });                       // drop shadow
+      paint(rrPts(-82, -76, 160, 144, 34), { wash: '#FFFFFF', ink: INK, sw: 1.4 });                            // the die-cut white border
+      paint(rrPts(-70, -64, 136, 120, 26), { wash: ['#BDF2D2', '#FFE9A8', '#C9D6FF', '#FFD2B0'][ty], ink: null });
+      if (ty === 2) clawd(-2, 34, 9, { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0', noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.3, aR: 1.3, seed: i });
+      else bigItem(ty, -2, ty === 3 ? -4 : 0, ty === 0 ? 2.6 : 3.4, s, .1);
+      pop();
+    });
   }
   // the WHEEL OF SAMSARA round the hamster wheel: a huge band turning clockwise with the wheel; 4 fixed stations in the sung order, clockwise
   // from the top (v14): GPU → token → agent → task — whatever rides past a station turns into the next thing; a station flares on its sung noun
@@ -271,7 +300,8 @@
       const x = cx + Math.cos(a) * RS, y = cy + Math.sin(a) * RS, lit = kick(s, ST_W[i], .7), been = ST_W[i].length && s >= ST_W[i][0], k = 1 + .3 * lit;
       if (lit > .02) glowAt(x, y, 300 * lit, gc, 170 * lit);
       paint(ellPts(x, y, STR * k, STR * k, 40), { wash: '#1C1A22', fill: gc, fillOp: been ? 60 + 120 * lit : 0, tex: .3, ink: been ? '#FFE08A' : '#8A7A50', sw: been ? 4 : 2 });
-      bigItem(ty, x, y + (ty === 3 ? 0 : 5), 4.7 * k, s, .1 * Math.sin(s * 3));
+      if (ty === 2) clawd(x, y + 62 * k, 15 * k, { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0', noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.2 + .3 * lit, aR: 1.2 + .3 * lit, seed: 3 });   // v15: a clean symmetric agent (the scaled mini read crooked)
+      else bigItem(ty, x, y + (ty === 3 ? 0 : 5), 4.7 * k, s, .1 * Math.sin(s * 3));
       if (!been) paint(ellPts(x, y, STR, STR, 40), { wash: '#1C1A22', washOp: 150, ink: null });
     });
   }
@@ -315,6 +345,7 @@
     flipchart(s, ang / TAU, wk);
     // the CEO under the chart, pointer up at the bars
     ceoClawd(1160, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2) });
+    stickers(s);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
       hamster(THR, s, 2.6, n, 0, 1, { x: cx + Math.cos(THR) * FR + ux * V * fa, y: cy + Math.sin(THR) * FR + uy * V * fa + 900 * fa * fa, r: THR - Math.PI / 2 + fa * 14 }); }
