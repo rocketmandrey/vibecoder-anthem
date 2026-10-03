@@ -212,19 +212,19 @@
   const DA = rw('every', 30.42), DB = 38.34;
   const W8 = { every: DA, last: rw('last', 30.68), token: rw('token', 31.04), has: rw('has', 31.68), to: rw('to', 32.02), die: rw('die.', 32.20),
     app: rw('app,', 33.60), bot: rw('bot.', 34.84), still: rw('still', 35.30), tokens: 35.805, so: rw('so', 36.50), why: rw('why', 36.66), not: rw('not?', 37.34) };
-  const THROWS = [W8.every, W8.last, W8.token, W8.has, W8.to].map(w => w - .12), FLY = .36;
+  const TICKS = [W8.every, W8.last, W8.token, W8.has, W8.to];               // v15 (user): no tokens hop into the laptop; the clock ticks on these words
   const STACK = [665, 840], SCR = [1200, 700], CX = 905, DY = 840, LX = 1200;
   const CAL = { x: 1040, y: 350, w: 290, h: 252 }, CHH = CAL.h * .2, CPY = CAL.y + CHH, CPH = CAL.h - CHH;
   // v14: the page catches fire in the CLOSE-UP on «touch» (27.38, calCU below) and is still burning when the desk take starts (29.9):
   // eaten bottom-up by 35.1, so the app (33.6) and the bot (34.84) still land in the flames
-  const CU = [27.18, 29.9], IG = 27.38, BURN = [IG, 35.1];
+  const CU = [27.18, 29.9], PARK = 28.68, IG = 29.04, BURN = [IG, 35.1];   // v15: the park on «Could touch grass», the calendar on «but», fire on «Sunday»
   const APP_IN = W8.app + .4, BOT_IN = W8.bot + .36, FEED = [APP_IN, BOT_IN];
   const SWING = [RDB.find(d => d > W8.not - .4), W8.not];                    // the 37.1 downbeat → «not?»
   const HOP = [LX, 540], MOUTH8 = [LX, 528];                                 // the hopper's mouth on the laptop lid; the upended sack's mouth
   const POUR = []; for (let q = W8.not; q < DB - .05; q += .035) POUR.push(q);
   const REEL = RBT.filter(b => b > W8.not + .05 && b < DB - .1).slice(0, 3);  // the reels stop one per beat
   const arcPt = (p, q, h, u) => [lerp(p[0], q[0], u), lerp(p[1], q[1], u) - Math.sin(u * Math.PI) * h];
-  const landed = s => THROWS.filter(w => s >= w + FLY).length;
+  const landed = s => TICKS.filter(w => s >= w).length;
   const burnB = s => ease(seg(s, BURN[0], BURN[1]));
   const edgeY = s => CPY + CPH * (1 - burnB(s));
   const fireK = s => s < IG ? 0 : Math.min(1, backOut(seg(s, IG, IG + .22))) * (1 - ease(seg(s, BURN[1], BURN[1] + .5))) + 1.1 * kick(s, FEED, .25) * (s < BURN[1] + .3);
@@ -348,7 +348,7 @@
       agentBot(x, y, 11 * (1 - .75 * bk * bk), s, { n: 7, rot: NOTXT + bk * 7, eyes: bk > 0 ? 'x' : 'happy', mouth: bk > 0 ? 'O' : 'smile', aL: 1.4, aR: 1.4, noShadow: true });
     }
     // Clawd behind the desk
-    const swA = seg(s, W8.app - .15, W8.app + .25), fl = seg(s, W8.bot - .12, W8.bot + .22), thr = kick(s, THROWS, .18);
+    const swA = seg(s, W8.app - .15, W8.app + .25), fl = seg(s, W8.bot - .12, W8.bot + .22), thr = 0;
     const shrug = eased(s, W8.why - .1, W8.why + .12) * (1 - eased(s, SWING[0] - .05, SWING[0] + .05)), heaveS = seg(s, SWING[0] - .05, SWING[1] + .1), win = s >= W8.not;
     const pre = s < W8.die + .1, gaze = s >= W8.still && s < W8.so ? -1 : 1;
     clawd(CX, 882, 30, {
@@ -364,18 +364,15 @@
     const ash = seg(s, IG + .6, BURN[1] + .8);
     if (ash > 0) paint([[1010 - 90 * ash, DY + 2], [1010 - 30 * ash, DY - 26 * ash], [1010 + 25 * ash, DY - 30 * ash], [1010 + 90 * ash, DY + 2]], { wash: '#4A4442', ink: INK, sw: .6, curv: .4 });
     const slot = s >= W8.not ? 1 : 0, hop = backOut(seg(s, W8.so - .05, W8.so + .25));
-    laptop8(LX, DY + 4, 1.25, s, { glow: kick(s, THROWS.map(w => w + FLY), .2), hop, slot });
-    // the stack (shrinks as tokens hop off) — then the sack bursts up on «tokens», swings over the laptop on the downbeat, upended on «not?»
-    const left = THROWS.length - THROWS.filter(w => s >= w).length;
-    for (let i = 0; i < left; i++) { push(); translate(STACK[0], STACK[1] - 10 - i * 15); scale(1, .36); token(0, 0, 34, { spin: .02 }); pop(); }
+    laptop8(LX, DY + 4, 1.25, s, { hop, slot });
+    // the sack bursts up on «tokens», swings over the laptop on the downbeat, upended on «not?»
     const sk = backOut(seg(s, W8.tokens - .2, W8.tokens + .15));
     if (sk > 0) {
       const sw8 = ease(seg(s, SWING[0], SWING[1])), [sx, sy] = arcPt([STACK[0], DY], [MOUTH8[0], MOUTH8[1] - 190 * .85], 260, sw8);
       push(); translate(sx, lerp(lerp(DY + 260, DY + 6, sk), sy, sw8)); scale(.85);
       sack(0, 0, s, lerp(.55 * eased(s, W8.so - .1, W8.so + .25), Math.PI + .1 * Math.sin(s * 30) * slot, sw8), sw8 > 0 ? 0 : seg(s, W8.tokens, W8.tokens + .7)); pop();
     }
-    // flying tokens: the hops into the laptop, then the cascade out of the upended sack into the hopper
-    for (const w of THROWS) { const u = seg(s, w, w + FLY); if (u > 0 && u < 1) { const [x, y] = arcPt([STACK[0], STACK[1] - 100], SCR, 330, easeOut(u)); token(x, y, 36 * (1 - .5 * u), { spin: s * 3 + w }); } }
+    // the cascade out of the upended sack into the hopper
     for (const w of POUR) { const u = seg(s, w, w + .2); if (u > 0 && u < 1) token(MOUTH8[0] + (hash(w * 31) - .5) * 70 * (1 - u), lerp(MOUTH8[1], HOP[1] + 6, u * u), 20, { spin: s * 4 + w * 7 }); }
     if (slot) for (let i = 0; i < 6; i++) { const q = frac(s * 2.2 + i / 6), dx = (i - 2.5) * 40; inkLine([[HOP[0] + dx * .8, HOP[1] - 30 - q * 60], [HOP[0] + dx * 1.1, HOP[1] - 46 - q * 80]], 3 * (1 - q), TK.yellowLt, 'ink', 0); }   // jackpot rays
     // the app tile: pops out of the screen, swatted into the fire on «app»
@@ -398,8 +395,30 @@
   dropCh('en_v1_swat');
   // v14 «Could touch grass — but Sunday night» (27.18–29.9): a big close-up of the SUNDAY page that simply burns (the same calendar8, so the
   // desk take picks the fire up where the close-up left it)
+  function park(s) {                                                        // v15: «Could touch grass» — the sunny park he could go to
+    back('#9FD3F0');
+    paint(rectPts(300, -300, 1320, 900), { wash: '#9FD3F0', fill: '#7EC3EA', fillOp: 60, tex: .3, ink: null });
+    glowAt(1290, 130, 150, '#FFE07A', 120); paint(ellPts(1290, 130, 70, 70, 24), { wash: '#FFD84A', ink: INK, sw: .8 });
+    for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + s * .4; inkLine([[1290 + Math.cos(a) * 90, 130 + Math.sin(a) * 90], [1290 + Math.cos(a) * 120, 130 + Math.sin(a) * 120]], 3, '#FFC23A', 'ink', 0); }
+    for (const [cx, cy, r] of [[620, 160, 60], [700, 140, 46]]) paint(ellPts(cx + Math.sin(s * .5) * 10, cy, r, r * .55, 18), { wash: '#FFFFFF', ink: INK, sw: .5 });
+    paint([[300, 640], [600, 560], [960, 600], [1300, 540], [1620, 600], [1620, 1400], [300, 1400]], { wash: '#7CC35A', fill: '#5AA040', fillOp: 70, tex: .4, ink: INK, sw: .8, curv: .4 });   // the hill
+    paint(rectPts(300, 820, 1320, 600), { wash: '#6AB24A', ink: null });
+    for (const [tx, ty, sc] of [[560, 640, 1.1], [1380, 620, 1.25], [980, 600, .8]]) {                                                   // trees, swaying
+      const sw = Math.sin(s * 1.6 + tx) * 6 * sc;
+      paint(rectPts(tx - 14 * sc, ty - 120 * sc, 28 * sc, 130 * sc), { wash: '#8A5A32', ink: INK, sw: .7 });
+      for (const [dx, dy, r] of [[0, -190, 90], [-60, -140, 66], [60, -140, 66]]) paint(ellPts(tx + dx * sc + sw, ty + dy * sc, r * sc, r * .85 * sc, 18), { wash: '#3E9A3A', fill: '#2E7A2E', fillOp: 70, tex: .4, ink: INK, sw: .7 });
+    }
+    paint(rectPts(1080, 860, 220, 22, 2), { wash: '#B8743A', ink: INK, sw: .7 }); paint(rectPts(1080, 820, 220, 16, 2), { wash: '#B8743A', ink: INK, sw: .7 });   // a bench
+    for (const x of [1100, 1280]) inkLine([[x, 882], [x, 930]], 3, INK, 'ink', 0);
+    for (let i = 0; i < 22; i++) { const gx = 330 + hash(i * 3.1) * 1260, gy = 900 + hash(i * 1.7) * 330; inkLine([[gx - 8, gy], [gx - 2, gy - 18 - 6 * Math.sin(s * 3 + i)], [gx + 4, gy]], 1.6, '#3E8A2E', 'ink', .4); }   // grass tufts
+    for (let i = 0; i < 5; i++) { const fx = 420 + i * 260 + hash(i) * 60, fy = 1000 + hash(i + 9) * 160; paint(ellPts(fx, fy, 10, 10, 10), { wash: ['#FFFFFF', '#FF8AB4', '#FFD84A'][i % 3], ink: INK, sw: .4 }); }
+    const kx = 760 + Math.sin(s * 1.2) * 40, ky = 240 + Math.cos(s * 1.5) * 20;                                                          // a kite
+    paint([[kx, ky - 40], [kx + 30, ky], [kx, ky + 46], [kx - 30, ky]], { wash: '#E0442A', ink: INK, sw: .7 });
+    inkLine([[kx, ky + 46], [kx - 60, ky + 200], [kx - 30, ky + 420], [kx - 120, 700]], 1, INK, 'inkfine', .5);
+  }
   function calCU(tv) {
     const s = O2N(tv);
+    if (s < PARK) return park(s);
     back('#A39C93');
     camBegin(CAL.x + CAL.w / 2, CAL.y + CAL.h / 2 - 50, 2.7);
     paint(rectPts(CAL.x - 400, CAL.y - 400, CAL.w + 800, CAL.h + 800), { wash: '#A39C93', fill: A2.steel, fillOp: 70, bleed: .1, tex: .6, border: .3, ink: null });
@@ -413,5 +432,5 @@
   chapter('en_v8_desk', N2O(CU[1]), N2O(DB), [[N2O(CU[1]), native(desk8)]], { real: true });
   if (window.RU34) RU34.push([N2O(CU[1]), N2O(DB), [[N2O(CU[1]), 960, 500, 900], [N2O(W8.still), 960, 505, 880, 1], [N2O(REEL[1] ?? W8.not + .4), 1010, 530, 840, 1], [N2O(DB) - .001, 1200, 720, 400, 1]]]);
   dropPunch(N2O(DA), N2O(DB));
-  EN_PUNCH.push(...THROWS.map(w => [N2O(w + FLY), 3]), [N2O(IG), 12], [N2O(W8.app), 7], [N2O(APP_IN), 5], [N2O(W8.bot), 8], [N2O(BOT_IN), 5], [N2O(W8.tokens), 10], [N2O(SWING[0]), 8], [N2O(W8.not), 12], ...REEL.map(r => [N2O(r), 6]));
+  EN_PUNCH.push(...TICKS.map(w => [N2O(w), 3]), [N2O(IG), 12], [N2O(W8.app), 7], [N2O(APP_IN), 5], [N2O(W8.bot), 8], [N2O(BOT_IN), 5], [N2O(W8.tokens), 10], [N2O(SWING[0]), 8], [N2O(W8.not), 12], ...REEL.map(r => [N2O(r), 6]));
 })();
