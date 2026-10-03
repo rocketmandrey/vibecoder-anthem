@@ -182,39 +182,28 @@
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true });
-    // sweat (v12j, user: «like anime / cartoon — they splash SIDEWAYS»), --var=sweat:a|b|c (default a), all in his ROTATED head frame,
-    // fired on the strain beats (HV) and harder on the knock-backs (KN):
-    //   a — the classic teardrops: a fan of 2–3 burst sideways off the head, popping out with a squash-stretch, arcing away, gone
-    //   b — one big comic drop on his temple that wobbles while he strains, flung off sideways on a knock-back with a little splash, then regrows
-    //   c — a rapid spray of many small drops shooting sideways in bursts, with tiny splash ticks at the head
-    if (pushing && t > 4) {
-      const r = gAng + .12 + .1 * heave - .25 * bump - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), cs = Math.cos(r), sn = Math.sin(r);
-      const W = (lx, ly) => [fx + lx * cs - ly * sn, fy + lx * sn + ly * cs];                                      // his local frame → world
-      // one classic teardrop (the emote's shape) at local (lx, ly), size z, its tip pointing along (vx, vy) — flying drops pass minus their velocity so the tip trails, stretched along it
-      const drop = (lx, ly, z, vx = 0, vy = -1, st = 1) => { const [x, y] = W(lx, ly), a = Math.atan2(vy, vx) + r - Math.PI / 2;
-        push(); translate(x, y); rotate(a); scale(1 / Math.sqrt(st), st);
-        paint([[0, 1.6 * z], [.9 * z, -.2 * z], [0, -.9 * z], [-.9 * z, -.2 * z]], { wash: PAL.sky, fill: '#FFFFFF', fillOp: 60, ink: INK, sw: .8, curv: .7 }); pop(); };
-      const EV = [...HV, ...KN].filter(e => e > 4).sort((a, b) => a - b), le = lastLE(EV, t), age = le == null ? 9 : t - le, hard = KN.includes(le) ? 1.7 : 1;
-      const SWV = ((window.BTT_VAR || {}).sweat || 'a').toLowerCase(), u = cu;
-      if (SWV === 'b') {
-        const lk = lastLE(KN, t), ka = lk == null ? 9 : t - lk, gone = ka < .55, grow = lk == null ? 1 : seg(ka, .55, .85);
-        if (!gone) drop(5.9 * u, -6.6 * u, 2.3 * u * grow * (1 + .1 * Math.sin(t * 15)), 0, -1, 1 + .12 * Math.sin(t * 15 + 1));   // big drop on the temple, wobbling
-        else { const v = ka / .55, lx = (5.6 + 14 * v) * u, ly = (-6.6 - 7 * v + 12 * v * v) * u;
-          drop(lx, ly, 2.3 * u * (1 - .3 * v), -1, 1 - 2 * v, 1.3);                                                        // flung off sideways
-          if (ka < .25) for (let k = 0; k < 4; k++) { const w = ka / .25, a = -1.2 + k * .5; drop((5.6 + Math.cos(a) * 4 * w) * u, (-6.6 + Math.sin(a) * 4 * w + 3 * w * w) * u, .7 * u * (1 - w), -Math.cos(a), -Math.sin(a), 1.4); } }
-      } else if (SWV === 'c') {
-        if (age < .4 * hard) for (let k = 0; k < (hard > 1 ? 14 : 7); k++) { const side = k % 3 ? 1 : -1, sp = (12 + 9 * hash(k + 40)) * hard, a = -.35 - .5 * hash(k + 41), v = age / (.4 * hard);
-          const vx = side * Math.cos(a), vy = Math.sin(a), lx = side * 4.8 * u + vx * sp * v * u, ly = -7.4 * u + vy * sp * v * u + 9 * v * v * u;
-          if (age > hash(k + 42) * .08) drop(lx, ly, (.55 + .35 * hash(k + 43)) * u * (1 - .5 * v), -vx, -(vy + 1.2 * v), 1.5); }
-        if (age < .12) for (const side of [-1, 1]) for (let k = 0; k < 3; k++) { const a = -.6 + k * .45, [x0, y0] = W(side * 5.3 * u, -7.6 * u), [x1, y1] = W(side * (5.3 + 1.6 * Math.cos(a)) * u, (-7.6 + 1.6 * Math.sin(a)) * u);
-          inkLine([[x0, y0], [x1, y1]], 2.4, PAL.sky, 'ink', 0); }                                                      // splash ticks
-      } else {
-        drop(4.2 * u, -9.4 * u, 1.1 * u);                                                                                    // the one that always hangs on his head
-        if (age < .5 * hard) for (let k = 0; k < (hard > 1 ? 3 : 2); k++) { const side = k === 1 ? -1 : 1, a = -.35 - k * .3, v = age / (.5 * hard), sp = 16 * hard;
-          const vx = side * Math.cos(a), vy = Math.sin(a), lx = side * 4.6 * u + vx * sp * v * u, ly = -8 * u + vy * sp * v * u + 12 * v * v * u;
-          const pop = backOut(seg(age, 0, .08)), st = age < .1 ? 1 + 2.5 * age : 1.25;                                     // pops out, stretched along its flight
-          drop(lx, ly, 1.3 * u * pop * (1 - .35 * v), -vx, -(vy + 1.5 * v), st); }
-      }
+    // sweat v12k (user: «all bad — rethink it, give it to Codex»; spec from Codex/Astra off the 💦 reference): NO idle sweat; exactly two quick
+    // 💦 bursts, .06 s after the knock-backs in the second half (8.73, 13.40): three glossy teardrops fan out to the screen-LEFT from the
+    // left end of his head edge (away from the coin), bulb first, tail pointing back at him, a small bow, gone in .5 s
+    const SWB = KN.slice(2).map(k => k + .06), sb = lastLE(SWB, t), sa = sb == null ? 9 : t - sb;
+    if (sa < .5) {
+      const r = gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0), cs = Math.cos(r), sn = Math.sin(r), u = cu;
+      const W = (lx, ly) => [fx + lx * cs - ly * sn, fy + lx * sn + ly * cs];
+      // the emitter: the head edge's right end (the low close-up camera cuts off the left end at the frame border), nudged off the coin
+      const E0 = W(5.5 * u, -8.6 * u), ex = E0[0] - .4 * u, ey = E0[1] - .6 * u;   // ponytail: the emitter rides with him (not frozen at launch) — he barely moves in .5 s
+      const q = sa / .5, al = 1 - seg(sa, .36, .5);
+      const sL = sa < .06 ? lerp(.3, 1.2, sa / .06) : lerp(1.2, 1, seg(sa, .06, .14)), sW = sa < .06 ? lerp(.3, .8, sa / .06) : lerp(.8, 1, seg(sa, .06, .14));
+      // flush p5.brush's deferred strokes first (the flushLetters trick) so these native shapes land on top of Clawd and the coin
+      brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill();
+      const shape = (L, k = 1) => { const rb = .275 * L, c = L - rb; beginShape(); vertex(0, 0); for (let a = -1.9; a <= 1.9; a += .19) vertex(c + Math.cos(a) * rb * k, Math.sin(a) * rb * k); endShape(CLOSE); };
+      for (const [L, th, D] of [[4.3, 210, 8], [5.4, 180, 10.5], [3.4, 150, 7]]) {
+        const a = th * Math.PI / 180, dx = D * q * Math.cos(a) * u, dy = (D * q * Math.sin(a) + 6 * q * (q - 1)) * u, Lp = L * u;
+        push(); translate(ex + dx, ey + dy); rotate(a); scale(sL, sW); translate(-Lp * .45, 0);           // bulb leads, tail trails toward him
+        stroke(8, 125, 168, 255 * al); strokeWeight(.1 * u * 2); fill(7, 156, 221, 255 * al); shape(Lp);       // outline + the lower/right shadow
+        noStroke(); fill(41, 197, 246, 255 * al); push(); translate(-.03 * Lp, -.035 * Lp); scale(.93); shape(Lp); pop();   // base
+        fill(153, 236, 255, 255 * al); ellipse(Lp * .66, -Lp * .08, Lp * .34, Lp * .2);                     // light patch
+        noFill(); stroke(243, 253, 255, 255 * al); strokeWeight(Lp * .07); strokeCap(ROUND); arc(Lp * .725, 0, Lp * .35, Lp * .35, Math.PI * 1.05, Math.PI * 1.55);   // highlight
+        pop(); }
     }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
