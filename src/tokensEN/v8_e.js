@@ -20,7 +20,8 @@
   // jump back), aims at its cue and plays at clamp(rate, LO, HI): a too-short old take lands its cue a little late and the next segments
   // catch up; a segment never cuts to an old shot past the one its cue sits in (it plays that shot's own tail on instead), and a
   // segment whose cue opens a new shot starts that shot on the cue.
-  const LO = .9, HI = 2.2;
+  // HI 1.3 (coordinator: «2.2x reads as fast-forward»); old shots with no big moving character may still catch up at up to 2.2x
+  const LO = .9, HI = 1.3, FASTOK = { 'capex:3': 1, 'capex:4': 1, 'sunday:6': 1 };   // the AGI billboard / CAPEX neon, the benchmark, the reset notification
   const LOCK = { '98.42': 2, '191.03': 4 };                                            // «One more million»: the factory plays on (the counter shot is empty in 3:4); the mayo tunnel spins in
   let prevSeg = null;
   function seg(ra, rb, last) {
@@ -32,7 +33,7 @@
       const p = prev && prev.get(), cue = sh.st(a + 1e-4), cont = p && p.sh.key === sh.key && p.lock === sh.at(cue);
       const s0 = cont ? p.s0 + p.rate * p.D : cue, tgt = sh.st(b - 1e-4), D = rb - ra, r = (tgt - s0) / D, same = nx && nx.key === sh.key;
       let lock = sh.at(tgt); if (last) lock = sh.at(cue); else if (lock > sh.at(cue) && tgt - sh.startOf(lock) < .15) lock--;   // an old cut right at the cue belongs to the next segment; a span's last one stays in its shot
-      S = { sh, rate: clamp(same ? r : Math.max(r, 1), LO, HI), s0, D, lock: LOCK[ra.toFixed(2)] ?? lock, r, same, nx: nx && nx.key, miss: s0 - cue };
+      S = { sh, rate: clamp(same ? r : Math.max(r, 1), LO, FASTOK[sh.key + ':' + sh.at(s0)] ? 2.2 : HI), s0, D, lock: LOCK[ra.toFixed(2)] ?? lock, r, same, nx: nx && nx.key, miss: s0 - cue };
     };
     (window.V8E_SEG ||= []).push({ ra, rb, get: self.get });
     chapter(name, a, b, [[a, t => {
