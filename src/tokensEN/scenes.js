@@ -160,6 +160,9 @@
   const S2 = { fall: 48.94, land: 49.30, freeze: [49.30, 49.95] };
   const BURNS = [[45.36, 'A'], [46.68, 'B'], [50.64, 'A'], [51.94, 'B']];            // «Burn» / «burn»: which gang throws
   const CHOMPS2 = EN_GRID.filter(g => g >= 45.4 && g < 55.7 && !(g >= S2.fall && g < S2.freeze[1]));
+  // drum hits (real s) in the shredder take: beats with a strong kick (35–100 Hz) or snare (1.5–5 kHz) onset in the mix, minus the «floor.» freeze
+  const DRUMS2 = [50.68, 51.68, 52.34, 52.68, 53.98, 54.32, 54.66, 54.98, 55.32, 55.64, 56.64, 57.62, 57.96, 58.62, 58.96, 59.28, 59.60, 59.92, 60.26, 60.60, 61.26, 61.60, 61.92]
+    .filter(r => !(r >= O2N(S2.fall) && r < O2N(S2.freeze[1])));
   const TRUCKS = [                                                          // [arrive, dump, leave, rear x at the hopper, u, side (+1 = right)]
     [51.3, 53.90, 54.55, 1245, 80, 1],                                      //   «million»: from the right
     [54.4, 55.20, 99, 675, 100, -1],                                         //   «then one more»: a bigger one backs in from the left
@@ -188,16 +191,30 @@
   }
   function s2(t) {
     back(A2.gunDk);
-    const fz = t >= S2.freeze[0] && t < S2.freeze[1], tt = fz ? S2.freeze[0] : t;   // «floor.»: everyone freezes half a second
-    const k = kick(t, CHOMPS2, .28);
+    // v14 (user: «the shreds must fly out IN RHYTHM, on the drum hits, not the guitar»): the chomps + sprays run on the track's real clock
+    // (window.RNOW, set by the v8_e retime) on the drum hits of the new track, so the retime can't drift them off the beat
+    const rn = window.RNOW != null && window.RNOW > O2N(45) && window.RNOW < O2N(56) ? window.RNOW : null, ct = rn ?? t, chomps = rn != null ? DRUMS2 : CHOMPS2;
+    // the limit bar's fall / «floor.» freeze on the word clock (N2O of the real time): the retime keeps the rest at ≥ .9x, which can run ahead
+    const ev = rn != null ? N2O(rn) : t, fz = ev >= S2.freeze[0] && ev < S2.freeze[1], tt = fz ? t - (ev - S2.freeze[0]) : t;   // «floor.»: everyone freezes half a second
+    const k = kick(ct, chomps, .28);
     A03.hall(t, { lamps: [520, 1400] });
-    A03.furnace(t, k);
+    A03.furnace(ct, k);
     // the gantries the trucks drive onto, level with the hopper lip
     for (const [x0, x1] of [[260, 700], [1220, 1660]]) {
       paint(rectPts(x0, 300, x1 - x0, 26), { wash: A2.steel, ink: INK, sw: .7 }); hazard(x0, 326, x1 - x0, 12);
       for (let x = x0 + 30; x < x1; x += 110) paint(rectPts(x, 338, 16, 560), { wash: A2.gunmetal, ink: INK, sw: .4 });
     }
-    A03.shredder(t, CHOMPS2, false);
+    A03.shredder(ct, chomps, false);
+    if (rn != null) for (const c of DRUMS2) {                               // each drum hit: a burst of shredded token bits blown out of the hopper
+      const age = rn - c; if (age < 0 || age > .9) continue;
+      for (let j = 0; j < 22; j++) {
+        const h = hash(j + Math.floor(c * 100)), a = -Math.PI / 2 + (h - .5) * 3, v = 420 + hash(j * 7 + 3) * 420;
+        const x = 960 + Math.cos(a) * v * age, y = 330 + Math.sin(a) * v * age + 1500 * age * age;
+        if (y > 1000) continue;
+        token(x, y, (16 + hash(j + 11) * 12) * (1 - .4 * age / .9), { spin: age * 9 + j, burn: age * 1.4 });
+      }
+      sparks(960, 330, age, Math.floor(c * 10), 16, 260);
+    }
     // the trucks: back in, tip, coins pour in an arc into the hopper, drive off
     for (const [a, d, l, rx, u, side] of TRUCKS) {
       if (tt < a || tt > l + .7) continue;
@@ -212,9 +229,9 @@
       if (age > 0) sparks(rx, 300, age, rx, 14, 200);
     }
     // the limit bar on chains over the hopper: a notch down on each «burn», lets go on «hits», lands on «floor.» and stays, cracked
-    const v = kf(t, [[45.36, .64], [45.7, .5], [47.0, .38], [48.3, .26], [48.9, .2], [49.3, .06], [55.6, .03]]);
-    const gy = 170, land = t - S2.land, p = clamp((t - S2.fall) / (S2.land - S2.fall)), floorY = 1000;
-    if (t < S2.fall) {
+    const v = kf(ev, [[45.36, .64], [45.7, .5], [47.0, .38], [48.3, .26], [48.9, .2], [49.3, .06], [55.6, .03]]);
+    const gy = 170, land = ev - S2.land, p = clamp((ev - S2.fall) / (S2.land - S2.fall)), floorY = 1000;
+    if (ev < S2.fall) {
       const sw = Math.sin(t * 4) * .03 + Math.sin(t * 30) * .01 * k;
       for (const cx of [800, 1120]) inkLine([[cx, -300], [cx + sw * 300, gy - 30]], 1.4, A2.steelLt, 'ink', 0);
       gauge(960, gy, 460, v, { rot: sw, glow: .3 * k, burn: .5 + .5 * k });
@@ -222,7 +239,7 @@
       for (const [cx, s] of [[800, -1], [1120, 1]]) inkLine([[cx, -300], [cx + s * 30 * p, lerp(gy - 30, 40, p)]], 1.4, A2.steelLt, 'ink', 0);
       const y = land < 0 ? lerp(gy, floorY, p * p) : floorY - 34 * Math.abs(Math.sin(land * 12)) * Math.exp(-land * 7);
       // 3:4: a smaller bar lands in the gap between the gangs, then bursts to dust once the freeze ends (it cluttered the workers)
-      const gone = R ? ease(seg(t, S2.freeze[1], S2.freeze[1] + .3)) : 0;
+      const gone = R ? ease(seg(ev, S2.freeze[1], S2.freeze[1] + .3)) : 0;
       if (gone < 1) gauge(960, y, (R ? 240 : 400) * (1 - gone), v, { rot: land < 0 ? .25 * p : .05, cracked: land >= 0, burn: land < 0 ? 1 : .6 * Math.exp(-land) });
       if (land >= 0) { rubble(960, floorY + 30, R ? 300 : 520, land * .7, 9); for (const x of R ? [840, 1080] : [730, 1190]) sparks(x, floorY + 20, land, x, 12, 180); }
       if (gone > 0 && gone < 1) rubble(960, floorY + 20, 240, gone * .9, 13);
@@ -244,7 +261,7 @@
         token(lerp(x0, x1, f), lerp(1030, 320, f) - Math.sin(f * Math.PI) * 300, 22, { spin: f * 2 + j, burn: f > .7 ? (f - .7) * 3 : 0 });
       }
     }
-    flash(kick(t, [S2.land], .07) * .5, '#FFF3C8');
+    flash(kick(ev, [S2.land], .07) * .5, '#FFF3C8');
   }
 
   // ============ S3 NEW (E09, 55.64–65.18): the hiring hall. «More agents, more compute. Don't ask why, it's good for you.» ============
