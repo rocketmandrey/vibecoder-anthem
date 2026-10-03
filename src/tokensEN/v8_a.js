@@ -211,7 +211,9 @@
   const THROWS = [W8.every, W8.last, W8.token, W8.has, W8.to].map(w => w - .12), FLY = .36;
   const STACK = [665, 840], SCR = [1200, 700], CX = 905, DY = 840, LX = 1200;
   const CAL = { x: 1040, y: 350, w: 290, h: 252 }, CHH = CAL.h * .2, CPY = CAL.y + CHH, CPH = CAL.h - CHH;
-  const IG = W8.die, BURN = [IG, IG + 2.9];                                  // the page is eaten bottom-up by 35.1
+  // v14: the page catches fire in the CLOSE-UP on «touch» (27.38, calCU below) and is still burning when the desk take starts (29.9):
+  // eaten bottom-up by 35.1, so the app (33.6) and the bot (34.84) still land in the flames
+  const CU = [27.18, 29.9], IG = 27.38, BURN = [IG, 35.1];
   const APP_IN = W8.app + .4, BOT_IN = W8.bot + .36, FEED = [APP_IN, BOT_IN];
   const SWING = [RDB.find(d => d > W8.not - .4), W8.not];                    // the 37.1 downbeat → «not?»
   const HOP = [LX, 540], MOUTH8 = [LX, 528];                                 // the hopper's mouth on the laptop lid; the upended sack's mouth
@@ -233,7 +235,7 @@
       return { cx: x0 + i * tw + Math.sin(s * 2.3 + ph) * 6, h: hgt * f * (.6 + .4 * Math.sin((i + .5) / n * Math.PI)) * (1 + .4 * pulse), sw: Math.sin(s * 5.1 + ph) * tw * .35 };
     });
     for (const [k, col, ink] of [[1, '#E0442A', INK], [.68, '#FF8A1E', null], [.38, '#FFE07A', null]])
-      for (const f of T8) paint(tongue(f.cx, y, tw * 1.35 * (.55 + .45 * k), f.h * k, f.sw * k), { wash: col, ink, sw: .8, curv: .4 });
+      for (const f of T8) paint(tongue(f.cx, y, tw * 1.35 * (.55 + .45 * k), f.h * k, f.sw * k), { wash: col, ink, sw: .8, curv: CAM ? 0 : .4 });   // ponytail: p5.brush curves break under camBegin's zoom (calCU): straight-edged tongues there
   }
   function calendar8(s) {
     const { x, y, w, h } = CAL, yb = edgeY(s), b = burnB(s), k = fireK(s), pulse = kick(s, RBT, .12);
@@ -390,8 +392,22 @@
     if (slot) flash(.25 * Math.exp(-(s - W8.not) * 8), TK.yellowLt);
   }
   dropCh('en_v1_swat');
-  chapter('en_v8_desk', N2O(DA), N2O(DB), [[N2O(DA), native(desk8)]], { real: true });
-  if (window.RU34) RU34.push([N2O(DA), N2O(DB), [[N2O(DA), 960, 500, 900], [N2O(W8.still), 960, 505, 880, 1], [N2O(REEL[1] ?? W8.not + .4), 1010, 530, 840, 1], [N2O(DB) - .001, 1200, 720, 400, 1]]]);
+  // v14 «Could touch grass — but Sunday night» (27.18–29.9): a big close-up of the SUNDAY page that simply burns (the same calendar8, so the
+  // desk take picks the fire up where the close-up left it)
+  function calCU(tv) {
+    const s = O2N(tv);
+    back('#A39C93');
+    camBegin(CAL.x + CAL.w / 2, CAL.y + CAL.h / 2 - 50, 2.7);
+    paint(rectPts(CAL.x - 400, CAL.y - 400, CAL.w + 800, CAL.h + 800), { wash: '#A39C93', fill: A2.steel, fillOp: 70, bleed: .1, tex: .6, border: .3, ink: null });
+    for (let i = 4; i < 7; i++) inkLine([[i * 240 + 40, -300], [i * 240 + 40, 1100]], .35, A2.steel, 'inkfine', 0);
+    calendar8(s);
+    camEnd();
+  }
+  chapter('en_v8_calcu', N2O(CU[0]) - .002, N2O(CU[1]), [[N2O(CU[0]) - .002, native(calCU)]], { real: true });   // − 2 ms: v8_e's 27.18 hold looks the shot up at its own start (23.539)
+  if (window.RU34) RU34.push([N2O(CU[0]), N2O(CU[1]), [[N2O(CU[0]), 960, 540, 1080]]]);
+  dropPunch(N2O(CU[0]), N2O(CU[1]));
+  chapter('en_v8_desk', N2O(CU[1]), N2O(DB), [[N2O(CU[1]), native(desk8)]], { real: true });
+  if (window.RU34) RU34.push([N2O(CU[1]), N2O(DB), [[N2O(CU[1]), 960, 500, 900], [N2O(W8.still), 960, 505, 880, 1], [N2O(REEL[1] ?? W8.not + .4), 1010, 530, 840, 1], [N2O(DB) - .001, 1200, 720, 400, 1]]]);
   dropPunch(N2O(DA), N2O(DB));
   EN_PUNCH.push(...THROWS.map(w => [N2O(w + FLY), 3]), [N2O(IG), 12], [N2O(W8.app), 7], [N2O(APP_IN), 5], [N2O(W8.bot), 8], [N2O(BOT_IN), 5], [N2O(W8.tokens), 10], [N2O(SWING[0]), 8], [N2O(W8.not), 12], ...REEL.map(r => [N2O(r), 6]));
 })();

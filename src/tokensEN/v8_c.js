@@ -576,3 +576,6 @@
   if (window.RU34) RU34.push([A, B, [[A, ...{ a: [960, 660, 1700], b: [960, 700, 1640], c: [960, 760, 1680] }[VAR]], [N2O(126.40), 960, 575, 1120, 1], [N2O(141.0), 960, 570, 1090, 1], [N2O(151.72), 960, 565, 1060, 1],
     [N2O(155.74), 960, 548, 760, 1], [B - .001, 960, 545, 720, 1]]]);
 })();
+// v14 outro framing (user: «Midnight» / the reset / «Fuck.» were cropped): native 3:4 keys over the RU_CAM's fixed 1080 view
+// (keys are v1 time, N2O): «Midnight» the whole clock, the reset the whole tablet, «Fuck.» the whole face + the clock, centred; to the madness (250.1)
+if (window.RU34) RU34.push([N2O(241.96), N2O(250.1), [[N2O(241.96), 960, 560, 1080], [N2O(244.10), 970, 540, 1180], [N2O(247.2), 960, 600, 1120]]]);

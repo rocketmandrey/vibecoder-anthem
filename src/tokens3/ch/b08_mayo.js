@@ -141,6 +141,7 @@
     // fat cables from the racks converge on the phone
     const px = 960, py = 790;
     for (let i = 0; i < 9; i++) {
+      if (i === 4 && window.EN_TR) continue;                                    // EN v14: no lone cable straight up into the ceiling (it led nowhere)
       const s = i < 4 ? -1 : i > 4 ? 1 : 0, ex = 960 + (i - 4) * 250, ey = i === 4 ? 360 : 160 + Math.abs(i - 4) * 40;
       inkLine([[ex, ey], [lerp(ex, px, .5), lerp(ey, py, .3) + 120], [px + (i - 4) * 12, py - 40]], 3.2, ['#2E5BFF', '#D8262A', '#2FBF71', '#FFC53D'][i % 4], 'ink', .6);
     }
