@@ -323,7 +323,7 @@
       inkLine([[0, -8], [0, -34]], 1, INK, 'ink', 0); paint([[2, -32], [2, -12], [18, -12]], { wash: D('#FFF5E2'), ink: INK, sw: .4 });
       pop();
     });
-    if (lvl < .1) { const fx = cx + 5, fy = bot - 30, f = Math.sin(s * 20) * 6;                          // a stranded fish
+    if (lvl < .1) { const fx = cx - 40, fy = bot - 72, f = Math.sin(s * 20) * 6;                          // a stranded fish
       paint([[fx - 20, fy], [fx, fy - 9 + f * .3], [fx + 14, fy], [fx + 24, fy - 10 + f], [fx + 24, fy + 10 - f], [fx + 14, fy], [fx, fy + 9]], { wash: '#8EC3E6', ink: INK, sw: .5 }); }
     inkLine([[cx - hw, sy], [cx + hw, sy]], 1.2, '#15131C', 'ink', 0);
     paint(arch(cx, top, w, h), { ink: '#15131C', sw: 1.6 });
