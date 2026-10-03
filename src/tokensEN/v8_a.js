@@ -181,7 +181,13 @@
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
-      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
+      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true,
+      // sweat (v12h, user: «the blue drops fly off wrong»): drawn in his own rotated frame — each drop beads on the brow (front-top corner) and
+      // flicks a short arc up and back off him, faster while he heaves; a knock-back throws a burst of them
+      draw: pushing && t > 4 ? (u, sw) => { for (let i = 0; i < 3; i++) { const v = frac(t * (1.3 + .8 * heave) + i / 3 + hash(i + 90) * .2) * (1 + .6 * bump), a = clamp(v);
+        const x = (3.8 - 5.5 * a - 1.5 * hash(i + 91)) * u, y = (-8.3 - 3.2 * a + 4.2 * a * a) * u, r = (.55 + .2 * hash(i + 92)) * u * (1 - .4 * a);
+        if (a >= 1) continue;
+        paint([[x, y - 1.7 * r], [x + .9 * r, y + .2 * r], [x, y + .9 * r], [x - .9 * r, y + .2 * r]], { wash: '#9FD3F2', fill: '#FFFFFF', fillOp: 60, ink: INK, sw: sw * .6, curv: .7 }); } } : null });
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
