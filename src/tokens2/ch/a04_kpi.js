@@ -423,9 +423,12 @@ function a04_rep(t, lt) {
     push(); translate(nx, ny); scale(vk * q);                          // level sticker, level text, a clean symmetric eye
     paint(rectPts(-172, -60, 372, 120), { wash: TK.yellowLt, fill: TK.yellow, fillOp: 70, tex: .5, ink: PAL.ink, sw: .8 });
     pop();
-    const ex = nx - 128 * q, er = 28 * vk * q, eh = 16 * vk * q, eye = [];
-    for (let k = 0; k < 24; k++) { const u = k < 12 ? -1 + k / 6 : 1 - (k - 12) / 6; eye.push([ex + er * u, ny + (k < 12 ? -1 : 1) * eh * (1 - u * u)]); }   // almond, mirror-symmetric
-    paint(eye, { wash: '#FFFFFF', ink: PAL.ink, sw: .9 });
+    // the eye: flat washes only (the tapered ink stroke drew one lid heavier → crooked): an ink almond, a white almond inset by the
+    // same margin all round, a round pupil dead centre — mirror-symmetric both ways
+    const ex = nx - 128 * q, er = 28 * vk * q, eh = 16 * vk * q, lw = 3.2 * vk * q;
+    const almond = (rx, ry) => Array.from({ length: 48 }, (_, k) => { const a = k / 48 * TAU, u = Math.cos(a); return [ex + rx * u, ny + Math.sign(Math.sin(a)) * ry * (1 - u * u)]; });
+    paint(almond(er + lw * 1.6, eh + lw), { wash: PAL.ink, ink: null });
+    paint(almond(er, eh), { wash: '#FFFFFF', ink: null });
     paint(ellPts(ex, ny, 9 * vk * q, 9 * vk * q, 24), { wash: PAL.ink, ink: null });
     letter('ПРОЧТЕНИЙ: 0', nx + 40 * q, ny, 34 * vk * q, TK.soot, { font: ruFont(34 * vk * q), ink: false, rot: 0 });
   }
