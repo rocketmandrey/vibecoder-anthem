@@ -232,15 +232,15 @@
     // composite p5.brush's deferred washes/strokes NOW (the flushLetters trick: a tiny off-screen watercolor fill), so the native p5 shapes
     // below land on top of the drum instead of under its late-composited wash
     const flushB = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
-    const gs = (1 + .08 * k2 * (f === 3)) * (1 + (((window.BTT_VAR || {}).legs || 'a') === 'c' ? .1 : 0) * Math.max(k3, k4));   // c: stretched forward                                                                 // gallop: the stretch at full extension
+    const gs = (1 + .08 * k2 * (f === 3)) * (1 + (((window.BTT_VAR || {}).legs || 'b') === 'c' ? .1 : 0) * Math.max(k3, k4));   // c: stretched forward                                                                 // gallop: the stretch at full extension
     if (!fly && k4 > 0 && FX === 'c' && FV === '2') { const rk = BH * .3 * (.55 + .45 * k4); flushB(); push(); noStroke(); fill(255, 214, 64);   // c2 starburst behind him
       beginShape(); for (const [px, py] of starPts(0, -rk * .4, rk * (1.05 + .15 * Math.sin(t * 40)) * k4, .55, 12)) vertex(px, py); endShape(CLOSE); pop(); }
     ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: gs / sq, sy: sq / gs });
-    // v22 legs at speed (user: «the balls replacing his legs are wrong» → classic cartoon fast-run), --var=legs:a|b|c (default a); LG = 0..1
+    // v22 legs at speed (user: «the balls replacing his legs are wrong» → classic cartoon fast-run), --var=legs:a|b|c (v23 default b, the user's pick); LG = 0..1
     //   a — Road Runner: each leg pair whirls as a figure-8 blur (a translucent band + chasing ink strokes + smeared pink paws), dust puffs
     //   b — smear frames: the leg strip of his own last 3 run frames ghosted behind the current one, with motion lines
     //   c — scramble in place: each leg pair a spinning oval of many thin legs (Looney Tunes before takeoff), body stretched forward
-    const LG = fly ? 0 : Math.max(k3, k4), LV = ((window.BTT_VAR || {}).legs || 'a').toLowerCase(), HIPS = [[-.2 * BW, -BH * .3], [.24 * BW, -BH * .3]];
+    const LG = fly ? 0 : Math.max(k3, k4), LV = ((window.BTT_VAR || {}).legs || 'b').toLowerCase(), HIPS = [[-.2 * BW, -BH * .3], [.24 * BW, -BH * .3]];
     if (LG > 0) { flushB(); push(); strokeCap(ROUND);
       if (LV === 'b') { const img = ENK.art('ham4Run' + f), sy0 = img.height * .72, sh = img.height - sy0, dh = BH * sh / img.height;
         for (let gh = 3; gh >= 1; gh--) { const im = ENK.art('ham4Run' + ((f - gh + 8) % 4)); tint(255, 255 * LG * (.55 - .14 * gh)); imageMode(CORNER);
@@ -266,15 +266,22 @@
       const fr = Math.floor(t * 12), a = hash(q * 7 + fr) * Math.PI - Math.PI, r0 = BW * .38, pts = [];
       for (let k = 0; k < 6; k++) { const rr = r0 + k * (16 + 26 * e), j = (hash(q + k * 13 + fr) - .5) * .35; pts.push([Math.cos(a + j) * rr * 1.1, -BH * .5 + Math.sin(a + j) * rr * .8]); }
       inkLine(pts, 4, TK.yellow, 'ink', 0); }
-    // v21 face through the ramp (user): determined → straining → wide-eyed panic → dizzy at max / in the air; native p5 so it sits over the art
-    { const emo = fly || e > .86 ? 'dizzy' : e > .6 ? 'panic' : e > .3 ? 'strain' : 'det'; flushB(); push(); strokeCap(ROUND);
-      for (const [k, dx] of [[0, .29], [1, .37]]) { const ex = dx * BW, ey = -BH * .66 + bob;
-        if (emo === 'det') { stroke(34, 30, 38); strokeWeight(7); const d = k ? -1 : 1; line(ex - 15, ey - 24 + 6 * d, ex + 15, ey - 24 - 6 * d); }   // angry brows
-        else if (emo === 'strain') { noStroke(); fill(226, 135, 92); ellipse(ex, ey, 34, 34); stroke(34, 30, 38); strokeWeight(5); noFill();
-          const d = k ? -1 : 1; beginShape(); vertex(ex - 10 * d, ey - 10); vertex(ex + 8 * d, ey); vertex(ex - 10 * d, ey + 10); endShape(); }   // > <  squeezed shut
-        else if (emo === 'panic') { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); ellipse(ex, ey, 36 + 4 * Math.sin(t * 30), 40); noStroke(); fill(34, 30, 38); ellipse(ex + 3 + 2 * Math.sin(t * 40 + k), ey + 2 * Math.cos(t * 37), 9, 9); }   // tiny jittering pupils
-        else { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); ellipse(ex, ey, 36, 36); noFill(); strokeWeight(2.5); beginShape(); for (let s2 = 0; s2 <= 22; s2++) { const a = s2 * .55 + t * 16 * (k ? -1 : 1), r = s2 * .7; vertex(ex + Math.cos(a) * r, ey + Math.sin(a) * r); } endShape(); }
-      } pop(); }
+    // v23 face (user: «he already HAS eyes — you draw on top»): the art is a side view with ONE eye whose spot shifts per run frame (the frames
+    // differ in height), and v21 drew TWO new eyes at fixed spots beside it. Now the emotion works on that one eye: determined = his own eye +
+    // an angry brow; straining / panic / dizzy = his eye painted over in body colour and ONE new eye drawn in its place (+ brow)
+    { const emo = fly || e > .86 ? 'dizzy' : e > .6 ? 'panic' : e > .3 ? 'strain' : 'det', kk = BW / 532;
+      const EYE = [[192, -30], [195, -24.5], [179.5, -14.5], [190.5, -28.5]][f];            // the art's eye centre per frame, art px from the frame centre
+      const ex = EYE[0] * kk * gs / sq, ey = -BH * sq / 2 + bob + EYE[1] * kk * sq / gs;
+      flushB(); push(); strokeCap(ROUND); strokeJoin(ROUND);
+      if (emo !== 'det') { noStroke(); fill(219, 117, 76); ellipse(ex, ey, 26, 46); }                  // paint his own eye out
+      if (emo === 'det') { stroke(34, 30, 38); strokeWeight(7); line(ex - 16, ey - 32, ex + 12, ey - 22); }   // angry brow over his own eye
+      else if (emo === 'strain') { stroke(34, 30, 38); strokeWeight(6); noFill(); beginShape(); vertex(ex - 10, ey - 12); vertex(ex + 9, ey); vertex(ex - 10, ey + 12); endShape();   // >  squeezed shut
+        strokeWeight(6); line(ex - 14, ey - 28, ex + 12, ey - 20); }
+      else if (emo === 'panic') { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); ellipse(ex, ey, 30 + 3 * Math.sin(t * 30), 42); noStroke(); fill(34, 30, 38);
+        ellipse(ex + 3 + 2 * Math.sin(t * 40), ey + 2 * Math.cos(t * 37), 9, 10); noFill(); stroke(34, 30, 38); strokeWeight(5); arc(ex, ey - 30, 30, 14, Math.PI * 1.1, Math.PI * 1.9); }   // raised brow
+      else { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); circle(ex, ey, 38); noFill(); strokeWeight(2.5); beginShape();
+        for (let s2 = 0; s2 <= 22; s2++) { const a = s2 * .55 + t * 16, r = s2 * .75; vertex(ex + Math.cos(a) * r, ey + Math.sin(a) * r); } endShape(); }
+      pop(); }
     for (let q = 0; q < (FX === 'a' ? 1 + Math.round(8 * e) : FX === 'c' ? 1 : 0); q++) { const d = q % 2 ? 1 : -1, u = frac(1.2 * t + .8 * rev + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
       paint([[x, y - 12], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', washOp: 255 * (1 - u * u), ink: INK, sw: .6 }); }
     for (let q = 0; q < Math.min(8, n + (spin > 0 ? 4 : 0)); q++) { const per = .9 + hash(q) * .5, v = frac((t + hash(q + 50) * per) / per);   // tokens squeezed out of his cheeks, flung back
