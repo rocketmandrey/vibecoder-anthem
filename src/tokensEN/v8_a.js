@@ -117,7 +117,7 @@
           if (k > .9 && t > litAt[i]) smoke(cx, ct - 6, t + i, { r: (10 + 6 * hit) * Math.min(1, (t - litAt[i]) * 2), h: 120, n: 4, per: 2.4, seed: 70 + i, col: '#8A6A5A' }); }
         paint(rectPts(b.x, top, b.w, 735 - top), { wash: '#3E3238', fill: '#2E262C', fillOp: 80, ink: null });
         for (let r = 0; r * 22 + 18 < b.h * k - 10; r++) for (let c = 0; c * 18 + 14 < b.w - 8; c++) {
-          const on = litAt[i] + hash(i * 31 + r * 7 + c) * .12; if (t < on || hash(i * 13 + r * 5 + c * 3) > .6) continue;
+          const on = litAt[i] + hash(i * 31 + r * 7 + c) * .12; if (t < on || hash(i * 13 + r * 5 + c * 3) > (t >= FINAL ? .93 : .6)) continue;   // the last stroke fills the rest
           paint(rectPts(b.x + 8 + c * 18, top + 12 + r * 22, 9, 12), { wash: "#FFE08A", washOp: 110 + 120 * kick(t, [on], .25), ink: null });
         }
         if (t > litAt[i]) glowAt(b.x + b.w / 2, top + b.h * k * .5, b.w * 1.2, '#FFC860', 30 * kick(t, [litAt[i]], .4) + 10);
@@ -170,12 +170,16 @@
     const hero = (V !== 'b') * seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
     const pushing = t < SL.lift[1], back2 = eased(t, SL.lift[1], SL.lift[1] + .18);
-    const cu = lerp(12, 17, 1 - ov), [fx, fy] = [lerp(bx - SL.r - 80 - 5 * (cu - 12) - 140 * back2, gx0 - SLD[0] * (SL.r + 80), ov), lerp(SL.B[1], gy0 - SLD[1] * (SL.r + 80), ov)];
+    // v12g (user: «his feet hang off the edge — at the start, at the press»): Clawd stands on the hill path itself — his ground point is
+    // the token's path position minus the gap, mapped onto slope / plateau (no more corner-cutting lerp), his feet line follows the surface
+    const cu = lerp(12, 17, 1 - ov), sc0 = s - (SL.r + 80 + 5 * (cu - 12)) - 140 * back2, sc = lerp(sc0, Math.max(sc0, SLL + 6.5 * cu), eased(t, SL.top - .05, SL.top + .2));   // over the crest he hops up onto the plateau
+    const [fx, fy] = sc < SLL ? [SL.A[0] + SLD[0] * sc, SL.A[1] + SLD[1] * sc] : [SL.B[0] + sc - SLL, SL.B[1]];
+    const gAng = sc < SLL ? Math.atan2(SLD[1], SLD[0]) : 0;                                                        // the ground's angle under his feet (he hops over the crest)
     if (hero > 0) { glowAt(fx, fy - 60, 260, TK.ember, 70 * hero);
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: lerp(pushing ? (V === 'c' ? .32 : .2) + .12 * heave - .25 * bump : 0, .3, ov) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
+    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, emote: pushing && t > 4 ? 'sweat' : null, noShadow: true });
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
