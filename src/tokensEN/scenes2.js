@@ -454,7 +454,7 @@
       tops.push([x, base - hh - 8 - up]);
       paint(rectPts(x - 15, base - hh - up, 30, hh, 1), { wash: TYC[ty], fill: mixCol(TYC[ty], INK, .3), fillOp: 60, tex: .4, ink: INK, sw: .8 });
       if (age < .4) sparks(x, base - hh, age, k + 40, 8, 120); });
-    if (tops.length > 1) inkLine(tops.slice(0, a > 0 ? -1 : undefined), 3.4, '#E0302A', 'ink', 0);
+    const line = a > 0 ? tops.slice(0, -1) : tops; if (line.length > 1) inkLine(line, 3.4, '#E0302A', 'ink', 0);
     inkLine([[NOW, TLY + 48], [NOW, base + 26]], 4, TK.yellow, 'ink', 0);                         // «now»
     paint([[NOW - 14, TLY + 48], [NOW + 14, TLY + 48], [NOW, TLY + 66]], { wash: TK.yellow, ink: INK, sw: .8 });
     CELLS.forEach(([w], k) => spark(cellPos(k, ang), [NOW, base - 40], (s - w + .25) / .25, TYC[CELLS[k][1]]));   // the cell's spark lands on «now» on the word
