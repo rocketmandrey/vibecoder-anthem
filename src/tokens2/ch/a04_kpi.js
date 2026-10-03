@@ -423,14 +423,15 @@ function a04_rep(t, lt) {
     push(); translate(nx, ny); scale(vk * q);                          // level sticker, level text, a clean symmetric eye
     paint(rectPts(-172, -60, 372, 120), { wash: TK.yellowLt, fill: TK.yellow, fillOp: 70, tex: .5, ink: PAL.ink, sw: .8 });
     pop();
-    // the eye: a crisp vector glyph on the lettering layer (brush washes left wobbly, uneven lids at full res) — two mirrored quadratic
-    // lids, one even round-joined outline, the pupil dead centre
-    const ex = nx - 128 * q;
-    letter('', ex, ny, 28 * vk * q, PAL.ink, { ink: false, draw: (c, s) => {
-      c.beginPath(); c.moveTo(-s, 0); c.quadraticCurveTo(0, -1.15 * s, s, 0); c.quadraticCurveTo(0, 1.15 * s, -s, 0); c.closePath();
-      c.fillStyle = '#FFFFFF'; c.fill(); c.lineWidth = s * .14; c.lineJoin = 'round'; c.strokeStyle = PAL.ink; c.stroke();
-      c.beginPath(); c.arc(0, 0, s * .32, 0, TAU); c.fillStyle = PAL.ink; c.fill(); } });
-    letter('ПРОЧТЕНИЙ: 0', nx + 40 * q, ny, 34 * vk * q, TK.soot, { font: ruFont(34 * vk * q), ink: false, rot: 0 });
+    // the eye + «READS: 0» as ONE glyph in the card's own frame (centre nx + 14, scaled with the card's pop): the eye sits right before
+    // the text and the pair is centred on the card (was: eye pinned at the card's left edge, a big gap, text off to the right)
+    const txt = window.EN_TR ? EN_TR('ПРОЧТЕНИЙ: 0') : 'ПРОЧТЕНИЙ: 0';
+    letter('', nx + 14 * vk * q, ny, 34 * vk * q, TK.soot, { ink: false, draw: (c, s) => {
+      c.font = ruFont(s); const er = s * .82, gap = s * .45, tw = c.measureText(txt).width, x0 = -(2 * er + gap + tw) / 2, ex = x0 + er;
+      c.beginPath(); c.moveTo(ex - er, 0); c.quadraticCurveTo(ex, -1.15 * er, ex + er, 0); c.quadraticCurveTo(ex, 1.15 * er, ex - er, 0); c.closePath();
+      c.fillStyle = '#FFFFFF'; c.fill(); c.lineWidth = er * .14; c.lineJoin = 'round'; c.strokeStyle = PAL.ink; c.stroke();
+      c.beginPath(); c.arc(ex, 0, er * .32, 0, TAU); c.fillStyle = PAL.ink; c.fill();
+      c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = TK.soot; c.fillText(txt, x0 + 2 * er + gap, 0); } });
   }
   camEnd();
 }

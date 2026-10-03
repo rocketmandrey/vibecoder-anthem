@@ -395,13 +395,32 @@
   dropCh('en_v1_swat');
   // v14 «Could touch grass — but Sunday night» (27.18–29.9): a big close-up of the SUNDAY page that simply burns (the same calendar8, so the
   // desk take picks the fire up where the close-up left it)
-  function park(s) {                                                        // v15: «Could touch grass» — the sunny park he could go to
-    back('#9FD3F0');
-    paint(rectPts(300, -300, 1320, 900), { wash: '#9FD3F0', fill: '#7EC3EA', fillOp: 60, tex: .3, ink: null });
+  // v15b (user: «may be through the window?»): the same office wall by DAY, the camera pushes into the window and the sunny park behind
+  // it fills the frame; «but» (PARK) cuts to the calendar close-up. The park is drawn into the window at WS and the wall is laid over the
+  // overflow (p5.brush has no clip); curves off (cv 0) since brush curves break under scale.
+  const WIN = [588, 60, 334, 286], WS = WIN[2] / 1320;
+  function park(s) {
+    const z = lerp(1.7, 5.3, ease(seg(s, CU[0] + .05, PARK - .3))), [wx, wy, ww, wh] = WIN, wcx = wx + ww / 2, wcy = wy + wh / 2;
+    back('#A39C93');
+    camBegin(wcx, wcy, z);
+    paint(rectPts(wx - 500, wy - 500, ww + 1000, wh + 1000), { wash: '#A39C93', fill: A2.steel, fillOp: 70, bleed: .1, tex: .6, border: .3, ink: null });
+    for (const x of [280, 1000]) inkLine([[x, -300], [x, 900]], .35, A2.steel, 'inkfine', 0);
+    push(); translate(wx - 300 * WS, wy - 100 * WS); scale(WS); parkView(s, 0); pop();
+    const wall = { wash: '#A39C93', ink: null };                                                                       // the wall over the park's overflow
+    paint(rectPts(wx - 400, wy - 400, ww + 800, 400), wall); paint(rectPts(wx - 400, wy + wh, ww + 800, 400), wall);
+    paint(rectPts(wx - 400, wy, 400, wh), wall); paint(rectPts(wx + ww, wy, 400, wh), wall);
+    const fr = 9 / z, frame = { wash: INK, ink: null };                                                              // one big pane (no mullions in the view), the frame
+    paint(rectPts(wx - fr, wy - fr, ww + 2 * fr, fr), frame); paint(rectPts(wx - fr, wy + wh, ww + 2 * fr, fr), frame);    // as washes (thin brush ink drops out under zoom)
+    paint(rectPts(wx - fr, wy, fr, wh), frame); paint(rectPts(wx + ww, wy, fr, wh), frame);
+    paint(rectPts(wx - 16, wy + wh + fr, ww + 32, 12), { wash: '#C9C2B4', ink: null }); paint(rectPts(wx - 16, wy + wh + fr + 12, ww + 32, fr), frame);   // the sill
+    camEnd();
+  }
+  function parkView(s, cv) {                                                // v15: «Could touch grass» — the sunny park he could go to
+    paint(rectPts(300, -300, 1320, 1000), { wash: '#9FD3F0', fill: '#7EC3EA', fillOp: 60, tex: .3, ink: null });
     glowAt(1290, 130, 150, '#FFE07A', 120); paint(ellPts(1290, 130, 70, 70, 24), { wash: '#FFD84A', ink: INK, sw: .8 });
     for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + s * .4; inkLine([[1290 + Math.cos(a) * 90, 130 + Math.sin(a) * 90], [1290 + Math.cos(a) * 120, 130 + Math.sin(a) * 120]], 3, '#FFC23A', 'ink', 0); }
     for (const [cx, cy, r] of [[620, 160, 60], [700, 140, 46]]) paint(ellPts(cx + Math.sin(s * .5) * 10, cy, r, r * .55, 18), { wash: '#FFFFFF', ink: INK, sw: .5 });
-    paint([[300, 640], [600, 560], [960, 600], [1300, 540], [1620, 600], [1620, 1400], [300, 1400]], { wash: '#7CC35A', fill: '#5AA040', fillOp: 70, tex: .4, ink: INK, sw: .8, curv: .4 });   // the hill
+    paint([[300, 640], [600, 560], [960, 600], [1300, 540], [1620, 600], [1620, 1400], [300, 1400]], { wash: '#7CC35A', fill: '#5AA040', fillOp: 70, tex: .4, ink: INK, sw: .8, curv: cv });   // the hill
     paint(rectPts(300, 820, 1320, 600), { wash: '#6AB24A', ink: null });
     for (const [tx, ty, sc] of [[560, 640, 1.1], [1380, 620, 1.25], [980, 600, .8]]) {                                                   // trees, swaying
       const sw = Math.sin(s * 1.6 + tx) * 6 * sc;
@@ -410,11 +429,11 @@
     }
     paint(rectPts(1080, 860, 220, 22, 2), { wash: '#B8743A', ink: INK, sw: .7 }); paint(rectPts(1080, 820, 220, 16, 2), { wash: '#B8743A', ink: INK, sw: .7 });   // a bench
     for (const x of [1100, 1280]) inkLine([[x, 882], [x, 930]], 3, INK, 'ink', 0);
-    for (let i = 0; i < 22; i++) { const gx = 330 + hash(i * 3.1) * 1260, gy = 900 + hash(i * 1.7) * 330; inkLine([[gx - 8, gy], [gx - 2, gy - 18 - 6 * Math.sin(s * 3 + i)], [gx + 4, gy]], 1.6, '#3E8A2E', 'ink', .4); }   // grass tufts
+    for (let i = 0; i < 22; i++) { const gx = 330 + hash(i * 3.1) * 1260, gy = 900 + hash(i * 1.7) * 330; inkLine([[gx - 8, gy], [gx - 2, gy - 18 - 6 * Math.sin(s * 3 + i)], [gx + 4, gy]], 1.6, '#3E8A2E', 'ink', cv); }   // grass tufts
     for (let i = 0; i < 5; i++) { const fx = 420 + i * 260 + hash(i) * 60, fy = 1000 + hash(i + 9) * 160; paint(ellPts(fx, fy, 10, 10, 10), { wash: ['#FFFFFF', '#FF8AB4', '#FFD84A'][i % 3], ink: INK, sw: .4 }); }
     const kx = 760 + Math.sin(s * 1.2) * 40, ky = 240 + Math.cos(s * 1.5) * 20;                                                          // a kite
     paint([[kx, ky - 40], [kx + 30, ky], [kx, ky + 46], [kx - 30, ky]], { wash: '#E0442A', ink: INK, sw: .7 });
-    inkLine([[kx, ky + 46], [kx - 60, ky + 200], [kx - 30, ky + 420], [kx - 120, 700]], 1, INK, 'inkfine', .5);
+    inkLine([[kx, ky + 46], [kx - 60, ky + 200], [kx - 30, ky + 420], [kx - 120, 700]], 1, INK, 'inkfine', cv);
   }
   function calCU(tv) {
     const s = O2N(tv);
