@@ -528,8 +528,9 @@
     else { const up = backOut(seg(s, C.gpus, C.gpus + .2)); aL = aR = .3 + 1.7 * up; if (djAge > .7) { aL = -.2 + .25 * Math.sin(s * 14); aR = 1.9 + .15 * Math.sin(s * 5); } mouth = m || 'grin'; }
     const take = dj && djAge < .25 ? -.08 * Math.sin(djAge / .25 * Math.PI) : 0;
     if (!dj) { aL = .5 + (aL - .5) * 1.7 + .25 * talk(s); aR = .5 + (aR - .5) * 1.7 + .25 * talk(s + .17); }   // bigger sermon gestures (v8 note)
-    A06.pulpit(s, { eyes, lookX, mouth, aL, aR, dy: 9 * (1 - rise), take, sq: sipping ? .03 * Math.sin(s * 11) : 0,
-      armL: VAR !== 'c' && s > 133 && s < 137.6 ? cup(s, lift) : undefined, hat: dj ? 'shades' : null, click: kick(s, BT, .15) * (dj ? 1 : .4), draw: dj ? phones : undefined });
+    const pulpitO = { eyes, lookX, mouth, aL, aR, dy: 9 * (1 - rise), take, sq: sipping ? .03 * Math.sin(s * 11) : 0,
+      armL: VAR !== 'c' && s > 133 && s < 137.6 ? cup(s, lift) : undefined, hat: dj ? 'shades' : null, click: kick(s, BT, .15) * (dj ? 1 : .4), draw: dj ? phones : undefined };
+    A06.pulpit(s, pulpitO);
     decks(s, backOut(seg(s, C.gpus + .05, C.gpus + .45)), djAge > .7 ? Math.sin(s * 14) * .8 : 0);
     if (dj && djAge < .35) paint(starPts(960 - 3.2 * 32, 700 - 6.8 * 32, 26 * (1 - djAge / .35) + 6, .2), { wash: '#E6FFE8', ink: null });
     if (VAR === 'c') lakeStraw(s, lvlC(s));
@@ -548,6 +549,9 @@
     // ---- light ----
     const spot = pre ? seg(s, 123.4, 124.6) : Math.max(outK, dj ? 0 : .25 * seg(s, 141, 141.6) * (1 - seg(s, 151.0, 151.5)));
     if (spot > .02) A06.beam(960, 960, 60, 260, 880, (pre ? .55 : .4) * spot * (1 - djK));
+    // v15 (user: «a veil over him at 2:34»): lights out after «need…» darkened the preacher and the beam washed him grey — he is the one
+    // lit figure: drawn again on top of the dark + the beam
+    if (!pre && !dj && outK > .02) A06.pulpit(s, pulpitO);
     if (VAR !== 'b' && winK > .3 && !dj) for (const [cx, sd] of WIN) A06.beam(cx, cx + sd * -220, 50, 150, 1150, .22 * winK * (1 - outK), sd > 0 ? '#BFE8FF' : '#FFE6A0');
   }
   // ---- real 111.04–113.70: the fly-in. The night factory, its lights switching OFF block by block on the beats (the downbeat 112.36 kills
