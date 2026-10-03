@@ -345,22 +345,29 @@
   }
   // b: the drain pipe from the lake's floor along the wall into the GPU under the pulpit; water blobs run through it while the level drops
   const PIPE = [[LK.cx + 30, 770], [760, 770], [760, 690], [880, 690]];
-  // b (v16b): mirrored on the right, the power cable from the city's pylon window into the same GPU; current pulses run along it from
-  // «electricity» on, a bright burst on every line that darkens the city's blocks (CSTEP) and a tick on the beats
+  // b (v16b/c): mirrored on the right, a plain GREY power cable from the city's pylon window into the same GPU. The power is pulled
+  // slowly and quietly (user: «too bright — just grey, slowly drawn from the cities»). --var=power:a|b|c (default a):
+  //   a — one faint dim glow creeps slowly along the cable toward the GPU, a touch stronger as each line darkens city blocks
+  //   b — a few tiny dull sparks drift along it, only in the seconds after each line darkens blocks
+  //   c — no visible current: the cable hums (a slight shiver) and the GPU warms up as the city goes dark
+  const PV = (new URLSearchParams(location.search).get('var_power') || (window.BTT_VAR || {}).power || 'a').toLowerCase();
+  window.BTT_VAR = { ...(window.BTT_VAR || {}), power: PV };
   const CABLE = PIPE.map(([x, y]) => [1920 - x, y]);
+  const darkAt = s => COFF.filter(t => t != null && s >= t).length / CNB;            // the share of city blocks gone dark
+  const along = (P, u) => { const segs = P.slice(1).map((p, i) => Math.hypot(p[0] - P[i][0], p[1] - P[i][1])), tot = segs.reduce((a, b) => a + b, 0);
+    let d = clamp(u) * tot, i = 0; while (i < segs.length - 1 && d > segs[i]) d -= segs[i++]; const f = d / segs[i]; return [lerp(P[i][0], P[i + 1][0], f), lerp(P[i][1], P[i + 1][1], f)]; };
   function powerCable(s) {
-    const r = 5;
-    for (let i = 0; i + 1 < CABLE.length; i++) { const [a, b] = [CABLE[i], CABLE[i + 1]], x0 = Math.min(a[0], b[0]) - r, y0 = Math.min(a[1], b[1]) - r;
-      paint(rectPts(x0, y0, Math.abs(b[0] - a[0]) + 2 * r, Math.abs(b[1] - a[1]) + 2 * r), { wash: '#4A4E5E', ink: INK, sw: .6 }); }
-    inkLine(CABLE.map(([x, y]) => [x, y - 2]), .7, '#8A90A4', 'inkfine', 0);                                              // the rubber's sheen
-    paint(rectPts(CABLE[0][0] - 9, CABLE[0][1] - 9, 18, 18), { wash: '#B8B0A0', ink: INK, sw: .6 });               // the junction box at the pylon's foot
-    if (s < C.elec) return;
-    const burst = kick(s, CSTEP.map(([t]) => t), .35), k = 1 + 1.0 * burst + .3 * kick(s, BT, .12);
-    const segs = CABLE.slice(1).map((p, i) => Math.hypot(p[0] - CABLE[i][0], p[1] - CABLE[i][1])), tot = segs.reduce((a, b) => a + b, 0);
-    for (let j = 0; j < 7; j++) { let d = frac(s * 1.3 + j / 7) * tot, i = 0; while (d > segs[i]) d -= segs[i++];
-      const a = CABLE[i], b = CABLE[i + 1], f = d / segs[i], [x, y] = [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
-      if (burst > .2) glowAt(x, y, 9 * k, '#FFF3A0', 90 * burst);
-      paint(ellPts(x, y, 4 * k, 4 * k, 8), { wash: '#FFF3A0', ink: null }); }
+    const r = 6, on = s > C.elec, hum = PV === 'c' && on ? Math.sin(s * 70) * .9 * (.3 + darkAt(s)) : 0;
+    if (PV === 'c' && on) glowAt(960, 690, 150, '#FF8A3A', 95 * darkAt(s));                                     // c: the GPU warms as the city dims
+    for (let i = 0; i + 1 < CABLE.length; i++) { const [a, b] = [CABLE[i], CABLE[i + 1]], x0 = Math.min(a[0], b[0]) - r, y0 = Math.min(a[1], b[1]) - r + hum;
+      paint(rectPts(x0, y0, Math.abs(b[0] - a[0]) + 2 * r, Math.abs(b[1] - a[1]) + 2 * r), { wash: '#7A8290', ink: INK, sw: .6 }); }   // grey, like the water pipe
+    paint(rectPts(CABLE[0][0] - 9, CABLE[0][1] - 9, 18, 18), { wash: '#8A929E', ink: INK, sw: .6 });               // the junction box at the pylon's foot
+    if (!on) return;
+    const step = kick(s, CSTEP.map(([t]) => t), .8);
+    if (PV === 'a') { const [x, y] = along(CABLE, frac((s - C.elec) * .22)); glowAt(x, y, 26, '#FFE9A8', 45 + 40 * step); }
+    if (PV === 'b') for (const [t] of CSTEP) { const age = s - t; if (age < 0 || age > 3) continue;
+      for (let q = 0; q < 3; q++) { const u = age / 3 + q * .12; if (u > 1) continue; const [x, y] = along(CABLE, u);
+        paint(ellPts(x, y - 1, 2.2, 2.2, 6), { wash: '#C8BC8A', washOp: 170 * (1 - age / 3), ink: null }); } }
   }
   function drainPipe(s, lvl) {
     const r = 7;                                                                 // crisp wash segments (a fat brush stroke read as a blob)
@@ -405,11 +412,11 @@
         const a = [cx + hw - 10, hz - 10], b = [px + 38, pb - ph * f], c = [px - 38, pb - ph * f], d = [cx - hw - 20, pb - ph * f + 30];
         inkLine([a, [lerp(a[0], b[0], .5), Math.max(a[1], b[1]) + 10], b], .8, '#2A2C38', 'inkfine', .5);
         inkLine([c, [lerp(c[0], d[0], .5), Math.max(c[1], d[1]) + 16], d], .8, '#2A2C38', 'inkfine', .5);
-        const run = s > C.elec && s < C.need + 1.5;
-        if (run) for (let q = 0; q < 3; q++) {                                                              // current running toward the church
-          const ff = frac(s * 1.4 + q / 3 + f), pts = [a, b, c, d], seg3 = Math.min(2, Math.floor(ff * 3)), g = ff * 3 - seg3;
+        const run = s > C.elec && s < C.need + 1.5 && (WV !== 'b' || PV !== 'c');
+        if (run) for (let q = 0; q < (WV === 'b' ? 1 : 3); q++) {                                           // current running toward the church (b: one dim, slow mote)
+          const ff = frac(s * (WV === 'b' ? .4 : 1.4) + q / 3 + f), pts = [a, b, c, d], seg3 = Math.min(2, Math.floor(ff * 3)), g = ff * 3 - seg3;
           const P0 = pts[seg3], P1 = pts[seg3 + 1];
-          paint(ellPts(lerp(P0[0], P1[0], g), lerp(P0[1], P1[1], g), 4, 4, 6), { wash: '#FFF3A0', ink: null });
+          paint(ellPts(lerp(P0[0], P1[0], g), lerp(P0[1], P1[1], g), WV === 'b' ? 2.4 : 4, WV === 'b' ? 2.4 : 4, 6), { wash: WV === 'b' ? '#D8CC98' : '#FFF3A0', washOp: WV === 'b' ? 150 : 255, ink: null });
         }
       }
     }
