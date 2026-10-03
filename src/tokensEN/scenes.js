@@ -405,5 +405,5 @@
     for (const [a, b, keys] of RU34) { for (let i = out.length - 1; i >= 0; i--) if (out[i][0] >= a && out[i][0] < b) out.splice(i, 1); out.push(...keys); }
     out.sort((x, y) => x[0] - y[0]); if (window.DUMPK) console.warn("KEYS " + JSON.stringify(out.filter(k => k[0] > DUMPK[0] && k[0] < DUMPK[1])) + " PUNCH " + JSON.stringify(EN_PUNCH.filter(k => k[0] > DUMPK[0] && k[0] < DUMPK[1]))); return out;
   };
-  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3, layer };   // for tokensEN/scenes2.js
+  window.ENK = { kick, lastLE, NOTXT, rubble, gauge, dispenser, native, back, spoon, truck, bull, s1, s2, s3, layer, art: k => ART[k] };   // for tokensEN/scenes2.js
 })();

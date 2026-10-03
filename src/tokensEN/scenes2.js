@@ -232,20 +232,35 @@
     // composite p5.brush's deferred washes/strokes NOW (the flushLetters trick: a tiny off-screen watercolor fill), so the native p5 shapes
     // below land on top of the drum instead of under its late-composited wash
     const flushB = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
-    const gs = 1 + .08 * k2 * (f === 3);                                                                 // gallop: the stretch at full extension
+    const gs = (1 + .08 * k2 * (f === 3)) * (1 + (((window.BTT_VAR || {}).legs || 'a') === 'c' ? .1 : 0) * Math.max(k3, k4));   // c: stretched forward                                                                 // gallop: the stretch at full extension
     if (!fly && k4 > 0 && FX === 'c' && FV === '2') { const rk = BH * .3 * (.55 + .45 * k4); flushB(); push(); noStroke(); fill(255, 214, 64);   // c2 starburst behind him
-      beginShape(); for (const [px, py] of starPts(0, -rk * .7, rk * (1.6 + .2 * Math.sin(t * 40)) * k4, .55, 12)) vertex(px, py); endShape(CLOSE); pop(); }
+      beginShape(); for (const [px, py] of starPts(0, -rk * .4, rk * (1.05 + .15 * Math.sin(t * 40)) * k4, .55, 12)) vertex(px, py); endShape(CLOSE); pop(); }
     ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: gs / sq, sy: sq / gs });
-    if (!fly && k3 > 0 && k4 < 1) for (const lx of [-.2, .26]) {                                         // the legs blur into spinning wheels
-      const x = lx * BW, y = -30 + bob * .3, a0 = t * 30 + lx * 7, al = Math.min(1, 3 * k3) * (1 - Math.min(1, 3 * k4));
-      flushB(); const rw = 40 * (.6 + .4 * k3); push(); stroke(34, 30, 38, 255 * al); strokeWeight(3); fill(226, 135, 92, 250 * al); circle(x, y - 6, 2 * rw); noFill(); strokeCap(ROUND); for (let q = 0; q < 3; q++) arc(x, y - 6, 1.3 * rw, 1.3 * rw, a0 + q * TAU / 3, a0 + q * TAU / 3 + 1.2); pop();   // native p5: lands right over the leg bitmap (brush washes are deferred and composite muddy here)
-    }
-    if (!fly && k4 > 0) {                                                                                // max: the cartoon feet-circle
-      const r = BH * .3, rk = r * (.55 + .45 * k4), x = 0, y = -rk * .9, a0 = t * 42;   // v21: one clean round wheel, centred under the body, standing on the rim
-      if (FX === 'c' && FV === '3') for (let q = 0; q < 2; q++) paint(ellPts(x, y, r * (1.25 + .18 * q), r * (.55 + .1 * q), 40, 0), { ink: TK.yellow, sw: (5 - 2 * q) * k4 });   // c3 orbit rings
-      flushB();                                                                                          // native p5 shapes: they land in order over the drum
-      push(); stroke(34, 30, 38); strokeWeight(5); fill(226, 135, 92); circle(x, y, 2 * rk); noFill(); strokeWeight(3.5); strokeCap(ROUND);
-      for (let q = 0; q < 4; q++) arc(x, y, 1.3 * rk, 1.3 * rk, a0 + q * TAU / 4, a0 + q * TAU / 4 + 1.1); fill(34, 30, 38); noStroke(); circle(x, y, 10); pop();   // symmetric whirl
+    // v22 legs at speed (user: «the balls replacing his legs are wrong» → classic cartoon fast-run), --var=legs:a|b|c (default a); LG = 0..1
+    //   a — Road Runner: each leg pair whirls as a figure-8 blur (a translucent band + chasing ink strokes + smeared pink paws), dust puffs
+    //   b — smear frames: the leg strip of his own last 3 run frames ghosted behind the current one, with motion lines
+    //   c — scramble in place: each leg pair a spinning oval of many thin legs (Looney Tunes before takeoff), body stretched forward
+    const LG = fly ? 0 : Math.max(k3, k4), LV = ((window.BTT_VAR || {}).legs || 'a').toLowerCase(), HIPS = [[-.2 * BW, -BH * .3], [.24 * BW, -BH * .3]];
+    if (LG > 0) { flushB(); push(); strokeCap(ROUND);
+      if (LV === 'b') { const img = ENK.art('ham4Run' + f), sy0 = img.height * .72, sh = img.height - sy0, dh = BH * sh / img.height;
+        for (let gh = 3; gh >= 1; gh--) { const im = ENK.art('ham4Run' + ((f - gh + 8) % 4)); tint(255, 255 * LG * (.55 - .14 * gh)); imageMode(CORNER);
+          image(im, -BW / 2 - gh * (22 + 26 * LG), -dh + bob * .3, BW, dh, 0, sy0, im.width, sh); }
+        noTint(); stroke(241, 232, 210, 200 * LG); strokeWeight(4);
+        for (let q = 0; q < 5; q++) { const y = -8 - q * 14 + bob * .3, x0 = -BW * (.32 + .08 * hash(q + 3)); line(x0 - 60 - 90 * LG, y, x0, y); } }
+      else for (const [k, [hx, hy]] of HIPS.entries()) {
+        const ph = t * TAU * (2.6 + 1.2 * LG) + k * 1.7, cx2 = hx + 6, cy2 = hy * .45 + bob * .3;                         // whirl centre between hip and floor
+        if (LV === 'c') { const n = 9, rx = 58 + 14 * LG, ry = 40 + 8 * LG;                                            // the oval of many legs
+          noStroke(); fill(226, 135, 92, 70 * LG); ellipse(cx2, cy2, 2 * rx + 30, 2 * ry + 26);
+          for (let q = 0; q < n; q++) { const a = ph * 1.6 + q * TAU / n, px = cx2 + Math.cos(a) * rx, py = cy2 + Math.sin(a) * ry, al = 120 + 100 * hash(q + k * 9);
+            stroke(226, 135, 92, al * LG); strokeWeight(13); line(cx2, cy2, px, py); noStroke(); fill(242, 167, 167, al * LG); ellipse(px, py, 14, 10); }
+          stroke(34, 30, 38, 160 * LG); strokeWeight(2.5); noFill(); for (let q = 0; q < 3; q++) arc(cx2, cy2, 2 * rx + 18, 2 * ry + 16, ph * 1.6 + q * TAU / 3, ph * 1.6 + q * TAU / 3 + .9); }
+        else { const lem = u => { const d = 1 + Math.sin(u) ** 2; return [cx2 + 62 * Math.cos(u) / d, cy2 + 44 * Math.sin(u) * Math.cos(u) / d]; };   // a: the figure-8
+          noFill(); stroke(226, 135, 92, 175 * LG); strokeWeight(26); beginShape(); for (let u = 0; u <= TAU + .01; u += .2) vertex(...lem(u)); endShape();
+          stroke(34, 30, 38, 230 * LG); strokeWeight(4);
+          for (let q = 0; q < 2; q++) { beginShape(); for (let u = 0; u <= .9; u += .15) vertex(...lem(ph + q * Math.PI - u)); endShape(); }         // chasing strokes
+          noStroke(); for (let q = 0; q < 2; q++) { for (let m = 0; m < 3; m++) { const [px, py] = lem(ph + q * Math.PI - m * .22); fill(242, 167, 167, (200 - 60 * m) * LG); ellipse(px, py, 16 - 3 * m, 11 - 2 * m); } } } }
+      pop();
+      if (LV === 'a') for (let q = 0; q < 4; q++) { const v = frac(2.2 * t + q / 4), z = (12 + 40 * v) * LG; paint(ellPts(-BW * .35 - 200 * v, -10 - 30 * v, z, z * .8, 12), { wash: '#8A8478', washOp: 200 * (1 - v), ink: null }); }   // dust puffs
     }
     if (FX === 'c' && !fly && FV === '3' && e > .05) for (let q = 0; q < 1 + Math.round(5 * e); q++) {     // c3: crackling yellow lightning round him
       const fr = Math.floor(t * 12), a = hash(q * 7 + fr) * Math.PI - Math.PI, r0 = BW * .38, pts = [];
