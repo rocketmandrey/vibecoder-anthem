@@ -103,17 +103,16 @@
     const gk = kick(s, [WD.guys], .35), sk = kick(s, SLIP, .3);
     ceoClawd(1320, 1120, 30, { click: kick(s, [WD.release, ...SLIP], .2), aR: lerp(.9, 1.6, ease(seg(s, WD.guys - .1, WD.guys + .2))) + .2 * gk, aL: n ? .7 + .2 * Math.sin(s * 8) : lerp(.3, 1.3, ease(seg(s, WD.guys, WD.guys + .3))),
       eyes: n ? 'happy' : 'spark', mouth: n ? 'wobble' : 'grin', dy: -.3 * gk + .2 * sk, emote: n ? 'sweat' : null, emoteK: n ? clamp((s - SLIP[0]) * 3) : 0, noShadow: true });
-    // Clawd (left): deadpan, adds a stroke to his tally card on each slip
-    const tally = 3 + n, tk = kick(s, SLIP, .25);
-    clawd(600, 1120, 26, { eyes: 'narrow', mouth: 'flat', aL: .25, aR: 1.1 + .25 * tk, noShadow: true, armR: (u, sw) => {
-      push(); rotate(-1.1 - .25 * tk);
-      inkLine([[0, 0], [2.4 * u, 0]], sw * 2, '#7A5A3A', 'ink', 0);
-      translate(4.6 * u, 0); rotate(1.2);
-      paint(rectPts(-2.4 * u, -1.5 * u, 4.8 * u, 3 * u, 1), { wash: '#FFFDF6', ink: INK, sw: sw * .8 });
-      for (let k = 0; k < Math.min(tally, 4); k++) inkLine([[(-1.6 + k * .9) * u, -1 * u], [(-1.3 + k * .9) * u, 1 * u]], sw * 1.4, '#D8262A', 'marker', 0);
-      if (tally >= 5) inkLine([[-2 * u, .7 * u], [1.8 * u, -.7 * u]], sw * 1.4, '#D8262A', 'marker', 0);
-      pop();
-    } });
+    // Clawd (left), v15 (user: «what is he doing with the red card?» → a clear action): he has heard it every year — dozes standing, a sleep
+    // bubble swelling and shrinking under his nose; each slip («almost» / «here») jolts him awake for a beat, then he nods off again
+    const last = SLIP.filter(x => s >= x).slice(-1)[0], jolt = last == null ? 0 : Math.exp(-Math.max(0, s - last) * 2.2) * (s - last < 1.2 ? 1 : 0);
+    const awake = jolt > .35, nod = (1 - jolt) * (.5 + .5 * Math.sin(s * 1.7));
+    clawd(600, 1120, 26, { eyes: awake ? 'scared' : 'closed', mouth: awake ? 'o' : 'flat', aL: .2 + .9 * jolt, aR: .2 + .9 * jolt, dy: -.6 * jolt * Math.abs(Math.sin((s - (last || 0)) * 14)), rot: .08 * nod, noShadow: true });
+    if (!awake) {
+      const bub = .35 + .65 * (.5 + .5 * Math.sin(s * 3.1)), bx = 600 + 70, by = 1120 - 112;
+      paint(ellPts(bx + 18 * bub, by, 22 * bub + 8, 20 * bub + 7, 18), { wash: '#DCEBFF', washOp: 170, ink: INK, sw: .7 });
+      paint(ellPts(bx + 12 * bub, by - 7 * bub, 5 * bub + 2, 4 * bub + 2, 8), { wash: '#FFFFFF', ink: null });
+    }
     // the audience
     const hy = ease(seg(s, A - .1, WD.release + .1));
     ROWS.forEach(([gy, u, cnt, x0, x1, dl], r) => {
