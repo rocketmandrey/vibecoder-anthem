@@ -185,11 +185,13 @@
   const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();          // the user picked a (final)
   const RG = { x: { a: 920, b: 610, c: 720 }[WV] ?? 920, y: { a: 760, b: 980, c: 1160 }[WV] ?? 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
   const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
-  const RATE = [.15, .25, .35, .45, .58, .72, .9, 1.15, 2.2, 7];         // wheel rev/s before the first word, after each word, after WORKING
-  const spinOf = s => {                                                   // integrated wheel angle (real time)
-    const e = [RG.a, ...RG.words, RG.work, 1e9]; let a = 0;
-    for (let i = 0; i < RATE.length; i++) { if (s <= e[i]) break; a += (Math.min(s, e[i + 1]) - e[i]) * RATE[i] * TAU; }
-    return a;
+  // v18 (user: «the hamster should gradually speed up»): wheel rev/s is a smooth ramp, not a step per word — R0 idle, then from the first
+  // «MORE GPUs» it accelerates (quadratic, so the last stretch before «WORKING» is the steepest) R1 → R2 (~3.3x), then RF after the fling
+  const RI = .3, R1 = .45, R2 = 1.5, RF = 7, W0 = RG.words[0], WD = RG.work - W0;
+  const rateOf = s => s < W0 ? RI : s < RG.work ? R1 + (R2 - R1) * ((s - W0) / WD) ** 2 : RF;
+  const spinOf = s => {                                                   // integrated wheel angle (real time), closed form of rateOf
+    const p = Math.min(s, W0) - RG.a, u = clamp((s - W0) / WD);
+    return TAU * (Math.max(0, p) * RI + (s > W0 ? WD * (R1 * u + (R2 - R1) * u ** 3 / 3) : 0) + Math.max(0, s - RG.work) * RF);
   };
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
@@ -197,21 +199,21 @@
   const itemOf = (i, x, y, t, r) => i === 0 ? gpuCard(x, y, .14, t, { rot: r }) : i === 1 ? token(x, y, 14, { spin: r }) : i === 2 ? clawd(x, y + 14, 3.4, { col: '#6F8BE0', dk: '#3D55A8', lt: '#B5C6F0', noShadow: true, eyes: 'happy', mouth: 'grin', aL: 1.2, aR: 1.2, seed: 3 }) : (paint(rectPts(x - 13, y - 13, 26, 26), { wash: TK.yellow, ink: INK, sw: .7 }), [-6, 0, 6].forEach(d => inkLine([[x - 8, y + d], [x + 8, y + d]], .8, INK, 'inkfine', 0)));
   // hamster-Clawd v4 (draft 5, the user's pick from sandbox/hamster): side view, galloping right on all fours on the rim; th = rim angle
   // (π/2 = bottom), rate = wheel rev/s, n = words so far, wk = word kick, spin = dizzy 0..1, fly = {x, y, r} once flung (body centre, tumble)
-  function hamster(th, t, rate, n, wk, spin, fly) {
+  function hamster(th, t, rate, n, wk, spin, fly, rev = t * rate) {
     const BW = 440, g = PROP_ART.ham4Run0, BH = BW * g[1] / g[0], feetR = RG.R - 24;
-    const ph = t * (3 + rate * 5), f = Math.floor(ph) % 4, bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
+    const ph = 2 * t + 6 * rev, f = Math.floor(ph) % 4, bob = fly ? 0 : [0, 6, 2, -12][f] * (.6 + .4 * Math.min(rate, 1.4)), sq = [1, 1.04, 1, .97][f] * (1 + .05 * wk);
     push();
     if (fly) { translate(fly.x, fly.y); rotate(fly.r); translate(0, BH / 2); }
     else { translate(RG.x + Math.cos(th) * feetR, RG.y + Math.sin(th) * feetR); rotate(th - Math.PI / 2 + .06 * Math.min(rate, 1.5)); }
-    if (!fly) for (let q = 0; q < 5; q++) { const v = frac(t * (1.5 + rate) + hash(q + 3)); paint(ellPts(-BW * .35 - v * 160, -10 - hash(q) * 12 - v * 20, 7 + v * 14, 7 + v * 14, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
-    if (rate > .5) for (let q = 0; q < 5; q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
+    if (!fly) for (let q = 0; q < 5; q++) { const v = frac(1.5 * t + rev + hash(q + 3)); paint(ellPts(-BW * .35 - v * 160, -10 - hash(q) * 12 - v * 20, 7 + v * 14, 7 + v * 14, 10), { wash: '#4A4F58', washOp: 200 * (1 - v), ink: null }); }   // dust behind
+    if (rate > .5) for (let q = 0; q < 3 + Math.round(4 * Math.min(1, rate - .5)); q++) { const y = -BH * (.2 + q * .15), x0 = -BW * .5 - hash(q + 7) * 30, m = Math.min(1, (rate - .5) / 1.1);
       inkLine([[x0 - 70 - 80 * m, y], [x0, y]], 4, '#F1E8D2', 'inkfine', 0); }                                        // speed lines
     if (rate > .8 || spin > 0) for (let gh = 2; gh >= 1; gh--) ENK.layer('ham4Run' + ((f - gh + 8) % 4), -gh * 16 * Math.min(rate, 2), -BH / 2 + bob * .5, BW, { alpha: .15 / gh + .15 * spin });
     ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: 1 / sq, sy: sq });
     if (spin > 0) for (const dx of [.29, .37]) {                                                                          // dizzy spiral eyes over his
       const ex = dx * BW, ey = -BH * .66 + bob, pts = []; for (let s2 = 0; s2 <= 24; s2++) { const a = s2 * .5 + t * 16, r = s2 * .55 * spin; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); }
       paint(ellPts(ex, ey, 15 * spin, 15 * spin, 12), { wash: '#FFFDF2', ink: INK, sw: .8 }); inkLine(pts, 2, INK, 'inkfine', 0); }
-    for (let q = 0; q < 2 + n; q++) { const d = q % 2 ? 1 : -1, u = frac(t * (1.2 + rate * .8) + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
+    for (let q = 0; q < 2 + n + Math.round(4 * Math.max(0, rate - 1)); q++) { const d = q % 2 ? 1 : -1, u = frac(1.2 * t + .8 * rev + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
       paint([[x, y - 12], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', washOp: 255 * (1 - u * u), ink: INK, sw: .6 }); }
     for (let q = 0; q < Math.min(8, n + (spin > 0 ? 4 : 0)); q++) { const per = .9 + hash(q) * .5, v = frac((t + hash(q + 50) * per) / per);   // tokens squeezed out of his cheeks, flung back
       token(BW * .36 - v * (260 + hash(q + 2) * 200), -BH * .62 - (520 * v - 260 * v * v) * (.7 + hash(q + 9) * .5), 15, { spin: t * 8 + q }); }
@@ -327,7 +329,8 @@
       const a0 = ra - Math.PI / 2 + j * TAU / N, a1 = a0 + TAU / N, am = (a0 + a1) / 2, [w, ty] = CELLS[j] || [1e9, 0], age = s - w;
       const arc = (r, b0, b1) => Array.from({ length: 7 }, (_, q) => P(lerp(b0, b1, q / 6), r));
       const pts = [...arc(R1, a0, a1), ...arc(R0, a1, a0)];
-      paint(pts, { wash: age >= 0 ? mixCol(TYL[ty], '#241E2A', .35 - .25 * kick(s, [w], .5)) : '#1C1A22', ink: '#C9A24A', sw: 3 });
+      const ch = age >= 0 ? Math.max(0, 1 - frac(ang / TAU * .8 - j / N) / .14) : 0;               // v18 chase light, speeds up with the wheel
+      paint(pts, { wash: age >= 0 ? mixCol(mixCol(TYL[ty], '#241E2A', .35 - .25 * kick(s, [w], .5)), '#FFF6D0', .55 * ch) : '#1C1A22', ink: ch > .3 ? '#FFE04A' : '#C9A24A', sw: 3 });
       const inner = [...arc(R1 - 12, a0 + .02, a1 - .02), ...arc(R0 + 12, a1 - .02, a0 + .02)];
       paint(inner, { wash: '#000000', washOp: age >= 0 ? 0 : 60, ink: '#8A7A50', sw: 1 });
       if (age >= 0) { const [x, y] = P(am, RS); cellItem(ty, x, y, 3.0 * popK(age), s); flare(x, y, age, TYC[ty]); }
@@ -500,7 +503,7 @@
     paint(rectPts(-400, FLY, W + 800, 700), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     const cx = RG.x, cy = RG.y, R = RG.R, ang = spinOf(s), n = nWords(s), wa = s - RG.work;
     const blur = seg(s, RG.words[7], RG.words[7] + .5), spin = seg(s, RG.words[7], RG.words[7] + .3);
-    const rate = RATE[n + (wa >= 0 ? 1 : 0)], wk = kick(s, RG.words, .12);
+    const rate = rateOf(s), wk = kick(s, RG.words, .12);
     if (WV === 'a') cellsWheel(s, ang); else if (WV === 'b') rack(s); else ptable(s);
     // the stand: an A-frame from the axle to the floor
     for (const d of [-1, 1]) inkLine([[cx, cy], [cx + d * 330, FLY + 4]], 18, A2.steel, 'ink', 0);
@@ -513,7 +516,7 @@
     // «WORKING»: the over-spun rim carries him up the left side (CARRY s), then lets go: he flies up-right off the frame, tumbling
     const CARRY = .3, TH0 = Math.PI / 2 - Math.min(.3, rate * .12), THR = Math.PI * 1.25, FR = R - 24 + 60;
     const th = wa < 0 ? TH0 : TH0 + (THR - TH0) * easeIn(Math.min(1, wa / CARRY)), fa = wa - CARRY;
-    if (fa < 0) hamster(th, s, Math.min(rate, 2.6), n, wk, spin);
+    if (fa < 0) hamster(th, s, Math.min(rate, 2.6), n, wk, spin, null, ang / TAU);
     paint(ellPts(cx, cy, 34, 34, 16), { wash: TK.yellow, ink: INK, sw: 1.2 });
     paint(ellPts(cx, cy, R + 12, R + 12, 64), { ink: A2.steelLt, sw: 3 });
     for (let k = 0; k < 36; k++) { const a = ang + k * TAU / 36;
