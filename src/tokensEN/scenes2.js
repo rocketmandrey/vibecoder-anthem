@@ -195,9 +195,9 @@
   };
   // v19 effect packs for the speed-up (--var=fx:a|b|c): a cartoon (speed lines, sweat, dust), b heat (the rim glows orange → white-hot, sparks,
   // smoke), c comic (smear ghosts, impact stars on footfalls, the stand rattles, whoosh arcs) — the user picked c. v20: c1|c2|c3 (default c1) =
-  // the comic pack with a different YELLOW around the hamster: c1 rim trails + the rung under his feet flashes, c2 spark showers off his feet +
+  // the comic pack (v21: the user picked c2 → default) with a different YELLOW around the hamster: c1 rim trails + the rung under his feet flashes, c2 spark showers off his feet +
   // a starburst round the feet-circle, c3 crackling yellow lightning round him + orbit rings round the feet-circle
-  const FXS = ((window.BTT_VAR || {}).fx || 'c1').toLowerCase(), FX = FXS[0], FV = FXS[1] || '1', effOf = rate => clamp((rate - .55) / 1.25);
+  const FXS = ((window.BTT_VAR || {}).fx || 'c2').toLowerCase(), FX = FXS[0], FV = FXS[1] || '1', effOf = rate => clamp((rate - .55) / 1.25);
   const TB = spinOf(RG.work) / TAU / NB;                                  // wheel turns per bar: the last bar tops out right on «WORKING»
   const nWords = s => RG.words.filter(w => s >= w).length;
   const gearPts = (x, y, r, n, a, h = 8) => { const p = []; for (let k = 0; k < n * 4; k++) { const th = a + k * TAU / (n * 4), rr = k % 4 < 2 ? r + h : r; p.push([x + Math.cos(th) * rr, y + Math.sin(th) * rr]); } return p; };
@@ -233,26 +233,33 @@
     // below land on top of the drum instead of under its late-composited wash
     const flushB = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
     const gs = 1 + .08 * k2 * (f === 3);                                                                 // gallop: the stretch at full extension
+    if (!fly && k4 > 0 && FX === 'c' && FV === '2') { const rk = BH * .3 * (.55 + .45 * k4); flushB(); push(); noStroke(); fill(255, 214, 64);   // c2 starburst behind him
+      beginShape(); for (const [px, py] of starPts(0, -rk * .7, rk * (1.6 + .2 * Math.sin(t * 40)) * k4, .55, 12)) vertex(px, py); endShape(CLOSE); pop(); }
     ENK.layer('ham4Run' + f, 0, -BH * sq / 2 + bob, BW, { sx: gs / sq, sy: sq / gs });
     if (!fly && k3 > 0 && k4 < 1) for (const lx of [-.2, .26]) {                                         // the legs blur into spinning wheels
       const x = lx * BW, y = -30 + bob * .3, a0 = t * 30 + lx * 7, al = Math.min(1, 3 * k3) * (1 - Math.min(1, 3 * k4));
-      flushB(); noStroke(); fill(226, 135, 92, 245 * al); ellipse(x, y, 124 * (.6 + .4 * k3), 88 * (.6 + .4 * k3));   // native p5: lands right over the leg bitmap (brush washes are deferred and composite muddy here)
-      for (let q = 0; q < 3; q++) { const pts = []; for (let k = 0; k <= 8; k++) { const a = a0 + q * TAU / 3 + k * .22; pts.push([x + Math.cos(a) * 44, y + Math.sin(a) * 30]); } inkLine(pts, 1, INK, 'inkfine', 0); } }
+      flushB(); const rw = 40 * (.6 + .4 * k3); push(); stroke(34, 30, 38, 255 * al); strokeWeight(3); fill(226, 135, 92, 250 * al); circle(x, y - 6, 2 * rw); noFill(); strokeCap(ROUND); for (let q = 0; q < 3; q++) arc(x, y - 6, 1.3 * rw, 1.3 * rw, a0 + q * TAU / 3, a0 + q * TAU / 3 + 1.2); pop();   // native p5: lands right over the leg bitmap (brush washes are deferred and composite muddy here)
+    }
     if (!fly && k4 > 0) {                                                                                // max: the cartoon feet-circle
-      const r = BH * .3, rk = r * (.5 + .5 * k4), x = BW * .03, y = -rk * .62, a0 = t * 42;   // under his belly, standing on the rim (the body art covers its top)
+      const r = BH * .3, rk = r * (.55 + .45 * k4), x = 0, y = -rk * .9, a0 = t * 42;   // v21: one clean round wheel, centred under the body, standing on the rim
       if (FX === 'c' && FV === '3') for (let q = 0; q < 2; q++) paint(ellPts(x, y, r * (1.25 + .18 * q), r * (.55 + .1 * q), 40, 0), { ink: TK.yellow, sw: (5 - 2 * q) * k4 });   // c3 orbit rings
       flushB();                                                                                          // native p5 shapes: they land in order over the drum
-      if (FX === 'c' && FV === '2') { noStroke(); fill(255, 214, 64); beginShape(); for (const [px, py] of starPts(x, y + rk * .2, rk * (1.45 + .2 * Math.sin(t * 40)), .55, 12)) vertex(px, py); endShape(CLOSE); }   // c2 starburst behind it
-      noStroke(); fill(34, 30, 38); ellipse(x, y, 2 * rk + 10, 1.56 * rk + 10); fill(226, 135, 92); ellipse(x, y, 2 * rk, 1.56 * rk);
-      for (let q = 0; q < 3; q++) { const pts = []; for (let k = 0; k <= 10; k++) { const a = a0 + q * TAU / 3 + k * .2, rr = rk * (.25 + .6 * k / 10); pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr * .78]); } inkLine(pts, 1.1, INK, 'inkfine', 0); }
+      push(); stroke(34, 30, 38); strokeWeight(5); fill(226, 135, 92); circle(x, y, 2 * rk); noFill(); strokeWeight(3.5); strokeCap(ROUND);
+      for (let q = 0; q < 4; q++) arc(x, y, 1.3 * rk, 1.3 * rk, a0 + q * TAU / 4, a0 + q * TAU / 4 + 1.1); fill(34, 30, 38); noStroke(); circle(x, y, 10); pop();   // symmetric whirl
     }
     if (FX === 'c' && !fly && FV === '3' && e > .05) for (let q = 0; q < 1 + Math.round(5 * e); q++) {     // c3: crackling yellow lightning round him
       const fr = Math.floor(t * 12), a = hash(q * 7 + fr) * Math.PI - Math.PI, r0 = BW * .38, pts = [];
       for (let k = 0; k < 6; k++) { const rr = r0 + k * (16 + 26 * e), j = (hash(q + k * 13 + fr) - .5) * .35; pts.push([Math.cos(a + j) * rr * 1.1, -BH * .5 + Math.sin(a + j) * rr * .8]); }
       inkLine(pts, 4, TK.yellow, 'ink', 0); }
-    if (spin > 0) for (const dx of [.29, .37]) {                                                                          // dizzy spiral eyes over his
-      const ex = dx * BW, ey = -BH * .66 + bob, pts = []; for (let s2 = 0; s2 <= 24; s2++) { const a = s2 * .5 + t * 16, r = s2 * .55 * spin; pts.push([ex + Math.cos(a) * r, ey + Math.sin(a) * r]); }
-      paint(ellPts(ex, ey, 15 * spin, 15 * spin, 12), { wash: '#FFFDF2', ink: INK, sw: .8 }); inkLine(pts, 2, INK, 'inkfine', 0); }
+    // v21 face through the ramp (user): determined → straining → wide-eyed panic → dizzy at max / in the air; native p5 so it sits over the art
+    { const emo = fly || e > .86 ? 'dizzy' : e > .6 ? 'panic' : e > .3 ? 'strain' : 'det'; flushB(); push(); strokeCap(ROUND);
+      for (const [k, dx] of [[0, .29], [1, .37]]) { const ex = dx * BW, ey = -BH * .66 + bob;
+        if (emo === 'det') { stroke(34, 30, 38); strokeWeight(7); const d = k ? -1 : 1; line(ex - 15, ey - 24 + 6 * d, ex + 15, ey - 24 - 6 * d); }   // angry brows
+        else if (emo === 'strain') { noStroke(); fill(226, 135, 92); ellipse(ex, ey, 34, 34); stroke(34, 30, 38); strokeWeight(5); noFill();
+          const d = k ? -1 : 1; beginShape(); vertex(ex - 10 * d, ey - 10); vertex(ex + 8 * d, ey); vertex(ex - 10 * d, ey + 10); endShape(); }   // > <  squeezed shut
+        else if (emo === 'panic') { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); ellipse(ex, ey, 36 + 4 * Math.sin(t * 30), 40); noStroke(); fill(34, 30, 38); ellipse(ex + 3 + 2 * Math.sin(t * 40 + k), ey + 2 * Math.cos(t * 37), 9, 9); }   // tiny jittering pupils
+        else { stroke(34, 30, 38); strokeWeight(3); fill(255, 253, 242); ellipse(ex, ey, 36, 36); noFill(); strokeWeight(2.5); beginShape(); for (let s2 = 0; s2 <= 22; s2++) { const a = s2 * .55 + t * 16 * (k ? -1 : 1), r = s2 * .7; vertex(ex + Math.cos(a) * r, ey + Math.sin(a) * r); } endShape(); }
+      } pop(); }
     for (let q = 0; q < (FX === 'a' ? 1 + Math.round(8 * e) : FX === 'c' ? 1 : 0); q++) { const d = q % 2 ? 1 : -1, u = frac(1.2 * t + .8 * rev + hash(q + 20)), x = BW * .2 + d * (20 + u * 90) - 40 * u, y = -BH * .95 - 70 * u + 170 * u * u;   // sweat
       paint([[x, y - 12], [x + 7, y + 2], [x, y + 8], [x - 7, y + 2]], { wash: '#BFE3F7', washOp: 255 * (1 - u * u), ink: INK, sw: .6 }); }
     for (let q = 0; q < Math.min(8, n + (spin > 0 ? 4 : 0)); q++) { const per = .9 + hash(q) * .5, v = frac((t + hash(q + 50) * per) / per);   // tokens squeezed out of his cheeks, flung back
@@ -442,17 +449,22 @@
   const spark = (from, to, u, col) => { if (u <= 0 || u >= 1) return; const x = lerp(from[0], to[0], u), y = lerp(from[1], to[1], u) - Math.sin(u * Math.PI) * 120;
     glowAt(x, y, 50, col, 200); paint(ellPts(x, y, 9, 9, 10), { wash: '#FFF6D0', ink: null }); };
   // a: 16 bars, one per filled cell, in the cell's colour
+  // v21 «IS WORKING» on the flipchart, --var=working:a|b|c (default a): a the trend line rockets off the board; b the pages flip wildly and the
+  // last page has a giant green arrow that rips up through the paper; c the whole board launches like a rocket, the CEO cheers, token confetti
   function chartA(s, ang, wk, wa) {
-    const [X, Y, Wd, Hd] = FC, a = wa - .06, popped = a >= 0, base = Y + Hd - 40, BW = 15, BS = 17.2, H = k => 22 * Math.pow(1.2, k), FLT = .25;
+    const WKV = ((window.BTT_VAR || {}).working || 'a').toLowerCase();
+    const [X, Y, Wd, Hd] = FC, a = wa - .06, popped = a >= 0, lift = WKV === 'c' && popped ? 260 * a + 2600 * a * a : 0, base = Y + Hd - 40, BW = 15, BS = 17.2, H = k => 22 * Math.pow(1.2, k), FLT = .25;
     belt(RG.x, RG.y, [X - 34, Y + 300], ang);
     paint(rrPts(X - 84, Y + 328, 100, 60, 8), { wash: A2.gunmetal, ink: INK, sw: 1.2 });
     const jolt = Math.max(0, ...CELLW.map(w => { const d = s - w - FLT; return d > 0 && d < .6 ? Math.exp(-d * 7) * Math.sin(d * 40) : 0; }));
     inkLine([[X + 70, Y + Hd], [X + 10, FLY + 4]], 9, '#6A4A30', 'ink', 0); inkLine([[X + Wd - 70, Y + Hd], [X + Wd - 10, FLY + 4]], 9, '#6A4A30', 'ink', 0);
-    push(); translate(X + Wd / 2, Y + Hd); rotate(.035 * jolt); translate(-(X + Wd / 2), -(Y + Hd) - 10 * Math.abs(jolt));
+    if (lift > 0) for (let q = 0; q < 9; q++) { const v = frac(s * 3 + hash(q + 30)), bx = X + Wd / 2 + (hash(q + 31) - .5) * 120;   // c: the launch exhaust
+      paint(ellPts(bx + (hash(q) - .5) * 60 * v, Y + Hd + 30 - lift + 260 * v, 30 + 70 * v, 26 + 60 * v, 12), { wash: v < .25 ? TK.yellow : v < .5 ? TK.orange : '#8A8580', washOp: 230 * (1 - v), ink: null }); }
+    push(); translate(X + Wd / 2, Y + Hd); rotate(.035 * jolt + (lift > 0 ? .05 * Math.sin(s * 30) * Math.min(1, a * 4) : 0)); translate(-(X + Wd / 2), -(Y + Hd) - 10 * Math.abs(jolt) - lift);
     paint(rrPts(X - 14, Y - 14, Wd + 28, Hd + 28, 10), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
     paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FBF8F1', ink: null });
     paint(rectPts(X, Y, Wd, 64), { wash: '#2FBF71', ink: null });
-    letter('MORE TOKENS', X + Wd / 2, Y + 34, 40, '#FBF8F1', { ink: false });
+    letter('MORE TOKENS', X + Wd / 2, Y + 34 - lift, 40, '#FBF8F1', { ink: false });
     inkLine([[X + 22, Y + 90], [X + 22, base], [X + Wd - 10, base]], 2.4, INK, 'ink', 0);
     const tops = [], pump = 1 + .04 * Math.sin(ang) + .06 * wk;
     CELLS.forEach(([w, ty], k) => { const age = s - w - FLT; if (age < 0) return;
@@ -460,10 +472,22 @@
       if (age < .4) sparks(x + BW / 2, base - hh, age, k + 40, 8, 120);
       paint(rectPts(x, base - hh, BW, hh, 1), { wash: TYC[ty], fill: mixCol(TYC[ty], INK, .3), fillOp: 60, tex: .4, ink: INK, sw: .8 }); });
     if (tops.length > 1) inkLine(tops, 4, '#E0302A', 'ink', 0);
-    if (tops.length && !popped) { const [tx, ty] = tops[tops.length - 1]; paint([[tx - 14, ty + 4], [tx + 16, ty - 16], [tx + 6, ty + 14]], { wash: '#E0302A', ink: INK, sw: .8 }); }
+    if (tops.length && (!popped || WKV === 'c')) { const [tx, ty] = tops[tops.length - 1]; paint([[tx - 14, ty + 4], [tx + 16, ty - 16], [tx + 6, ty + 14]], { wash: '#E0302A', ink: INK, sw: .8 }); }
+    if (WKV === 'b' && popped) {                                                          // b: the pages flip wildly, then the arrow rips through
+      const PY = Y + 64, PH = Hd - 64, FLP = .07, nF = Math.min(6, Math.floor(a / FLP));
+      paint(rectPts(X, PY, Wd, PH, 1), { wash: nF % 2 ? '#F3EDE0' : '#FBF8F1', ink: null });                            // the page underneath
+      if (a < 6 * FLP) { const p = frac(a / FLP), c = Math.cos(p * Math.PI), h = PH * Math.abs(c);                     // the page in flight over the top
+        paint(rectPts(X, c > 0 ? PY : PY - h, Wd, Math.max(2, h), 1), { wash: nF % 2 ? '#FBF8F1' : '#EDE6D6', ink: INK, sw: .8 });
+        for (let q = 0; q < 4; q++) { const yy = c > 0 ? PY + h * (.2 + q * .18) : PY - h * (.2 + q * .18); inkLine([[X + 30, yy], [X + Wd - 40 - 30 * hash(q + nF), yy]], 1.2, '#B8B0A0', 'inkfine', 0); } }
+      else { const g = a - 6 * FLP, tipY = base - 60 - 900 * g - 3000 * g * g, AW = 90;                                  // the giant green arrow
+        paint([[X + Wd / 2 - AW * .45, base], [X + Wd / 2 - AW * .45, tipY + AW], [X + Wd / 2 - AW, tipY + AW], [X + Wd / 2, tipY], [X + Wd / 2 + AW, tipY + AW], [X + Wd / 2 + AW * .45, tipY + AW], [X + Wd / 2 + AW * .45, base]], { wash: '#2FBF71', ink: INK, sw: 1.6 });
+        if (tipY < PY) for (let q = 0; q < 7; q++) { const v = Math.min(1, (PY - tipY) / 500), sx = X + Wd / 2 + (q - 3) * 30, sy = PY - v * (40 + 160 * hash(q + 7)), r0 = (hash(q + 8) - .5) * 4 * v;   // torn paper shards
+          push(); translate(sx + (q - 3) * 40 * v, sy); rotate(r0); paint([[-16, 0], [14, -6], [4, 18]], { wash: '#FBF8F1', ink: INK, sw: .8 }); pop(); } } }
     pop();
     CELLS.forEach(([w], k) => spark(cellPos(k, ang), [X + 30 + k * BS + BW / 2, base - 40], (s - w) / FLT, TYC[CELLS[k][1]]));   // cell → bar
-    if (popped && tops.length) {                                                          // the trend line rockets off the top
+    if (WKV === 'c' && popped) for (let q = 0; q < 18; q++) { const v = Math.min(1.4, a * (1.2 + hash(q + 50))), an = -Math.PI / 2 + (hash(q + 51) - .5) * 2.6, sp = 500 + 500 * hash(q + 52);   // c: token confetti
+      token(X + Wd / 2 + Math.cos(an) * sp * v, Y + 200 + Math.sin(an) * sp * v + 900 * v * v, 13, { spin: s * 9 + q }); }
+    if (WKV === 'a' && popped && tops.length) {                                           // a: the trend line rockets off the top
       const [tx, ty] = tops[tops.length - 1], ry = ty - 900 * a - 2600 * a * a, rx = tx + 120 * a;
       inkLine([[tx, ty], [lerp(tx, rx, .5), lerp(ty, ry, .5) + 30], [rx, ry]], 6, '#E0302A', 'ink', .4);
       push(); translate(rx, ry); rotate(-.6 - .2 * a); paint([[-22, 18], [0, -34], [22, 18], [0, 8]], { wash: '#E0302A', ink: INK, sw: 1.2 }); pop();
@@ -471,7 +495,7 @@
         paint(ellPts(px, py, 14 + 20 * u, 12 + 16 * u, 10), { fill: '#B8B2A8', fillOp: 140 * (1 - u * .6), ink: null }); }
       if (a < .35) paint(starPts(tx, ty, 120 * a / .35 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .35), ink: INK, sw: 1.2 });
     }
-    ceo(1160, s, wa);
+    ceo(1160, s, wa, WKV === 'c' && popped ? { aL: 2.6, aR: 2.6, eyes: 'spark', mouth: 'O', dy: -2 * Math.abs(Math.sin(s * 14)) } : {});   // c: he cheers, hopping
   }
   // b: the timeline strip under the wheel
   const TLY = 1380, TLH = 360, TLX0 = 230, TLX1 = 1490, NOW = 1310, STEP = 36;
@@ -558,7 +582,7 @@
     if (blur > 0) paint(ellPts(cx, cy, R - 26, R - 26, 48), { fill: A2.steel, fillOp: 70 * blur, tex: .3, ink: null });
     // «WORKING»: the over-spun rim carries him up the left side (CARRY s), then lets go: he flies up-right off the frame, tumbling
     const CARRY = .3, TH0 = Math.PI / 2 - Math.min(.3, rate * .12), THR = Math.PI * 1.25, FR = R - 24 + 60;
-    const th = wa < 0 ? TH0 : TH0 + (THR - TH0) * easeIn(Math.min(1, wa / CARRY)), fa = wa - CARRY;
+    const th = wa < 0 ? TH0 : TH0 + (THR - TH0) * easeIn(Math.min(1, wa / CARRY)), fa = wa - CARRY;   // (the carry's lean stays .27, the fling picks it up)
     if (fa < 0) hamster(th, s, Math.min(rate, 2.6), n, wk, spin, null, ang / TAU);
     paint(ellPts(cx, cy, 34, 34, 16), { wash: TK.yellow, ink: INK, sw: 1.2 });
     paint(ellPts(cx, cy, R + 12, R + 12, 64), { ink: A2.steelLt, sw: 3 });
@@ -576,15 +600,18 @@
       if (e > .7) for (let q = 0; q < 7; q++) { const v = frac(s * .7 + hash(q + 80)), k = (e - .7) / .3;
         paint(ellPts(cx - 200 + 400 * hash(q + 81) + 60 * v, cy - R - 40 - 360 * v, 40 + 70 * v, 34 + 60 * v, 12), { fill: '#55565C', fillOp: 160 * k * (1 - v), ink: null }); }
     }
-    if (FX === 'c' && e > .15 && wa < 0) for (let q = 0; q < 2 + Math.round(3 * e); q++) {                // whoosh arcs chasing the rim
-      const a0 = ang * .9 + q * TAU / (2 + Math.round(3 * e)), L = .4 + 1.1 * e, r = R + 50 + 30 * (q % 2), pts = [];
+    if (FX === 'c' && e > .15 && wa < .3) for (let q = 0; q < 2 + Math.round(3 * e); q++) {                // whoosh arcs chasing the rim
+      const a0 = ang * .9 + q * TAU / (2 + Math.round(3 * e)), L = (.4 + 1.1 * e) * (wa < 0 ? 1 : 1 - wa / .3), r = R + 50 + 30 * (q % 2), pts = [];
       for (let k = 0; k <= 10; k++) { const a = a0 - L * k / 10; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
       inkLine(pts, 5 + 4 * e, '#F1E8D2', 'ink', 0); }
     pop();
     if (CV === 'b') chartB(s, ang, wk, wa); else if (CV === 'c') chartC(s, ang, wk, wa, rate); else chartA(s, ang, wk, wa);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
-      hamster(THR, s, 2.6, n, 0, 1, { x: cx + Math.cos(THR) * FR + ux * V * fa, y: cy + Math.sin(THR) * FR + uy * V * fa + 900 * fa * fa, r: THR - Math.PI / 2 + fa * 14 }); }
+      // v21 (user: «the animation at ~171 is broken»): he used to pop from inside the drum to OUTSIDE the rim (FR) with a flipped anchor at the
+      // hand-off; now the flight starts exactly where the carry left his body centre, at the same angle, and only then tumbles away
+      const HBH = 440 * PROP_ART.ham4Run0[1] / PROP_ART.ham4Run0[0], a0 = THR - Math.PI / 2 + .27, fx0 = cx + Math.cos(THR) * (R - 24) + Math.sin(a0) * HBH * .6, fy0 = cy + Math.sin(THR) * (R - 24) - Math.cos(a0) * HBH * .6;   // .6 = half his height + the feet-circle lift
+      hamster(THR, s, 2.6, n, 0, 1, { x: fx0 + ux * V * fa, y: fy0 + uy * V * fa + 900 * fa * fa, r: a0 + fa * 14 }); }
     // on the blur: sparks off the rim and tokens flung out
     if (blur > 0) {
       for (let q = 0; q < 10; q++) { const a0 = hash(q) * TAU, age = frac(s * 1.6 + hash(q + 3)), th2 = a0 + ang, r = R + age * 300;
