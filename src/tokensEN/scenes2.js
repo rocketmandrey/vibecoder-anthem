@@ -373,7 +373,7 @@
   const BB = [560, 190, 740, 420];                                           // the blackboard
   const HM = { a: [680, 720], b: [1240, 720] };                              // the hammock hooks (the park trees)
   function thesis(t) {
-    if (t >= TH.nobody) return park(t);
+    if (t >= TH.nobody && !window.R34) return park(t);   // R34: «No one's working» is the beggar (v8b); the retimed classroom tail must not flash the park
     back('#2A2F2A');
     paint(rectPts(-400, -600, 2720, 1660), { wash: '#B9CDB0', fill: '#9DB594', fillOp: 60, tex: .5, ink: null });             // classroom wall
     paint(rectPts(-400, 1060, 2720, 600), { wash: '#8A5E3C', fill: '#6A4430', fillOp: 70, tex: .6, ink: INK, sw: 1 });         // wooden floor
@@ -439,7 +439,7 @@
     }
   }
   scene('e26_thesis', 157.46, 162.86, thesis, [
-    [157.46, 900, 640, 1040], [TH.nobody - .01, 900, 650, 1020, 1], [TH.nobody, 960, 640, 1000], [TH.you, 960, 660, 960, 1], [162.859, 960, 720, 880, 1],
+    [157.46, 900, 640, 1040], [TH.nobody - .01, 900, 650, 1020, 1], ...(window.R34 ? [[162.859, 900, 652, 1016, 1]] : [[TH.nobody, 960, 640, 1000], [TH.you, 960, 660, 960, 1], [162.859, 960, 720, 880, 1]]),
   ], [[TH.you + .35, 12]]);
 
   // ======== E30 NEW (183.82–189.06) «REVENUE? LATER! PROFIT? HOW?! A-G-I? SOON! CAPEX? NOW!» ========
