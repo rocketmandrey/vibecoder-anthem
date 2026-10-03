@@ -182,7 +182,7 @@
   //   a — the samsara band round the wheel is cut into 16 compartments; each item pops into the next one clockwise, the wheel fills up
   //   b — a vending / sorting rack beside the wheel, a column per kind (GPU, token, agent, task): items drop down a chute into their column
   //   c — a periodic-table board over the wheel, 16 tiles: each item rides up a feed tube from the wheel and lights its tile, in sung order
-  const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();
+  const WV = ((window.BTT_VAR || {}).wheel || 'a').toLowerCase();          // the user picked a (final)
   const RG = { x: { a: 920, b: 610, c: 720 }[WV] ?? 920, y: { a: 760, b: 980, c: 1160 }[WV] ?? 760, R: 290, words: wv1.map(O2N), ix: [0, 1, 1, 2, 2, 3, 3, 1], eco: O2N(enWord('the', 148.56)), work: O2N(enWord('working', 149.60)), a: O2N(137.0) };
   const FC = [1250, 1180, 320, 470], NB = 12, FLY = 1800, RS = 540;          // flipchart x, y, w, h; bars on it; floor y; samsara radius
   const RATE = [.15, .25, .35, .45, .58, .72, .9, 1.15, 2.2, 7];         // wheel rev/s before the first word, after each word, after WORKING
@@ -382,6 +382,117 @@
       }
     });
   }
+  // ---- v17 the chart + staging (user: «wheel A is great; now the flipchart and the timeline, 3 versions»): --var=chart:a|b|c, default a
+  //   a — the flipchart grows a bar per FILLED CELL (a spark flies from the cell to its bar, the bar takes the cell's colour); on «WORKING»
+  //       the trend line rockets off the top of the board
+  //   b — the board becomes a TIMELINE strip under the wheel: quarters tick by on every beat, each filled cell stacks a bar at «now» that
+  //       then scrolls away into the past; the CEO points along it; on «WORKING» the timeline whips forward and the newest bar shoots up
+  //   c — a big LED stock ticker: the wheel's belt winds a rope that literally hauls the graph up, the CEO pumps a lever on every word,
+  //       item icons scroll in the ticker row; on «WORKING» the needle bursts through the top and the whole board flashes
+  const CV = ((window.BTT_VAR || {}).chart || 'a').toLowerCase();
+  const CELLW = CELLS.map(c => c[0]), cellPos = (j, ang) => { const a = ang * .06 - Math.PI / 2 + (j + .5) * TAU / 16; return [RG.x + Math.cos(a) * RS, RG.y + Math.sin(a) * RS]; };
+  const BT = EN_BEATS.map(O2N).filter(b => b > RG.a - 1 && b < RG.work + 3);
+  const belt = (cx, cy, P2, ang, pr = 30) => { const dx = P2[0] - cx, dy = P2[1] - cy, L = Math.hypot(dx, dy), nx = -dy / L * pr, ny = dx / L * pr;
+    for (const k of [-1, 1]) inkLine([[cx + k * nx, cy + k * ny], [P2[0] + k * nx, P2[1] + k * ny]], 3, '#2A2A2A', 'ink', 0);
+    paint(gearPts(P2[0], P2[1], pr + 4, 8, -ang * 2.5, 9), { wash: TK.yellow, ink: INK, sw: 1.2 }); };
+  const ceo = (x, s, wa, o = {}) => ceoClawd(x, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2), ...o });
+  const spark = (from, to, u, col) => { if (u <= 0 || u >= 1) return; const x = lerp(from[0], to[0], u), y = lerp(from[1], to[1], u) - Math.sin(u * Math.PI) * 120;
+    glowAt(x, y, 50, col, 200); paint(ellPts(x, y, 9, 9, 10), { wash: '#FFF6D0', ink: null }); };
+  // a: 16 bars, one per filled cell, in the cell's colour
+  function chartA(s, ang, wk, wa) {
+    const [X, Y, Wd, Hd] = FC, a = wa - .06, popped = a >= 0, base = Y + Hd - 40, BW = 15, BS = 17.2, H = k => 22 * Math.pow(1.2, k), FLT = .25;
+    belt(RG.x, RG.y, [X - 34, Y + 300], ang);
+    paint(rrPts(X - 84, Y + 328, 100, 60, 8), { wash: A2.gunmetal, ink: INK, sw: 1.2 });
+    const jolt = Math.max(0, ...CELLW.map(w => { const d = s - w - FLT; return d > 0 && d < .6 ? Math.exp(-d * 7) * Math.sin(d * 40) : 0; }));
+    inkLine([[X + 70, Y + Hd], [X + 10, FLY + 4]], 9, '#6A4A30', 'ink', 0); inkLine([[X + Wd - 70, Y + Hd], [X + Wd - 10, FLY + 4]], 9, '#6A4A30', 'ink', 0);
+    push(); translate(X + Wd / 2, Y + Hd); rotate(.035 * jolt); translate(-(X + Wd / 2), -(Y + Hd) - 10 * Math.abs(jolt));
+    paint(rrPts(X - 14, Y - 14, Wd + 28, Hd + 28, 10), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
+    paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FBF8F1', ink: null });
+    paint(rectPts(X, Y, Wd, 64), { wash: '#2FBF71', ink: null });
+    letter('MORE TOKENS', X + Wd / 2, Y + 34, 40, '#FBF8F1', { ink: false });
+    inkLine([[X + 22, Y + 90], [X + 22, base], [X + Wd - 10, base]], 2.4, INK, 'ink', 0);
+    const tops = [], pump = 1 + .04 * Math.sin(ang) + .06 * wk;
+    CELLS.forEach(([w, ty], k) => { const age = s - w - FLT; if (age < 0) return;
+      const x = X + 30 + k * BS, hh = H(k) * backOut(clamp(age / .3)) * pump; tops.push([x + BW / 2, base - hh - 10]);
+      if (age < .4) sparks(x + BW / 2, base - hh, age, k + 40, 8, 120);
+      paint(rectPts(x, base - hh, BW, hh, 1), { wash: TYC[ty], fill: mixCol(TYC[ty], INK, .3), fillOp: 60, tex: .4, ink: INK, sw: .8 }); });
+    if (tops.length > 1) inkLine(tops, 4, '#E0302A', 'ink', 0);
+    if (tops.length && !popped) { const [tx, ty] = tops[tops.length - 1]; paint([[tx - 14, ty + 4], [tx + 16, ty - 16], [tx + 6, ty + 14]], { wash: '#E0302A', ink: INK, sw: .8 }); }
+    pop();
+    CELLS.forEach(([w], k) => spark(cellPos(k, ang), [X + 30 + k * BS + BW / 2, base - 40], (s - w) / FLT, TYC[CELLS[k][1]]));   // cell → bar
+    if (popped && tops.length) {                                                          // the trend line rockets off the top
+      const [tx, ty] = tops[tops.length - 1], ry = ty - 900 * a - 2600 * a * a, rx = tx + 120 * a;
+      inkLine([[tx, ty], [lerp(tx, rx, .5), lerp(ty, ry, .5) + 30], [rx, ry]], 6, '#E0302A', 'ink', .4);
+      push(); translate(rx, ry); rotate(-.6 - .2 * a); paint([[-22, 18], [0, -34], [22, 18], [0, 8]], { wash: '#E0302A', ink: INK, sw: 1.2 }); pop();
+      for (let q = 0; q < 6; q++) { const u = q / 6, px = lerp(tx, rx, u) + Math.sin(q * 3 + s * 9) * 12, py = lerp(ty, ry, u) + 20;
+        paint(ellPts(px, py, 14 + 20 * u, 12 + 16 * u, 10), { fill: '#B8B2A8', fillOp: 140 * (1 - u * .6), ink: null }); }
+      if (a < .35) paint(starPts(tx, ty, 120 * a / .35 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .35), ink: INK, sw: 1.2 });
+    }
+    ceo(1160, s, wa);
+  }
+  // b: the timeline strip under the wheel
+  const TLY = 1380, TLH = 360, TLX0 = 230, TLX1 = 1490, NOW = 1310, STEP = 36;
+  const scrollOf = s => { let n = 0; for (const b of BT) { if (b > s) break; n += easeOut(clamp((s - b) / .16)); } return n * STEP; };
+  function chartB(s, ang, wk, wa) {
+    const a = wa - .06, whip = a > 0 ? 2600 * a * a : 0, sc = scrollOf(s) + whip, base = TLY + TLH - 34;
+    belt(RG.x, RG.y, [NOW, TLY - 30], ang);
+    paint(rrPts(TLX0 - 16, TLY - 16, TLX1 - TLX0 + 32, TLH + 32, 14), { wash: '#4A4F5A', ink: INK, sw: 1.4 });
+    paint(rectPts(TLX0, TLY, TLX1 - TLX0, TLH, 1), { wash: '#FBF8F1', ink: null });
+    paint(rectPts(TLX0, TLY, TLX1 - TLX0, 44), { wash: '#2FBF71', ink: null });
+    letter('MORE TOKENS', (TLX0 + TLX1) / 2, TLY + 24, 30, '#FBF8F1', { ink: false });
+    const off = ((sc % STEP) + STEP) % STEP;
+    for (let x = NOW + STEP * 6 - off; x > TLX0; x -= STEP) { if (x > TLX1 - 6) continue;
+      const qi = Math.round((x + sc - NOW) / STEP), quarter = ((qi % 4) + 4) % 4 === 0;
+      inkLine([[x, base], [x, base + (quarter ? 22 : 10)]], quarter ? 3 : 1.6, INK, 'inkfine', 0);
+      if (quarter) { paint(rectPts(x - 13, base + 4 - 70, 26, 24, 1), { wash: '#FFFFFF', ink: INK, sw: .7 }); paint(rectPts(x - 13, base + 4 - 70, 26, 7), { wash: '#E0302A', ink: null }); } }   // a calendar page per quarter
+    inkLine([[TLX0 + 10, base], [TLX1 - 10, base]], 2.6, INK, 'ink', 0);
+    const tops = [];
+    CELLS.forEach(([w, ty], k) => { const age = s - w; if (age < 0) return;
+      const x = NOW - (sc - scrollOf(w)), hh = Math.min(TLH - 70, 26 * Math.pow(1.17, k)) * backOut(clamp(age / .3)) * (1 + .06 * wk);
+      if (x < TLX0 + 14) return;
+      const up = k === CELLS.length - 1 && a > 0 ? 900 * a + 1500 * a * a : 0;
+      tops.push([x, base - hh - 8 - up]);
+      paint(rectPts(x - 15, base - hh - up, 30, hh, 1), { wash: TYC[ty], fill: mixCol(TYC[ty], INK, .3), fillOp: 60, tex: .4, ink: INK, sw: .8 });
+      if (age < .4) sparks(x, base - hh, age, k + 40, 8, 120); });
+    const line = a > 0 ? tops.slice(0, -1) : tops; if (line.length > 1) inkLine(line, 3.4, '#E0302A', 'ink', 0);
+    inkLine([[NOW, TLY + 48], [NOW, base + 26]], 4, TK.yellow, 'ink', 0);                         // «now»
+    paint([[NOW - 14, TLY + 48], [NOW + 14, TLY + 48], [NOW, TLY + 66]], { wash: TK.yellow, ink: INK, sw: .8 });
+    CELLS.forEach(([w], k) => spark(cellPos(k, ang), [NOW, base - 40], (s - w + .25) / .25, TYC[CELLS[k][1]]));   // the cell's spark lands on «now» on the word
+    ceo(1590, s, wa, { aR: wa >= 0 ? 1.8 : 1.3 });
+  }
+  // c: the LED ticker, hauled up by the belt
+  const TK2 = { x: 250, y: 1360, w: 1160, h: 380 };
+  function chartC(s, ang, wk, wa, rate) {
+    const { x, y, w, h } = TK2, a = wa - .06, n = CELLW.filter(q => s >= q).length, lvl = n / CELLS.length, P2 = [x + w - 120, y - 40];
+    belt(RG.x, RG.y, P2, ang);
+    paint(rrPts(x - 20, y - 20, w + 40, h + 40, 16), { wash: '#3A3F48', ink: INK, sw: 1.6 });
+    paint(rectPts(x, y, w, h, 1), { wash: '#0B0D10', ink: null });
+    for (let gx = x + 14; gx < x + w; gx += 28) for (let gy = y + 14; gy < y + h - 70; gy += 28) paint(ellPts(gx, gy, 3, 3, 6), { wash: '#1E2A22', ink: null });   // the dot matrix
+    const flashAll = a > 0 ? Math.max(0, 1 - a * 1.5) : 0;
+    if (flashAll > 0) paint(rectPts(x, y, w, h - 70, 1), { wash: TK.yellow, washOp: 140 * flashAll, ink: null });
+    // the graph: one LED point per filled cell, the level hauled up by the rope; the head bursts up on «WORKING»
+    const pts = [], gh = h - 110;
+    CELLS.forEach(([q], k) => { if (s < q) return; const px = x + 40 + k * (w - 160) / 15, v = Math.pow((k + 1) / 16, 1.7) * backOut(clamp((s - q) / .3)); pts.push([px, y + gh - v * (gh - 30)]); });
+    if (pts.length > 1) for (let k = 1; k < pts.length; k++) { const [x0, y0] = pts[k - 1], [x1, y1] = pts[k];
+      for (let u = 0; u <= 1; u += .12) paint(ellPts(lerp(x0, x1, u), lerp(y0, y1, u), 7, 7, 8), { wash: '#3BFF7A', ink: null }); }
+    let head = pts[pts.length - 1];
+    if (head && a > 0) head = [head[0] + 60 * a, head[1] - 1200 * a - 2000 * a * a];
+    if (head) { glowAt(head[0], head[1], 70, '#3BFF7A', 200); paint([[head[0] - 18, head[1] + 10], [head[0], head[1] - 22], [head[0] + 18, head[1] + 10]], { wash: '#3BFF7A', ink: INK, sw: .8 });
+      inkLine([[P2[0], P2[1]], [head[0], head[1] - 24]], 2.4, '#C9A24A', 'ink', 0); }               // the rope from the belt pulley
+    // the ticker row: item icons scrolling left, speed = the wheel
+    paint(rectPts(x, y + h - 70, w, 70, 1), { wash: '#15181D', ink: INK, sw: 1 });
+    const off = (ang * 40) % 150;
+    for (let k = 0; k < 9; k++) { const ix = x + w - 40 - ((k * 150 + off) % (w + 60)); if (ix < x + 30 || ix > x + w - 30) continue;
+      const ty = [0, 1, 2, 3, 1, 1, 2, 3, 1][k]; cellItem(ty, ix, y + h - 38, 1.3, s);
+      paint([[ix + 34, y + h - 30], [ix + 44, y + h - 48], [ix + 54, y + h - 30]], { wash: '#3BFF7A', ink: null }); }
+    // the lever + the CEO pumping it on every word
+    const lk = kick(s, CELLW, .18), LX = x + w + 110, LY = FLY - 10, la = -.9 + 1.1 * lk + (a > 0 ? .4 : 0);
+    paint(rrPts(LX - 40, LY - 60, 80, 60, 8), { wash: A2.gunmetal, ink: INK, sw: 1.2 });
+    inkLine([[LX, LY - 50], [LX + Math.cos(la - Math.PI / 2) * 230, LY - 50 + Math.sin(la - Math.PI / 2) * 230]], 10, A2.steel, 'ink', 0);
+    paint(ellPts(LX + Math.cos(la - Math.PI / 2) * 230, LY - 50 + Math.sin(la - Math.PI / 2) * 230, 22, 22, 12), { wash: '#E0302A', ink: INK, sw: 1 });
+    ceo(LX + 120, s, wa, { aR: 1.4 + .8 * lk, aL: 1.4 + .8 * lk, dy: -1.5 * lk });
+    paint([[x + 30, y + 30], [x + 60, y - 4 - 10 * wk], [x + 90, y + 30]], { wash: '#3BFF7A', ink: INK, sw: .8 });   // the ▲
+  }
   function ringScene(t) {
     const s = O2N(t);
     back(A2.gunDk);
@@ -409,18 +520,7 @@
       if (blur > .6 && k % 3) continue;
       inkLine([[cx + Math.cos(a) * (R - 24), cy + Math.sin(a) * (R - 24)], [cx + Math.cos(a) * (R + 10), cy + Math.sin(a) * (R + 10)]], 4, k % 9 ? A2.steelLt : TK.yellow, 'ink', 0); }
     if (blur > 0) for (let k = 0; k < 5; k++) paint(ellPts(cx, cy, R - 20 + k * 10, R - 20 + k * 10, 48), { ink: [TK.yellow, TK.orange, TK.ember, TK.yellowLt, TK.orange][k], sw: 3 * blur });
-    // the drive belt: axle pulley → the dynamo under the flipchart; whatever was just sung rides it to the board
-    const P2 = [FC[0] - 34, FC[1] + 300], pr = 30, dx = P2[0] - cx, dy = P2[1] - cy, L = Math.hypot(dx, dy), nx = -dy / L * pr, ny = dx / L * pr;
-    for (const k of [-1, 1]) inkLine([[cx + k * nx, cy + k * ny], [P2[0] + k * nx, P2[1] + k * ny]], 3, '#2A2A2A', 'ink', 0);
-    paint(gearPts(P2[0], P2[1], pr + 4, 8, -ang * 2.5, 9), { wash: TK.yellow, ink: INK, sw: 1.2 });
-    paint(rrPts(P2[0] - 50, P2[1] + 28, 100, 60, 8), { wash: A2.gunmetal, ink: INK, sw: 1.2 });
-    inkLine([[P2[0] + 40, P2[1] + 70], [FC[0] + 30, FC[1] + FC[3] + 4]], 3, TK.ember, 'ink', 0);   // cable into the chart
-    const typ = n ? RG.ix[n - 1] : 0;
-    for (let k = 0; k < 4; k++) { const u = frac(ang * .05 + k / 4); if (u < .18 || u > .9) continue;
-      itemOf(typ, cx + dx * u - nx * 1.6, cy + dy * u - ny * 1.6, s, ang * .3 + k); }
-    flipchart(s, ang / TAU, wk);
-    // the CEO under the chart, pointer up at the bars
-    ceoClawd(1160, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2) });
+    if (CV === 'b') chartB(s, ang, wk, wa); else if (CV === 'c') chartC(s, ang, wk, wa, rate); else chartA(s, ang, wk, wa);
     // the fling: ballistic from the release point, tangent to the rim, tumbling
     if (fa >= 0) { const V = 2400, ux = -Math.sin(THR), uy = Math.cos(THR);
       hamster(THR, s, 2.6, n, 0, 1, { x: cx + Math.cos(THR) * FR + ux * V * fa, y: cy + Math.sin(THR) * FR + uy * V * fa + 900 * fa * fa, r: THR - Math.PI / 2 + fa * 14 }); }
