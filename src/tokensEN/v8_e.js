@@ -6,32 +6,40 @@
 (() => {
   const idx = (shots, x) => { let i = 0; while (i + 1 < shots.length && x >= shots[i + 1][0]) i++; return i; };
   const NATIVE = /^en_(v8|e23_loop|e31_bench|hold)/;                       // already drawn in real time
-  // the shot under v1 time x: { key, st(x) → its own time, draw(tShot) }
+  // the CHAPTER under v1 time x, in its own time domain: { key, st(x) → own time, at(ts) → shot index, draw(ts, lock) }. draw picks the shot at
+  // ts itself, but never one past `lock`: past the locked shot's end it plays that shot on (its own tail) instead of cutting early
   function shotAt(x) {
-    let ch = CH.find(c => c.real && !c.hold && x >= c.start && x < c.end);
-    if (ch) {
-      if (NATIVE.test(ch.name)) return null;
-      const i = idx(ch.shots, x), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end, v3 = !/^en_/.test(ch.name);
-      return { key: ch.name + i, st: v3 ? EN2V3 : y => y, endS: v3 ? EN2V3(end) : end, draw: ts => { const t = v3 ? V32EN(ts) : ts; fn(t, t - t0, end - t0); } };
-    }
-    const x2 = TIME_WARP(x); ch = CH.find(c => !c.real && x2 >= c.start && x2 < c.end); if (!ch) return null;
-    const i = idx(ch.shots, x2), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end;
-    return { key: ch.name + i, st: TIME_WARP, endS: end, draw: t2 => { window.REAL_CH = false; fn(t2, t2 - t0, end - t0); } };
+    let ch = CH.find(c => c.real && !c.hold && x >= c.start && x < c.end), dom, pre = () => {};
+    if (ch) { if (NATIVE.test(ch.name)) return null; const v3 = !/^en_/.test(ch.name); dom = v3 ? [EN2V3, V32EN] : [y => y, y => y]; }
+    else { const x2 = TIME_WARP(x); ch = CH.find(c => !c.real && x2 >= c.start && x2 < c.end); if (!ch) return null; dom = [TIME_WARP, y => y]; pre = () => { window.REAL_CH = false; }; }
+    const at = ts => idx(ch.shots, dom[1](ts));
+    return { key: ch.name, st: dom[0], at, startOf: i => dom[0](ch.shots[i][0]),
+      draw: (ts, lock) => { const t = dom[1](ts), i = Math.min(at(ts), lock), [t0, fn] = ch.shots[i], end = i + 1 < ch.shots.length ? ch.shots[i + 1][0] : ch.end; pre(); fn(t, t - t0, end - t0); } };
   }
-  function seg(ra, rb) {
-    const a = N2O(ra), b = N2O(rb), name = 'en_hold_' + ra.toFixed(3); let S = null;
+  // v14 (user: «the slow-motion fit reads as lag»): no rate below LO, no holds. A segment starts where the previous one ended (never a
+  // jump back), aims at its cue and plays at clamp(rate, LO, HI): a too-short old take lands its cue a little late and the next segments
+  // catch up; a segment never cuts to an old shot past the one its cue sits in (it plays that shot's own tail on instead), and a
+  // segment whose cue opens a new shot starts that shot on the cue.
+  const LO = .9, HI = 2.2;
+  const LOCK = { '98.42': 2, '191.03': 4 };                                            // «One more million»: the factory plays on (the counter shot is empty in 3:4); the mayo tunnel spins in
+  let prevSeg = null;
+  function seg(ra, rb, last) {
+    const a = N2O(ra), b = N2O(rb), name = 'en_hold_' + ra.toFixed(3), prev = prevSeg && Math.abs(prevSeg.rb - ra) < 1e-6 ? prevSeg : null; let S = null;
+    const self = { rb, get: () => (S === null && init(), S) }; prevSeg = self;
+    const init = () => {
+      const sh = shotAt(a + 1e-4), nx = shotAt(b + 1e-4);                   // after the segment: same chapter → a cue inside it; another → a cut
+      if (!sh) { S = 0; return; }
+      const p = prev && prev.get(), cue = sh.st(a + 1e-4), cont = p && p.sh.key === sh.key && p.lock === sh.at(cue);
+      const s0 = cont ? p.s0 + p.rate * p.D : cue, tgt = sh.st(b - 1e-4), D = rb - ra, r = (tgt - s0) / D, same = nx && nx.key === sh.key;
+      let lock = sh.at(tgt); if (last) lock = sh.at(cue); else if (lock > sh.at(cue) && tgt - sh.startOf(lock) < .15) lock--;   // an old cut right at the cue belongs to the next segment; a span's last one stays in its shot
+      S = { sh, rate: clamp(same ? r : Math.max(r, 1), LO, HI), s0, D, lock: LOCK[ra.toFixed(2)] ?? lock, r, same, nx: nx && nx.key, miss: s0 - cue };
+    };
+    (window.V8E_SEG ||= []).push({ ra, rb, get: self.get });
     chapter(name, a, b, [[a, t => {
-      if (S === null) {
-        const sh = shotAt(a + 1e-4), nx = shotAt(b + 1e-4);                   // after the segment: same shot → a cue inside it; another → a cut
-        if (!sh) S = 0; else {
-          const s0 = sh.st(a + 1e-4), dOld = sh.st(b - 1e-4) - s0, D = rb - ra, r = dOld / D, same = nx && nx.key === sh.key;
-          const room = sh.endS - s0;                                            // a cut follows: up to 1x, as long as the old shot has frames left
-          S = { sh, rate: clamp(same || r > 1 ? r : Math.max(r, Math.min(1, room / D)), .4, 2.5), s0, cap: (same ? dOld : room) - 1e-3 };   // never past the next sync / the shot's own end (the next old shot leaked in)
-        }
-      }
+      if (S === null) init();
       const dt = O2N(t) - ra, T0 = T;
       if (!S) { const c = CH.find(c => c.real && !c.hold && t >= c.start && t < c.end); if (c) { const i = idx(c.shots, t); c.shots[i][1](t, t - c.shots[i][0], 0); } return; }
-      T = a + dt; try { S.sh.draw(S.s0 + Math.min(S.rate * dt, S.cap)); } finally { T = T0; }
+      T = a + dt; window.RNOW = ra + dt; try { S.sh.draw(S.s0 + S.rate * dt, S.lock); } finally { T = T0; }
     }]], { real: true });
     CH.find(c => c.name === name).hold = true;
   }
@@ -44,7 +52,7 @@
     for (const x of TABR) if (x > ra && x < rb) add(x);
     if (en) for (const x of WORDR) if (x > ra && x < rb) add(x);
     P.sort((p, q) => p - q);
-    for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1]);
+    for (let k = 0; k + 1 < P.length; k++) seg(P[k], P[k + 1], k + 2 === P.length);
   }
   const L = v1 => O2N(v1), OUTCU = 247.2;                                  // OUTCU: the a10 cut to the close-up
   span(22.40, 29.00);                 // verse 1 (a02 friday)
