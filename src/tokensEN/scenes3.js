@@ -250,8 +250,8 @@
     paint(rectPts(620, 990, 680, 80, 1), { wash: '#8A6446', fill: '#5E4230', fillOp: 70, tex: .5, ink: INK, sw: 1.2 });       // the long desk
     for (const x of DESK) { paint(rectPts(x - 36, 948, 72, 44, 1), { wash: '#3A3F48', ink: INK, sw: .8 }); token(x, 970, 10, { spin: .02 }); }
     // the CEO (right): pulls the screen, clicks, then the laser pointer
-    const cx = 1225, pointing = t > V2.low;
-    ceoClawd(cx, 1058 - bob * 10, 16, { noShadow: true, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: R < KP.slam ? 2.2 - bob * .6 : pointing ? 1.2 : .5 + kick(R, KP.bars, .15) * .9, aR: .4 });
+    const R34 = window.R34, cx = R34 ? 1370 : 1225, pointing = t > V2.low;              // v16 reels: off the desk end, feet on the floor (he hung over the desk)
+    ceoClawd(cx, (R34 ? 1084 : 1058) - bob * 10, 16, { noShadow: !R34, flip: true, eyes: pointing ? 'narrow' : 'happy', mouth: pointing ? 'flat' : 'grin', aL: R < KP.slam ? 2.2 - bob * .6 : pointing ? 1.2 : .5 + kick(R, KP.bars, .15) * .9, aR: .4 });
     if (pointing) {
       const [bx, by] = [SCR[0] + 90 + LOWI * 150 + 45, SCR[1] + SCR[3] - 90], k = eased(t, V2.laser, V2.laser + .5);
       const [dx, dy] = [lerp(bx, DESK[LOWI], k), lerp(by, 900, k)];
