@@ -75,7 +75,9 @@ function clawd(x, y, u, o = {}) {
   }
   if (o.draw) o.draw(u, sw);
   pop();
-  if (o.emote) emote(o.emote, x + (o.flip ? -1 : 1) * 5.4 * u, y + dy - 8.6 * u, u * .9, o.emoteK ?? 1);
+  // the emote sits by the head in his ROTATED frame (it used to ignore o.rot and float off a tilted/leaning Clawd)
+  if (o.emote) { const lx = (o.flip ? -1 : 1) * 5.4 * u, ly = -8.6 * u, r = o.rot || 0;
+    emote(o.emote, x + lx * Math.cos(r) - ly * Math.sin(r), y + dy + lx * Math.sin(r) + ly * Math.cos(r), u * .9, o.emoteK ?? 1); }
 }
 
 function mouth(u, m, sw) {
