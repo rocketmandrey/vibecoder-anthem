@@ -175,23 +175,25 @@
     for (const k of SEG7[d]) { const [x0, y0, x1, y1] = P[k], hz = y0 === y1;
       paint(hz ? rrPts(x + x0 * w + th * .6, y + y0 * h - th / 2, w - th * 1.2, th, th / 2) : rrPts(x + x0 * w - th / 2, y + y0 * h + th * .6, th, h / 2 - th * 1.2, th / 2), { wash: col, ink: null }); }
   }
-  function ledClock(cx, cy, hh, mm, t, pulse) {
-    const H = 110, W2 = 470, x0 = cx - W2 / 2, y0 = cy - 95;
-    paint(rrPts(x0, y0, W2, 190, 22), { wash: '#0A0B10', fill: '#1E2029', fillOp: 70, tex: .4, ink: PAL.ink, sw: 1.4 });
-    glowAt(cx, cy, 300, '#FF3B3B', 40 + 70 * pulse);
+  function ledClock(cx, by, hh, mm, t, pulse, k = .42) {                   // v16: a small alarm clock standing on the desk; (cx, by) = its foot line
+    push(); translate(cx, by); scale(k); translate(0, -110);
+    const H = 110, W2 = 470, x0 = -W2 / 2, y0 = -95;
+    for (const fx of [-170, 170]) paint(rrPts(fx - 22, 90, 44, 26, 8), { wash: '#2A2D36', ink: PAL.ink, sw: 1.2 });   // its feet
+    paint(rrPts(x0, y0, W2, 190, 30), { wash: '#0A0B10', fill: '#1E2029', fillOp: 70, tex: .4, ink: PAL.ink, sw: 2.4 });
+    glowAt(0, 0, 300, '#FF3B3B', 50 + 70 * pulse);
     const col = '#FF4A40', dg = [Math.floor(hh / 10), hh % 10, Math.floor(mm / 10), mm % 10], xs = [x0 + 40, x0 + 115, x0 + 225, x0 + 300];
-    dg.forEach((d, i) => digit7(xs[i], cy - H / 2 - 10, H, d, col));
-    if (Math.floor(t * 2) % 2 === 0) for (const dy of [-26, 16]) paint(ellPts(x0 + 198, cy - 10 + dy, 7, 7, 10), { wash: col, ink: null });   // the blinking colon
-    letter('PM', x0 + 412, cy - 30, 40, col, { font: ruFont(40), ink: false });
-    letter('SUN', x0 + 412, cy + 22, 34, '#C8504A', { font: ruFont(34), ink: false });
+    dg.forEach((d, i) => digit7(xs[i], -H / 2 - 10, H, d, col));
+    if (Math.floor(t * 2) % 2 === 0) for (const dy of [-26, 16]) paint(ellPts(x0 + 198, -10 + dy, 7, 7, 10), { wash: col, ink: null });   // the blinking colon
+    pop();
+    letter('PM', cx + (x0 + 412) * k, by - (110 + 30) * k, 40 * k, col, { font: ruFont(40 * k), ink: false });
   }
   function sRoom(t) {                                                         // 197.9 «Воскресенье. 23:58»
     const z = kf(t, [[197.9, 1], [205.65, 1.14]]), cx = kf(t, [[197.9, 960], [205.65, 1040]]), cy = kf(t, [[197.9, 520], [205.65, 470]]);
     const fl = hitK(t, window.TIME_WARP ? hitsIn(197.9, 205.65, 10) : [198.26, 199.94, 202.61, 203.28, 204.93], .12);   // v3: the track's own hits
     if (R) camBegin(960, kf(t, [[197.9, 540], [205.65, 560]]), kf(t, [[197.9, 1], [205.65, 1.05]]));      // R34: the whole re-laid room, a slow push
     else camBegin(cx, cy, z);
-    room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: R ? 0 : 1, lookY: R ? -1 : 0 }) });
-    if (R) ledClock(990, 250, 11, 58, t, hitK(t, [200.88, 203.24], .5));
+    room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: 1 }) });
+    if (R) sub('desk', () => ledClock(1165, 700, 11, 58, t, hitK(t, [200.88, 203.24], .5), .3));   // on the desk, in front of the laptop
     camEnd();
     glitchCut(t, 197.9);
   }
