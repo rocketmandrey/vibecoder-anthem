@@ -269,10 +269,8 @@
   function calmCU() {
     // RNOW: the true real clock (O2N of the hold's shifted T jumped at the 239.56 segment boundary — the jerk before «I'm at peace»)
     const s = window.RNOW ?? O2N(T), k = seg(s, 237.0, 241.96), eyes = s < 237.7 ? 'narrow' : 'closed', br = Math.sin(s * 2.2) * .12;
-    // v16: the last 0.7 s glide up onto sMidnight's opening framing (1255, -20, 2.5), so «Midnight.» lands without a cut
-    const g = ease(seg(s, 241.26, 241.96));
-    camBegin(lerp(880, 1255, g), lerp(850 - 10 * k, -20, g), lerp(lerp(1.85, 2.25, k), 2.5, g));
-    room(s, { grey: { games: 1, sites: 1, agents: 1 }, moonK: lerp(.3 + .6 * seg(s, 237.0, 239.5), .6, g), glow: lerp(.45, .5, g), clock: g > 0 ? 'ВС 23:59' : undefined,
+    camBegin(880, 850 - 10 * k, lerp(1.85, 2.25, k));
+    room(s, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .3 + .6 * seg(s, 237.0, 239.5), glow: .45,
       clawd: sitClawd(s, { eyes, lookX: 0, mouth: s > 239.56 ? 'smile' : 'flat', blush: s > 239.9, aL: .15, aR: .3, dy: br, sq: -br * .2 }) });
     camEnd();
   }
