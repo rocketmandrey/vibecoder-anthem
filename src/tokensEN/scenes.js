@@ -160,9 +160,12 @@
   const S2 = { fall: 48.94, land: 49.30, freeze: [49.30, 49.95] };
   const BURNS = [[45.36, 'A'], [46.68, 'B'], [50.64, 'A'], [51.94, 'B']];            // «Burn» / «burn»: which gang throws
   const CHOMPS2 = EN_GRID.filter(g => g >= 45.4 && g < 55.7 && !(g >= S2.fall && g < S2.freeze[1]));
-  // drum hits (real s) in the shredder take: beats with a strong kick (35–100 Hz) or snare (1.5–5 kHz) onset in the mix, minus the «floor.» freeze
-  const DRUMS2 = [50.68, 51.68, 52.34, 52.68, 53.98, 54.32, 54.66, 54.98, 55.32, 55.64, 56.64, 57.62, 57.96, 58.62, 58.96, 59.28, 59.60, 59.92, 60.26, 60.60, 61.26, 61.60, 61.92]
-    .filter(r => !(r >= O2N(S2.fall) && r < O2N(S2.freeze[1])));
+  // drum hits (real s) in the shredder take, from the demucs drum stem (assets/tokensEN/drums.json): kicks ≥ .9 → a full burst,
+  // snares ≥ .9 (not on a kick) → a smaller one; minus the «floor.» freeze. [t, burst size]
+  const DRUMHITS = [[50.869, 1], [51.693, 1], [52.361, 1], [53.011, 1], [53.673, 1], [54.335, 1], [54.991, 1], [55.652, 1], [56.152, 1], [56.813, 1], [57.638, 1], [58.3, 1], [58.961, 1], [59.617, 1], [60.279, 1], [61.103, 1], [61.434, 1],
+    [52.674, .6], [53.336, .6], [53.998, .6], [54.654, .6], [55.316, .6], [55.978, .6], [56.471, .6], [56.639, .6], [57.957, .6], [58.619, .6], [59.937, .6], [60.598, .6], [61.26, .6]]
+    .filter(([r]) => !(r >= O2N(S2.fall) && r < O2N(S2.freeze[1]))).sort((p, q) => p[0] - q[0]);
+  const DRUMS2 = DRUMHITS.map(([r]) => r);
   const TRUCKS = [                                                          // [arrive, dump, leave, rear x at the hopper, u, side (+1 = right)]
     [51.3, 53.90, 54.55, 1245, 80, 1],                                      //   «million»: from the right
     [54.4, 55.20, 99, 675, 100, -1],                                         //   «then one more»: a bigger one backs in from the left
@@ -205,15 +208,15 @@
       for (let x = x0 + 30; x < x1; x += 110) paint(rectPts(x, 338, 16, 560), { wash: A2.gunmetal, ink: INK, sw: .4 });
     }
     A03.shredder(ct, chomps, false);
-    if (rn != null) for (const c of DRUMS2) {                               // each drum hit: a burst of shredded token bits blown out of the hopper
+    if (rn != null) for (const [c, n] of DRUMHITS) {                               // each drum hit: a burst of shredded token bits blown out of the hopper
       const age = rn - c; if (age < 0 || age > .9) continue;
-      for (let j = 0; j < 22; j++) {
+      for (let j = 0; j < 22 * n; j++) {
         const h = hash(j + Math.floor(c * 100)), a = -Math.PI / 2 + (h - .5) * 3, v = 420 + hash(j * 7 + 3) * 420;
         const x = 960 + Math.cos(a) * v * age, y = 330 + Math.sin(a) * v * age + 1500 * age * age;
         if (y > 1000) continue;
         token(x, y, (16 + hash(j + 11) * 12) * (1 - .4 * age / .9), { spin: age * 9 + j, burn: age * 1.4 });
       }
-      sparks(960, 330, age, Math.floor(c * 10), 16, 260);
+      sparks(960, 330, age, Math.floor(c * 10), 16 * n, 260 * n);
     }
     // the trucks: back in, tip, coins pour in an arc into the hopper, drive off
     for (const [a, d, l, rx, u, side] of TRUCKS) {
