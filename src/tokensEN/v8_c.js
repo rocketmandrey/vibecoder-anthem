@@ -285,10 +285,10 @@
 
   // c (v13): the NEXT TOWN by its lake, a tall picture window left of the pulpit; the chalice's long straw runs out into the lake and
   // every sip on the break beats pulls a quarter of it (lvlC), the boats settle on the mud, a fish flops
-  // v16 water variants (render.mjs --var=water:a|b → window.BTT_VAR.water, default a). a: he just sips through a plain striped straw, a
+  // v16 water variants (render.mjs --var=water:a|b → window.BTT_VAR.water, default b). a: he just sips through a plain striped straw, a
   // little per sip; b: he doesn't drink at all, the lake drains by itself through a pipe into the data-center GPU under the pulpit.
   // In both the second «water» (137.24, «Why?») takes the rest, the lake is dry.
-  const WV = (new URLSearchParams(location.search).get('var_water') || (window.BTT_VAR || {}).water || 'a').toLowerCase();
+  const WV = (new URLSearchParams(location.search).get('var_water') || (window.BTT_VAR || {}).water || 'b').toLowerCase();   // the user picked b
   window.BTT_VAR = { ...(window.BTT_VAR || {}), water: WV };
   const lvlC = s => clamp(1 - (WV === 'b' ? .2 * ease(seg(s, C.water1, C.water1 + .5)) : 0) - GULPS.reduce((a, g) => a + (WV === 'b' ? .07 : .06) * ease(seg(s, g - .1, g + .25)), 0)
     - ease(seg(s, C.water2 - .1, C.water2 + .9)));
@@ -345,6 +345,23 @@
   }
   // b: the drain pipe from the lake's floor along the wall into the GPU under the pulpit; water blobs run through it while the level drops
   const PIPE = [[LK.cx + 30, 770], [760, 770], [760, 690], [880, 690]];
+  // b (v16b): mirrored on the right, the power cable from the city's pylon window into the same GPU; current pulses run along it from
+  // «electricity» on, a bright burst on every line that darkens the city's blocks (CSTEP) and a tick on the beats
+  const CABLE = PIPE.map(([x, y]) => [1920 - x, y]);
+  function powerCable(s) {
+    const r = 5;
+    for (let i = 0; i + 1 < CABLE.length; i++) { const [a, b] = [CABLE[i], CABLE[i + 1]], x0 = Math.min(a[0], b[0]) - r, y0 = Math.min(a[1], b[1]) - r;
+      paint(rectPts(x0, y0, Math.abs(b[0] - a[0]) + 2 * r, Math.abs(b[1] - a[1]) + 2 * r), { wash: '#4A4E5E', ink: INK, sw: .6 }); }
+    inkLine(CABLE.map(([x, y]) => [x, y - 2]), .7, '#8A90A4', 'inkfine', 0);                                              // the rubber's sheen
+    paint(rectPts(CABLE[0][0] - 9, CABLE[0][1] - 9, 18, 18), { wash: '#B8B0A0', ink: INK, sw: .6 });               // the junction box at the pylon's foot
+    if (s < C.elec) return;
+    const burst = kick(s, CSTEP.map(([t]) => t), .35), k = 1 + 1.0 * burst + .3 * kick(s, BT, .12);
+    const segs = CABLE.slice(1).map((p, i) => Math.hypot(p[0] - CABLE[i][0], p[1] - CABLE[i][1])), tot = segs.reduce((a, b) => a + b, 0);
+    for (let j = 0; j < 7; j++) { let d = frac(s * 1.3 + j / 7) * tot, i = 0; while (d > segs[i]) d -= segs[i++];
+      const a = CABLE[i], b = CABLE[i + 1], f = d / segs[i], [x, y] = [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
+      if (burst > .2) glowAt(x, y, 9 * k, '#FFF3A0', 90 * burst);
+      paint(ellPts(x, y, 4 * k, 4 * k, 8), { wash: '#FFF3A0', ink: null }); }
+  }
   function drainPipe(s, lvl) {
     const r = 7;                                                                 // crisp wash segments (a fat brush stroke read as a blob)
     for (let i = 0; i + 1 < PIPE.length; i++) { const [a, b] = [PIPE[i], PIPE[i + 1]], x0 = Math.min(a[0], b[0]) - r, y0 = Math.min(a[1], b[1]) - r;
@@ -552,7 +569,7 @@
     A06.pulpit(s, pulpitO);
     decks(s, backOut(seg(s, C.gpus + .05, C.gpus + .45)), djAge > .7 ? Math.sin(s * 14) * .8 : 0);
     if (dj && djAge < .35) paint(starPts(960 - 3.2 * 32, 700 - 6.8 * 32, 26 * (1 - djAge / .35) + 6, .2), { wash: '#E6FFE8', ink: null });
-    if (VAR === 'c') { if (WV === 'b') drainPipe(s, lvlC(s)); else lakeStraw(s, lvlC(s)); }
+    if (VAR === 'c') { if (WV === 'b') { drainPipe(s, lvlC(s)); powerCable(s); } else lakeStraw(s, lvlC(s)); }
     // ---- the choir: three angels each side ----
     const sing = inSpan(s, SING), singK = sing ? .7 + .3 * kick(s, BT, .3) : 0, whyK = seg(s, C.why, C.why + .25) * (1 - seg(s, 140.6, 141.2));
     ANG.forEach(([x, nn]) => {
