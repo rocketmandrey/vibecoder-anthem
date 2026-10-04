@@ -471,7 +471,7 @@
   // v24 the CEO acts, --var=ceo:a|b|c (unset = the old stand-and-click). User: «Клоди который внизу говорит — сделай чтобы двигался».
   //   a salesman: strides across the stage between the pitches, turns and points at the wheel / the board on every noun, bounces on the drums
   //   b hype man: a hand mic, a jump on every «More», bounces on the drums, a hard fist-pump run on «WORKING»
-  //   c ringmaster: a baton that circles WITH the wheel (so it winds up as the hamster speeds up), snaps on the drums, a leap on the launch
+  //   c ringmaster (d/e/f below): a baton that circles WITH the wheel (so it winds up as the hamster speeds up), snaps on the drums, a leap on the launch
   // Mouth: open while a sung word sounds (EN_WORDS → real). Hits: kick + snare onsets ≥ .6 from assets/tokensEN/drums.json (real s).
   const CEOV = ((window.BTT_VAR || {}).ceo || '').toLowerCase();
   const CHITS = [157.15, 158.48, 159.80, 161.12, 162.44, 162.78, 163.10, 163.44, 163.76, 164.09, 164.43, 164.76, 165.08, 165.42, 165.74, 166.07, 166.41, 166.74, 167.07, 167.40, 167.72, 168.39, 169.05, 169.38, 169.86, 172.36, 172.54, 172.62, 172.70, 173.04, 173.36, 173.85, 174.02, 174.35, 174.68];
@@ -504,6 +504,38 @@
         aR: up ? .9 : 1.05 + .15 * hit, aL: up ? (ph ? 2.9 : 1.6) : mj < -.2 ? 2.9 : .6 + 1.4 * hit,               // the free fist punches the air
         dy: up ? pump : mj - 1.3 * hit, sq: up || mj < -.05 ? -.04 : .14 * land, rot: up ? .06 * Math.sin(s * 18) : mj < -.2 ? -.07 : .05 * hit,
         eyes: up || mj < -.5 ? 'spark' : 'happy' });
+    }
+    if (['d', 'e', 'f'].includes(CEOV)) {
+    // v25 round 2 (user: a out, b good without the mic, no wand; bare hands or the clicker only), all u 25, at x 1200, facing the wheel:
+    //   d hype man, bare hands: a jump on every «More», fists pump on the drums (alternating), «WORKING» a two-arm hype jump then pumps
+    //   e clicker presenter: each bar on the board pops exactly on his click (bar time = cell word + .25), «WORKING» he tosses the clicker up and catches it
+    //   f coach: claps on the drums while the hamster is slow, then leans in hands on knees waving «faster»; «WORKING» a victory jump with a spin
+    const after = CHITS.filter(h => h > RG.work), ws = s - RG.work;
+    base.bare = true;
+    if (CEOV === 'd') {
+      const mj = hop(s, MORES, .42, 3.2), hi = Math.max(0, CHITS.findIndex(h => h > s) - 1), sd = hi % 2, big = up ? hop(s, [RG.work], .55, 5) : 0, pump = up && ws > .55 ? hop(s, after, .26, 2.4) : 0;
+      return ceoClawd(1200, FLY - 4, 25, { ...base, flip: true, mouth: cMouth(s, up ? 'O' : 'grin'), noClicker: true,
+        aL: up ? (ws < .55 ? 2.7 : 1.7 + 1.2 * hit) : mj < -.2 ? 2.8 : .5 + (sd ? 2.2 : .3) * hit,
+        aR: up ? (ws < .55 ? 2.7 : 1.7 + 1.2 * hit) : mj < -.2 ? 2.8 : .5 + (sd ? .3 : 2.2) * hit,
+        dy: up ? big + pump : mj - 1.3 * hit, sq: up || mj < -.05 ? -.04 : .14 * land, rot: mj < -.2 ? -.07 : .05 * hit * (sd ? 1 : -1),
+        eyes: up || mj < -.5 ? 'spark' : 'happy' });
+    }
+    if (CEOV === 'e') {
+      const BARS = CELLS.map(c => c[0] + .25), ck = kick(s, BARS, .14), tossK = up ? clamp(ws / .8) : 0, inAir = tossK > 0 && tossK < 1;
+      const jump = up ? (ws > .8 ? hop(s, [RG.work + .8, ...after.filter(h => h > RG.work + 1.3)], .4, 3.5) : 0) : -.7 * hit;
+      if (inAir) { const cx = 1060 + 40 * tossK, cy = 1640 - 4 * 420 * tossK * (1 - tossK);                // the clicker flies, spinning
+        push(); translate(cx, cy); rotate(ws * 14); paint(rrPts(-10, -22, 20, 44, 8), { wash: TK.sootLt, ink: PAL.ink, sw: 1 }); paint(ellPts(0, -11, 5, 5, 8), { wash: '#FF3A3A', ink: null }); pop(); }
+      return ceoClawd(1200 + 14 * Math.sin(s * Math.PI * 1.5), FLY - 4, 25, { ...base, flip: true, mouth: cMouth(s, up ? 'O' : 'smile'), noClicker: inAir,
+        click: up ? 0 : ck, aR: up ? (inAir ? 2.4 + .3 * Math.sin(ws * 9) : 2.6) : 1.0 + .7 * ck, aL: up ? 2.6 : .5 + .3 * hit,           // a jab toward the board on each click
+        dy: jump, sq: .12 * land, rot: up ? 0 : -.06 * ck + .03 * Math.sin(s * Math.PI * 1.5), eyes: up ? 'spark' : ck > .3 ? 'spark' : 'happy' });
+    }
+    // f: the coach
+    const r = rateOf(s), lean = up ? 0 : clamp((r - 1) / .3), clap = (1 - lean) * hit, wave = Math.sin(s * TAU * (1.2 + r * 1.4));
+    const vj = up ? hop(s, [RG.work], .7, 6) + (ws > .7 ? hop(s, after, .26, 2) : 0) : 0, spin = up ? clamp(ws / .7) : 0;
+    return ceoClawd(1200, FLY - 4, 25, { ...base, flip: true, noClicker: true, mouth: cMouth(s, up ? 'O' : lean > .5 ? 'grin' : 'smile'),
+      aL: up ? 2.7 : lerp(1.2 + 1.3 * clap, -.9, lean), aR: up ? 2.7 : lerp(1.2 + 1.3 * clap, 1.3 + .9 * wave, lean),   // clap overhead → one hand on the knee, the other waves on
+      dy: up ? vj : -1 * hit * (1 - lean) - .5 * hit * lean, sq: .12 * land + .1 * lean, rot: up ? 0 : -.22 * lean - .04 * hit * lean,
+      sx: up ? Math.cos(spin * TAU) : 1, eyes: up ? 'spark' : lean > .5 ? 'angry' : 'happy' });
     }
     // c: the ringmaster. The baton arm turns with the wheel (spinOf), plus a snap down on each drum hit; the other hand beckons «faster».
     const wph = spinOf(s), r = rateOf(s), leap = up ? hop(s, [RG.work + .06], .7, 7) + hop(s, CHITS.filter(h => h > RG.work + .8), .25, 2) : 0;

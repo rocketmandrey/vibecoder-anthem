@@ -316,8 +316,8 @@ function ceoClawd(x, y, u, o = {}) {
   };
   clawd(x, y, u, {
     mouth: 'smile', dk: '#3E5A8C', ...o,
-    armL: (uu, sw) => sleeve(uu, sw, o.armL),
-    armR: (uu, sw) => sleeve(uu, sw, o.armR || (o.noClicker ? null : clicker)),
+    armL: o.bare ? o.armL : (uu, sw) => sleeve(uu, sw, o.armL),                       // o.bare: rolled-up sleeves, the clay arms read on a dark stage
+    armR: o.bare ? o.armR || (o.noClicker ? null : clicker) : (uu, sw) => sleeve(uu, sw, o.armR || (o.noClicker ? null : clicker)),
     draw: (u, sw) => {
       // the turtleneck: lower body in black knit, a rolled collar with ribbing
       paint(rectPts(-5.08 * u, -3.55 * u, 10.16 * u, 1.62 * u, u * .03), { wash: TK.soot, fill: TK.sootLt, fillOp: 70, tex: .6, border: .5, ink: PAL.ink, sw: sw * .8 });
