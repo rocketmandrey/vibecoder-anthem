@@ -473,7 +473,7 @@
   //   b hype man: a hand mic, a jump on every «More», bounces on the drums, a hard fist-pump run on «WORKING»
   //   c ringmaster (d/e/f below): a baton that circles WITH the wheel (so it winds up as the hamster speeds up), snaps on the drums, a leap on the launch
   // Mouth: open while a sung word sounds (EN_WORDS → real). Hits: kick + snare onsets ≥ .6 from assets/tokensEN/drums.json (real s).
-  const CEOV = ((window.BTT_VAR || {}).ceo || '').toLowerCase();
+  const CEOV = ((window.BTT_VAR || {}).ceo || 'f1').toLowerCase();                  // v26: the user picked f (coach); ceo:stand = the old static one
   const CHITS = [157.15, 158.48, 159.80, 161.12, 162.44, 162.78, 163.10, 163.44, 163.76, 164.09, 164.43, 164.76, 165.08, 165.42, 165.74, 166.07, 166.41, 166.74, 167.07, 167.40, 167.72, 168.39, 169.05, 169.38, 169.86, 172.36, 172.54, 172.62, 172.70, 173.04, 173.36, 173.85, 174.02, 174.35, 174.68];
   const CSAY = EN_WORDS.map(([v], i) => [v, EN_WORDS[i + 1] ? EN_WORDS[i + 1][0] : v + .5]).filter(([v]) => v > 134.5 && v < 150.3).map(([v, n]) => [O2N(v), O2N(Math.min(n, v + .55))]);
   const cMouth = (s, rest) => { const w = CSAY.find(([a, b]) => s >= a && s < b); return w ? (frac((s - w[0]) * 7) < .62 ? 'O' : 'o') : rest; };
@@ -505,7 +505,7 @@
         dy: up ? pump : mj - 1.3 * hit, sq: up || mj < -.05 ? -.04 : .14 * land, rot: up ? .06 * Math.sin(s * 18) : mj < -.2 ? -.07 : .05 * hit,
         eyes: up || mj < -.5 ? 'spark' : 'happy' });
     }
-    if (['d', 'e', 'f'].includes(CEOV)) {
+    if (['d', 'e', 'f', 'f1', 'f2', 'f3'].includes(CEOV)) {
     // v25 round 2 (user: a out, b good without the mic, no wand; bare hands or the clicker only), all u 25, at x 1200, facing the wheel:
     //   d hype man, bare hands: a jump on every «More», fists pump on the drums (alternating), «WORKING» a two-arm hype jump then pumps
     //   e clicker presenter: each bar on the board pops exactly on his click (bar time = cell word + .25), «WORKING» he tosses the clicker up and catches it
@@ -529,13 +529,32 @@
         click: up ? 0 : ck, aR: up ? (inAir ? 2.4 + .3 * Math.sin(ws * 9) : 2.6) : 1.0 + .7 * ck, aL: up ? 2.6 : .5 + .3 * hit,           // a jab toward the board on each click
         dy: jump, sq: .12 * land, rot: up ? 0 : -.06 * ck + .03 * Math.sin(s * Math.PI * 1.5), eyes: up ? 'spark' : ck > .3 ? 'spark' : 'happy' });
     }
-    // f: the coach
+    // f: the coach. v26 f1|f2|f3 (user: «ток глаза нормальные? три версии, меняются пусть на основных моментах»): plain f wore ^^ arcs the
+    // whole scene (read as eyes shut) and flat 'angry' wedges. Now open Clawd eyes, and the face SNAPS (no morph) at the scene's beats:
+    // 0 start calm · 1 first «More» eager · 2 the wheel past rate 1 (he leans in) focused · 3 rate 1.5 max alarmed · 4 «WORKING» joy · 5 after the jump
+    //   f1 classic shapes: open → looking at the wheel → narrow → wide round → ^^ → ^^ + blush
+    //   f2 brows + round eyes whose pupils track the hamster up in the wheel (flung up-left after «WORKING»)
+    //   f3 anime: open → look → fiery wedges → wide → sparkle stars on «WORKING» → ^^ + blush
+    const tR = q => W0 + WD * Math.cbrt((q - R1) / (R2 - R1)), snap = m => { const h = CHITS.find(h => h >= m - .02); return h != null && h - m < .5 ? h : m; };
+    const st = [snap(MORES[0]), snap(tR(1)), snap(tR(1.5)), RG.work, RG.work + .7].filter(m => s >= m).length;
+    const face = s => {
+      const mouth = cMouth(s, ['smile', 'smile', 'grin', 'o', 'O', 'grin'][st]), sp = spinOf(s);
+      if (CEOV === 'f2') {
+        const BR = [[.1, 0, .1], [.45, -.3, .15], [0, .9, 0], [.75, -.6, .1], [.8, 0, .45], [.3, 0, .3]][st];   // [lift, tilt (+ = frown), arch] in u
+        const brows = (u, sw) => { for (const ex of [-3, 2]) { const cx = ex * u + .5 * u, sd = ex < 0 ? -1 : 1, y0 = -7.35 * u - BR[0] * .5 * u;   // the 1u between the eye tops and the head's top line: brows must not merge into it
+          inkLine([[cx + sd * .7 * u, y0 - BR[1] * .3 * u], [cx, y0 - BR[2] * .6 * u], [cx - sd * .7 * u, y0 + BR[1] * .3 * u]], sw * 2, PAL.ink, 'ink', .2); } };
+        const py = -.7 + .25 * Math.sin(sp), lk = st >= 4 ? { lookX: .5, lookY: -1, pupilY: -1 } : { lookX: .9, lookY: py, pupilY: py };   // +lookX = toward the wheel (he is flipped)
+        return { mouth, draw: brows, eyes: st === 0 ? 'normal' : st === 1 ? 'look' : st <= 3 ? 'scared' : 'happy', ...lk };
+      }
+      if (CEOV === 'f3') return { mouth, eyes: ['normal', 'look', 'angry', 'scared', 'spark', 'happy'][st], lookX: .9, lookY: -.5, blush: st === 5 };
+      return { mouth, eyes: ['normal', 'look', 'narrow', 'scared', 'happy', 'happy'][st], lookX: .9, lookY: -.5, blush: st >= 4 };
+    };
     const r = rateOf(s), lean = up ? 0 : clamp((r - 1) / .3), clap = (1 - lean) * hit, wave = Math.sin(s * TAU * (1.2 + r * 1.4));
     const vj = up ? hop(s, [RG.work], .7, 6) + (ws > .7 ? hop(s, after, .26, 2) : 0) : 0, spin = up ? clamp(ws / .7) : 0;
     return ceoClawd(1200, FLY - 4, 25, { ...base, flip: true, noClicker: true, mouth: cMouth(s, up ? 'O' : lean > .5 ? 'grin' : 'smile'),
       aL: up ? 2.7 : lerp(1.2 + 1.3 * clap, -.9, lean), aR: up ? 2.7 : lerp(1.2 + 1.3 * clap, 1.3 + .9 * wave, lean),   // clap overhead → one hand on the knee, the other waves on
       dy: up ? vj : -1 * hit * (1 - lean) - .5 * hit * lean, sq: .12 * land + .1 * lean, rot: up ? 0 : -.22 * lean - .04 * hit * lean,
-      sx: up ? Math.cos(spin * TAU) : 1, eyes: up ? 'spark' : lean > .5 ? 'angry' : 'happy' });
+      sx: up ? Math.cos(spin * TAU) : 1, ...(CEOV === 'f' ? { eyes: up ? 'spark' : lean > .5 ? 'angry' : 'happy' } : face(s)) });
     }
     // c: the ringmaster. The baton arm turns with the wheel (spinOf), plus a snap down on each drum hit; the other hand beckons «faster».
     const wph = spinOf(s), r = rateOf(s), leap = up ? hop(s, [RG.work + .06], .7, 7) + hop(s, CHITS.filter(h => h > RG.work + .8), .25, 2) : 0;
@@ -592,7 +611,7 @@
         paint(ellPts(px, py, 14 + 20 * u, 12 + 16 * u, 10), { fill: '#B8B2A8', fillOp: 140 * (1 - u * .6), ink: null }); }
       if (a < .35) paint(starPts(tx, ty, 120 * a / .35 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .35), ink: INK, sw: 1.2 });
     }
-    if (CEOV) ceoAct(s, wa); else ceo(1160, s, wa, WKV === 'c' && popped ? { aL: 2.6, aR: 2.6, eyes: 'spark', mouth: 'O', dy: -2 * Math.abs(Math.sin(s * 14)) } : {});   // c: he cheers, hopping
+    if (CEOV !== 'stand') ceoAct(s, wa); else ceo(1160, s, wa, WKV === 'c' && popped ? { aL: 2.6, aR: 2.6, eyes: 'spark', mouth: 'O', dy: -2 * Math.abs(Math.sin(s * 14)) } : {});   // c: he cheers, hopping
   }
   // b: the timeline strip under the wheel
   const TLY = 1380, TLH = 360, TLX0 = 230, TLX1 = 1490, NOW = 1310, STEP = 36;

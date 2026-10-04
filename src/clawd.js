@@ -115,7 +115,7 @@ function eyes(u, o, sw) {
     else if (e === 'angry') paint([[X - .2 * u, Y + (ex < 0 ? .3 : 1) * u], [X + 1.2 * u, Y + (ex < 0 ? 1 : .3) * u], [X + 1.2 * u, Y + 2 * u], [X - .2 * u, Y + 2 * u]], { wash: PAL.ink, ink: null });
     else if (e === 'scared') {
       paint(ellPts(cx, Y + u, u * .95, u * 1.15, 16), { wash: PAL.cream, ink: PAL.ink, sw: sw * .6 });
-      paint(ellPts(cx + (o.lookX || 0) * u * .3, Y + 1.1 * u, u * .32, u * .42, 10), { wash: PAL.ink, ink: null });
+      paint(ellPts(cx + (o.lookX || 0) * u * .3, Y + 1.1 * u + (o.pupilY || 0) * u * .35, u * .32, u * .42, 10), { wash: PAL.ink, ink: null });
     } else if (e === 'spark') {
       paint(ellPts(cx, Y + u, u * 1.5, u * 1.5, 18), { fill: PAL.ochre, fillOp: 90, bleed: .3, ink: null });
       paint(starPts(cx, Y + u, u * 1.35 * (1 + .12 * Math.sin(T * 14))), { wash: PAL.cream, fill: PAL.ochre, fillOp: 80, ink: PAL.ink, sw: sw * .55 });
