@@ -1,235 +1,274 @@
-// PRESS CONFERENCE 2.0. All choreography uses real seconds; safe to seek.
+// PRESS CONFERENCE: one continuous grounded CEO pose, a microphone throw,
+// empty turned-out pockets and delighted star eyes on NOW. Alternate: capexend:podium.
 window.CAPEX_V = window.CAPEX_V || {};
 CAPEX_V.e = function (r) {
-  const INK = '#171C25', BLUE = '#7894B2', CREAM = '#FFE5AF';
-  const shape = (p, c, sw = 1.2) => paint(p, { wash: c, ink: INK, sw });
-  const box = (x, y, w, h, c, sw) => shape(rectPts(x, y, w, h), c, sw);
-  const line = (p, w = 1.2, c = INK) => inkLine(p, w, c, 'ink', 0);
-  // Full amplitude ON the answer frame, never a delayed impact crest.
-  const hit = (at, life = .19) => r < at ? 0 : Math.exp(-(r - at) / life);
-  const later = hit(202.26), how = hit(203.20), soon = hit(204.92);
-  const now = hit(205.90, .24), extra = hit(206.40, .15) + hit(206.85, .16);
-  const crashed = r >= 205.90, broken = r >= 204.92;
-  const reveal = ease(seg(r, 204.28, 204.64)), cap = ease(seg(r, 205.24, 205.65));
-  const age = Math.max(0, r - 205.90);
+  const INK = PAL.ink, CREAM = PAL.cream;
+  const sh = (p, c, sw = 1.2) => paint(p, { wash: c, fill: mixCol(c, TK.soot, .30), fillOp: 55, bleed: .035, tex: .6, border: .5, ink: INK, sw });
+  const box = (x, y, w, h, c, sw) => sh(rectPts(x, y, w, h, 1.2), c, sw);
+  const oval = (x, y, a, b, c, sw) => sh(ellPts(x, y, a, b, 18, .6), c, sw);
+  const line = (p, w = 1, c = INK) => inkLine(p, w, c, 'ink', 0);
+  const hit = (at, life = .12) => r < at ? 0 : Math.exp(-(r - at) / life);
+  const later = hit(202.26), how = hit(203.20), soon = hit(204.92), now = hit(205.90);
+  const crashed = r >= 205.90, broken = r >= 204.92, age = Math.max(0, r - 205.90);
+  const podiumEnd = (window.BTT_VAR || {}).capexend === 'podium';
+  const reveal = ease(seg(r, 204.28, 204.66));
+  const rise = podiumEnd ? 355 * easeOut(seg(age, 0, 1.03)) : 0;
+  // Source-audio word boundaries (assets/tokensEN/truth.json), in real song time.
+  // The two foreground journalists alternate; the CEO speaks only the answers.
+  const dialogue = [
+    { s: 201.60, e: 202.18, who: 5, word: 'REVENUE?', sounds: ['flat', 'o', 'smile', 'O', 'o'] },
+    { s: 202.26, e: 202.54, who: 'ceo', word: 'LATER!', sounds: ['O', 'smile', 'o', 'flat'] },
+    { s: 202.60, e: 203.04, who: 8, word: 'PROFIT?', sounds: ['o', 'O', 'flat', 'o'] },
+    { s: 203.20, e: 203.74, who: 'ceo', word: 'HOW?!', sounds: ['O', 'O', 'o'] },
+    { s: 204.28, e: 204.84, who: 5, word: 'A-G-I?', sounds: ['O', 'smile', 'flat', 'O', 'smile'] },
+    { s: 204.92, e: 205.18, who: 'ceo', word: 'SOON!', sounds: ['o', 'O', 'o', 'flat'] },
+    { s: 205.24, e: 205.78, who: 8, word: 'CAPEX?', sounds: ['O', 'flat', 'smile', 'O', 'flat'] },
+    { s: 205.90, e: 206.50, who: 'ceo', word: 'NOW!', sounds: ['flat', 'O', 'O', 'grin'] }
+  ];
+  const spoken = who => dialogue.find(d => d.who === who && r >= d.s && r < d.e);
+  const mouthOf = (d, idle) => d ? d.sounds[Math.min(d.sounds.length - 1, Math.floor(seg(r, d.s, d.e) * d.sounds.length))] : idle;
+  const askPose = who => Math.max(0, ...dialogue.filter(d => d.who === who).map(d =>
+    easeOut(seg(r, d.s - .12, d.s)) * (1 - ease(seg(r, d.e, d.e + .10)))));
+  const beats = EN_BEATS.map(O2N).filter(t => t > 201.3 && t < 207.4);
+  const rebound = (t, at, life = .30) => t < at || t > at + life ? 0 : Math.sin(seg(t, at, at + life) * Math.PI);
+  const bounce = t => Math.max(0, ...beats.map(b => rebound(t, b, .28)));
+  const pocketsAt = t => easeOut(seg(t, 203.06, 203.20)) * (1 - ease(seg(t, 203.85, 204.15)));
+  // Native 2.2u arms: pose by angles, props attach at their original tips.
+  function pose(t) {
+    const wind = ease(seg(t, 202.04, 202.26)), follow = easeOut(seg(t, 202.26, 202.42));
+    const settle = ease(seg(t, 202.42, 202.88)), pocket = pocketsAt(t);
+    const press = ease(seg(t, 205.24, 205.57)), down = easeIn(seg(t, 205.72, 205.90));
+    const cheer = easeOut(seg(t, 205.90, 206.08));
+    const reaction = mood(t, [[201.60, 'narrow'], [203.20, 'scared'], [204.20, 'narrow'], [205.90, 'spark']]);
+    let aL = lerp(.30, 1.22, wind), aR = -.28;
+    if (t >= 202.26) aL = lerp(1.22 + .30 * follow, -.25, settle);
+    aL = lerp(aL, -.57, pocket); aR = lerp(aR, -.57, pocket);
+    if (t >= 205.24) aR = lerp(lerp(-.28, .70, press), -.91, down);
+    if (t >= 205.90) { aL = lerp(-.25, .70, cheer) + .06 * Math.sin((t - 205.90) * 10) * cheer; aR = lerp(-.91, .90, cheer); }
+    const sq = .025 * bounce(t) + .045 * rebound(t, 203.20, .28) + .06 * rebound(t, 205.90, .24);
+    const rot = -.014 * Math.sin((t - 201.60) * 5) + (t < 202.88 ? .025 * wind - .045 * follow : 0);
+    return { aL, aR, sq, rot, y: 949 - 4 * bounce(t), ...reaction };
+  }
+  const heroX = 887, u = 40, body = pose(r), heroY = body.y - rise;
+  function hand(t, side, lift = 0) {
+    const o = pose(t), a = side < 0 ? o.aL : o.aR, q = o.sq + o.take;
+    const sx = 1 + q * .6, sy = 1 - q, c = Math.cos(o.rot), sn = Math.sin(o.rot);
+    const x = side * (4.9 + 2.2 * Math.cos(a)) * u, y = (-4.5 - 2.2 * Math.sin(a)) * u;
+    return [heroX + c * x * sx - sn * y * sy, o.y - lift + sn * x * sx + c * y * sy];
+  }
+  const button = hand(205.90, 1), release = hand(202.26, -1), releaseAngle = pose(202.26).rot;
+
   function mic(x, y, a = 0, s = 1) {
     push(); translate(x, y); rotate(a); scale(s);
-    shape(rrPts(-8, -42, 16, 61, 5), '#535B63');
-    shape(ellPts(0, -51, 21, 25, 18), '#A4ABB0');
-    for (let i = -2; i <= 2; i++) line([[-14, -51 + i * 7], [14, -51 + i * 7]], .5);
-    pop();
+    sh(rrPts(-8, -36, 16, 54, 5), '#535B63'); oval(0, -46, 19, 22, '#A4ABB0', .8);
+    for (let i = -2; i <= 2; i++) line([[-12, -46 + i * 6], [12, -46 + i * 6]], .45); pop();
   }
-  function burst(x, y, k, rad = 95) {
-    if (k < .025) return;
-    paint(starPts(x, y, rad * k, .3, 9, r * .3), { wash: CREAM, ink: null });
-    for (let i = 0; i < 7; i++) {
-      const a = i * Math.PI * 2 / 7;
-      line([[x + Math.cos(a) * rad * .8, y + Math.sin(a) * rad * .8],
-        [x + Math.cos(a) * rad * (1 + .5 * k), y + Math.sin(a) * rad * (1 + .5 * k)]], 1.4 * k, CREAM);
-    }
+  function spark(x, y, k, rad = 60) {
+    if (k > .025) paint(starPts(x, y, rad * k, .35, 8), { wash: CREAM, ink: null });
   }
-  function camera(x, y, a) {
-    push(); translate(x, y); rotate(a);
-    shape(rrPts(-37, -25, 70, 50, 7), '#303943'); box(-22, -37, 28, 13, '#687580');
-    shape(ellPts(31, 0, 24, 27, 16), INK); shape(ellPts(36, 0, 13, 18, 16), BLUE); pop();
+  function rack(x, floor, w, h, tilt = 0, seed = 0) {
+    push(); translate(x, floor); rotate(tilt);
+    if (h < 80) box(-w / 2, -h, w, h, TK.steel);
+    else serverRack(-w / 2, -h, w, h, N2O(r), { seed, units: Math.max(2, Math.round(h / 90)), heat: .10 * now, fire: 0 });
+    box(-w / 2 + 5, 0, 20, 12, TK.soot); box(w / 2 - 25, 0, 20, 12, TK.soot); pop();
   }
-  // Native blue bot arms, arm-tip hand and held prop use the SAME transform.
-  // Logical unit stays at 8 even in close-up, suppressing the native badge text.
-  function reporter(x, y, size, questioner, phase) {
-    const alarm = crashed || (questioner && r >= 202.26);
-    const reach = .20 + .35 * ease(seg(r, 201.60, 202.10));
-    push(); translate(x, y); scale(size);
-    agentBot(0, 0, 8, r, {
-      dance: 'idle', seed: phase, col: BLUE, dk: '#4B6482', lt: '#A4B9CB',
-      dy: 0, sq: crashed ? .07 * Math.sin(age * 24 + phase) : 0,
-      rot: crashed ? .14 * Math.sin(age * 17 + phase) : 0,
-      walk: crashed ? r * 4 : null, noShadow: true,
-      eyes: alarm ? 'scared' : 'narrow', mouth: alarm ? 'O' : 'o',
-      aL: crashed ? 1.5 + .3 * Math.sin(age * 20) : .3,
-      aR: questioner && !crashed ? reach : 1 + .4 * Math.sin(r * 7 + phase),
-      armR: u => {
-        if (questioner && r < 202.26) mic(0, 0, reach, .42);
-        shape(rrPts(-.55 * u, -.6 * u, 1.25 * u, 1.2 * u, .25 * u), BLUE, .5);
-        if (questioner && r >= 202.26) {
-          for (let i = 0; i < 3; i++) box(.4 * u, (-.7 + i * .55) * u, .9 * u, .25 * u, BLUE, .25);
-        } else line([[-2, -2], [4, -2]], .35, '#4B6482');
+  function camera() {
+    sh(rrPts(-16, -13, 32, 24, 3, .6), TK.steelDk, .7);
+    box(-10, -18, 14, 6, TK.steelLt, .5);
+    oval(16, 0, 9, 10, TK.soot, .6); oval(18, 0, 5, 6, '#7A93D8', .5);
+  }
+  function reporter(x, y, s, journalist, seed) {
+    const flee = crashed ? easeOut(seg(age, .06, 1.35)) : 0;
+    const question = spoken(seed), ask = journalist ? askPose(seed) : 0;
+    const xx = x + (seed % 2 ? -1 : 1) * flee * 42;
+    const aR = journalist ? lerp(-.65, .58, ask) : 1.1 + .06 * Math.sin(r * 5 + seed);
+    const aL = journalist ? lerp(.15, .83, ask) : crashed ? .95 : .2;
+    const dy = -.32 * bounce(r + seed * .017) - .28 * ask;
+    const reaction = mood(r, [[201.60, 'narrow'], [205.90, 'scared']]);
+    const lean = journalist ? (seed === 5 ? .025 : -.025) * ask : 0;
+    push(); translate(xx, y); scale(s);
+    agentBot(0, 0, 8, N2O(r), { seed, dance: 'idle', dx: 0, dy,
+      noShadow: false, ...reaction, flip: journalist && seed === 8,
+      eyes: question ? 'normal' : reaction.eyes,
+      squint: question ? 0 : reaction.squint,
+      sq: .03 * bounce(r + seed * .017) + .035 * ask,
+      rot: lean + (crashed ? .06 * Math.sin(age * 11 + seed) : .012 * Math.sin(r * 5 + seed)),
+      walk: crashed ? age * 3 : null,
+      mouth: mouthOf(question, crashed ? 'o' : 'flat'), aL, aR,
+      armR: uu => {
+        push(); rotate(aR); if (journalist) mic(0, 0, -.55, .5); else camera(); pop();
       }
     }); pop();
-  }
-  function rack(x, y, w, h, tilt, seed) {
-    push(); translate(x, y); rotate(tilt);
-    box(-w / 2, -h, w, h, '#121A24', 2);
-    box(-w / 2 + 12, -h + 12, w - 24, h - 24, '#4B535D');
-    for (let i = 0; i < 7; i++) {
-      const yy = -h + 22 + i * (h - 34) / 7, hh = (h - 64) / 7;
-      box(-w / 2 + 21, yy, w - 42, hh, '#232D38', .8);
-      for (let j = 0; j < 3; j++) line([[-w / 2 + 30, yy + 9 + j * 8], [w / 2 - 52, yy + 9 + j * 8]], .5, '#101820');
-      box(w / 2 - 40, yy + 10, 11, 9, Math.sin(r * 27 + i * 2 + seed) > 0 ? '#F99735' : '#748C87', .2);
-    } pop();
+    if (question) {
+      // A single balloon points to the speaking reporter; the other reporter stays quiet.
+      const by = y - 242, bw = question.word === 'REVENUE?' ? 286 : 248, bh = 68;
+      sh([[xx - 22, by + bh - 3], [xx + 17, by + bh - 3], [xx + 5, y - 168]], CREAM, 1.2);
+      sh(rrPts(xx - bw / 2, by, bw, bh, 12, .8), CREAM, 1.4);
+      letter(question.word, xx, by + bh / 2, 33, INK, { ink: false, font: ruFont(33) });
+      // Two small hand-drawn accents make the raised microphone readable at phone size.
+      const dir = seed === 5 ? 1 : -1;
+      line([[xx + dir * 144, y - 160], [xx + dir * 163, y - 174]], 1.0, CREAM);
+      line([[xx + dir * 154, y - 141], [xx + dir * 177, y - 145]], 1.0, CREAM);
+    }
   }
   function robot() {
-    const dt = Math.max(0, r - 204.92);
-    // Head to feet: 625 units, matching the podium + CEO silhouette.
-    const parts = [[0, -550, 192, 128], [0, -350, 166, 220],
-      [-126, -350, 54, 185], [126, -350, 54, 185], [-52, -120, 58, 200], [52, -120, 58, 200]];
-    parts.forEach(([x, y, w, h], i) => {
-      let dx = 0, dy = 0, a = 0;
+    // Boots touch the stage; every detached part lands on that same plane.
+    const dt = Math.max(0, r - 204.92), base = 951;
+    const parts = [[0, -608, 173, 116], [0, -416, 168, 230],
+      [-123, -416, 53, 182], [123, -416, 53, 182], [-49, -133, 55, 264], [49, -133, 55, 264]];
+    for (let i = 0; i < parts.length; i++) {
+      const [px, py, w, h] = parts[i]; let dx = 0, dy = 0, tilt = 0;
       if (broken) {
+        const sign = i % 2 ? 1 : -1;
         if (i === 0) {
-          dx = 22 + 85 * dt;
-          // Exact ballistic floor contact, then two diminishing bounces.
-          const floor = 493, contact = (100 + Math.sqrt(10000 + 4800 * (floor + 48))) / 2400;
-          dy = dt < contact ? -48 - 100 * dt + 1200 * dt * dt : floor - 108 * Math.abs(Math.sin((dt - contact) * 8)) * Math.exp(-(dt - contact) * 2);
-          a = -.18 + dt * 2.4;
+          const startY = base + py, floorY = base - h / 2;
+          const contact = (75 + Math.sqrt(75 * 75 + 4 * 850 * (floorY - startY))) / 1700;
+          dx = 30 * easeOut(seg(dt, 0, .15)) + 67 * dt;
+          dy = dt < contact ? -75 * dt + 850 * dt * dt : floorY - startY - 43 * Math.abs(Math.sin((dt - contact) * 11)) * Math.exp(-(dt - contact) * 3);
+          tilt = dt * 2.5;
         } else if (i === 2 || i === 3) {
-          dx = (i === 2 ? -1 : 1) * (28 + dt * 105);
-          dy = Math.min(325, 36 + 580 * dt * dt); a = (i === 2 ? 1 : -1) * (.5 + dt * 3.4);
+          dx = sign * (30 * easeOut(seg(dt, 0, .14)) + 53 * dt);
+          dy = Math.min(-py - h / 2, -75 * dt + 680 * dt * dt); tilt = sign * dt * 1.9;
         } else {
-          dx = (i % 2 ? -1 : 1) * dt * 24;
-          dy = Math.min(-y - h / 2, 28 + dt * dt * 850); a = Math.sin(dt * 9 + i) * .12;
+          dx = sign * 12 * easeOut(seg(dt, 0, .2));
+          dy = Math.min(-py - h / 2, 700 * dt * dt); tilt = sign * Math.min(1.35, dt * (i === 1 ? 1.45 : .65));
         }
       }
-      push(); translate(1190 + x + dx, 722 + y + dy); rotate(a);
-      shape(rrPts(-w / 2, -h / 2, w, h, 9), i === 1 ? '#A0A9AE' : '#C1C8C7', 1.5);
-      box(-w / 2 + 10, -h / 2 + 10, w - 20, 12, '#E0DFCF', .4);
+      if (broken) dy = Math.min(dy, -py - (Math.abs(w * Math.sin(tilt)) + Math.abs(h * Math.cos(tilt))) / 2);
+      push(); translate(1254 + px + dx, base + py + dy); rotate(tilt);
+      sh(rrPts(-w / 2, -h / 2, w, h, 7, 1.3), i === 1 ? TK.steel : TK.steelLt, 1.6);
+      for (const side of [-1, 1]) oval(side * (w / 2 - 12), -h / 2 + 17, 3.5, 3.5, TK.copper, .5);
+      box(-w / 2 + 9, -h / 2 + 9, w - 18, 7, '#9097A0', .4);
+      if (i === 3 && !broken) {
+        box(-w / 2 + 5, -15, w - 10, h / 2 - 4, TK.steelDk, .5);
+        for (let j = 0; j < 3; j++) line([[-16 + j * 13, -6], [-22 + j * 15, 50], [-10 + j * 9, 92]], .8, j % 2 ? TK.copper : TK.led);
+      }
       if (i === 0) {
-        for (const ex of [-43, 43]) box(ex - 10, -15, 20, broken ? 8 : 25, broken ? '#E85C3D' : '#7DABB0', .7);
-        line([[-28, 32], [28, 32]], 1.5);
+        for (const ex of [-38, 38]) box(ex - 9, -15, 18, broken ? 8 : 21, broken ? TK.ember : TK.led, .6);
+        line([[-25, 27], [25, 27]], 1.0);
       }
       if (i === 1) {
-        shape(ellPts(0, -16, 48, 48, 20), '#344A58');
-        shape(ellPts(0, -16, 22 + 3 * Math.sin(r * 6), 22, 16), broken ? '#F99735' : '#A4D4CE');
-      } pop();
-    });
-    if (broken) {
-      line([[1170, 264], [1198, 287 + Math.sin(dt * 22) * 20], [1220, 259]], 2, '#E79356');
-      burst(1190, 270, soon, 140);
+        box(-62, -78, 124, 160, TK.steelDk, .8);
+        box(-39, -52, 78, 54, TK.pcb, .6);
+        for (let j = 0; j < 4; j++) line([[-40 + j * 23, 10], [-49 + j * 28, 43], [-28 + j * 17, 67]], 1.1, j % 2 ? TK.copper : TK.led);
+        oval(0, -23, 17, 17, broken ? TK.yellow : TK.led, .6);
+      }
+      pop();
     }
+    spark(1254, 405, soon, 73);
   }
-  // Eased glides/whips between close shots; every key moves, including the end.
-  const [cx, cy, z] = kf(r, [
-    [201.60, [775, 413, 1.62]], [202.20, [806, 399, 1.72]],
-    [202.46, [812, 382, 1.68]], [202.78, [831, 319, 1.77]],
-    [203.19, [846, 310, 1.84]], [203.55, [858, 325, 1.78]],
-    [204.05, [884, 346, 1.71]], [204.55, [1065, 397, 1.48]],
-    [205.10, [1072, 419, 1.50]], [205.52, [1000, 450, 1.57]],
-    [205.89, [982, 468, 1.61]], [206.17, [969, 554, 1.45]],
-    [206.55, [943, 583, 1.53]], [206.94, [919, 612, 1.64]],
-    [207.26, [900, 631, 1.76]]
-  ]);
-  const power = later + how + soon + 2.2 * now + extra;
-  const shake = power * 8 + (crashed ? 2.8 : 0);
-  camBegin(cx + Math.cos((r - 201.6) * 73) * shake,
-    cy + Math.sin((r - 201.6) * 91) * shake, z * (1 + .065 * power));
-  paint(rectPts(-1200, -1500, 4400, 4300), { wash: '#18212E', fill: '#27364D', fillOp: 45, tex: .6, ink: null });
-  box(1030, -55, 425, 800, '#101820');
+  const cam = kf(r, [[201.60, [930, 900, 1.46]], [202.26, [910, 907, 1.48]],
+    [203.20, [910, 911, 1.48]], [203.90, [930, 897, 1.46]],
+    [204.60, [1023, 752, 1.23]], [204.92, [1025, 753, 1.25]],
+    [205.45, [1010, 805, 1.30]], [205.90, [956, 894, 1.43]],
+    [206.40, [958, podiumEnd ? 720 : 897, podiumEnd ? 1.20 : 1.38]],
+    [207.26, [952, podiumEnd ? 695 : 904, podiumEnd ? 1.21 : 1.40]]]);
+  const extra = hit(206.40) + hit(206.85), shake = later * 3 + how * 3 + soon * 5 + now * 12 + extra * 5;
+  camBegin(cam[0] + Math.sin(r * 71) * shake, cam[1] + Math.cos(r * 89) * shake, cam[2]);
+  paint(rectPts(-1800, -1800, 5600, 4800), { wash: TK.soot, fill: '#332535', fillOp: 100, bleed: .1, tex: .65, border: .3, ink: null });
+  box(1080, 231, 375, 725, TK.soot);
   if (reveal > 0) {
-    paint([[1170, -40], [1250, -40], [1440, 743], [1025, 743]], { wash: '#B7C6BD', washOp: 65, ink: null });
+    paint([[1214, 230], [1296, 230], [1438, 954], [1096, 954]], { fill: TK.yellowLt, fillOp: 24, bleed: .025, tex: .25, border: .1, ink: null });
     robot();
   }
-  // Curtains compress into the alcove wings; no teleprompter crosses the robot.
-  for (let i = 0; i < 22; i++) {
-    const x = 160 + i * 65, alcove = x >= 1005 && x <= 1460;
-    const target = x < 1230 ? 990 + (x - 1005) * .15 : 1455 + (x - 1230) * .15;
-    const xx = alcove ? lerp(x, target, reveal) : x, w = alcove ? lerp(67, 12, reveal) : 67;
-    shape([[xx, -700], [xx + w, -700], [xx + w - 4, 745], [xx - 7, 739]], i % 2 ? '#304159' : '#27364D', .55);
-    if (!alcove) line([[x + 15, -650], [x + 7, 724]], .8, '#182637');
+  for (let i = 0; i < 20; i++) {
+    const x = 310 + i * 65, alcove = x >= 1080 && x <= 1455;
+    const target = x < 1260 ? 1066 + (x - 1080) * .1 : 1454 + (x - 1260) * .1;
+    const xx = alcove ? lerp(x, target, reveal) : x, w = alcove ? lerp(67, 10, reveal) : 67;
+    const drift = 2 * Math.sin(r * 2 + i), yy = 958;
+    sh([[xx + jit(1), -700], [xx + w + jit(1), -700],
+      [xx + w - 4 + drift, yy + jit(2)], [xx - 7 + drift, yy + jit(2)]], i % 2 ? '#362B3D' : '#2B2331', .45);
+    line([[xx + w * .18, 340], [xx + w * .21 + drift, 700], [xx + w * .15 + drift, 942]], .5, '#4B3947');
   }
-  box(-300, 746, 2300, 950, '#343338'); box(-300, 739, 2300, 24, '#76604F');
-  // Blank monitor on the LEFT; HOW kicks it down and starts a wordless spinner.
-  push(); translate(730, 208 + 24 * how); rotate(-.045 * how);
-  box(-7, 104, 14, 355, '#535B63'); box(-73, 453, 146, 17, '#444C56');
-  box(-156, -136, 312, 250, '#525A64', 1.8); box(-141, -121, 282, 220, '#141C26');
-  if (r >= 203.20) {
-    for (let i = 0; i < 10; i++) {
-      const a = i * Math.PI / 5 + (r - 203.20) * 6;
-      shape(ellPts(Math.cos(a) * 65, -10 + Math.sin(a) * 65, 9, 9, 10), mixCol('#39434E', '#E0E5E8', i / 9), .2);
-    }
-  } else line([[-115, -95], [-68, -107]], .8, '#617080');
-  pop(); burst(730, 200, how * .55, 125);
-  const flee = easeOut(seg(r, 205.90, 207.26));
-  reporter(596 - 90 * flee, 659 + (crashed ? 100 + 20 * Math.sin(age * 20) : 0), 2.65, true, 2);
-  if (r >= 202.26 && r < 202.90) {
-    const d = r - 202.26;
-    // Hand's release position is (740,539); prop snaps 42 units upwards.
-    mic(740 + d * 210, 497 - d * 960 + d * d * 450, -.3 - d * 8, 1.11);
-    line([[735, 535], [767 + d * 160, 454 - d * 650], [838, 381]], 1.7);
-    burst(740, 535, later, 75);
+  for (const [x, col] of [[714, TK.orange], [1110, TK.yellowLt]]) {
+    glowAt(x, 700, 190, col, 22);
   }
-  ceoClawd(905 + (crashed ? 8 * Math.sin(age * 9) : 0),
-    crashed ? 819 + 8 * Math.sin(age * 12) : 518 + 3 * Math.sin(r * 6), crashed ? 25 : 28, {
-      noClicker: true, noShadow: true, eyes: 'narrow',
-      mouth: crashed ? 'O' : r >= 203.20 && r < 204.28 ? 'flat' : 'smile',
-      aL: crashed ? 1.5 : .25 + later * 1.2, aR: crashed ? 1.5 : .3 + reveal * .3 + cap * .9,
-      sq: .12 * later + .13 * how + .17 * soon + .23 * now,
-      rot: crashed ? .045 * Math.sin(age * 19) : -.03 * soon
-    });
-  if (!crashed) {
-    box(740, 518, 330, 251, '#665247', 1.8); box(760, 552, 289, 200, '#735E50', .7);
-    for (let i = 0; i < 5; i++) line([[784 + i * 51, 562], [780 + i * 51, 744]], .5, '#514138');
-    for (let i = 0; i < 4; i++) {
-      const x = 776 + i * 61, y = 478 + i % 2 * 12;
-      line([[x + 15, 523], [x, y]], 1.8); mic(x, y, (i - 1.5) * .17, .57);
-    }
-    box(725, 513, 364, 29, '#8C7461', 1.7); box(1050, 488, 80, 23, '#222A34');
-    shape(ellPts(1090, 483, 29, 18, 20), '#E54B3C');
-    if (cap > 0) {
-      const y = 409 - 20 * Math.sin(cap * Math.PI);
-      line([[1026, 403], [1060, y - 18], [1090, y]], 6);
-      shape(ellPts(1090, y, 25, 14, 18), '#EC985E');
-    }
+  box(-700, 960, 3400, 1400, '#352C33'); box(-700, 952, 3400, 17, '#936B49');
+  for (let i = 0; i < 8; i++) line([[430 + i * 130, 972], [310 + i * 164, 1260]], .5, '#514039');
+
+  reporter(570, 955, 2.55, false, 2);
+  ceoClawd(heroX, heroY, u, { ...body, noClicker: true, noShadow: false,
+    mouth: mouthOf(spoken('ceo'), crashed ? 'grin' : 'flat'),
+    armL: uu => {
+      if (r < 202.26) { push(); rotate(body.aL); mic(0, 0, 0, 1.08); pop(); }
+    },
+    draw: uu => {
+      const pull = pocketsAt(r);
+      if (pull > 0) for (const side of [-1, 1]) {
+        const x = side * 4.4 * uu, y = -3.7 * uu;
+        sh([[x, y], [x + side * 60 * pull, y - 10 * pull],
+          [x + side * 90 * pull, y + 10 * pull], [x + side * 94 * pull, y + 70 * pull],
+          [x + side * 55 * pull, y + 87 * pull], [x + side * 10 * pull, y + 65 * pull],
+          [x, y + 35]], CREAM, 1.05);
+        line([[x + side * 14, y + 14], [x + side * 72 * pull, y + 14 * pull]], .7, '#9A9B91');
+        line([[x + side * 18, y + 35], [x + side * 29 * pull, y + 62 * pull],
+          [x + side * 56 * pull, y + 73 * pull]], .55, '#B3AD99');
+      }
+    } });
+  if (r >= 202.26 && r < 203.06) {
+    const dt = r - 202.26;
+    mic(release[0] - 590 * dt, release[1] - 390 * dt + 580 * dt * dt, releaseAngle - dt * 9, 1.08);
+    if (dt < .12) for (let i = 0; i < 3; i++)
+      line([[release[0] + 15 + i * 9, release[1] + i * 14], [release[0] + 38 + i * 9, release[1] + 8 + i * 14]], .9, CREAM);
   }
-  // A horizontal rack lands EXACTLY on NOW. Clawd ducks beneath its lower edge.
-  if (r >= 205.68) {
-    const fall = easeIn(seg(r, 205.68, 205.90));
-    const bounce = crashed ? -20 * Math.exp(-age * 5) * Math.abs(Math.sin(age * 20)) : 0;
-    rack(665, lerp(-780, 510, fall) + bounce, 210, 660, Math.PI / 2 + (crashed ? .015 * Math.sin(age * 16) : 0), 1);
+  if (!crashed || !podiumEnd) {
+    // Foreground podium naturally hides the legs and grounded lower body.
+    box(724, 888, 384, 63, '#665247', 1.6); box(742, 901, 346, 35, '#7B6551', .7);
+    for (let i = 0; i < 5; i++) line([[770 + i * 66, 907], [767 + i * 66, 934]], .5, '#514138');
+    box(710, 879, 472, 25, '#A1896B', 1.4);
+    for (let i = 0; i < 3; i++) {
+      const x = 774 + i * 73;
+      line([[x + 12, 883], [x, 854]], .9); mic(x, 854, (i - 1) * .15, .50);
+    }
+    const lift = easeOut(seg(r, 205.24, 205.54)), by = lerp(902, button[1], lift);
+    if (lift > .01) {
+      box(button[0] - 34, by + 10, 68, 36, TK.steelDk);
+      const pushDown = 6 * rebound(r, 205.90, .18);
+      oval(button[0], by + pushDown, 25, 13 - pushDown * .45, TK.ember);
+    }
+    if (r >= 205.72 && r < 206.04) {
+      const grip = hand(r, 1, rise), q = body.sq + body.take;
+      push(); translate(...grip); rotate(body.rot - body.aR); scale(1 + q * .6, 1 - q);
+      paint(rectPts(-18, -20, 18, 40, 1.2), { wash: PAL.clay, fill: '#3E5A8C', fillOp: 50, ink: INK, sw: 1.6 }); pop();
+    }
   }
   if (crashed) {
-    burst(1065, 520, now, 235);
-    // Button contact remains visible for the impact, before flying away.
-    const buttonX = 1090 + age * 95, buttonY = 496 - age * 150 + age * age * 340;
-    box(buttonX - 40, buttonY, 80, 20, '#222A34');
-    shape(ellPts(buttonX, buttonY - 3, 31, 7, 18), '#E54B3C');
-    if (age < .12) shape(ellPts(buttonX, buttonY - 12, 25, 12, 18), '#EC985E');
-    for (let i = 0; i < 8; i++) {
-      const x = 900 + (i - 3.5) * (38 + age * 88);
-      const y = Math.min(865 + i % 2 * 32, 570 - (130 + hash(i) * 240) * age + 670 * age * age);
-      push(); translate(x, y); rotate((i - 3) * (.15 + age * 1.9));
-      shape([[-43, -13], [34, -22], [52, 8], [-25, 24]], i % 2 ? '#8C7461' : '#665247'); pop();
+    if (podiumEnd && rise > 2) {
+      // The former podium becomes a lifting rack. Hero and roof share ONE support point.
+      rack(887, 949, 386, rise, 0, 4);
+      // Redraw the planted feet over the roof edge, without a duplicate face or body.
+      for (const lx of [-4, -2, 1, 3]) box(heroX + lx * u * (1 + (body.sq + body.take) * .6), heroY - 8, u * (1 + (body.sq + body.take) * .6), 10, '#3E5A8C', .7);
     }
-    mic(760 - age * 120, 590 - age * 230 + age * age * 330, age * 6, .8);
-    // Each additional rack finishes its fall on the requested beat and recoils.
-    for (const [at, x, tilt, seed] of [[206.40, 1240, -.08, 3], [206.85, 594, .09, 5]]) {
-      if (r < at - .21) continue;
-      const q = easeIn(seg(r, at - .21, at)), dt = Math.max(0, r - at);
-      const recoil = r >= at ? Math.abs(Math.sin(dt * 24)) * 22 * Math.exp(-dt * 5) : 0;
-      rack(x, lerp(-650, 916, q) - recoil, 216, 815, tilt + .018 * Math.sin(dt * 18) * hit(at, .35), seed);
-      burst(x, 885, hit(at), 145);
+    spark(button[0] + 26, button[1] + 26, now, 42);
+    for (let i = 0; i < (podiumEnd ? 7 : 0); i++) {
+      const vx = (i - 3) * 75, vy = -140 - hash(i) * 160;
+      const x = 904 + (i - 3) * 39 + vx * age, y = Math.min(951 - i % 2 * 17, 786 + vy * age + 520 * age * age);
+      push(); translate(x, y); rotate((i - 3) * (.15 + age * 1.8));
+      sh([[-33, -9], [34, -13], [47, 7], [-24, 19]], i % 2 ? '#A1896B' : '#665247', .8); pop();
     }
-    // Three independent spark waves: the final wave keeps moving past the cut.
+    // Button and its platform remain one object when they break away.
+    if (podiumEnd) {
+      const bx = button[0] + age * 95, by = button[1] - age * 190 + age * age * 380;
+      box(bx - 35, by, 71, 18, '#273039'); oval(bx, by - 4, 26, 11, '#CF5744', .7);
+    }
+    for (const [at, x, tilt, seed] of [[206.40, 1348, -.065, 3], [206.85, 567, .055, 5]]) {
+      if (r < at - .27) continue;
+      const p = easeIn(seg(r, at - .27, at)), dt = Math.max(0, r - at);
+      const bounce = r >= at ? 17 * Math.abs(Math.sin(dt * 21)) * Math.exp(-dt * 5) : 0;
+      rack(x, lerp(-480, 948, p) - bounce, 177, 622, tilt + .008 * Math.sin(dt * 13), seed);
+      spark(x, 943, hit(at), 68);
+    }
     for (const at of [205.90, 206.40, 206.85]) {
-      const dt = r - at; if (dt < 0 || dt > 1.4) continue;
-      const ox = at === 205.90 ? 1040 : at === 206.40 ? 1200 : 640;
-      for (let i = 0; i < 13; i++) {
-        const vx = (hash(i + at) - .5) * 900, vy = -180 - hash(i + 9) * 490;
-        const x = ox + vx * dt, y = 735 + vy * dt + 450 * dt * dt;
-        line([[x, y], [x - vx * .035, y - (vy + 900 * dt) * .035]], 1.8, i % 3 ? '#FFB34D' : CREAM);
+      const dt = r - at; if (dt < 0 || dt > 1.35) continue;
+      const ox = at === 205.90 ? 1100 : at === 206.40 ? 1348 : 567;
+      for (let i = 0; i < 7; i++) {
+        const vx = (hash(i + at) - .5) * 440, vy = -120 - hash(i + 8) * 250;
+        const x = ox + vx * dt, y = 892 + vy * dt + 310 * dt * dt;
+        line([[x, y], [x - vx * .022, y - (vy + 620 * dt) * .022]], .8, i % 2 ? '#F4B053' : CREAM);
       }
     }
-    for (let i = 0; i < 3; i++) {
-      const x = 816 + i * 97;
-      line([[x, 596], [x + Math.sin(age * 13 + i) * 22, 621], [x + 20, 649 + Math.sin(age * 17 + i) * 14]], 1.6, '#101820');
-      if (Math.sin(r * 39 + i * 2) > .3) burst(x + 20, 639, .22, 62);
-    }
   }
-  // Native foreground bots scramble and jostle their cameras throughout the tail.
-  reporter(705 - flee * 65, 1000 + 22 * Math.sin(r * (crashed ? 17 : 3)), 2.7, false, 5);
-  reporter(1244 - flee * 85, 991 + 24 * Math.sin(r * (crashed ? 19 : 3)), 2.8, false, 8);
-  camera(765 - flee * 205, 825 + (crashed ? Math.sin(age * 11) * 48 : 0), -.15 - age * .9);
-  camera(1155 + flee * 210, 811 + (crashed ? Math.sin(age * 14) * 44 : 0), .1 + age);
-  const exposure = .16 * hit(202.26, .035) + .18 * hit(203.20, .035) + .2 * hit(204.92, .04)
-    + .34 * hit(205.90, .045) + .13 * hit(206.40, .035) + .13 * hit(206.85, .035);
-  if (exposure > .005) paint(rectPts(-1200, -1500, 4400, 4300), { wash: CREAM, washOp: 255 * exposure, ink: null });
+  // Foreground press witnesses look up; distinct footprints leave the CEO's face clear.
+  reporter(760, 1200, 2.50, true, 5); reporter(1128, 1200, 2.50, true, 8);
   camEnd();
 };

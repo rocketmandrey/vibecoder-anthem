@@ -1,217 +1,232 @@
-// The slot machine. All poses, impacts and debris are seekable in real track time.
+// SLOT MACHINE: physical hands, recognisable GPUs, a readable face through the payout.
+// --var=capex:d,capexend:rain|belt. Every pose is a pure function of real song time.
 window.CAPEX_V = window.CAPEX_V || {};
 CAPEX_V.d = function (r) {
-  const INK = '#171C25', NAVY = '#27364D', GOLD = '#E8AA52';
-  const sh = (p, c, sw = 1.4) => paint(p, { wash: c, ink: INK, sw, tex: .5 });
+  const INK = '#171C25', NAVY = '#27364D', GOLD = '#E8AA52', ORANGE = '#DE8654';
+  const sh = (p, c, sw = 1.2) => paint(p, { wash: c, ink: INK, sw, tex: .45 });
   const box = (x, y, w, h, c, sw) => sh(rectPts(x, y, w, h), c, sw);
   const oval = (x, y, a, b, c, sw) => sh(ellPts(x, y, a, b, 18), c, sw);
-  const line = (p, w = 1.5, c = INK) => inkLine(p, w, c, 'ink', 0);
-  const hit = t => r < t ? 0 : Math.exp(-(r - t) * 15);
+  const line = (p, w = 1.2, c = INK) => inkLine(p, w, c, 'ink', 0);
+  const hit = (at, life = .12) => r < at ? 0 : Math.exp(-(r - at) / life);
   const later = hit(202.26), how = hit(203.20), soon = hit(204.92), now = hit(205.90);
-  const burst = r >= 205.90, age = Math.max(0, r - 205.90);
-  const flame = (x, y, s, phase) => {
-    push(); translate(x, y); scale(s);
-    sh([[-23, 15], [-30, -8], [-15, -33], [-10, -15], [7 + 7 * Math.sin(phase), -65], [20, -29], [31, -5], [21, 17]], '#E65B36', .8);
-    sh([[-12, 13], [-13, -6], [2, -29], [12, -4], [11, 14]], '#FFD47B', .5); pop();
-  };
-  function coin(x, y, s, a = 0, burn = false) {
+  const fired = r >= 205.90, age = Math.max(0, r - 205.90);
+  const belt = (window.BTT_VAR || {}).capexend === 'belt';
+  function coin(x, y, s = 1, a = 0) {
     push(); translate(x, y); rotate(a); scale(s);
-    if (burn) flame(0, -8, 1.15, r * 18 + x);
-    oval(0, 0, 29, 29, GOLD); oval(0, 0, 21, 21, '#F7D184', .8);
-    // A plain embossed hexagon, never a currency glyph.
-    sh([[-10, -15], [9, -15], [18, 0], [9, 15], [-10, 15], [-18, 0]], '#CB8944', .7); pop();
+    oval(0, 0, 26, 26, GOLD); oval(0, 0, 19, 19, '#F7D184', .65);
+    sh([[-8, -13], [8, -13], [15, 0], [8, 13], [-8, 13], [-15, 0]], '#CB8944', .6); pop();
   }
-  function chip(x, y, s, a = 0) {
+  function gpu(x, y, s = 1, a = 0, spin = 0) {
     push(); translate(x, y); rotate(a); scale(s);
-    for (let k = -2; k <= 2; k++) {
-      box(k * 13 - 3, -42, 6, 84, '#C5B989', .5);
-      box(-45, k * 12 - 3, 90, 6, '#C5B989', .5);
+    // Long board, two fan circles, PCIe fingers, and the silver mounting bracket.
+    box(-82, -37, 164, 74, '#365D5D'); box(-76, -31, 149, 62, '#263843', 1);
+    box(-78, 33, 113, 10, '#CEAA59', .6);
+    for (let i = 0; i < 9; i++) line([[-71 + i * 12, 35], [-71 + i * 12, 41]], .45, '#F5CF7F');
+    box(78, -47, 12, 95, '#A7AFB0', .9); box(81, -54, 22, 8, '#C7C7BA', .6);
+    for (const fx of [-40, 34]) {
+      oval(fx, 0, 29, 29, '#17212A', .8); oval(fx, 0, 23, 23, '#788F91', .6);
+      for (let j = 0; j < 5; j++) {
+        const q = spin + j * TAU / 5;
+        sh([[fx + 5 * Math.cos(q), 5 * Math.sin(q)],
+          [fx + 20 * Math.cos(q + .35), 20 * Math.sin(q + .35)],
+          [fx + 18 * Math.cos(q + .95), 18 * Math.sin(q + .95)]], '#344B55', .35);
+      }
+      oval(fx, 0, 6, 6, '#B9C5C0', .4);
     }
-    box(-36, -33, 72, 66, '#547C77'); box(-23, -22, 46, 44, '#263B44');
-    box(-14, -14, 28, 28, '#87A9AC', .7); line([[-13, -12], [9, -12]], .8, '#DCE0CF'); pop();
+    line([[-69, -25], [-52, -25]], .8, '#A6C0B5'); pop();
   }
-  function brain(x, y, s) {
+  function brain(x, y, s = 1) {
     push(); translate(x, y); scale(s);
-    sh([[-40, 18], [-49, 0], [-44, -21], [-30, -27], [-24, -40], [-7, -42], [0, -33], [12, -43], [29, -36], [34, -24], [47, -15], [49, 9], [37, 26], [14, 31], [0, 24], [-18, 31]], '#CA9398');
-    line([[0, -30], [-4, -10], [3, 5], [0, 22]], 1.6);
-    line([[-29, -22], [-17, -12], [-28, 0], [-17, 14]], 1.2);
-    line([[25, -26], [16, -12], [31, -3], [20, 15]], 1.2); pop();
+    sh([[-40, 18], [-49, 0], [-44, -21], [-30, -27], [-24, -40], [-7, -42],
+      [0, -33], [12, -43], [29, -36], [34, -24], [47, -15], [49, 9],
+      [37, 26], [14, 31], [0, 24], [-18, 31]], '#CA9398');
+    line([[0, -30], [-4, -10], [3, 5], [0, 22]], 1.2);
+    line([[-29, -22], [-17, -12], [-28, 0], [-17, 14]], .9);
+    line([[25, -26], [16, -12], [31, -3], [20, 15]], .9); pop();
   }
-  function snail(x, y, s) {
-    push(); translate(x, y); scale(s);
-    sh([[-47, 24], [-24, 13], [23, 15], [32, -11], [43, -10], [43, 22], [57, 29], [-42, 32]], '#A3AAA0');
-    oval(-10, 0, 30, 29, '#BF976E');
-    const spiral = [];
-    for (let j = 0; j < 23; j++) { const a = j * .43, rad = 23 * (1 - j / 27); spiral.push([-10 + Math.cos(a) * rad, Math.sin(a) * rad]); }
-    line(spiral, 1.5); line([[33, -9], [29, -25]], 1.2); line([[41, -9], [48, -24]], 1.2);
-    oval(29, -26, 3, 4, INK, .3); oval(48, -25, 3, 4, INK, .3); pop();
+  function snail(x, y) {
+    sh([[x - 48, y + 24], [x - 24, y + 13], [x + 23, y + 15], [x + 32, y - 11],
+      [x + 43, y - 10], [x + 43, y + 22], [x + 57, y + 29], [x - 42, y + 32]], '#A3AAA0');
+    oval(x - 10, y, 30, 29, '#BF976E');
+    const p = []; for (let j = 0; j < 23; j++) {
+      const a = j * .43, rad = 23 * (1 - j / 27); p.push([x - 10 + Math.cos(a) * rad, y + Math.sin(a) * rad]);
+    }
+    line(p, 1.2); line([[x + 33, y - 9], [x + 29, y - 25]], 1);
+    line([[x + 41, y - 9], [x + 48, y - 24]], 1);
+    oval(x + 29, y - 26, 3, 4, INK, .3); oval(x + 48, y - 25, 3, 4, INK, .3);
   }
-  function cherry(x, y) {
-    line([[x - 18, y + 5], [x, y - 37], [x + 23, y + 2]], 2.5, '#67886B');
-    oval(x - 20, y + 16, 19, 22, '#B94A45'); oval(x + 23, y + 13, 19, 22, '#CC6154');
+  function burst(x, y, k, rad = 65) {
+    if (k > .025) paint(starPts(x, y, rad * k, .42, 8), { wash: '#FFE6A9', ink: null });
   }
-  function impact(x, y, k, size) {
-    if (k > .02) sh(starPts(x, y, size * k, .32, 9, r * .2), '#FFF0B9', .8);
-  }
-
-  const cam = kf(r, [[201.60, [1000, 505, 1.24]], [202.24, [1052, 491, 1.32]],
-    [202.56, [1035, 545, 1.30]], [202.98, [982, 550, 1.40]], [203.38, [937, 553, 1.44]],
-    [203.83, [970, 522, 1.39]], [204.27, [1027, 455, 1.32]], [204.89, [1070, 412, 1.37]],
-    [205.22, [1030, 473, 1.30]], [205.88, [1010, 512, 1.28]], [206.25, [1000, 543, 1.18]],
-    [206.73, [970, 566, 1.23]], [207.26, [925, 563, 1.30]]]);
-  const kick = later * .045 + how * .06 + soon * .055 + now * .13;
-  const shake = burst ? 19 * Math.exp(-age * 2.3) : 3 * (later + how + soon);
-  camBegin(cam[0] + Math.cos(r * 91) * shake, cam[1] + Math.sin(r * 77) * shake,
-    cam[2] + kick + .005 * Math.sin(r * 5));
-  paint(rectPts(-1800, -1800, 5600, 4800), { wash: '#141D2B', ink: null });
-  // The casino is suggested by velvet folds, warm pools and neighbouring silhouettes.
+  // Composition fits the complete hero and the machine throughout the native 3:4 camera.
+  const cam = kf(r, [[201.60, [1000, 568, 1.02]], [202.26, [1008, 559, 1.06]],
+    [202.65, [987, 600, 1.04]], [203.20, [970, 585, 1.07]],
+    [203.65, [987, 575, 1.04]], [204.28, [1010, 527, 1.04]],
+    [204.92, [1014, 519, 1.07]], [205.30, [1000, 568, 1.02]],
+    [205.90, [1000, 575, 1.00]], [206.48, [982, 577, 1.02]], [207.26, [969, 570, 1.03]]]);
+  const shake = later * 3 + how * 6 + soon * 3 + now * 13;
+  camBegin(cam[0] + Math.sin(r * 83) * shake, cam[1] + Math.cos(r * 69) * shake, cam[2]);
+  paint(rectPts(-1800, -1800, 5600, 4800), { wash: '#17212F', ink: null });
   for (let i = 0; i < 11; i++) {
     const x = 180 + i * 170;
-    sh([[x, -650], [x + 110, -650], [x + 80, 920], [x - 15, 920]], i % 2 ? '#202B40' : '#253047', .4);
+    sh([[x, -650], [x + 110, -650], [x + 80, 940], [x - 15, 940]], i % 2 ? '#202B40' : '#253047', .4);
   }
-  box(-900, 920, 4000, 1400, '#393039');
-  for (const x of [350, 1610]) {
-    sh(rrPts(x - 115, 280, 230, 670, 45), '#20252F');
-    box(x - 85, 425, 170, 200, '#101923');
-    glowAt(x, 305, 140, '#DFA25A', 35);
+  box(-900, 930, 4000, 1400, '#3B3338');
+  line([[380, 934], [1760, 934]], .8, '#63515A');
+  glowAt(1130, 390, 360, fired ? '#FF9B4E' : '#DF9750', fired ? 42 : 27);
+  // Feet stay planted; recoil comes from rotation about the cabinet's base.
+  const recoil = -.012 * later + .017 * how - .012 * soon + .035 * now;
+  const pull = easeOut(seg(r, 201.60, 201.96));
+  const lever = [866, 705 + 114 * pull];
+  const button = [892, 858];
+  push(); translate(1130, 924); rotate(recoil); translate(-1130, -924);
+  sh(rrPts(887, 191, 517, 732, 42), '#76534A', 2);
+  sh(rrPts(902, 205, 487, 699, 29), NAVY, 1.6);
+  sh(rrPts(920, 224, 450, 89, 23), '#473C45');
+  sh([[1069, 283], [1060, 247], [1098, 262], [1144, 232], [1183, 262], [1227, 247], [1216, 283]], GOLD);
+  for (let i = 0; i < 19; i++) {
+    const x = i < 11 ? 932 + i * 43 : i < 15 ? 915 : 1381;
+    const y = i < 11 ? 213 : 346 + (i % 4) * 127;
+    const lit = fired || (i + Math.floor(r * 15)) % 5 < 3;
+    oval(x, y, 7, 8, lit ? '#FFCF79' : '#665349', .5);
   }
-  glowAt(1125, 330, 490, burst ? '#FF803C' : '#DF9750', burst ? 100 : 38);
-
-  // Cabinet recoil is a discontinuity precisely at each answer.
-  push(); translate(1125, 820); rotate(-.013 * later + .018 * how - .017 * soon + now * .07); translate(-1125, -820);
-  sh(rrPts(840, 155, 575, 735, 48), '#76534A', 2.5);
-  sh(rrPts(855, 170, 545, 700, 35), NAVY, 2);
-  sh(rrPts(873, 188, 509, 100, 38), '#473C45', 2);
-  // Pure pictorial jackpot crown.
-  sh([[1037, 245], [1026, 206], [1077, 223], [1127, 184], [1173, 223], [1225, 206], [1213, 245]], GOLD, 1.3);
-  for (let i = 0; i < 24; i++) {
-    const top = i < 12, x = top ? 879 + i * 45 : (i < 18 ? 867 : 1386);
-    const y = top ? 161 + 6 * Math.sin(i / 11 * Math.PI) : 290 + (i % 6) * 86;
-    const chase = r >= 204.28 && r < 204.92;
-    const lit = burst || (r < 204.92 && (!chase || (i + Math.floor(r * 30)) % 5 < 2));
-    oval(x, y, 10 + (burst ? 3 * Math.sin(r * 23 + i) : 0), 11, lit ? '#FFDA8C' : '#635754', .8);
-  }
-  box(885, 297, 480, 212, INK, 2);
+  box(936, 335, 415, 211, INK, 1.8);
   for (let i = 0; i < 3; i++) {
-    const x = 970 + i * 153;
-    box(x - 68, 310, 136, 184, '#E5D8BF');
+    const x = 1006 + i * 137;
+    box(x - 62, 348, 124, 183, '#E5D8BF');
     if (r < 202.26) {
-      const ph = (r * 7 + i * .28) % 1;
-      const yy = 314 + ph * 178;
-      if (i === 0) coin(x, yy, 1.1); else if (i === 1) cherry(x, yy); else chip(x, yy, .85);
-      for (let q = 0; q < 3; q++) line([[x - 45 + q * 40, 327], [x - 45 + q * 40, 470]], 1.2, '#B7AB94');
-    } else if (r < 204.28) snail(x, 404 + 3 * Math.sin(r * 4 + i), .98);
+      const yy = 350 + ((r * 5 + i * .27) % 1) * 178;
+      if (i === 0) coin(x, yy, 1); else if (i === 1) brain(x, yy, .85); else gpu(x, yy, .48, .12);
+      for (let q = 0; q < 3; q++) line([[x - 42 + q * 40, 358], [x - 42 + q * 40, 520]], .6, '#B7AB94');
+    } else if (r < 204.28) snail(x, 439 + Math.sin(r * 3 + i) * 1.5);
     else {
       const stop = [204.49, 204.70, 204.92][i];
-      const off = r < stop ? (1 - easeOut(seg(r, 204.28, stop))) * 150 : 0;
-      brain(x, 404 + off + (i === 2 && r >= 204.92 ? 90 : 0), .99);
+      const off = 148 * (1 - easeOut(seg(r, 204.28, stop)));
+      const miss = i === 2 ? 87 * easeIn(seg(r, 204.85, 204.92)) : 0;
+      brain(x, 439 + off + miss, .92);
     }
   }
-  // Masks crop the spinning pictures and the third brain halfway at its stop.
-  box(880, 278, 490, 32, NAVY); box(880, 494, 490, 180, NAVY);
-  line([[887, 310], [1365, 310]], 2, GOLD); line([[887, 494], [1365, 494]], 2, GOLD);
-  for (const x of [1038, 1191]) box(x, 308, 17, 188, '#55484A');
-  sh([[872, 395], [891, 405], [872, 415]], '#DDA957');
-  sh([[1378, 395], [1359, 405], [1378, 415]], '#DDA957');
-  // Coin inlet beside the character; the empty payout trough is below the reels.
-  sh(rrPts(887, 548, 85, 65, 10), '#9C8D79'); box(917, 557, 15, 45, INK);
-  sh(rrPts(1000, 566, 335, 37, 12), '#4B4241');
-  box(940, 678, 375, 99, '#111B26', 2);
-  sh([[922, 762], [1332, 762], [1309, 810], [946, 810]], '#82786C', 2);
-  line([[956, 782], [1299, 782]], 2, '#AAA08B');
-  if (r >= 202.26 && r < 202.60) {
-    const p = seg(r, 202.26, 202.60);
-    paint(ellPts(1120 + 40 * p, 749 - 45 * p, 15 + 34 * p, 9 + 17 * p, 16), { wash: '#C5BBA9', washOp: 170 * (1 - p), ink: null });
-  }
-  // Lever is pulled toward Clawd, away from the reels.
-  const pull = easeOut(seg(r, 201.60, 201.97));
-  const leverY = 407 + 208 * pull;
-  oval(854, 654, 27, 27, '#8C8175');
-  line([[854, 654], [804, leverY]], 10, INK); line([[854, 654], [804, leverY]], 6, '#C0B7A4');
-  oval(804, leverY, 27, 27, '#C75541');
-  if (burst) {
-    sh(starPts(1120, 616, 260 + 70 * Math.sin(age * 9), .65, 11), '#EF9A48', 2);
-    sh(starPts(1120, 616, 204, .55, 9), '#FFDC8D', 1);
-    for (let i = 0; i < 5; i++) {
-      push(); translate(1060 + (i - 2) * age * 300, 540 - age * 220 + age * age * 100); rotate((i - 2) * (.3 + age));
-      sh([[-45, -65], [50, -40], [27, 56], [-31, 36]], i % 2 ? NAVY : '#8E6454', 2); pop();
-    }
+  box(931, 318, 426, 30, NAVY); box(931, 531, 426, 113, NAVY);
+  for (const x of [1068, 1205]) box(x, 348, 13, 184, '#55484A');
+  line([[937, 348], [1351, 348]], 1.3, GOLD); line([[937, 531], [1351, 531]], 1.3, GOLD);
+  sh([[920, 432], [937, 440], [920, 448]], GOLD);
+  // The coin slot and lever are close enough for a real short arm to reach.
+  sh(rrPts(918, 744, 67, 73, 9), '#9C8D79'); box(942, 757, 11, 47, INK);
+  sh(rrPts(1011, 610, 322, 58, 12), '#4B4241');
+  box(1045, 711, 279, 90, '#111B26');
+  sh([[1018, 795], [1344, 795], [1327, 846], [1035, 846]], '#82786C', 1.7);
+  line([[1049, 821], [1321, 821]], 1, '#AAA08B');
+  oval(901, 857, 31, 25, '#111B26'); oval(button[0], button[1] - now * 6, 19, 13, '#C75541');
+  oval(891, 841, 8, 3, '#F4A57C', .3);
+  oval(908, 850, 8, 8, '#909087');
+  sh([[908, 850], [856, 824], [856, 708]], '#909087', .8);
+  // Handle follows a visible pivot and stops before the LATER payout.
+  line([[908, 850], lever], 1.8, '#BDB5A4'); oval(...lever, 18, 18, '#C75541');
+  if (fired && age < .18) {
+    burst(1167, 799, Math.exp(-age * 24), 170);
+    for (let i = 0; i < 5; i++) line([[1080 + i * 39, 722], [1077 + i * 39, 703 - now * 30]], .8, '#FFE2A0');
   }
   pop();
-
-  const bob = Math.sin(r * 7) * 3;
-  const slamPrep = ease(seg(r, 205.24, 205.63));
-  const cy = 857 + bob + how * 22 + now * 20;
-  clawd(741, cy, 28, { eyes: 'narrow', mouth: r < 203.20 ? 'smile' : burst ? 'O' : 'flat',
-    noShadow: true, aL: .2 + slamPrep * 1.7, aR: .15 + slamPrep * 1.7,
-    sq: .13 * how + .12 * now, rot: -.06 * how + .025 * Math.sin(r * 5),
-    col: '#DE8654', dk: '#A9583E', lt: '#F0AC77' });
-  function arm(x, y, ex, ey) {
-    line([[x, y], [(x + ex) / 2 - 12, y - 19], [ex, ey]], 13, INK);
-    line([[x, y], [(x + ex) / 2 - 12, y - 19], [ex, ey]], 9, '#DE8654');
-    sh(rrPts(ex - 19, ey - 16, 38, 32, 8), '#E99660');
-  }
-  if (r < 202.60) arm(852, 726 + bob, 804, leverY);
-  if (r >= 202.60 && r < 203.20) {
-    const feed = ease(seg(r, 202.60, 202.97));
-    const x = lerp(815, 924, feed), y = lerp(690, 579, feed);
-    arm(854, 732, x - 12, y + 18);
-    if (r < 203.03) coin(x, y, .84 * (1 - .6 * ease(seg(r, 202.94, 203.03))));
-    // Rejection travels out in anticipation; contact is exactly HOW.
-    if (r >= 203.03) {
-      const p = seg(r, 203.03, 203.20);
-      coin(lerp(924, 741, p), lerp(579, 603, p) - 42 * Math.sin(p * Math.PI), .84, p * 5);
+  // Airborne hardware passes behind the face; the settled pile is in front.
+  if (fired) {
+    if (belt) {
+      const extend = easeOut(seg(age, 0, .20)), left = lerp(1050, 557, extend);
+      sh([[left, 842], [1325, 842], [1325, 891], [left, 891]], '#4B5C61', 1.5);
+      for (let i = 0; i < 15; i++) {
+        const x = left + ((i * 56 - age * 300) % (1325 - left) + 1325 - left) % (1325 - left);
+        line([[x, 847], [x - 18, 885]], .8, '#A0A19A');
+      }
+      for (let i = 0; i < 7; i++) {
+        const a = age - i * .16; if (a < 0) continue;
+        const p = Math.min(1, a / .80), x = lerp(1180, 590, p);
+        const fall = Math.max(0, a - .8);
+        gpu(x, 804 + 520 * fall * fall, .63, -.10 - fall * 3, r * 9 + i);
+      }
+    } else {
+      // Cards arc out of the actual trough. Staggered births sustain the avalanche.
+      for (let i = 0; i < 15; i++) {
+        const start = i * .057, a = age - start; if (a < 0) continue;
+        const vx = -240 - hash(i + 19) * 430, vy = -300 - hash(i + 41) * 240;
+        const x = 1167 + vx * a, y = 815 + vy * a + 620 * a * a;
+        // Once a card settles it belongs to the heap, not a flickering airborne clone.
+        if (y < 945) gpu(x, y, .57 + hash(i) * .16, .1 + a * (i % 2 ? 3 : -3), r * 8 + i);
+      }
     }
   }
-  if (r >= 203.20 && r < 204.12) {
-    const a = r - 203.20;
-    coin(741 - 200 * a, 603 - 150 * a + 470 * a * a, .84, a * 10);
-    impact(741, 621, how, 94);
-    for (let i = 0; i < 3; i++) {
-      const a = r * 7 + i * 2.094;
-      sh(starPts(740 + Math.cos(a) * 106, 592 + Math.sin(a) * 22, 11, .4, 5), GOLD, .7);
+  // The original Clawd drawer remains untouched. Native arms are tucked behind the torso;
+  // the posed arms below inherit the body's exact squash/rotation and have fixed lengths.
+  const prep = ease(seg(r, 205.24, 205.61));
+  const lean = .06 * prep - .055 * how - .022 * now;
+  const squash = .06 * how + .055 * now;
+  const heroX = 713 - 11 * how + (belt ? -12 * easeOut(seg(r, 206.10, 206.65)) : 0);
+  const heroY = 928;
+  const u = 31, sx = 1 + squash * .6, sy = 1 - squash;
+  clawd(heroX, heroY, u, { noShadow: false, aL: -Math.PI / 2, aR: -Math.PI / 2,
+    sq: squash, rot: lean, col: ORANGE, dk: '#A9583E', lt: '#F0AC77',
+    eyes: fired ? 'scared' : r >= 203.20 && r < 204.28 ? 'swirl' : 'narrow',
+    mouth: fired ? 'O' : r < 203.20 ? 'smile' : 'flat' });
+  function arm(side, worldTarget) {
+    const c = Math.cos(lean), s = Math.sin(lean), dx = worldTarget[0] - heroX, dy = worldTarget[1] - heroY;
+    const target = [(c * dx + s * dy) / sx, (-s * dx + c * dy) / sy];
+    const shoulder = [side * 4.9 * u, -4.5 * u], ax = target[0] - shoulder[0], ay = target[1] - shoulder[1];
+    const d = Math.min(123.9, Math.max(8, Math.hypot(ax, ay))), a = Math.atan2(ay, ax);
+    const bend = side * Math.acos(d / 124), elbow = [shoulder[0] + 62 * Math.cos(a + bend), shoulder[1] + 62 * Math.sin(a + bend)];
+    const tip = [shoulder[0] + d * Math.cos(a), shoulder[1] + d * Math.sin(a)];
+    push(); translate(heroX, heroY); rotate(lean); scale(sx, sy);
+    for (const [p, q] of [[shoulder, elbow], [elbow, tip]]) {
+      const len = Math.hypot(q[0] - p[0], q[1] - p[1]), px = -(q[1] - p[1]) * 10 / len, py = (q[0] - p[0]) * 10 / len;
+      sh([[p[0] + px, p[1] + py], [q[0] + px, q[1] + py], [q[0] - px, q[1] - py], [p[0] - px, p[1] - py]], ORANGE, 1.1);
+    }
+    oval(...elbow, 11, 11, ORANGE, .7); oval(...tip, 17, 14, '#EA9A65', 1);
+    line([[tip[0] - 5, tip[1] - 5], [tip[0] + 5, tip[1] - 5]], .6, '#A9583E'); pop();
+    return [heroX + c * tip[0] * sx - s * tip[1] * sy, heroY + s * tip[0] * sx + c * tip[1] * sy];
+  }
+  arm(-1, [595, 849 - 20 * prep]);
+  let right = [855, 844];
+  if (r < 202.48) right = lever;
+  else if (r < 203.03) {
+    const p = ease(seg(r, 202.48, 202.97)); right = [lerp(866, 945, p), lerp(819, 782, p)];
+  } else if (r < 203.20) {
+    const p = ease(seg(r, 203.03, 203.18)); right = [lerp(945, 855, p), lerp(782, 844, p)];
+  } else if (r >= 205.24 && !fired) {
+    const down = easeIn(seg(r, 205.70, 205.90)); right = [lerp(855, 892, prep), lerp(844, 786, prep) + 72 * down - 24 * Math.sin(prep * Math.PI)];
+  } else if (fired) right = [lerp(892, 858, easeOut(seg(age, 0, .20))), 858 - 16 * Math.sin(age * 9) * Math.exp(-age * 2)];
+  const hand = arm(1, right);
+  if (r >= 202.48 && r < 203.03) {
+    const enter = ease(seg(r, 202.94, 203.03)); coin(hand[0], hand[1] - 11, .75 * (1 - .8 * enter));
+  }
+  if (r >= 203.03 && r < 204.00) {
+    if (r < 203.20) {
+      const p = seg(r, 203.03, 203.20); coin(lerp(945, 705, p), lerp(771, 696, p) - 52 * Math.sin(p * Math.PI), .75, p * 5);
+    } else {
+      const a = r - 203.20; coin(705 - 150 * a, 696 - 170 * a + 660 * a * a, .75, a * 12);
+      burst(705, 694, how, 66);
+      for (let i = 0; i < 3; i++) {
+        const p = r * 7 + i * TAU / 3;
+        sh(starPts(710 + Math.cos(p) * 85, 668 + Math.sin(p) * 12, 7, .4, 5), GOLD, .5);
+      }
     }
   }
-  if (r >= 204.92 && r < 205.24) {
-    impact(1280, 467, soon, 67);
-    for (let i = 0; i < 5; i++) line([[1100 + i * 23, 170], [1092 + i * 23, 143 - soon * 24], [1105 + i * 23, 119 - soon * 28]], 1.7, '#A5ACAF');
+  // The slow symbols stay exposed; their impact mark is beside, never over, the image.
+  burst(1373, 442, later, 37); burst(1373, 526, soon, 38);
+  if (r >= 204.92 && r < 205.30) {
+    line([[1248, 570], [1254, 592], [1248, 607]], .8, '#AEB9B7');
+    line([[1280, 565], [1288, 589], [1281, 607]], .8, '#AEB9B7');
   }
-  if (r >= 205.24 && !burst) {
-    const down = easeIn(seg(r, 205.71, 205.90));
-    arm(621, 727, 944, 641 - 132 * slamPrep + 135 * down);
-    arm(866, 727, 1020, 636 - 132 * slamPrep + 135 * down);
-  }
-  if (burst) {
-    arm(621, 727, 944 - 90 * easeOut(age / .28), 663 + Math.sin(age * 17) * 15);
-    arm(866, 727, 1020 - 70 * easeOut(age / .28), 658);
-    impact(977, 663, now, 135);
-    // Continuous outward stream; new chips keep entering until the hard scene cut.
-    for (let i = 0; i < 34; i++) {
-      const start = i < 12 ? 0 : (i - 12) * .047;
-      const a = age - start; if (a < 0) continue;
-      const vx = (hash(i + 19) - .63) * 1250, vy = -280 - hash(i + 41) * 620;
-      const x = 1130 + vx * a, y = 620 + vy * a + 670 * a * a;
-      if (i % 3) chip(x, y, .8 + hash(i) * .45, i + a * (i % 2 ? 5 : -6));
-      else coin(x, y, .9, i + a * 7, true);
+  if (fired) {
+    // Face stays above the heap. Each card arrives and settles, instead of a solid wall popping in.
+    const rise = easeOut(seg(age, .16, 1.05)), top = 956 - rise * 155;
+    for (let i = 0; i < 13; i++) {
+      const born = .13 + i * .052; if (age < born) continue;
+      const a = age - born, x = 587 + (i % 5) * 124 + 14 * Math.sin(i * 8), y = top + 62 + Math.floor(i / 5) * 75 + 12 * Math.sin(i * 5);
+      gpu(x, y - 15 * Math.exp(-a * 8) * Math.abs(Math.sin(a * 19)), .70,
+        .31 * Math.sin(i * 3) + .015 * Math.exp(-a * 4) * Math.sin(a * 15), r * (i < 3 ? 5 : 0) + i);
     }
-    // Rising foreground heap covers the body but leaves the slit eyes peeking out.
-    const rise = easeOut(seg(r, 205.90, 206.63));
-    const top = 1005 - 303 * rise;
-    sh([[360, top + 95], [585, top + 22], [733, top], [942, top + 29], [1160, top - 24], [1540, top + 54], [1700, 1400], [200, 1400]], '#354C50', 2);
-    for (let i = 0; i < 27; i++) {
-      const row = Math.floor(i / 9), x = 425 + (i % 9) * 125;
-      const y = top + 72 + row * 108 + Math.sin(i * 2) * 20 + 6 * Math.sin(r * 9 + i);
-      if (i % 4) chip(x, y, 1.12, Math.sin(i * 3) * .5 + .035 * Math.sin(r * 8 + i));
-      else coin(x, y, 1.1, i, true);
-    }
-    for (let i = 0; i < 19; i++) {
-      const p = (age * (1.1 + hash(i)) + hash(i + 3)) % 1;
-      const x = 520 + hash(i + 9) * 930, y = 940 - p * 870;
-      line([[x, y], [x + 5, y + 15]], 2, i % 2 ? '#FFCC79' : '#E47743');
+    // The gag ends with the character looking out of the hardware, still moving.
+    for (let i = 0; i < 7; i++) {
+      const p = (age * .9 + hash(i + 9)) % 1;
+      line([[970 + hash(i) * 340, 850 - p * 300], [973 + hash(i) * 340, 859 - p * 300]], .8, i % 2 ? GOLD : '#E47743');
     }
   }
-  impact(1124, 402, later, 65);
-  // Local light wash retains the readable silhouettes on the actual impact frame.
-  if (now > .04) paint(rectPts(-1800, -1800, 5600, 4800), { wash: '#FFE0A0', washOp: now * 90, ink: null });
   camEnd();
 };
