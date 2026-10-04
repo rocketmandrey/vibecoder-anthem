@@ -470,6 +470,7 @@ else {
 
 // BURN THE TOKENS keeps the moon out of every reused RU sky (a05 factory, a10 office window)
 window.NO_MOON = true;
+window.GLOW_STILL = true;   // kit.js glowAt: a fixed blob per glow, no 12 fps flicker
 // «Don't ask why — it's good for you!»: the a05 LED billboard tells it with a picture, no slogan: the grinning stock-photo Clawd with the
 // thumbs-up is spoon-fed a glowing token like medicine, a big heart pops over him, five stars under it.
 a05_billboard = function (x, y, w, h, t, lit) {

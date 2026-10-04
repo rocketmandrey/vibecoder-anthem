@@ -64,7 +64,16 @@ const fmtNum = n => String(Math.floor(Math.max(0, n))).replace(/\B(?=(\d{3})+(?!
 const _mc = document.createElement('canvas').getContext('2d');
 const textW = (txt, font) => { _mc.font = font; return _mc.measureText(txt).width; };
 const rotPts = (pts, cx, cy, a) => { const c = Math.cos(a), s = Math.sin(a); return pts.map(([x, y]) => [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]); };
-const glowAt = (x, y, r, col, op = 80) => paint(ellPts(x, y, r, r, 16), { fill: col, fillOp: op, bleed: .3, tex: .2, border: .1, ink: null });
+// window.GLOW_STILL (BURN THE TOKENS EN): every glow is one fixed bleed blob. With the frame's boil seed the big translucent blob
+// re-shaped itself 12x a second and read as flicker (the 244 s reset bar glow, the midnight clock/laptop halos). The boil resumes after it.
+let _glowT = null, _glowN = 0;
+const glowAt = (x, y, r, col, op = 80) => {
+  if (!window.GLOW_STILL) return paint(ellPts(x, y, r, r, 16), { fill: col, fillOp: op, bleed: .3, tex: .2, border: .1, ink: null });
+  if (_glowT !== T) { _glowT = T; _glowN = 0; }
+  randomSeed(4242);
+  paint(ellPts(x, y, r, r, 16), { fill: col, fillOp: op, bleed: .3, tex: .2, border: .1, ink: null });
+  randomSeed(1000 + Math.floor(T * BOIL) * 977 + ++_glowN);
+};
 
 // ---------- fire + smoke ----------
 function flamePts(x, y, w, h, t, seed, n) {
@@ -358,7 +367,7 @@ function limitBar(x, y, w, v, o = {}) {
   paint(rrPts(x, y, w, h, h * .3, 1.5), { wash: TK.soot, ink: grey ? TK.ash : TK.cream, sw: sw * 1.2 });
   const fw = (w - h * .3) * v;
   if (fw > h * .3) {
-    paint(rrPts(x + h * .15, y + h * .15, fw, h * .7, h * .2), { wash: col, fill: grey ? TK.sootLt : mixCol(col, TK.soot, .35), fillOp: 90, tex: .6, border: .4, ink: null });
+    paint(rrPts(x + h * .15, y + h * .15, fw, h * .7, h * .2), { wash: col, fill: grey ? TK.sootLt : mixCol(col, TK.soot, .35), fillOp: 90, tex: .6, border: .4, bleed: window.GLOW_STILL ? .01 : .1, ink: null });   // EN: the bleed smeared a flickering green cloud round the full bar
     if (!grey) inkLine([[x + h * .35, y + h * .32], [x + h * .15 + fw - h * .2, y + h * .32]], sw * .7, '#FFFFFF', 'inkfine', 0);
   }
   for (let q = 1; q < 4; q++) inkLine([[x + w * q / 4, y + h * .78], [x + w * q / 4, y + h]], sw * .5, TK.ash, 'inkfine', 0);

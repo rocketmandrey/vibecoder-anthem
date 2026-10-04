@@ -317,15 +317,18 @@
   }
 
   function sReset(t) {                                                        // 220.7 the notification, the one Matrix glitch, the bar refills
-    const mx = seg(t, 220.9, 221.1) * (1 - seg(t, 222.25, 222.45)), fill = ease(seg(t, 222.45, 223.18)), full = t >= 223.18;
+    // R34 (v24, user: «грязновата — мигает»): no full-frame blink and no bar-end glow blob; the Matrix glitch per --var=reset:a|b|c
+    // a: kept as is, b: none, c: one short burst
+    const RV = R ? ((window.BTT_VAR || {}).reset || 'a') : 'a';
+    const mx = RV === 'b' ? 0 : RV === 'c' ? seg(t, 220.9, 221.0) * (1 - seg(t, 221.45, 221.6)) : seg(t, 220.9, 221.1) * (1 - seg(t, 222.25, 222.45)), fill = ease(seg(t, 222.45, 223.18)), full = t >= 223.18;
     const ring = t - 220.76;
     // R34: a tall card: the notification up top, the bar under it, both inside ~85% of the width
     const [bx, by, bw, cx0, cy0, cw, ch] = R ? [530, 620, 860, 490, 200, 940, 210] : [460, 470, 1000, 400, 130, 1120, 210];
     screenCU(t, () => {
-      limitBar(bx, by, bw, fill, { h: R ? 100 : 92, grey: fill < .01, glow: full ? .6 + .4 * hitK(t, [223.18, 223.68, 224.18], .4) : 0 });
+      limitBar(bx, by, bw, fill, { h: R ? 100 : 92, grey: fill < .01, glow: full && !R ? .6 + .4 * hitK(t, [223.18, 223.68, 224.18], .4) : 0 });
       if (fill < .01) noLimitMsg(true, R ? 820 : 640);
       if (fill > .01) tokenRain(t, { n: 14, r: 20, seed: 4, area: R ? [520, 1400] : [300, 1620] });
-      if (full) stamp('+1 000 000', 960, 740, 64, t, 223.18, { col: '#2FBF71', rot: -.08 });
+      if (full && !R) stamp('+1 000 000', 960, 740, 64, t, 223.18, { col: '#2FBF71', rot: -.08 });   // R34: its text is hidden (letter() size rule), only a green smear was left under the bar
       const jx = mx > .1 ? (hash(Math.floor(t * 24)) - .5) * 40 * mx : 0;
       uiCard(cx0 + jx, cy0, cw, ch, { title: 'Ваш недельный лимит восстановлен', body: 'Приятной недели! · 1 000 000 токенов', icon: 'token', time: '00:00', timeLow: R, k: seg(t, 220.72, 221.0), accent: A2.matrix });
       if (mx > .01) {
@@ -335,7 +338,7 @@
     });
     if (ring > 0 && ring < .5) for (let i = 0; i < 3; i++) inkLine([[(R ? 1390 : 1400) + i * 22, (R ? 220 : 150) - i * 14], [(R ? 1420 : 1430) + i * 22, (R ? 190 : 120) - i * 14]], 2, '#C9D3E6', 'inkfine', 0);
     if (mx > .05) glitchCut(t, 221.65, { span: .8, k: .55 * mx, n: 7, cols: [A2.matrix, A2.matrixBg, '#7DFFAE', '#0B3D1E'] });
-    if (full) flash((R ? .35 : .7) * hitK(t, [223.18], .1), '#E6FFE8');   // R34: a softer blink (no washed frame)
+    if (full && !R) flash(.7 * hitK(t, [223.18], .1), '#E6FFE8');
   }
 
   // v3 only (tokens3 warp): he says «Сука» with his eyes shut; the band crash cuts to this snap: the eyes fly open, red, on a zoom punch (v2 225.0+)
