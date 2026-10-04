@@ -468,6 +468,49 @@
     for (const k of [-1, 1]) inkLine([[cx + k * nx, cy + k * ny], [P2[0] + k * nx, P2[1] + k * ny]], 3, '#2A2A2A', 'ink', 0);
     paint(gearPts(P2[0], P2[1], pr + 4, 8, -ang * 2.5, 9), { wash: TK.yellow, ink: INK, sw: 1.2 }); };
   const ceo = (x, s, wa, o = {}) => ceoClawd(x, FLY - 4, 22, { noShadow: true, flip: true, eyes: wa >= 0 ? 'spark' : 'happy', mouth: wa >= 0 ? 'O' : 'grin', aL: 1.5, aR: wa >= 0 ? 1.8 : .9, click: kick(s, [RG.eco, RG.work], .2), ...o });
+  // v24 the CEO acts, --var=ceo:a|b|c (unset = the old stand-and-click). User: «Клоди который внизу говорит — сделай чтобы двигался».
+  //   a salesman: strides across the stage between the pitches, turns and points at the wheel / the board on every noun, bounces on the drums
+  //   b hype man: a hand mic, a jump on every «More», bounces on the drums, a hard fist-pump run on «WORKING»
+  //   c ringmaster: a baton that circles WITH the wheel (so it winds up as the hamster speeds up), snaps on the drums, a leap on the launch
+  // Mouth: open while a sung word sounds (EN_WORDS → real). Hits: kick + snare onsets ≥ .6 from assets/tokensEN/drums.json (real s).
+  const CEOV = ((window.BTT_VAR || {}).ceo || '').toLowerCase();
+  const CHITS = [157.15, 158.48, 159.80, 161.12, 162.44, 162.78, 163.10, 163.44, 163.76, 164.09, 164.43, 164.76, 165.08, 165.42, 165.74, 166.07, 166.41, 166.74, 167.07, 167.40, 167.72, 168.39, 169.05, 169.38, 169.86, 172.36, 172.54, 172.62, 172.70, 173.04, 173.36, 173.85, 174.02, 174.35, 174.68];
+  const CSAY = EN_WORDS.map(([v], i) => [v, EN_WORDS[i + 1] ? EN_WORDS[i + 1][0] : v + .5]).filter(([v]) => v > 134.5 && v < 150.3).map(([v, n]) => [O2N(v), O2N(Math.min(n, v + .55))]);
+  const cMouth = (s, rest) => { const w = CSAY.find(([a, b]) => s >= a && s < b); return w ? (frac((s - w[0]) * 7) < .62 ? 'O' : 'o') : rest; };
+  const hop = (s, list, len, h) => { const t0 = lastLE(list, s); if (t0 == null || s - t0 > len) return 0; const q = (s - t0) / len; return -4 * h * q * (1 - q); };   // a parabola jump of h u
+  const NOUNS = RG.words, PITCH = [1020, 1420, 1080, 1450, 1000, 1380, 1120, 1440];        // a: where he stands for each «More …» pair
+  const mic = (u0, sw) => { const u = u0 * 1.5; paint(rrPts(-.2 * u, -.32 * u, 1.5 * u, .64 * u, .25 * u), { wash: TK.soot, ink: PAL.ink, sw: sw * .5 });
+    paint(ellPts(1.75 * u, 0, .62 * u, .62 * u, 14), { wash: '#9AA0AA', ink: PAL.ink, sw: sw * .6 });
+    for (const k of [-.3, 0, .3]) inkLine([[1.75 * u + k * u, -.5 * u], [1.75 * u + k * u, .5 * u]], sw * .3, '#5A5F6A', 'inkfine', 0); };
+  const baton = (u0, sw) => { const u = u0 * 1.4; paint(rrPts(-.2 * u, -.18 * u, 3.6 * u, .36 * u, .15 * u), { wash: '#FBF8F1', ink: PAL.ink, sw: sw * .5 });
+    paint(rrPts(-.25 * u, -.28 * u, .9 * u, .56 * u, .2 * u), { wash: '#2A2A2A', ink: null });
+    paint(starPts(3.5 * u, 0, .55 * u, .45, 5), { wash: TK.yellow, ink: PAL.ink, sw: sw * .4 }); };
+  function ceoAct(s, wa) {
+    const hit = kick(s, CHITS, .1), land = kick(s, CHITS, .06), up = wa >= 0, base = { noShadow: true, eyes: up ? 'spark' : 'happy', sq: .1 * land - (up ? 0 : .02) };
+    if (CEOV === 'a') {
+      const m = Math.max(0, lastLE(MORES, s) == null ? -1 : MORES.indexOf(lastLE(MORES, s))), from = m ? PITCH[m - 1] : 1220, to = PITCH[m] ?? 1220;
+      const t0 = MORES[m] ?? RG.a, wq = up ? 1 : clamp((s - t0 + .1) / .55), x = up ? 1200 : lerp(from, to, ease(wq)), moving = !up && wq > 0 && wq < 1;
+      const nn = lastLE(NOUNS, s), ni = nn == null ? -1 : NOUNS.indexOf(nn), pt = ni >= 0 && !moving ? kick(s, [nn], .5) : 0, atBoard = ni % 2 === 1;
+      const flip = moving ? to < from : !atBoard;                                                  // flip = facing left (the wheel)
+      return ceoClawd(x, FLY - 4, 25, { ...base, flip, walk: moving ? s * 3.2 : null, mouth: cMouth(s, up ? 'O' : 'grin'),
+        aR: up ? 2.6 : moving ? .3 * Math.sin(s * 20) : .6 + (atBoard ? .7 : 0) * Math.min(1, pt * 2) + .2 * hit,          // the clicker arm points
+        aL: up ? 2.6 : moving ? -.3 * Math.sin(s * 20) : 1.1 + 1.1 * Math.min(1, pt * 2),                                   // the other one sells it
+        dy: (up ? hop(s, [RG.work, ...CHITS.filter(h => h > RG.work)], .3, 2.5) : -1.2 * hit) - (moving ? Math.abs(Math.sin(s * 10)) * .6 : 0),
+        rot: moving ? (to < from ? .08 : -.08) : (flip ? .06 : -.06) * pt, click: kick(s, NOUNS, .2) });
+    }
+    if (CEOV === 'b') {
+      const mj = hop(s, MORES, .42, 3.2), pump = up ? hop(s, [RG.work, ...CHITS.filter(h => h > RG.work)], .26, 2.8) : 0, ph = Math.floor(s / .17) % 2;
+      return ceoClawd(1180, FLY - 4, 25, { ...base, flip: true, noClicker: true, armR: mic, mouth: cMouth(s, up ? 'O' : 'grin'),
+        aR: up ? .9 : 1.05 + .15 * hit, aL: up ? (ph ? 2.9 : 1.6) : mj < -.2 ? 2.9 : .6 + 1.4 * hit,               // the free fist punches the air
+        dy: up ? pump : mj - 1.3 * hit, sq: up || mj < -.05 ? -.04 : .14 * land, rot: up ? .06 * Math.sin(s * 18) : mj < -.2 ? -.07 : .05 * hit,
+        eyes: up || mj < -.5 ? 'spark' : 'happy' });
+    }
+    // c: the ringmaster. The baton arm turns with the wheel (spinOf), plus a snap down on each drum hit; the other hand beckons «faster».
+    const wph = spinOf(s), r = rateOf(s), leap = up ? hop(s, [RG.work + .06], .7, 7) + hop(s, CHITS.filter(h => h > RG.work + .8), .25, 2) : 0;
+    return ceoClawd(1200, FLY - 4, 25, { ...base, flip: true, noClicker: true, armR: baton, mouth: cMouth(s, up ? 'O' : 'smile'),
+      aR: up ? 2.7 : 1.15 + .75 * Math.sin(wph) - .7 * hit, aL: up ? 2.7 : .9 + .55 * Math.sin(s * TAU * (.8 + r * .9)),
+      dy: up ? leap : -1 * hit, rot: up ? -.25 * Math.sin(clamp((s - RG.work) / .7) * Math.PI) : .03 + .04 * r / R2, eyes: up ? 'spark' : r > 1.2 ? 'spark' : 'happy' });
+  }
   const spark = (from, to, u, col) => { if (u <= 0 || u >= 1) return; const x = lerp(from[0], to[0], u), y = lerp(from[1], to[1], u) - Math.sin(u * Math.PI) * 120;
     glowAt(x, y, 50, col, 200); paint(ellPts(x, y, 9, 9, 10), { wash: '#FFF6D0', ink: null }); };
   // a: 16 bars, one per filled cell, in the cell's colour
@@ -517,7 +560,7 @@
         paint(ellPts(px, py, 14 + 20 * u, 12 + 16 * u, 10), { fill: '#B8B2A8', fillOp: 140 * (1 - u * .6), ink: null }); }
       if (a < .35) paint(starPts(tx, ty, 120 * a / .35 + 40, .4, 10), { wash: '#FFE04A', washOp: 255 * (1 - a / .35), ink: INK, sw: 1.2 });
     }
-    ceo(1160, s, wa, WKV === 'c' && popped ? { aL: 2.6, aR: 2.6, eyes: 'spark', mouth: 'O', dy: -2 * Math.abs(Math.sin(s * 14)) } : {});   // c: he cheers, hopping
+    if (CEOV) ceoAct(s, wa); else ceo(1160, s, wa, WKV === 'c' && popped ? { aL: 2.6, aR: 2.6, eyes: 'spark', mouth: 'O', dy: -2 * Math.abs(Math.sin(s * 14)) } : {});   // c: he cheers, hopping
   }
   // b: the timeline strip under the wheel
   const TLY = 1380, TLH = 360, TLX0 = 230, TLX1 = 1490, NOW = 1310, STEP = 36;
