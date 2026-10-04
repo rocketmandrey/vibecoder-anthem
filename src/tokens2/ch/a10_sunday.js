@@ -319,7 +319,7 @@
   function sReset(t) {                                                        // 220.7 the notification, the one Matrix glitch, the bar refills
     // R34 (v24, user: «грязновата — мигает»): no full-frame blink and no bar-end glow blob; the Matrix glitch per --var=reset:a|b|c
     // a: kept as is, b: none, c: one short burst
-    const RV = R ? ((window.BTT_VAR || {}).reset || 'a') : 'a';
+    const RV = R ? ((window.BTT_VAR || {}).reset || 'b') : 'a';
     const mx = RV === 'b' ? 0 : RV === 'c' ? seg(t, 220.9, 221.0) * (1 - seg(t, 221.45, 221.6)) : seg(t, 220.9, 221.1) * (1 - seg(t, 222.25, 222.45)), fill = ease(seg(t, 222.45, 223.18)), full = t >= 223.18;
     const ring = t - 220.76;
     // R34: a tall card: the notification up top, the bar under it, both inside ~85% of the width
