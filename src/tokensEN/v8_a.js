@@ -26,6 +26,12 @@
   //   b — WIDE: the whole mountain + press + skyline in frame, each knock-back a backward tumble (a full flip) and he catches the token
   //   c — a low heroic close-up on a steeper slope, each knock-back the token bouncing back and squashing him flat
   const V = ((window.BTT_VAR || {}).intro || 'c').toLowerCase();          // the user picked c for the climb
+  // v12m sweat storyboards, --var=sweat:a|b|c (unset = v12l). Audit: v12l spawned at his head's coin-side corner and flew screen-left in
+  // WORLD angles, i.e. across the coin's face, drawn on top of it at 1/10 of its size → read as leaking out from under the coin.
+  //   a 💦: 3 big drops spring off the TOP edge's back half (clear dark air), launched in his own frame up/back, world gravity arc
+  //   b one fat drop swells on his back temple through the strain before each knock, flicks off behind him on the knock
+  //   c relief instead: after the lift (head clear, upright) a wet-dog shake from the 15.73 hit, the spray flies off his head on the 15.89 snare
+  const SWV = ((window.BTT_VAR || {}).sweat || '').toLowerCase();
   // v12e: the ending (16.2–22.4) — the PRESS is the engine that switches the city on: every stroke lights the skyline behind it.
   // Strokes only on drum-stem hits: the 16.21 slam, a rest (ram up, steam), then the roll's accents 19.11 · 19.69 → 19.86 (a «da-DUM»),
   // a slow heave through the drum-less 20–22 gap (no strokes, the press shivers and hisses), the 22.18 drum entry the final big one.
@@ -36,6 +42,7 @@
   const VE = ((window.BTT_VAR || {}).introend || 'b').toLowerCase();          // the user picked b
   const IA = 0, IB = 22.40;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
+  const SWC = [15.726, 15.894];                                           // sweat:c — the brow wipe (drum hit) and the flick (snare)
   const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
   const KN = [1.217, 6.086, 8.73, 13.395];
   const KL = { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
@@ -181,12 +188,33 @@
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
-      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true });
+      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true,
+      ...(SWV === 'c' && t > SWC[0] && t < SWC[1] + .35 ? { rot: t < SWC[1] + .08 ? .2 * Math.sin((t - SWC[0]) * 75) : 0, sq: t < SWC[1] ? .08 : 0, aL: 1.2, aR: 1.2, eyes: t < SWC[1] + .08 ? 'closed' : 'happy', mouth: t < SWC[1] + .08 ? 'flat' : 'grin' } : {}) });   // c: a wet-dog shake
     // sweat v12k (user: «all bad — rethink it, give it to Codex»; spec from Codex/Astra off the 💦 reference): NO idle sweat; exactly two quick
     // 💦 bursts, .06 s after the knock-backs in the second half (8.73, 13.40): three glossy teardrops fan out to the screen-LEFT from the
     // left end of his head edge (away from the coin), bulb first, tail pointing back at him, a small bow, gone in .5 s
     const SWB = KN.slice(2).map(k => k + .06), sb = lastLE(SWB, t), sa = sb == null ? 9 : t - sb;
-    if (sa < .5) {
+    const flushN = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
+    const dshape = (L, k = 1) => { const rb = .275 * L, c = L - rb; beginShape(); vertex(0, 0); for (let a = -1.9; a <= 1.9; a += .19) vertex(c + Math.cos(a) * rb * k, Math.sin(a) * rb * k); endShape(CLOSE); };
+    const drop = (x, y, a, Lp, al = 1, sL = 1, sW = 1) => {                       // the 💦 teardrop, bulb toward a, native (after flushN)
+      push(); translate(x, y); rotate(a); scale(sL, sW); translate(-Lp * .45, 0);
+      stroke(8, 125, 168, 255 * al); strokeWeight(Lp * .07); fill(7, 156, 221, 255 * al); dshape(Lp);
+      noStroke(); fill(41, 197, 246, 255 * al); push(); translate(-.03 * Lp, -.035 * Lp); scale(.93); dshape(Lp); pop();
+      fill(153, 236, 255, 255 * al); ellipse(Lp * .66, -Lp * .08, Lp * .34, Lp * .2);
+      noFill(); stroke(243, 253, 255, 255 * al); strokeWeight(Lp * .07); strokeCap(ROUND); arc(Lp * .725, 0, Lp * .35, Lp * .35, Math.PI * 1.05, Math.PI * 1.55); pop(); };
+    const rr = gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0), rc = Math.cos(rr), rs = Math.sin(rr), Wl = (lx, ly) => [fx + lx * rc - ly * rs, fy + lx * rs + ly * rc];
+    const fly = (lx, ly, dx, dy, sp, tt, g = 2600) => { const [x0, y0] = Wl(lx, ly), vx = (dx * rc - dy * rs) * sp, vy = (dx * rs + dy * rc) * sp;   // local launch, world gravity
+      return [x0 + vx * tt, y0 + vy * tt + g * tt * tt / 2, Math.atan2(vy + g * tt, vx)]; };
+    if (SWV === 'a' && sa < .55) { flushN(); const u = cu, al = 1 - seg(sa, .4, .55);
+      for (const [lx, dx, dy, sp, L, d0] of [[-1.5, -.25, -1, 620, 3.2, 0], [-3.2, -.75, -.7, 700, 3.8, .03], [-4.6, -1, -.25, 560, 2.6, .06]]) { const tt = sa - d0; if (tt < 0) continue;
+        const [x, y, a] = fly(lx * u, -8.2 * u, dx, dy, sp, tt), k = Math.min(1, tt / .07); drop(x, y, a, L * u, al, lerp(.4, 1, k), lerp(.5, 1, k)); } }
+    if (SWV === 'b') { const u = cu, nk = KN.slice(2).find(k => t < k + .6); if (nk != null) { const g = t < nk ? easeIn(seg(t, nk - .7, nk)) : 1, L = lerp(.8, 3.4, g) * u;
+      flushN(); if (t < nk) { if (g > .01) { const [x, y] = Wl(-4.5 * u, -6.9 * u + L * .3); drop(x, y, Math.PI / 2, L, 1, 1 + .06 * Math.sin(t * 30), 1 - .06 * Math.sin(t * 30)); } }
+      else { const tt = t - nk, [x, y, a] = fly(-4.5 * u, -6.9 * u, -1, -.55, 900, tt); drop(x, y, a, L, 1 - seg(tt, .42, .6)); } } }
+    if (SWV === 'c' && t >= SWC[1] && t < SWC[1] + .6) { flushN(); const u = cu, tt = t - SWC[1], al = 1 - seg(tt, .42, .6);
+      for (const [lx, an, sp, L] of [[-4.6, -.25, 700, 3], [-3.6, -.7, 760, 2.6], [-2.2, -1.1, 650, 2.2], [-.6, -1.4, 600, 2.6], [1.4, -1.6, 560, 2]]) {   // off the back corner and the top
+        const [x, y, a] = fly(lx * u, -8.3 * u, -Math.cos(an), Math.sin(an), sp, tt); drop(x, y, a, L * u, al); } }
+    if (!SWV && sa < .5) {
       const r = gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0), cs = Math.cos(r), sn = Math.sin(r), u = cu;
       const W = (lx, ly) => [fx + lx * cs - ly * sn, fy + lx * sn + ly * cs];
       // the emitter: the head edge's right end (the low close-up camera cuts off the left end at the frame border), nudged off the coin
@@ -213,10 +241,11 @@
   dropCh('en_intro');
   chapter('en_v8_intro', N2O(IA), N2O(IB), [[N2O(IA), native(intro)]], { real: true });
   // the 3:4 camera follows the climb, a key per bar; pushes in on the heroic last push
+  // (sweat a|b: the c keys frame back, centre at the token − (60, −20) instead of + (40, −110), so his head has air on the knocks)
   const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, 13.24, 14.3, 14.6, SL.top];
   const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
     : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
-      return V === 'c' ? [N2O(k), x + 40, y - 110, 600, i ? 1 : 0] : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
+      return V === 'c' ? (SWV === 'a' || SWV === 'b' ? [N2O(k), x - 60, y + 20, 600, i ? 1 : 0] : [N2O(k), x + 40, y - 110, 600, i ? 1 : 0]) : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 330, 1080, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
       : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
