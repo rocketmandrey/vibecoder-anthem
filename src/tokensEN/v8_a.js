@@ -31,7 +31,7 @@
   //   a 💦: 3 big drops spring off the TOP edge's back half (clear dark air), launched in his own frame up/back, world gravity arc
   //   b one fat drop swells on his back temple through the strain before each knock, flicks off behind him on the knock
   //   c relief instead: after the lift (head clear, upright) a wet-dog shake from the 15.73 hit, the spray flies off his head on the 15.89 snare
-  const SWV = ((window.BTT_VAR || {}).sweat || '').toLowerCase();
+  const SWV = ((window.BTT_VAR || {}).sweat || 'a').toLowerCase();
   // v12e: the ending (16.2–22.4) — the PRESS is the engine that switches the city on: every stroke lights the skyline behind it.
   // Strokes only on drum-stem hits: the 16.21 slam, a rest (ram up, steam), then the roll's accents 19.11 · 19.69 → 19.86 (a «da-DUM»),
   // a slow heave through the drum-less 20–22 gap (no strokes, the press shivers and hisses), the 22.18 drum entry the final big one.
