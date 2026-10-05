@@ -114,7 +114,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   // a 16:9 screen-space HUD point (x, y in 0..1920 / 0..1080) → the world point at the same place in the current square
   window.sqHud = (x, y) => { const [cx, cy, side] = SQ_CAM(T), h = side * AR; return [cx - side / 2 + x * side / 1920, cy - h / 2 + y * h / 1080]; };
   if (!window.SQ) return;
-  const YT = CFG.yt, REELS = /[?&]reels\b/.test(location.search) && !YT, VW = YT ? SQS : 1080, S = VW, SH = Math.round(S * AR), VH = REELS ? 1920 : SH, PY = REELS ? CFG.py : 0;
+  const YT = CFG.yt, RSQ = !!CFG.rsq, REELS = /[?&]reels\b/.test(location.search) && (!YT || RSQ), VW = YT ? SQS : 1080, S = VW, SH = Math.round(S * AR), VH = REELS ? 1920 : SH, PY = REELS ? CFG.py : 0;   // RSQ: the reels layout around the YouTube square
   const C = window.SQ_C = document.createElement('canvas'); C.width = VW; C.height = VH;
   const c = C.getContext('2d'), sm = document.createElement('canvas'); sm.width = 54; sm.height = 96;   // tiny copy = cheap heavy blur
   const smx = sm.getContext('2d');
@@ -165,7 +165,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     }
     const ch = chunks.filter(q => st[q[0]] <= t).pop() || chunks[0], cwid = ch.reduce((p, i) => p + wd[i], 0) + sp * (ch.length - 1);
     const fs = cwid > maxW ? size * maxW / cwid : size, sc = fs / size;                  // a single over-long word: shrink, never wrap
-    const y = CFG.subY + (1 - k) * 14; let x = VW / 2 - cwid * sc / 2;
+    const y = CFG.subY + (1 - k) * 14; let x = (CFG.subCx ?? VW / 2) - cwid * sc / 2;
     c.save(); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = FONT(fs); c.lineJoin = 'round';
     for (const i of ch) {
       const w = words[i], ww = wd[i] * sc, f = clamp((t - st[i]) / Math.max(.08, Math.min(.5, (i + 1 < n ? st[i + 1] : st[i] + .4) - st[i])));
@@ -190,7 +190,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     }
     c.drawImage(src, 0, PY, S, SH);
     c.save(); c.globalCompositeOperation = 'multiply'; c.drawImage(grain, 0, PY, S, SH); c.restore();
-    if (YT) return subtitle(t);                                                // YouTube: full-frame picture + plain subtitles, no band
+    if (YT && !RSQ) return subtitle(t);                                                // YouTube: full-frame picture + plain subtitles, no band
     if (!REELS) return;
     if (!window.VTITLE_OFF || !VTITLE_OFF(t)) {
       c.save(); c.font = FONT(64); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
