@@ -101,14 +101,20 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   window.SQ_CAM = t => {
     let k = 0; while (k < K.length && K[k][0] <= t) k++;
     const A = K[Math.max(0, k - 1)], B = K[Math.min(K.length - 1, k)], u = B[0] > A[0] ? clamp((t - A[0]) / (B[0] - A[0])) : 0, e = u * u * (3 - 2 * u);
-    const side = Math.min(1920, lerp(A[3], B[3], e));
+    let side = Math.min(1920, lerp(A[3], B[3], e));
     const [sx, sy] = window.CAM_SHAKE ? CAM_SHAKE(t) : [0, 0];                // a song's beat shake (tokensEN/scenes.js)
-    return [clamp(lerp(A[1], B[1], e), side / 2, W - side / 2) + sx, lerp(A[2], B[2], e) + sy, side];
+    let x = clamp(lerp(A[1], B[1], e), side / 2, W - side / 2), y = lerp(A[2], B[2], e);
+    // YouTube re-shoot: the keys are the 3:4 reels camera (h = 4/3 · side); the new view is `fit` × that height, same centre
+    if (CFG.yt) {
+      const r = typeof O2N === 'function' ? O2N(t) : t, a = (CFG.adj || []).find(([p, q]) => r >= p && r < q);   // per-shot re-framing [realA, realB, dy, fit×]
+      side = side * 4 / 3 * CFG.fit * (a?.[3] ?? 1) / AR; if (a) y += a[2];
+      x = side >= W ? W / 2 : clamp(x, side / 2, W - side / 2); }
+    return [x + sx, y + sy, side];
   };
   // a 16:9 screen-space HUD point (x, y in 0..1920 / 0..1080) → the world point at the same place in the current square
   window.sqHud = (x, y) => { const [cx, cy, side] = SQ_CAM(T), h = side * AR; return [cx - side / 2 + x * side / 1920, cy - h / 2 + y * h / 1080]; };
   if (!window.SQ) return;
-  const REELS = /[?&]reels\b/.test(location.search), VW = 1080, S = 1080, SH = Math.round(S * AR), VH = REELS ? 1920 : SH, PY = REELS ? CFG.py : 0;
+  const YT = CFG.yt, REELS = /[?&]reels\b/.test(location.search) && !YT, VW = YT ? SQS : 1080, S = VW, SH = Math.round(S * AR), VH = REELS ? 1920 : SH, PY = REELS ? CFG.py : 0;
   const C = window.SQ_C = document.createElement('canvas'); C.width = VW; C.height = VH;
   const c = C.getContext('2d'), sm = document.createElement('canvas'); sm.width = 54; sm.height = 96;   // tiny copy = cheap heavy blur
   const smx = sm.getContext('2d');
@@ -120,7 +126,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     const L = LY.find(l => t >= R(l[0]) - .12 && t < R(l[1]) + .2); if (!L) return;
     const [a, b, raw] = [R(L[0]), R(L[1]), L[2]], txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
     const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
-    const maxW = 810; let size = 66, lines;
+    const maxW = CFG.subMax || 810; let size = CFG.subSize || 66, lines;
     for (;; size -= 3) {
       c.font = FONT(size); const wOf = ws => c.measureText(ws.join(' ')).width;
       if (wOf(words) <= maxW) { lines = [words.join(' ')]; break; }
@@ -129,7 +135,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
       if (best) { lines = [words.slice(0, best).join(' '), words.slice(best).join(' ')]; break; }
       if (size < 36) { lines = [words.join(' ')]; break; }
     }
-    const lh = size * 1.22, cx = 495, cy = CFG.subY - (lines.length - 1) * lh / 2 + (1 - k) * 14;
+    const lh = size * 1.22, cx = YT ? VW / 2 : 495, cy = CFG.subY - (lines.length - 1) * lh / 2 + (1 - k) * 14;
     c.save(); c.globalAlpha = k; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = FONT(size); c.lineJoin = 'round';
     lines.forEach((s, i) => {
       const y = cy + i * lh;
@@ -152,6 +158,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     }
     c.drawImage(src, 0, PY, S, SH);
     c.save(); c.globalCompositeOperation = 'multiply'; c.drawImage(grain, 0, PY, S, SH); c.restore();
+    if (YT) return subtitle(t);                                                // YouTube: full-frame picture + plain subtitles, no band
     if (!REELS) return;
     if (!window.VTITLE_OFF || !VTITLE_OFF(t)) {
       c.save(); c.font = FONT(64); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';

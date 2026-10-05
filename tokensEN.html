@@ -14,7 +14,12 @@
   #tt { font-variant-numeric: tabular-nums; min-width: 190px; }
 </style>
 <script>window.SONG = { bpm: 90.9, off: 0.16, shift: 0, dur: 264.811, wipes: [], meter: [], boil24: [], lyFont: '44px "Russo One", "Arial Black", sans-serif',
-  reels: { ar: 4 / 3, py: 170, title: 'BURN THE TOKENS', titleY: 92, subY: 1690, censor: true } };   // ?reels: title 0–170, 3:4 picture 170–1610, subtitles 1625–1760 right under it
+  reels: { ar: 4 / 3, py: 170, title: 'BURN THE TOKENS', titleY: 92, subY: 1690, censor: true } };
+  // ?reels&yt=wide|square: the YouTube re-shoot. Same scenes / R34 layouts / cuts, a second camera: each 3:4 key → a view `fit` × the
+  // 3:4 picture's height in the new aspect (same centre); plain subtitles over the picture's bottom (no title band, no karaoke: user)
+  { const YT = new URLSearchParams(location.search).get('yt');
+    if (YT === 'wide') SONG.reels = { ar: 9 / 16, sqs: 1920, yt: YT, fit: .8, adj: [[172.67, 175.12, -70, 1.08], [241.96, 247.2, 130, 1.18]], title: 'BURN THE TOKENS', subY: 985, subMax: 1500, subSize: 58, censor: true };
+    if (YT === 'square') SONG.reels = { ar: 1, sqs: 1080, yt: YT, fit: 1.12, adj: [[241.96, 247.2, 110, 1.05]], title: 'BURN THE TOKENS', subY: 975, subMax: 940, subSize: 56, censor: true }; }   // ?reels: title 0–170, 3:4 picture 170–1610, subtitles 1625–1760 right under it
   // R34: the 3:4 reels picture — chapters re-lay their elements for it (never in the 16:9 / RU pages); RU34: [enA, enB, keys] a chapter's own 3:4 camera
   // keys (EN song time, [t, cx, cy, w, glide]) that replace every other key in [enA, enB) — see tokensEN/scenes.js SQSHOTS_X
   window.R34 = /[?&]reels\b/.test(location.search); window.RU34 = [];

@@ -8,7 +8,7 @@ const TAU = Math.PI * 2;
 // 1080×1080 and each frame is shot by a square camera (SQ_CAM(t) → [cx, cy, side]): side 1080 = a 1:1 slice at full scale,
 // up to 1920 = the whole width, scaled down. Full-width background rects are stretched vertically (rectPts) so a wide square
 // shows more sky / floor instead of bars. Chapters may recompose for it under window.SQ.
-const SQ = window.SQ = /[?&](square|reels)\b/.test(location.search), SQS = 1080, SQH = Math.round(SQS * (SONG.reels?.ar ?? 1)), LETPAD = SQ ? 420 : 0;   // SONG.reels.ar: picture h/w (1.25 = 4:5); LETPAD: lettering above/below the 16:9 frame
+const SQ = window.SQ = /[?&](square|reels)\b/.test(location.search), SQS = SONG.reels?.sqs ?? 1080, SQH = Math.round(SQS * (SONG.reels?.ar ?? 1)), LETPAD = SQ ? 420 : 0;   // SONG.reels.ar: picture h/w (1.25 = 4:5); LETPAD: lettering above/below the 16:9 frame
 const PAL = {
   paper: '#F3EBDC', ink: '#2B2233', clay: '#D97757', clayDk: '#A84D33', clayLt: '#F2A283',
   night: '#1F2550', indigo: '#2F3C7A', rose: '#E27A92', ochre: '#E8AA38', sap: '#6E9F58',
@@ -86,6 +86,8 @@ let LETTERS = [], KARAOKE = null;
 function rectPts(x, y, w, h, j = 0) {
   // square mode: a full-width backdrop (sky, floor, full-frame wash) keeps going above/below the 16:9 frame
   if (SQ && x <= -40 && x + w >= W + 40) { if (y <= -40) { h += y + 1100; y = -1100; } if (y + h >= H + 40) h = H + 1100 - y; }
+  // YouTube re-shoot (?yt): the wider-than-3:4 camera can see past x 0..W; full-width backdrops carry on sideways too (set extension)
+  if (SQ && SONG.reels?.yt && x <= -40 && x + w >= W + 40) { const x2 = Math.max(x + w, W + 2200); x = Math.min(x, -2200); w = x2 - x; }
   return [[x + jit(j), y + jit(j)], [x + w / 2 + jit(j), y + jit(j) * .5], [x + w + jit(j), y + jit(j)],
           [x + w + jit(j) * .5, y + h / 2], [x + w + jit(j), y + h + jit(j)], [x + w / 2 + jit(j), y + h + jit(j) * .5],
           [x + jit(j), y + h + jit(j)], [x + jit(j) * .5, y + h / 2]];
