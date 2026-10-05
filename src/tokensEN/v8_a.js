@@ -193,7 +193,7 @@
     // sweat v12k (user: «all bad — rethink it, give it to Codex»; spec from Codex/Astra off the 💦 reference): NO idle sweat; exactly two quick
     // 💦 bursts, .06 s after the knock-backs in the second half (8.73, 13.40): three glossy teardrops fan out to the screen-LEFT from the
     // left end of his head edge (away from the coin), bulb first, tail pointing back at him, a small bow, gone in .5 s
-    const SWB = KN.slice(2).map(k => k + .06), sb = lastLE(SWB, t), sa = sb == null ? 9 : t - sb;
+    const SWB = KN.slice(2, 3).map(k => k + .06), sb = lastLE(SWB, t), sa = sb == null ? 9 : t - sb;
     const flushN = () => { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-9000, -9000], [-8990, -9000], [-8990, -8990]]); brush.noFill(); };
     const dshape = (L, k = 1) => { const rb = .275 * L, c = L - rb; beginShape(); vertex(0, 0); for (let a = -1.9; a <= 1.9; a += .19) vertex(c + Math.cos(a) * rb * k, Math.sin(a) * rb * k); endShape(CLOSE); };
     const drop = (x, y, a, Lp, al = 1, sL = 1, sW = 1) => {                       // the 💦 teardrop, bulb toward a, native (after flushN)
