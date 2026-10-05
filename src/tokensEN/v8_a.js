@@ -40,7 +40,7 @@
   //   b — each stroke sends a shockwave ring along the ground, the windows light as the rings pass; the camera pulls back to the whole skyline
   //   c — the press pumps glowing token-liquid through pipes into the factories, chimneys start smoking one by one, the last stroke lights all
   const VE = ((window.BTT_VAR || {}).introend || 'b').toLowerCase();          // the user picked b
-  const IA = 0, IB = 22.40;
+  const IA = 0, IB = 22.40, YT = !!SONG.reels?.yt;
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
   const SWC = [15.726, 15.894];                                           // sweat:c — the brow wipe (drum hit) and the flick (snare)
   const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
@@ -156,8 +156,8 @@
       paint(ellPts(lx, ly + 22, 20, 12, 14), { wash: lit > 0 ? '#FFF6D8' : '#8A8F96', ink: INK, sw: .5 });              // the bulb
     });
     // the hill: slope + plateau, a hazard edge along the top
-    const edge = []; for (let x = -600; x <= 2400; x += 50) edge.push([x, hillY(x)]);   // dense: brush clamps far vertices
-    paint([...edge, [2400, 2800], [-600, 2800]], { wash: '#6A5A4A', fill: '#3A3028', fillOp: 90, tex: .6, ink: INK, sw: 2 });
+    const HX = YT ? 3400 : 2400, edge = []; for (let x = -600; x <= HX; x += 50) edge.push([x, hillY(x)]);   // dense: brush clamps far vertices
+    paint([...edge, [HX, 2800], [-600, 2800]], { wash: '#6A5A4A', fill: '#3A3028', fillOp: 90, tex: .6, ink: INK, sw: 2 });
     inkLine(edge.filter(([x]) => x > -300 && x < 2200), 7, '#D8B880', 'ink', 0);
     for (const [cx, wb, lit] of pools) { const on = cx < SL.B[0], r = on ? -Math.atan(SK) : 0;   // the pool lies along the slope (ellPts' rot only shifts the start angle)
       paint(ellPts(0, 0, wb * (on ? 1.15 : .9), wb * .16, 24).map(([x, y]) => [cx + x * Math.cos(r) - y * Math.sin(r), hillY(cx) + 6 + x * Math.sin(r) + y * Math.cos(r)]), { wash: '#FFE2A8', washOp: 55 * lit, ink: null }); }
@@ -240,7 +240,8 @@
     }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
     for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
-    if (t >= SLAM) stamp('BURN THE TOKENS', 1380, 930, 78, t, SLAM, { col: TK.yellow, rot: -.04 });
+    // YouTube (square / 16:9): the stamp lies level on the plateau under the press, clear of the slope's diagonal edge
+    if (t >= SLAM) stamp('BURN THE TOKENS', YT ? SL.px + 60 : 1380, YT ? 880 : 930, 78, t, SLAM, { col: TK.yellow, rot: YT ? 0 : -.04 });
     flash(Math.min(.3, kick(t, [SLAM], .2) * .3) + .3 * kick(t, [FINAL], .15), TK.yellowLt);
   }
   dropCh('en_intro');
@@ -251,7 +252,11 @@
   const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
     : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
       return V === 'c' ? (SWV === 'a' || SWV === 'b' ? [N2O(k), x - 60, y + 20, 600, i ? 1 : 0] : [N2O(k), x + 40, y - 110, 600, i ? 1 : 0]) : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
-  if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
+  // YouTube re-shoot: the climb centred on the token's slope point (the 45° slope runs corner to corner), then the press centred on its axis
+  const YK = [...KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5); return [N2O(k), x + 10, y - 70, k > 14 ? 700 : 760, i ? 1 : 0]; }),
+    [N2O(SL.lift[1]), SL.px, 370, 980, 1], [N2O(SLAM - .01), SL.px, 350, 1080, 1], [N2O(STR[0]), SL.px, 360, 1000, 1], [N2O(FINAL), SL.px, 370, 1200, 1], [N2O(IB) - .001, SL.px, 370, 1210, 1]];
+  if (window.RU34 && YT) RU34.push([N2O(IA), N2O(IB), YK], [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);
+  else if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
       : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));

@@ -108,7 +108,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     if (CFG.yt) {
       const r = typeof O2N === 'function' ? O2N(t) : t, a = (CFG.adj || []).find(([p, q]) => r >= p && r < q);   // per-shot re-framing [realA, realB, dy, fit×]
       side = side * 4 / 3 * CFG.fit * (a?.[3] ?? 1) / AR; if (a) y += a[2];
-      x = side >= W ? W / 2 : clamp(x, side / 2, W - side / 2); }
+      x = a?.[4] ? lerp(A[1], B[1], e) : side >= W ? W / 2 : clamp(x, side / 2, W - side / 2); }   // a[4]: free x (the shot's set is drawn past 0..W)
     return [x + sx, y + sy, side];
   };
   // a 16:9 screen-space HUD point (x, y in 0..1920 / 0..1080) → the world point at the same place in the current square

@@ -81,7 +81,7 @@
     for (const lx of [520, 1400]) { inkLine([[lx, -2600], [lx, 300]], .8, INK, 'inkfine', 0); paint([[lx - 30, 300], [lx + 30, 300], [lx + 70, 350], [lx - 70, 350]], { wash: '#3A3F48', ink: INK, sw: .6 }); paint([[lx - 60, 350], [lx + 60, 350], [lx + 300, G], [lx - 300, G]], { wash: '#FFE2A8', washOp: 22, ink: null }); }
     paint(rectPts(-400, G, W + 800, 900), { wash: '#2A2D33', fill: '#1C1E22', fillOp: 80, tex: .5, ink: INK, sw: .8 });
     // b: the cliff on the right (drawn after the pile so the pile banks against it)
-    const cliff = () => { paint([[LEDGE.x, LEDGE.y], [2500, LEDGE.y], [2500, G + 600], [LEDGE.x - 40, G + 600], [LEDGE.x + 30, 600], [LEDGE.x - 20, 200]], { wash: '#4A4038', fill: '#2E2824', fillOp: 90, tex: .6, ink: INK, sw: 2 });
+    const CX = SONG.reels?.yt ? 3600 : 2500, cliff = () => { paint([[LEDGE.x, LEDGE.y], [CX, LEDGE.y], [CX, G + 600], [LEDGE.x - 40, G + 600], [LEDGE.x + 30, 600], [LEDGE.x - 20, 200]], { wash: '#4A4038', fill: '#2E2824', fillOp: 90, tex: .6, ink: INK, sw: 2 });
       inkLine([[LEDGE.x, LEDGE.y], [2400, LEDGE.y]], 6, '#D8B880', 'ink', 0); };
     // the pile
     const HW = P.H / PS + PR, pts = [[-600, G + 40]]; for (let x = -600; x <= 2600; x += 25) pts.push([x, surf(x)]); pts.push([2600, G + 40]);
@@ -174,7 +174,8 @@
       const w = Math.max(1350, x1 - x0, (y1 - y0) * .75); return [(x0 + x1) / 2, (y0 + y1) / 2, w]; };   // holds on each sack, then tilts/pulls up
     K.push([A, ...low(A)], [211.3, ...low(211.3)]);   // wide from the first frame: Clawd at the foot + the fat cats on the cliff
     for (const [b] of CFG.throws.filter(([b]) => b < SLIP)) K.push([b + .02, ...low(b - .1)], [b + .6, ...low(b + .6)]);
-    K.push([SLIP + .04, ...low(SLIP)], [SLIP + .45, 900, 440, 1700], [B - .01, 900, 450, 1680]);   // settle on the fall early, then hold: no camera move while he lands
+    const yt = !!SONG.reels?.yt;   // YouTube: the settle frame shifted right, so the fat cats on the ledge get air from the corner
+    K.push([SLIP + .04, ...low(SLIP)], [SLIP + .45, yt ? 1060 : 900, 440, 1700], [B - .01, yt ? 1060 : 900, 450, 1680]);   // settle on the fall early, then hold: no camera move while he lands
   }
   if (V === 'c') {
     for (let r = A; r < SLIP; r += .2) { const x = footXc(r), y = surfOf(pileC(r))(x); K.push([r, x + 120, y - 60, 880]); }
