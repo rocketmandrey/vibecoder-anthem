@@ -131,6 +131,7 @@
     clawd(...(R ? [HX, HY, HS] : [820, 870, 40]), {
       noShadow: true, mouth: stretch > .5 ? 'smile' : 'flat', ...mood(t, [[20.1, 'narrow'], [T_STR, 'happy']]),
       aL: lerp(-.3, 1.9, stretch) + (stretch > .9 ? .1 * Math.sin(t * 6) : 0), aR: lerp(-.1, 1.9, stretch), dy: -stretch * .4,
+      ...(typeof EN_WORDS !== 'undefined' ? { dy: -stretch * .4 - .05 * Math.sin(t * 5), sq: .025 * Math.cos(t * 5) } : {}),   // EN: a breath (bob + squash in quadrature: never two identical frames)
     });
     heroDesk();
     camEnd();

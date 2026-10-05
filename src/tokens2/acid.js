@@ -135,7 +135,7 @@ function press(x, y, w, h, t, hits = [], o = {}) {
   let last = -1e9, next = 1e9;
   for (const hh of hits) { const ht = hitT(hh); if (ht <= t && ht > last) last = ht; if (ht > t && ht < next) next = ht; }
   const age = t - last, fall = .1, down = next - t < fall ? easeIn(1 - (next - t) / fall) : 0, up = age < .06 ? 1 : 1 - ease((age - .06) / .4);
-  const s = Math.max(down, up), k = Math.exp(-age / .12), sw = clamp(w / 320, .5, 1.3), seed = o.seed || 0;
+  const s = Math.max(down, up, o.creep || 0), k = Math.exp(-age / .12), sw = clamp(w / 320, .5, 1.3), seed = o.seed || 0;
   const colW = w * .13, beamH = h * .17, bedH = h * .12, bedY = y + h - bedH, strokeY = bedY - (y + beamH) - h * .26;
   const ramH = h * .2, ramY = y + beamH + h * .06 + s * strokeY, ramX = x + colW * 1.1, ramW = w - colW * 2.2;
   // columns + base

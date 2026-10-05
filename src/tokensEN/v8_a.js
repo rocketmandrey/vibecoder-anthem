@@ -56,6 +56,9 @@
   Object.assign(SL, { r: 110, px: 1440, top: TOP, lift: [15.30, 15.55] });
   const SLL = Math.hypot(SL.B[0] - SL.A[0], SL.B[1] - SL.A[1]), SLD = [(SL.B[0] - SL.A[0]) / SLL, (SL.B[1] - SL.A[1]) / SLL], SLN = [SLD[1], -SLD[0]];
   const STR = INH.slice(1), FINAL = STR[STR.length - 1];
+  // v12n (user: «any stalls?» — 17.6–19.0 sat still while the drums roll): the snare/kick roll hits (drums.json, ≥ .45, 17.39 → 19.05) keep
+  // it alive: the ram creeps down a notch per hit, the press shudders, sparks tick on the bed, Clawd vibrates; the camera pushes in to 19.11
+  const ROLL = [17.392, 17.485, 17.566, 17.647, 17.728, 17.81, 17.978, 18.059, 18.135, 18.315, 18.39, 18.477, 18.559, 18.692, 18.791, 18.866, 18.947, 19.046];
   const FD = FAR.map(b => Math.abs(b.x + b.w / 2 - SL.px)), FMAX = Math.max(...FD), FRANK = FD.map(d => FD.filter(e => e < d).length / FAR.length);
   const CHS = FAR.map((b, i) => i).filter(i => FAR[i].ch).sort((i, j) => FD[i] - FD[j]);                             // c: the chimneys, nearest first
   const litAt = FAR.map((b, i) => {                                                                                  // when building i switches on
@@ -161,9 +164,11 @@
     for (let k = 0; k < 9; k++) { const u = hash(k + 4), x = lerp(-300, SL.B[0], u), y = hillY(x) + 40 + hash(k) * 120; paint(ellPts(x, y, 26 + hash(k + 1) * 30, 14 + hash(k + 2) * 12, 8, 4, k), { wash: '#3A3F48', ink: INK, sw: .6 }); }
     // the press (bed on the plateau): idle, a creak shiver while the token is loaded, then the slams
     const PW = 520, PH = 1000, wob = t > SL.lift[0] && t < SLAM - .05 ? Math.sin(t * 40) * 3 * seg(t, SL.lift[0], SLAM) : t > 21.3 && t < FINAL ? Math.sin(t * 47) * 6 * seg(t, 21.3, FINAL - .05) : 0;   // + the slow heave before the last stroke
-    const PX = SL.px - PW / 2 + wob, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
+    const inRoll = t > ROLL[0] - .01 && t < STR[0], rk = inRoll ? kick(t, ROLL, .06) : 0, nR = inRoll ? ROLL.filter(h => h <= t).length : 0;
+    const PX = SL.px - PW / 2 + wob + (nR % 2 ? 3 : -3) * rk, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
     engine(t, PX, PY, PW, PH, true);
-    press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : INH, { seed: 3, token: false });
+    press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : INH, { seed: 3, token: false, creep: inRoll ? .018 * nR + .012 * rk : 0 });
+    if (inRoll) for (const h of ROLL) if (t >= h && t < h + .2) sparks(SL.px + (hash(h * 7) - .5) * 300, bedY - 10, t - h, h * 11, 4, 110);   // a tick of sparks per roll hit
     engine(t, PX, PY, PW, PH);
     if ((t > SLAM + 1.2 && t < STR[0] - .1) || (t > 20.3 && t < FINAL)) for (const sd of [-1, 1]) steam(SL.px + sd * 230, PY + PH * .3, t, { dir: sd < 0 ? Math.PI + .4 : -.4, k: .45 + .2 * Math.sin(t * 3), len: 260, seed: 90 + sd, n: 3, per: 1.1 });   // the rest: it hisses
     // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
@@ -188,7 +193,7 @@
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
     clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
-      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true,
+      mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true, ...(inRoll ? { dy: -.5 * rk, sx: 1 + .03 * rk } : {}),
       ...(SWV === 'c' && t > SWC[0] && t < SWC[1] + .35 ? { rot: t < SWC[1] + .08 ? .2 * Math.sin((t - SWC[0]) * 75) : 0, sq: t < SWC[1] ? .08 : 0, aL: 1.2, aR: 1.2, eyes: t < SWC[1] + .08 ? 'closed' : 'happy', mouth: t < SWC[1] + .08 ? 'flat' : 'grin' } : {}) });   // c: a wet-dog shake
     // sweat v12k (user: «all bad — rethink it, give it to Codex»; spec from Codex/Astra off the 💦 reference): NO idle sweat; exactly two quick
     // 💦 bursts, .06 s after the knock-backs in the second half (8.73, 13.40): three glossy teardrops fan out to the screen-LEFT from the
@@ -246,7 +251,7 @@
   const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
     : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
       return V === 'c' ? (SWV === 'a' || SWV === 'b' ? [N2O(k), x - 60, y + 20, 600, i ? 1 : 0] : [N2O(k), x + 40, y - 110, 600, i ? 1 : 0]) : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
-  if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 330, 1080, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
+  if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
       : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])]],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
