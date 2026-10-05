@@ -126,6 +126,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     const L = LY.find(l => t >= R(l[0]) - .12 && t < R(l[1]) + .2); if (!L) return;
     const [a, b, raw] = [R(L[0]), R(L[1]), L[2]], txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
     const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
+    if (YT) return ytSub(t, a, b, L, words, k);
     const maxW = CFG.subMax || 810; let size = CFG.subSize || 66, lines;
     for (;; size -= 3) {
       c.font = FONT(size); const wOf = ws => c.measureText(ws.join(' ')).width;
@@ -143,6 +144,37 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
       c.fillStyle = PAL.ink; c.fillText(s, cx + size * .04, y + size * .05);
       c.fillStyle = PAL.cream; c.fillText(s, cx, y);
     });
+    c.restore();
+  }
+
+  // YouTube: ONE line, always — a long lyric line plays as consecutive one-line chunks, each shown from its first word's sung start;
+  // karaoke the way timeline.js drawKaraokeText does it: cream words, each swept to KP.goldLt from its own truth.js word time
+  function ytSub(t, a, b, L, words, k) {
+    const R = typeof O2N === 'function' ? O2N : x => x, n = words.length, maxW = CFG.subMax, size = CFG.subSize;
+    const ws = typeof EN_WORDS === 'undefined' ? [] : EN_WORDS.filter(([w]) => w >= L[0] - .05 && w < L[1] + .05).map(([w]) => R(w));
+    const st = ws.length === n ? ws : (() => { const len = words.map(w => w.length), tot = len.reduce((p, q) => p + q, 0), d = Math.max(.4, b - a - .1); let acc = 0; return len.map(l => { const v = a + d * acc / tot; acc += l; return v; }); })();
+    c.font = FONT(size); const sp = c.measureText(' ').width, wd = words.map(w => c.measureText(w).width), tot = wd.reduce((p, q) => p + q, 0) + sp * (n - 1);
+    const greedy = lim => { const q = [[0]]; let cw = wd[0];                  // fill chunks up to lim
+      for (let i = 1; i < n; i++) { if (cw + sp + wd[i] > lim) { q.push([i]); cw = wd[i]; } else { q[q.length - 1].push(i); cw += sp + wd[i]; } } return q; };
+    const nMin = Math.ceil(tot / maxW); let chunks = greedy(Math.min(maxW, tot / nMin * 1.15)); if (chunks.length > nMin) chunks = greedy(maxW);   // balanced, else tight
+    if (chunks.length === 2) {                                                // two chunks: the best break, a phrase end (, . ? ! : —) preferred
+      const wOf = (p, q) => words.slice(p, q).reduce((u, w, j) => u + wd[p + j], 0) + sp * (q - p - 1); let bi = chunks[1][0], bs = Infinity;
+      for (let i = 1; i < n; i++) { const p = wOf(0, i), q = wOf(i, n); if (p > maxW || q > maxW) continue;
+        const sc = Math.abs(p - q) + (/[,.?!:—–"]$/.test(words[i - 1]) ? 0 : tot * .2); if (sc < bs) { bs = sc; bi = i; } }
+      chunks.splice(0, 2, [...Array(bi).keys()], [...Array(n - bi).keys()].map(j => j + bi));
+    }
+    const ch = chunks.filter(q => st[q[0]] <= t).pop() || chunks[0], cwid = ch.reduce((p, i) => p + wd[i], 0) + sp * (ch.length - 1);
+    const fs = cwid > maxW ? size * maxW / cwid : size, sc = fs / size;                  // a single over-long word: shrink, never wrap
+    const y = CFG.subY + (1 - k) * 14; let x = VW / 2 - cwid * sc / 2;
+    c.save(); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = FONT(fs); c.lineJoin = 'round';
+    for (const i of ch) {
+      const w = words[i], ww = wd[i] * sc, f = clamp((t - st[i]) / Math.max(.08, Math.min(.5, (i + 1 < n ? st[i + 1] : st[i] + .4) - st[i])));
+      c.lineWidth = fs * .2; c.strokeStyle = 'rgba(24,18,30,.92)'; c.strokeText(w, x, y);
+      c.fillStyle = PAL.ink; c.fillText(w, x + fs * .04, y + fs * .05);
+      c.fillStyle = PAL.cream; c.fillText(w, x, y);
+      if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - fs, ww * f + 4, fs * 2); c.clip(); c.fillStyle = KP.goldLt; c.fillText(w, x, y); c.restore(); }
+      x += ww + sp * sc;
+    }
     c.restore();
   }
 
