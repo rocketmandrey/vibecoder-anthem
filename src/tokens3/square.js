@@ -150,21 +150,23 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   // YouTube: ONE line, always — a long lyric line plays as consecutive one-line chunks, each shown from its first word's sung start;
   // karaoke the way timeline.js drawKaraokeText does it: cream words, each swept to KP.goldLt from its own truth.js word time
   function ytSub(t, a, b, L, words, k) {
-    const R = typeof O2N === 'function' ? O2N : x => x, n = words.length, maxW = CFG.subMax, size = CFG.subSize;
+    const R = typeof O2N === 'function' ? O2N : x => x, n = words.length, maxW = CFG.subMax, size = CFG.subSize, lw = CFG.subMin ? maxW / CFG.subMin : maxW;   // subMin: shrink down to it before chunking (rsq)
     const ws = typeof EN_WORDS === 'undefined' ? [] : EN_WORDS.filter(([w]) => w >= L[0] - .05 && w < L[1] + .05).map(([w]) => R(w));
     const st = ws.length === n ? ws : (() => { const len = words.map(w => w.length), tot = len.reduce((p, q) => p + q, 0), d = Math.max(.4, b - a - .1); let acc = 0; return len.map(l => { const v = a + d * acc / tot; acc += l; return v; }); })();
     c.font = FONT(size); const sp = c.measureText(' ').width, wd = words.map(w => c.measureText(w).width), tot = wd.reduce((p, q) => p + q, 0) + sp * (n - 1);
     const greedy = lim => { const q = [[0]]; let cw = wd[0];                  // fill chunks up to lim
       for (let i = 1; i < n; i++) { if (cw + sp + wd[i] > lim) { q.push([i]); cw = wd[i]; } else { q[q.length - 1].push(i); cw += sp + wd[i]; } } return q; };
-    const nMin = Math.ceil(tot / maxW); let chunks = greedy(Math.min(maxW, tot / nMin * 1.15)); if (chunks.length > nMin) chunks = greedy(maxW);   // balanced, else tight
+    const nMin = Math.ceil(tot / lw); let chunks = greedy(Math.min(lw, tot / nMin * 1.15)); if (chunks.length > nMin) chunks = greedy(lw);   // balanced, else tight
+    if (CFG.subMin && chunks.length > 2) chunks = [[0], [1]];                 // rsq: never 3+, the split below picks the break
     if (chunks.length === 2) {                                                // two chunks: the best break, a phrase end (, . ? ! : —) preferred
       const wOf = (p, q) => words.slice(p, q).reduce((u, w, j) => u + wd[p + j], 0) + sp * (q - p - 1); let bi = chunks[1][0], bs = Infinity;
-      for (let i = 1; i < n; i++) { const p = wOf(0, i), q = wOf(i, n); if (p > maxW || q > maxW) continue;
+      for (let i = 1; i < n; i++) { const p = wOf(0, i), q = wOf(i, n); if (!CFG.subMin && (p > lw || q > lw)) continue;
         const sc = Math.abs(p - q) + (/[,.?!:—–"]$/.test(words[i - 1]) ? 0 : tot * .2); if (sc < bs) { bs = sc; bi = i; } }
       chunks.splice(0, 2, [...Array(bi).keys()], [...Array(n - bi).keys()].map(j => j + bi));
     }
     const ch = chunks.filter(q => st[q[0]] <= t).pop() || chunks[0], cwid = ch.reduce((p, i) => p + wd[i], 0) + sp * (ch.length - 1);
-    const fs = cwid > maxW ? size * maxW / cwid : size, sc = fs / size;                  // a single over-long word: shrink, never wrap
+    const widest = CFG.subMin ? Math.max(...chunks.map(q => q.reduce((p, i) => p + wd[i], 0) + sp * (q.length - 1))) : cwid;   // rsq: both chunks one size
+    const fs = widest > maxW ? size * maxW / widest : size, sc = fs / size;                  // a single over-long word: shrink, never wrap
     const y = CFG.subY + (1 - k) * 14; let x = (CFG.subCx ?? VW / 2) - cwid * sc / 2;
     c.save(); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = FONT(fs); c.lineJoin = 'round';
     for (const i of ch) {
@@ -179,7 +181,10 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   }
 
   window.sqComposite = (src, grain, t) => {
-    if (REELS) {
+    if (RSQ) {                                                                 // rsq: a clean navy field around the square, no blurred mirror
+      const g = c.createLinearGradient(0, 0, 0, VH); g.addColorStop(0, '#1E2133'); g.addColorStop(.5, '#191B2A'); g.addColorStop(1, '#121320');
+      c.fillStyle = g; c.fillRect(0, 0, VW, VH);
+    } else if (REELS) {
       // background: the picture itself, blurred to a colour field and pulled toward the clip's ink, so the bands read as the scene's light spilling out
       smx.drawImage(src, 0, 0, sm.width, sm.height);
       c.save(); c.imageSmoothingQuality = 'high'; c.filter = 'blur(6px) saturate(1.15)'; c.drawImage(sm, -40, -40, VW + 80, VH + 80); c.restore();
