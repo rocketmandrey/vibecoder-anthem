@@ -250,7 +250,7 @@
     // the gangs on the floor: hard hats left, agents right; each «Burn» the gang throws an arc of tokens up into the hopper
     for (const side of ['A', 'B']) {
       const t0 = lastLE(BURNS.filter(b => b[1] === side).map(b => b[0]), tt + .35), age = t0 == null ? 9 : tt - t0, shout = age > -.35 && age < 1.2;
-      for (let i = 0; i < 3; i++) {
+      for (const i of [1, 0, 2]) {                                       // depth order: i = 1 stands 45 px further back (higher), so it goes first
         const x = side === 'A' ? (R ? 600 : 590) + i * (R ? 90 : 95) : (R ? 1320 : 1330) - i * (R ? 90 : 95), y = 1180 - (i % 2) * 45, u = 15;
         const arm = fz ? 1.6 : shout ? kf(age - i * .05, [[-.35, .2], [-.2, 1.6], [.1, 1.1], [.6, .9], [1.2, .3]]) : .3 + .15 * Math.sin(tt * 6 + i);
         const bob = fz ? 0 : Math.abs(Math.sin((tt + i * .1) * Math.PI * 3)) * (shout ? 1.2 : .5);
@@ -317,6 +317,7 @@
     } else conveyor(BELT.x0, BELT.y, BELT.x1 - BELT.x0, t, { items: [() => {}], speed: 200, legs: 250, seed: 2 });
     dispenser(L3.m[0], L3.m[1], t, k);
     // agents: popped out of the slot (squash), ride the belt, hop off the end, trot to a spot and dance
+    const AG = [];                                                       // v12o (user: «agents overlap in the wrong layers»): collect, then draw by floor y
     SPAWN.forEach((s, i) => {
       const a = t - s; if (a < 0) return;
       const [sx, sy] = SPOTS[i], ride = 3.4, o = { n: i + 2, rot: NOTXT };
@@ -328,8 +329,9 @@
       else if (a < ride + .4) { const f = (a - ride) / .4; x = lerp(b1[0], off[0], f); y = lerp(b1[1], off[1], f * f) - Math.sin(f * Math.PI) * 80; Object.assign(o, { aL: 1.5, aR: 1.5, mouth: 'O' }); }
       else if (a < ride + 1.4) { const f = ease((a - ride - .4) / 1); x = lerp(off[0], sx, f); y = lerp(off[1], sy, f); Object.assign(o, move('walk', t, i), { flip: true, rot: NOTXT }); }
       else { x = sx; y = sy; Object.assign(o, move(i % 2 ? 'bounce' : 'roof', t, i), { rot: NOTXT, eyes: t > S3.good && t < S3.gulp ? 'look' : 'happy', lookX: -1 }); }
-      agentBot(x, y, u, t, o);
+      AG.push([x, y, u, o]);
     });
+    AG.sort((p, q) => p[1] - q[1]).forEach(([x, y, u, o]) => agentBot(x, y, u, t, o));   // lower on screen = nearer = drawn later (belt queue, crowd rows)
     // «more compute»: GPUs drop out of a ceiling chute onto a pile on the shelf, upper right
     const [gx, gy] = L3.gpu, cy0 = R ? gy - 330 : 170;                      // shelf top gy, chute mouth cy0 (layout from the 16:9 one: 1250 / 470)
     paint([[gx - 70, -300], [gx + 70, -300], [gx + 70, cy0 - 50], [gx + 40, cy0], [gx - 40, cy0], [gx - 70, cy0 - 50]], { wash: A2.steel, fill: A2.gunDk, fillOp: 90, tex: .6, ink: INK, sw: 1 }); hazard(gx - 70, cy0 - 60, 140, 16);
