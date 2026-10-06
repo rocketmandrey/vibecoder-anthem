@@ -44,9 +44,17 @@
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
   const SWC = [15.726, 15.894];                                           // sweat:c — the brow wipe (drum hit) and the flick (snare)
   const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
-  const KN = [1.217, 6.086, 8.73, 13.395];
-  const KL = { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
-  const HB = RBT.filter((b, i, a) => b > 1.2 && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
+  // v13 SHORT-INTRO openings, --var=open:a|b|c (render --clip from OPEN0; unset = the full 0–22.4 intro). The cut starts on the synth-bass
+  // entry (6.04: the low swell's attack, the first drum burst 6.10–6.59 right on it) and runs into the same slam 16.21 / press / office cut.
+  //   a cover: a poster title shot (title + Clawd + token at the foot, press + skyline silhouette), alive on the 6.10–6.59 snares, it
+  //     shatters on the 8.75 snare → one push to the top (no knock-backs but the 13.40 roll push)
+  //   b straight to the summit: one continuous push from the synth on, the 13.40 push the only knock, crest on the roll peak
+  //   c cold open: a close-up on the token, it IGNITES on the 6.10 snare, the camera pulls back to reveal mountain + press, he pushes the burning token up
+  const OPV = ((window.BTT_VAR || {}).open || '').toLowerCase(), OPEN0 = 6.04, OCOV = 8.748;
+  const C0 = OPV === 'a' ? OCOV : OPV === 'c' ? 6.59 : OPV === 'b' ? OPEN0 : 0;     // when the climb starts
+  const KN = OPV ? [13.395] : [1.217, 6.086, 8.73, 13.395];
+  const KL = OPV ? [.15] : { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
+  const HB = RBT.filter((b, i, a) => b > Math.max(1.2, C0 + .1) && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
     .map(b => [b, (b > VOX[0] && b < VOX[1] ? 1.8 : 1) * (b > LASTK ? 4 : 1)]);                          // a shove every beat, bigger while the gang sings
   const HV = HB.filter(([, w]) => w > 1.5).map(([b]) => b);
   const HW = HB.reduce((a, [, w]) => a + w, 0), KSUM = KL.reduce((a, l) => a + l, 0);
@@ -68,7 +76,7 @@
   });
   const SK = (SL.A[1] - SL.B[1]) / (SL.B[0] - SL.A[0]), hillY = x => x < SL.B[0] ? SL.A[1] - (x - SL.A[0]) * SK : SL.B[1];
   // progress: a slow creep + a shove on every beat (they pay back the knock-backs), minus a sharp KL backslide in KD from each knock beat
-  const climb = t => Math.max(0, CREEP * Math.min(1, t / TOP) + HB.reduce((a, [b, w]) => a + (1 - CREEP + KSUM) * w / HW * easeOut(seg(t, b - .03, b + .26)), 0)
+  const climb = t => Math.max(0, CREEP * seg(t, C0, TOP) + HB.reduce((a, [b, w]) => a + (1 - CREEP + KSUM) * w / HW * easeOut(seg(t, b - .03, b + .26)), 0)
     - KN.reduce((a, d, i) => a + KL[i] * easeOut(seg(t, d, d + KD)), 0));
   const slopeAt = t => { const u = .15 + .85 * Math.min(1, climb(t));   // starts a bit up the slope: the camera can't see left of x 0
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
@@ -112,16 +120,29 @@
       const pump = kick(t, STR, .2); paint(ellPts(SL.px, base - 30, 120 + 30 * pump, 30 + 8 * pump, 20), { wash: '#FFC23A', washOp: 120 * pump, ink: null });
     }
   }
+  const OIGN = 6.101, OSN = [6.101, 6.269, 6.432, 6.594];                  // c: the ignition snare; a: the burst the cover pulses on
+  function cover(t) {                                                     // a: the poster backdrop + title, shattering on OCOV
+    const br = t - OCOV, gone = seg(br, 0, .5), al = 1 - gone, pk = kick(t, OSN, .12);
+    if (al <= 0) return;
+    glowAt(1300, 760, 700 + 60 * pk, TK.ember, (60 + 40 * pk) * al);                       // the real press + skyline stand behind (sky forced on below)
+    [['BURN THE', 950, 620, 190], ['TOKENS', 950, 850, 260]].forEach(([w, x0, y0, sz], li) => {
+      const cw = sz * .62, n = w.length;
+      for (let j = 0; j < n; j++) { if (w[j] === ' ') continue; const h = hash(j * 7 + li * 31), ang = -Math.PI / 2 + (h - .5) * 2.6, v = 900 + 700 * hash(j + li * 9);
+        const x = x0 + (j - (n - 1) / 2) * cw + Math.cos(ang) * v * br * (br > 0), y = y0 - 8 * pk * (j % 2 ? 1 : -1) + (Math.sin(ang) * v * br + 1400 * br * br) * (br > 0);
+        letter(w[j], x, y, sz * (1 + .06 * pk), TK.yellow, { font: ruFont(Math.round(sz * (1 + .06 * pk))), stroke: PAL.ink, rot: -.06 + (br > 0 ? br * (h - .5) * 10 : 0), alpha: al }); } });
+    if (br > 0 && br < .2) flash(.35 * (1 - br / .2), TK.yellowLt);
+  }
   function intro(tv) {
     const t = O2N(tv), hit = kick(t, INH, .25);
     back('#16181D');
-    for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);            // the wall of the pit
+    for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);
+    if (OPV === 'a' && t < OCOV + .5) cover(t);            // the wall of the pit
     // while Clawd crests the sky goes ember and FAR AWAY a factory skyline rises out of the haze on the horizon, windows switching on beat by beat
-    const sky = easeOut(seg(t, 13.9, 15.7));
+    const covK = OPV === 'a' ? 1 - seg(t, OCOV, OCOV + .45) : 0, sky = Math.max(covK, easeOut(seg(t, 13.9, 15.7)));   // a: the cover shows the skyline, it sinks on the break
     if (sky > 0) {
       glowAt(SL.px, 640, 1100, TK.ember, 30 * sky + 15 * hit);
       FAR.forEach((b, i) => {
-        const k = easeOut(seg(t, b.at, b.at + .9)); if (k <= 0) return;
+        const k = Math.max(covK, easeOut(seg(t, b.at, b.at + .9))); if (k <= 0) return;
         const top = 735 - b.h * k;
         if (b.ch) { const cx = b.x + b.w * .7, ct = top - b.ch * k; paint(rectPts(cx - 7, ct, 14, 735 - ct), { wash: '#4A3A3A', ink: null });
           if (k > .9 && t > litAt[i]) smoke(cx, ct - 6, t + i, { r: (10 + 6 * hit) * Math.min(1, (t - litAt[i]) * 2), h: 120, n: 4, per: 2.4, seed: 70 + i, col: '#8A6A5A' }); }
@@ -177,7 +198,8 @@
     const tk = V === 'c' && lastLE(KN, t) != null ? kick(t, KN, .14) * kAmp(lastLE(KN, t)) : 0;   // c: the token bounces back onto him
     const bx = gx0 + SLN[0] * SL.r * ov - SLD[0] * 70 * tk, by = -SLD[1] * 70 * tk + lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
-    token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
+    token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : OPV === 'c' ? .8 * easeOut(seg(t, OIGN, OIGN + .5)) : 0 }); pop();
+    if (OPV === 'c' && t > OIGN - .02 && t < OIGN + .5) { glowAt(bx, by - SL.r, 260 * (1 - seg(t, OIGN, OIGN + .5)), TK.orange, 150); sparks(bx, by - SL.r * 1.4, t - OIGN, 61, 18, 320); }   // c: the ignition
     // the heroic last push — an ember aura + speed streaks behind him from the last knock to the bed
     const hero = (V !== 'b') * seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
@@ -191,7 +213,7 @@
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
+    clawd(fx, fy, cu, { walk: pushing && !slip && t >= C0 ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true, ...(inRoll ? { dy: -.5 * rk, sx: 1 + .03 * rk } : {}),
       ...(SWV === 'c' && t > SWC[0] && t < SWC[1] + .35 ? { rot: t < SWC[1] + .08 ? .2 * Math.sin((t - SWC[0]) * 75) : 0, sq: t < SWC[1] ? .08 : 0, aL: 1.2, aR: 1.2, eyes: t < SWC[1] + .08 ? 'closed' : 'happy', mouth: t < SWC[1] + .08 ? 'flat' : 'grin' } : {}) });   // c: a wet-dog shake
@@ -249,12 +271,15 @@
   // the 3:4 camera follows the climb, a key per bar; pushes in on the heroic last push
   // (sweat a|b: the c keys frame back, centre at the token − (60, −20) instead of + (40, −110), so his head has air on the knocks)
   const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, 13.24, 14.3, 14.6, SL.top];
-  const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
+  const IK0 = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
     : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
       return V === 'c' ? (SWV === 'a' || SWV === 'b' ? [N2O(k), x - 60, y + 20, 600, i ? 1 : 0] : [N2O(k), x + 40, y - 110, 600, i ? 1 : 0]) : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   // YouTube re-shoot: the climb centred on the token's slope point (the 45° slope runs corner to corner), then the press centred on its axis
-  const YK = [...KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5); return [N2O(k), x + 10, y - 70, k > 14 ? 700 : 760, i ? 1 : 0]; }),
+  const YK0 = [...KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5); return [N2O(k), x + 10, y - 70, k > 14 ? 700 : 760, i ? 1 : 0]; }),
     [N2O(SL.lift[1]), SL.px, 370, 980, 1], [N2O(SLAM - .01), SL.px, 350, 1080, 1], [N2O(STR[0]), SL.px, 360, 1000, 1], [N2O(FINAL), SL.px, 370, 1200, 1], [N2O(IB) - .001, SL.px, 370, 1210, 1]];
+  const OK3 = { a: [[OPEN0, 950, 1200, 1140, 0], [OCOV, 950, 1200, 1140, 1]], c: [[OPEN0, 560, 1640, 420, 0], [OIGN + .5, 560, 1640, 470, 1], [OCOV, 900, 1250, 1300, 1]], b: [[OPEN0, 620, 1600, 640, 0]] }[OPV];
+  const withOpen = L => OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0] + .5))] : L;   // the opening's own keys, then the climb's
+  const IK = withOpen(IK0), YK = withOpen(YK0);
   if (window.RU34 && YT) RU34.push([N2O(IA), N2O(IB), YK], [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);
   else if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
       : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])]],
