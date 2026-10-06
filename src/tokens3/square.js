@@ -108,6 +108,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     if (CFG.yt) {
       const r = typeof O2N === 'function' ? O2N(t) : t, a = (CFG.adj || []).find(([p, q]) => r >= p && r < q);   // per-shot re-framing [realA, realB, dy, fit×]
       side = side * 4 / 3 * CFG.fit * (a?.[3] ?? 1) / AR; if (a) y += a[2];
+      if (a?.[5]) { [x, y] = a[5]; side = a[5][2] / AR; return [x + sx, y + sy, side]; }   // a[5] = [cx, cy, view height]: a fixed shot (16:9 recompose)
       x = a?.[4] ? lerp(A[1], B[1], e) : side >= W ? W / 2 : clamp(x, side / 2, W - side / 2); }   // a[4]: free x (the shot's set is drawn past 0..W)
     return [x + sx, y + sy, side];
   };
@@ -124,6 +125,7 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
   function subtitle(tv) {
     const R = typeof O2N === 'function' ? O2N : x => x, t = R(tv);             // fades in real seconds (tokensEN: tables are v1 time, see truth.js RETIME)
     const L = LY.find(l => t >= R(l[0]) - .12 && t < R(l[1]) + .2); if (!L) return;
+    const FIN = LY.find(l => /^Fuck/i.test(l[2])); if (FIN && L[0] > FIN[0]) return;   // user: no subtitles after «Fuck.» (the finale plays bare)
     const [a, b, raw] = [R(L[0]), R(L[1]), L[2]], txt = CFG.censor ? raw.replace(/\bFuck/g, 'F*ck') : raw, k = ease((t - (a - .12)) / .16) * (1 - ease((t - b) / .2)); if (k < .01) return;
     const words = txt.split(' ').reduce((u, w) => ((/^[—–]$/.test(w) && u.length) ? u[u.length - 1] += ' ' + w : u.push(w), u), []);
     if (YT) return ytSub(t, a, b, L, words, k);
