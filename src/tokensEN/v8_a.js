@@ -263,7 +263,8 @@
   function matchM(t) {
     const [TX, TY, TR] = MTOK, [hx, hy, lift] = mHead(t), lit = t >= MSCR ? clamp((t - MSCR) / .1) : 0;
     const ia = t - MIGN, on = ia >= 0, fk = on ? easeOut(clamp(ia / .35)) : 0, fa = t - MFL, fl = fa >= 0 ? easeOut(clamp(fa / .12)) : 0;
-    const E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .3) : 0, bloom = t >= OSY ? .35 * Math.exp(-(t - OSY) / .15) : 0;   // the synth: a small bloom
+    const PO = t >= MSCR ? Math.exp(-(t - MSCR) / .07) : 0, IG = on ? Math.exp(-ia / .6) : 0, FL = fa >= 0 ? Math.exp(-fa / .5) : 0;   // strike pop (local) < ignition < flare
+    const E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .12) : 0, bloom = t >= OSY ? .35 * Math.exp(-(t - OSY) / .15) : 0;   // the synth: a small bloom
     back('#0B0C0F');
     if (t < MSCR) return;                                                                               // 19.83: clean dark until the strike
     paint(rectPts(-600, 930, 3200, 1400), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });   // floor
@@ -271,12 +272,16 @@
     if (fk > .02) paint(ellPts(TX, 960, 520 * fk, 40, 18), { fill: A2.sodium, fillOp: 90 * fk, bleed: .3, ink: null });          // reflection on the floor
     paint(rectPts(749, 839, 422, 50, 1), { wash: A2.gunmetal, ink: INK, sw: 1.3 });                                              // the press's bed, no press
     hazard(658, 889, 605, 41);                                                                                                    // the strike strip
+    // warm light pools behind the props on the ignition and the flare (the flare is the brightest beat)
+    if (IG > .02) glowAt(TX, TY - 40, 640, A2.sodium, 85 * IG);
+    if (FL > .02) glowAt(TX, TY - 80, 760, A2.hazard, 95 * FL);
     if (fk > .02) fire(TX, TY + 30, 230 * (1 + .45 * fl), 360 * (1 + .45 * fl), t, { k: fk * (1 + .1 * Math.sin(t * 9) + .15 * Math.exp(-Math.max(0, fa) / .15) * (fa >= 0)), seed: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
     token(TX, TY, TR, { burn: on ? .22 * clamp(ia * 2) : 0, glow: on ? .45 : .1 });
     // Clawd: the match is his left arm's hook; he steps so that the head sits at (hx, hy)
     const a = Math.asin(clamp((MPY - hy) / MR, -1, 1)), bx = hx + MR * Math.cos(a) + 4.9 * MU;
     clawd(bx, MG, MU, { seed: 2, walk: bx / 90, aL: a, aR: -.2, noShadow: true,
-      eyes: on ? 'happy' : 'look', lookX: -1, lookY: lift > .1 ? -.4 : .6, mouth: on ? 'smile' : lit > .5 ? 'o' : 'flat',
+      eyes: fa >= 0 ? 'happy' : on ? 'scared' : 'normal', lookX: -1, lookY: lift > .1 ? -.4 : .6, pupilY: -.4,   // focused carry → surprised on the ignition → smiles on the flare
+      mouth: fa >= 0 ? 'smile' : on ? 'o' : 'flat',
       armL: (u, sw) => { paint(rectPts(0, -.16 * u, ML, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
         paint(ellPts(ML, 0, .55 * u, .45 * u, 10), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
     mSparks(lerp(1010, 730, .6), 905, t - MSCR, 11, 34, 420, 1);                                        // the strike's spark shower
@@ -288,10 +293,12 @@
       if (sd === 60) for (let i = 0; i < 16; i++) { const q = clamp(g / .7), ang = hash(i * 5.1 + 2) * TAU, d = 80 + q * (300 + hash(i + 3) * 220);
         paint(ellPts(TX + Math.cos(ang) * d, TY - 120 + Math.sin(ang) * d * .7 - q * 60, 7 * (1 - q) + 2, 7 * (1 - q) + 2, 6), { wash: i % 2 ? A2.hazard : A2.sodium, ink: null }); } }
     // the dark: opens with the spark shower, then with the fire (RU screen radii / RU zoom)
-    mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6))) / 2.2 : (230 + 1100 * clamp(E) + 330 * lit) / 2.4, on ? 90 : 150);
-    // ponytail: open:m has no title (user, 2026-10-06)
-    // if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, MIGN, { col: A2.hazard, rot: -.05, punch: 0 });
-    flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on + .2 * Math.exp(-fa * 8) * (fa >= 0), '#FFC27A');
+    // the strike: a short local pop at the head (E, τ .12), back to the dark with only the match light
+    mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6)) + 900 * IG + 1000 * FL) / 2.2 : (230 + 500 * clamp(E) + 330 * lit) / 2.4, on ? 90 - 30 * Math.max(IG, FL) : lerp(205, 150, ease(seg(t, 20.4, 21.0))));   // darker right after the pop, eases open toward the token
+    if (PO > .02) glowAt(hx, hy - 10, 50 + 70 * (1 - PO), A2.hazard, 200 * PO);                          // the pop itself
+    // the title slams in with the ignition (user: «тут можно заголовок нарисовать уже!»), a small kick with the 22.181 flare
+    if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88 * (1 + .1 * Math.exp(-Math.max(0, fa) / .12) * (fa >= 0)), t, MIGN, { col: A2.hazard, rot: -.05, punch: 0 });
+    flash(.06 * PO + .2 * Math.exp(-ia * 8) * on + .25 * Math.exp(-fa * 8) * (fa >= 0), '#FFC27A');
   }
   function intro(tv) {
     const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
