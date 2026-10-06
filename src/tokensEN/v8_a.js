@@ -227,64 +227,63 @@
       if (e > 0) fire(lerp(MX, 1660, q), lerp(MY, 330, q) + 60, 220 - 18 * k, 320 * e, t + k, { seed: 40 + k, glow: false }); }
     if (hit) glowAt(MX, MY, 900, TK.orange, 150 * (1 - seg(br, .1, .3)));
   }
-  // v12q open:m (user: «полная хуита — ни горы, ни пресса: как в русской версии — Клоди чиркает спичкой и поджигает токен»): the RU a01
-  // match beat ported natively for the 20.15 cut. Darkness, Clawd, one long match, a hazard strike strip, one token. A scrape stroke per
-  // synth pulse (the head crosses the strip's middle ON the pulse, a spark shower lights his face out of the black, growing); the match
-  // catches on OSP[9] (21.64), he carries it to the token, it lights on OSP[11] (21.97) and grows; the 22.18 hit: the token erupts —
-  // big flame, rays, embers, «BURN THE TOKENS» stamped over it (the RU «ЖГИ ТОКЕНЫ» shot); holds to the 22.40 office cut.
-  const MSQ = SONG.reels?.yt === 'square', MG = 900, MU = 26, ML = 150, MR = 2.2 * MU + ML, MPY = MG - 4.5 * MU;
-  const MTK = [680, MG - 120, 120], MSM = 960, MCATCH = OSP[9], MIGN = OSP[11];
-  const mSparks = (x, y, age, seed, n, R0, dir) => { if (age < 0 || age > .5) return; const p = age / .5;   // a01_sparks
+  // v12r open:m (user: «возьми старт как в русской сессии — на первый такт зажигается спичка, а потом поджигается токен»): a straight
+  // port of a01_strike (tokens2/ch/a01_boot.js) — same coordinates, Clawd, hook-arm match, strike strip, token, sparks, ignition burst,
+  // vignette — minus ПРЕСС №1 (the user banned the press): the token lies on the press's bed slab + hazard strip, nothing above it.
+  // No shake, no sfx lettering. Timing on the EN window (drums.json is silent 20.004 → 22.181; the synth is the first beat):
+  //   RU 1.66 the third scrape catches     → EN 20.168 synth entry (frame 1 is mid-stroke)
+  //   RU 1.85–2.78 lift to the wick         → EN 21.18 (downbeat) – 22.06, the camera follows up and opens for the title
+  //   RU 2.93 the token ignites             → EN 22.181 drum hit (snare 1.33 + kick) + BURN THE TOKENS, held to the 22.40 cut
+  const MSQ = SONG.reels?.yt === 'square', MSCR = OSY, MLIFT = [21.18, 22.06];
+  const MTOK = [960, 777, 62], MU = 26, MG = 990, ML = 190, MR = 2.2 * MU + ML, MPY = MG - 4.5 * MU;
+  const mSparks = (x, y, age, seed, n, R0, dir = 1) => { if (age < 0 || age > .5) return; const p = age / .5;   // a01_sparks verbatim
     for (let i = 0; i < n; i++) { const a = -Math.PI * (.05 + hash(i + seed) * .55), sp = .35 + hash(i + seed + 7) * .9, d = R0 * sp * easeOut(p);
-      const vx = Math.cos(a) * dir, vy = Math.sin(a), x1 = x + vx * d, y1 = y + vy * d + p * p * R0 * .9, len = 52 * (1 - p) + 12;
-      inkLine([[x1, y1], [x1 - vx * len * 2, y1 - (vy + p * 1.6) * len * 1.5]], 5.5 * (1 - p) + 1.2, i % 3 ? A2.hazard : '#FFF3C8', 'inkfine', 0); } };
-  const mRays = (cx, cy, t, n, op, len = 1700) => { for (let i = 0; i < n; i++) { const a = i / n * TAU + t * .07, w = .045 + .02 * (i % 2);   // a01_rays
-    paint([[cx, cy], [cx + Math.cos(a - w) * len, cy + Math.sin(a - w) * len], [cx + Math.cos(a + w) * len, cy + Math.sin(a + w) * len]], { wash: i % 2 ? A2.sodium : A2.hazard, washOp: op, ink: null }); } };
-  const mEmbers = (t, x0, x1, y0, n, seed, rise) => { for (let i = 0; i < n; i++) {                                     // a01_embers
-    const p = frac(t * (.25 + hash(i + seed) * .3) + hash(i * 3 + seed)), x = lerp(x0, x1, hash(i * 7 + seed)) + Math.sin(t * 2 + i) * 30 * p, y = y0 - p * rise, r = 3 + hash(i + 11 + seed) * 5 * (1 - p);
-    paint(ellPts(x, y, r, r, 6), { wash: p < .5 ? A2.hazard : A2.sodium, washOp: 255 * (1 - p), ink: null }); } };
+      const vx = Math.cos(a) * dir, vy = Math.sin(a), x1 = x + vx * d, y1 = y + vy * d + p * p * R0 * .9, len = 26 * (1 - p) + 6;
+      inkLine([[x1, y1], [x1 - vx * len * 2, y1 - (vy + p * 1.6) * len * 1.5]], 2.6 * (1 - p) + .6, i % 3 ? A2.hazard : '#FFF3C8', 'inkfine', 0); } };
   const mVig = (cx, cy, r, op) => { for (let l = 0; l < 3; l++) { const rr = r * (1 + l * .4), pts = [[-600, cy], [-600, -900], [2600, -900], [2600, 2200], [-600, 2200], [-600, cy]];   // a01_vig, world space
     for (let i = 0; i <= 28; i++) { const a = Math.PI - i / 28 * TAU; pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * .8]); }
     paint(pts, { wash: '#0B0C0F', washOp: op, ink: null }); } };
+  function mFlame(x, y, w, h, t, seed, n = 3) {                                                       // a01_flame verbatim (kit fire() vanished under the wide camera)
+    if (h < 4) return;
+    paint(flamePts(x, y, w, h, t, seed, n), { wash: A2.rust, fill: TK.emberDk, fillOp: 60, tex: .5, ink: TK.emberDk, sw: .6 });
+    paint(flamePts(x, y, w * .74, h * .72, t + 3.1, seed + 11, Math.max(2, n - 1)), { wash: A2.sodium, ink: null });
+    paint(flamePts(x, y, w * .44, h * .42, t + 7.3, seed + 23, Math.max(2, n - 2)), { wash: A2.hazard, ink: null });
+  }
+  function mHead(t) {                                                                                   // a01_head on the EN beats
+    const X0 = 1010, X1 = 730, Y = 905;
+    let hx = t < MSCR - .05 ? X0 : lerp(X0, X1, easeOut(seg(t, MSCR - .05, MSCR + .09))), hy = Y - 40 * ease(seg(t, MSCR + .12, MSCR + .45));   // off the strip, held up
+    const lift = ease(seg(t, ...MLIFT));
+    hx = lerp(hx, 946, lift); hy = lerp(hy, 716, lift) - Math.sin(lift * Math.PI) * 60;
+    return [hx, hy, lift];
+  }
   function matchM(t) {
-    const [TX, TY, TR] = MTK, ph = (t - OSY) / .1635, br = t - FINAL, hit = br >= 0;
-    const amp = lerp(90, 150, seg(t, OPEN0, MCATCH)), lit = t >= MCATCH ? easeOut(seg(t, MCATCH, MCATCH + .08)) : 0, on = t >= MIGN, ia = t - MIGN;
-    // the head: a stroke per pulse across the strip, then (caught) up to the token's wick, then a hop back on the hit
-    let hx = MSM + amp * Math.sin(Math.PI * Math.min(ph, 9)), hy = MG - 70 - 10 * Math.abs(Math.cos(Math.PI * ph)) * (t < MCATCH);
-    const lift = ease(seg(t, MCATCH + .04, MIGN)), wick = [TX + TR * .55, TY - TR - 6];
-    hx = lerp(hx, wick[0], lift); hy = lerp(hy, wick[1], lift) - Math.sin(lift * Math.PI) * 50;
-    const jump = hit ? easeOut(seg(br, 0, .14)) : 0; hx += 170 * jump; hy -= 60 * jump;
-    let E = 0; [OSY - .1635, ...OSP].forEach((p, i) => { if (t >= p && p < MCATCH + .01) E += (.55 + .45 * Math.max(0, i - 1) / 9) * Math.exp(-(t - p) / .13); });
-    const fk = on ? easeOut(clamp(ia / .2)) : 0, light = clamp(E * .9 + lit * .3 + fk * .5 + (hit ? 1 : 0));
+    const [TX, TY, TR] = MTOK, [hx, hy, lift] = mHead(t), lit = t >= MSCR ? clamp((t - MSCR) / .1) : 0;
+    const ia = t - FINAL, on = ia >= 0, fk = on ? easeOut(clamp(ia / .35)) : 0;
+    const E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .3) : 0;
     back('#0B0C0F');
-    if (hit) { mRays(TX, TY, t, 16, (36 + 30 * kick(t, [FINAL], .3)) * easeOut(seg(br, 0, .08))); glowAt(TX, TY, 760, A2.sodium, 90); }
-    paint(rectPts(-600, MG, 3200, 1400), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });   // the floor
-    inkLine([[-600, MG + 1], [2600, MG + 1]], 1, INK, 'inkfine', 0);
-    paint(rectPts(MSM - 230, MG - 62, 460, 62), { wash: A2.gunDk, fill: '#1E2127', fillOp: 90, ink: INK, sw: 1.2 });           // the strike strip block
-    hazard(MSM - 230, MG - 62, 460, 26);
-    if (fk > .02 || hit) paint(ellPts(TX, MG + 30, 560 * Math.max(fk, hit ? 1 : 0), 44, 18), { fill: A2.sodium, fillOp: 90, bleed: .3, ink: null });   // floor reflection
-    const big = hit ? easeOut(seg(br, 0, .1)) : 0;
-    if (fk > .02 && !hit) fire(TX, TY + 40, 150 + 200 * fk * seg(t, MIGN, FINAL) + 60 * fk, 200 + 360 * seg(t, MIGN, FINAL), t, { k: fk * (1 + .12 * kick(t, OSP, .12)), seed: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
-    if (hit) fire(TX, MG - 10, 660, 820, t, { k: big * (1 + .12 * kick(t, [FINAL], .25)), seed: 21, n: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
-    token(TX, TY - 30 * big, TR * (1 + .1 * big), { burn: hit ? .3 : on ? .22 * clamp(ia * 3) : 0, glow: hit ? .6 : on ? .45 : .1 });
-    // Clawd: the match is his left arm's hook (a01); he steps so the head sits at (hx, hy)
-    const a = Math.asin(clamp((MPY - hy) / MR, -1, 1)), bx = hx + MR * Math.cos(a) + 4.9 * MU, happy = on && !hit;
-    clawd(bx, MG, MU, { seed: 2, walk: bx / 90, aL: a, aR: hit ? 1.3 : -.2, noShadow: true, sq: .08 * kick(t, OSP, .1) * (t < MCATCH),
-      eyes: hit ? 'scared' : happy ? 'happy' : lit > .5 ? 'look' : 'narrow', lookX: -1, lookY: lift > .5 ? -.4 : .6,
-      mouth: hit ? 'O' : happy ? 'smile' : lit > .5 ? 'o' : 'flat',
-      armL: (u, sw) => { paint(rectPts(0, -.26 * u, ML, .52 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
-        paint(ellPts(ML, 0, .85 * u, .68 * u, 12), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
-    // the sparks per pulse + the scrape just before the cut (frame 1 already sprays)
-    [OSY - .1635, ...OSP].forEach((p, i) => { i--; if (p < MCATCH + .01) { const k = .55 + .45 * Math.max(0, i) / 9; mSparks(MSM, MG - 66, t - p, 18 + i * 7, Math.round(16 + 20 * k), 220 + 220 * k, i % 2 ? 1 : -1);
-      glowAt(MSM, MG - 90, 110 * k, '#FFC27A', 70 * k * Math.exp(-Math.max(0, t - p) / .1) * (t >= p)); } });
-    if (lit > .02 && !hit) { glowAt(hx, hy - 30, 150, '#FFC27A', 90 * lit); fire(hx, hy + 6, 46, 120, t, { k: lit, seed: 3, n: 3, glow: false }); }
-    if (on && ia < .5) for (let i = 0; i < 16; i++) { const q = clamp(ia / .5), ang = hash(i * 3.3) * TAU, d = 50 + q * (220 + hash(i) * 180);   // ignition burst
+    paint(rectPts(-600, 930, 3200, 1400), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });   // floor
+    inkLine([[-600, 931], [2600, 931]], 1, INK, 'inkfine', 0);
+    if (fk > .02) paint(ellPts(TX, 960, 520 * fk, 40, 18), { fill: A2.sodium, fillOp: 90 * fk, bleed: .3, ink: null });          // reflection on the floor
+    paint(rectPts(749, 839, 422, 50, 1), { wash: A2.gunmetal, ink: INK, sw: 1.3 });                                              // the press's bed, no press
+    hazard(658, 889, 605, 41);                                                                                                    // the strike strip
+    if (fk > .02) fire(TX, TY + 30, 230, 360, t, { k: fk * (1 + .1 * Math.sin(t * 9)), seed: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
+    token(TX, TY, TR, { burn: on ? .22 * clamp(ia * 2) : 0, glow: on ? .45 : .1 });
+    // Clawd: the match is his left arm's hook; he steps so that the head sits at (hx, hy)
+    const a = Math.asin(clamp((MPY - hy) / MR, -1, 1)), bx = hx + MR * Math.cos(a) + 4.9 * MU;
+    clawd(bx, MG, MU, { seed: 2, walk: bx / 90, aL: a, aR: -.2, noShadow: true,
+      eyes: on ? 'happy' : 'look', lookX: -1, lookY: lift > .1 ? -.4 : .6, mouth: on ? 'smile' : lit > .5 ? 'o' : 'flat',
+      armL: (u, sw) => { paint(rectPts(0, -.16 * u, ML, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
+        paint(ellPts(ML, 0, .55 * u, .45 * u, 10), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
+    mSparks(lerp(1010, 730, .6), 905, t - MSCR, 11, 34, 420, 1);                                        // the strike's spark shower
+    if (lit > .02) { glowAt(hx, hy - 30, 170, A2.hazard, 110 * lit); mFlame(hx, hy + 6, 46, 110 * lit * (1 + .08 * Math.sin(t * 11)), t, 3); }
+    if (on && ia < .7) for (let i = 0; i < 16; i++) {                                                   // ignition burst
+      const q = clamp(ia / .7), ang = hash(i * 3.3) * TAU, d = 50 + q * (220 + hash(i) * 180);
       paint(ellPts(TX + Math.cos(ang) * d, TY - 60 + Math.sin(ang) * d * .7 - q * 60, 6 * (1 - q) + 2, 6 * (1 - q) + 2, 6), { wash: i % 2 ? A2.hazard : A2.sodium, ink: null }); }
-    if (hit) { mEmbers(t, TX - 700, TX + 900, MG + 60, 34, 1, 900); sparks(TX, TY, br, 9, 30, 520); }
-    // the dark opens with every spark shower (on his face + the strip), then with the fire
-    if (!hit) mVig(on ? TX + 200 : (MSM + bx) / 2, on ? TY - 40 : MG - 160, on ? 420 + 700 * fk : 260 + 520 * clamp(E) + 200 * lit, on ? 90 : 150);
-    if (hit) stamp('BURN THE TOKENS', MSQ ? 960 : 1000, MSQ ? 250 : 330, MSQ ? 92 : 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
-    flash(.12 * kick(t, OSP.filter(p => p < MCATCH + .01), .1) + .25 * kick(t, [MIGN], .15) + .45 * kick(t, [FINAL], .12), '#FFC27A');
+    if (on) { mSparks(TX, TY - TR, ia, 40, 16, 300, 1); mSparks(TX, TY - TR, ia, 47, 16, 300, -1); }
+    // the dark: opens with the spark shower, then with the fire (RU screen radii / RU zoom)
+    mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6))) / 2.2 : (230 + 1100 * clamp(E) + 330 * lit) / 2.4, on ? 90 : 150);
+    if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
+    flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on, '#FFC27A');
   }
   function intro(tv) {
     const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
@@ -444,8 +443,8 @@
     c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]],
     e1: [[OPEN0, 1360, 390, 740, 0], [21.4, SL.px - 40, 350, 1000, 1], [FINAL - .01, SL.px - 40, 350, 1020, 1], [IB - .002, SL.px - 40, 350, 1060, 1]],
     e2: [[OPEN0, 1440, 360, 1060, 0], [FINAL - .01, 1440, 350, 1020, 1], [IB - .002, 1440, 350, 1080, 1]],
-    m: SONG.reels?.yt === 'square' ? [[OPEN0, 1010, 650, 720, 0], [FINAL - .01, 1000, 660, 690, 1], [FINAL, 960, 600, 800, 0], [IB - .002, 960, 600, 820, 1]]
-      : [[OPEN0, 1070, 650, 640, 0], [FINAL - .01, 1060, 655, 620, 1], [FINAL, 1040, 640, 660, 0], [IB - .002, 1040, 640, 670, 1]],
+    m: SONG.reels?.yt === 'square' ? [[OPEN0, 900, 860, 415, 0], [21.10, 905, 850, 400, 1], [22.10, 960, 610, 670, 1], [IB - .002, 960, 605, 690, 1]]   // RU a01 framing: close on the strip → follow the match up, open for the title
+      : [[OPEN0, 870, 930, 330, 0], [21.10, 880, 910, 320, 1], [22.10, 960, 650, 600, 1], [IB - .002, 960, 645, 615, 1]],   // 16:9 (adj: y −50, view h ≈ 1.26·w)
     g1: [[OPEN0, 1600, 360, 1080, 0], [FINAL - .01, 1600, 350, 1040, 1], [IB - .002, 1600, 350, 1100, 1]] }[OPV === 'g2' ? 'g1' : OPV];
   const opn = L => OPV === 'b' ? [[N2O(OPEN0), ...L.reduce((r, k) => O2N(k[0]) <= 14.35 ? k : r, L[0]).slice(1, 4), 0], ...L.filter(k => O2N(k[0]) > 14.35).map(([k, ...r]) => [N2O(toReal(O2N(k))), ...r])]
     : OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0]) + .001)] : L;
