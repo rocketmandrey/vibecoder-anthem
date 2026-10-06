@@ -280,8 +280,8 @@
     // Clawd: the match is his left arm's hook; he steps so that the head sits at (hx, hy)
     const a = Math.asin(clamp((MPY - hy) / MR, -1, 1)), bx = hx + MR * Math.cos(a) + 4.9 * MU;
     clawd(bx, MG, MU, { seed: 2, walk: bx / 90, aL: a, aR: -.2, noShadow: true,
-      eyes: fa >= 0 ? 'happy' : on ? 'scared' : 'normal', lookX: -1, lookY: lift > .1 ? -.4 : .6, pupilY: -.4,   // focused carry → surprised on the ignition → smiles on the flare
-      mouth: fa >= 0 ? 'smile' : on ? 'o' : 'flat',
+      eyes: fa >= 0 ? 'happy' : 'normal', lookX: -1, lookY: lift > .1 ? -.4 : .6, pupilY: -.4,   // plain face → joy on the 22.181 flare (the 3rd accent)
+      mouth: fa >= 0 ? 'smile' : 'flat',
       armL: (u, sw) => { paint(rectPts(0, -.16 * u, ML, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
         paint(ellPts(ML, 0, .55 * u, .45 * u, 10), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
     mSparks(lerp(1010, 730, .6), 905, t - MSCR, 11, 34, 420, 1);                                        // the strike's spark shower
