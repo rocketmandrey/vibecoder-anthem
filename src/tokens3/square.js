@@ -153,7 +153,8 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     const R = typeof O2N === 'function' ? O2N : x => x, n = words.length, maxW = CFG.subMax, size = CFG.subSize, lw = CFG.subMin ? maxW / CFG.subMin : maxW;   // subMin: shrink down to it before chunking (rsq)
     const ws = typeof EN_WORDS === 'undefined' ? [] : EN_WORDS.filter(([w]) => w >= L[0] - .05 && w < L[1] + .05).map(([w]) => R(w));
     const st = ws.length === n ? ws : (() => { const len = words.map(w => w.length), tot = len.reduce((p, q) => p + q, 0), d = Math.max(.4, b - a - .1); let acc = 0; return len.map(l => { const v = a + d * acc / tot; acc += l; return v; }); })();
-    c.font = FONT(size); const sp = c.measureText(' ').width, wd = words.map(w => c.measureText(w).width), tot = wd.reduce((p, q) => p + q, 0) + sp * (n - 1);
+    const F = CFG.plate ? z => `700 ${z}px "Baloo 2", "Russo One", sans-serif` : FONT;   // plate: the reference look (rounded bold, no outline)
+    c.font = F(size); const sp = c.measureText(' ').width, wd = words.map(w => c.measureText(w).width), tot = wd.reduce((p, q) => p + q, 0) + sp * (n - 1);
     const greedy = lim => { const q = [[0]]; let cw = wd[0];                  // fill chunks up to lim
       for (let i = 1; i < n; i++) { if (cw + sp + wd[i] > lim) { q.push([i]); cw = wd[i]; } else { q[q.length - 1].push(i); cw += sp + wd[i]; } } return q; };
     const nMin = Math.ceil(tot / lw); let chunks = greedy(Math.min(lw, tot / nMin * 1.15)); if (chunks.length > nMin) chunks = greedy(lw);   // balanced, else tight
@@ -168,13 +169,17 @@ const SQ_CFG = Object.assign({ ar: 1, py: 300, title: 'ЖГИ ТОКЕНЫ', tit
     const widest = CFG.subMin ? Math.max(...chunks.map(q => q.reduce((p, i) => p + wd[i], 0) + sp * (q.length - 1))) : cwid;   // rsq: both chunks one size
     const fs = widest > maxW ? size * maxW / widest : size, sc = fs / size;                  // a single over-long word: shrink, never wrap
     const y = CFG.subY + (1 - k) * 14; let x = (CFG.subCx ?? VW / 2) - cwid * sc / 2;
-    c.save(); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = FONT(fs); c.lineJoin = 'round';
+    c.save(); c.globalAlpha = k; c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = F(fs); c.lineJoin = 'round';
+    if (CFG.plate) {                                                          // a dark navy plate hugging the text, rough ink-ish edges (steady per chunk)
+      const px = fs * .48, ph = fs * .62, x0 = x - px, x1 = x + cwid * sc + px, y0 = y - ph, y1 = y + ph, sd = ch[0] * 7.3 + L[0], j = q => (hash(sd + q) - .5) * fs * .12;
+      c.beginPath(); c.moveTo(x0 + j(1), y0 + j(2)); c.lineTo((x0 + x1) / 2 + j(3), y0 + j(4)); c.lineTo(x1 + j(5), y0 + j(6)); c.lineTo(x1 + j(7), y1 + j(8));
+      c.lineTo((x0 + x1) / 2 + j(9), y1 + j(10)); c.lineTo(x0 + j(11), y1 + j(12)); c.closePath(); c.fillStyle = 'rgba(36,34,60,.84)'; c.fill();
+    }
     for (const i of ch) {
       const w = words[i], ww = wd[i] * sc, f = clamp((t - st[i]) / Math.max(.08, Math.min(.5, (i + 1 < n ? st[i + 1] : st[i] + .4) - st[i])));
-      c.lineWidth = fs * .2; c.strokeStyle = 'rgba(24,18,30,.92)'; c.strokeText(w, x, y);
-      c.fillStyle = PAL.ink; c.fillText(w, x + fs * .04, y + fs * .05);
-      c.fillStyle = PAL.cream; c.fillText(w, x, y);
-      if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - fs, ww * f + 4, fs * 2); c.clip(); c.fillStyle = KP.goldLt; c.fillText(w, x, y); c.restore(); }
+      if (CFG.plate) { c.fillStyle = '#F6EEDD'; c.fillText(w, x, y); }        // the sweep runs through the letters: it can stop mid-word
+      else { c.lineWidth = fs * .2; c.strokeStyle = 'rgba(24,18,30,.92)'; c.strokeText(w, x, y); c.fillStyle = PAL.ink; c.fillText(w, x + fs * .04, y + fs * .05); c.fillStyle = PAL.cream; c.fillText(w, x, y); }
+      if (f > 0) { c.save(); c.beginPath(); c.rect(x - 2, y - fs, ww * f + 2, fs * 2); c.clip(); c.fillStyle = CFG.plate ? '#F2B13A' : KP.goldLt; c.fillText(w, x, y); c.restore(); }
       x += ww + sp * sc;
     }
     c.restore();
