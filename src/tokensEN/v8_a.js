@@ -282,7 +282,8 @@
     if (on) { mSparks(TX, TY - TR, ia, 40, 16, 300, 1); mSparks(TX, TY - TR, ia, 47, 16, 300, -1); }
     // the dark: opens with the spark shower, then with the fire (RU screen radii / RU zoom)
     mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6))) / 2.2 : (230 + 1100 * clamp(E) + 330 * lit) / 2.4, on ? 90 : 150);
-    if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
+    // ponytail: open:m has no title (user, 2026-10-06)
+    // if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
     flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on, '#FFC27A');
   }
   function intro(tv) {
