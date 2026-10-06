@@ -121,7 +121,7 @@
     const pp = o.pop || {}, popAt = (gr, x, y, fn) => { const k = pp[gr] || 0; if (!k) return fn(); const [cx, cy] = at(gr, x, y); push(); translate(cx, cy); scale(1 + k); translate(-cx, -cy); try { fn(); } finally { pop(); } };
     popAt('games', 770, 330, () => sub('games', () => games(t, g.games || 0, D * (1 - (lit.games || 0)))));
     popAt('sites', 1165, 285, () => sub('sites', () => sites(t, g.sites || 0, D * (1 - (lit.sites || 0)))));
-    sub('clock', () => clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0));
+    if (!R) sub('clock', () => clock(1480, 120, 340, 160, o.clock || 'ВС 23:58', t, o.clockGlow || 0));   // R34: no wall clock, the desk clock (deskClock) is the one clock
     popAt('agents', 1670, 640, () => sub('agents', () => agents(t, g.agents || 0, D * (1 - (lit.agents || 0)))));
     sub('desk', () => roomDesk(t, o));
   }
@@ -185,15 +185,16 @@
     dg.forEach((d, i) => digit7(xs[i], -H / 2 - 10, H, d, col));
     if (Math.floor(t * 2) % 2 === 0) for (const dy of [-26, 16]) paint(ellPts(x0 + 198, -10 + dy, 7, 7, 10), { wash: col, ink: null });   // the blinking colon
     pop();
-    letter('PM', cx + (x0 + 412) * k, by - (110 + 30) * k, 40 * k, col, { font: ruFont(40 * k), ink: false });
   }
+  // R34 (user: «the clock moved / vanished»): ONE desk clock through the whole night run, same spot, 24h: 23:58 → 23:59 on «I'm at peace» → 00:00 on the midnight hit
+  const deskClock = (t, hh, mm, pulse = 0) => sub('desk', () => ledClock(1165, 700, hh, mm, t, pulse, .3));
   function sRoom(t) {                                                         // 197.9 «Воскресенье. 23:58»
     const z = kf(t, [[197.9, 1], [205.65, 1.14]]), cx = kf(t, [[197.9, 960], [205.65, 1040]]), cy = kf(t, [[197.9, 520], [205.65, 470]]);
     const fl = hitK(t, window.TIME_WARP ? hitsIn(197.9, 205.65, 10) : [198.26, 199.94, 202.61, 203.28, 204.93], .12);   // v3: the track's own hits
     if (R) camBegin(960, kf(t, [[197.9, 540], [205.65, 560]]), kf(t, [[197.9, 1], [205.65, 1.05]]));      // R34: the whole re-laid room, a slow push
     else camBegin(cx, cy, z);
     room(t, { clockGlow: hitK(t, [200.88, 203.24], .5), glow: 1 - .35 * fl, clawd: sitClawd(t, { eyes: 'look', lookX: 1 }) });
-    if (R) sub('desk', () => ledClock(1165, 700, 11, 58, t, hitK(t, [200.88, 203.24], .5), .3));   // on the desk, in front of the laptop
+    if (R) deskClock(t, 23, 58, hitK(t, [200.88, 203.24], .5));   // on the desk, in front of the laptop
     camEnd();
     glitchCut(t, 197.9);
   }
@@ -252,6 +253,7 @@
       camBegin(965, 560, kf(t, [[207.6, 1.15], [213.95, 1.08]]));
       const pop = {}; for (const [k, a] of [['games', 207.6], ['sites', 208.8], ['agents', 210.16]]) pop[k] = Math.sin(Math.PI * seg(t, a, a + .35)) * .14;
       room(t, { lit, grey, pop, clawd: sitClawd(t, { eyes: t > 212.3 ? 'narrow' : 'look', lookX: 1 }) });
+      deskClock(t, 23, 58);
       return camEnd();
     } else camBegin(cam[0], cam[1], cam[2]);
     room(t, { lit, grey, clawd: sitClawd(t, { eyes: t > 212.3 ? 'narrow' : 'look', lookX: 1 }) });
@@ -269,9 +271,10 @@
   function calmCU() {
     // RNOW: the true real clock (O2N of the hold's shifted T jumped at the 239.56 segment boundary — the jerk before «I'm at peace»)
     const s = window.RNOW ?? O2N(T), k = seg(s, 237.0, 241.96), eyes = s < 237.7 ? 'narrow' : 'closed', br = Math.sin(s * 2.2) * .12;
-    camBegin(880, 850 - 10 * k, lerp(1.85, 2.25, k));
+    camBegin(965, 850 - 10 * k, lerp(1.35, 1.5, k));          // wide enough for the desk clock on the right
     room(s, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .3 + .6 * seg(s, 237.0, 239.5), glow: .45,
       clawd: sitClawd(s, { eyes, lookX: 0, mouth: s > 239.56 ? 'smile' : 'flat', blush: s > 239.9, aL: .15, aR: .3, dy: br, sq: -br * .2 }) });
+    deskClock(s, 23, s >= 239.56 ? 59 : 58, hitK(s, [239.56], .4));          // 3:59: one minute to midnight
     camEnd();
   }
   function sSilence(t) {                                                      // 213.95 «Тишина…»: he gets up, walks to the window
@@ -309,9 +312,10 @@
 
   function sMidnight(t) {                                                     // 218.45 «Полночь.»: ВС 23:59 → ПН 00:00 on the 219.18 hit
     const z = kf(t, [[218.45, 2.6], [220.7, 3.0]]), flip = t >= 219.18;
-    if (R) camBegin(1000, 400, 1.3); else camBegin(1650, 215, z);   // R34 (v19): one static shot, the wall clock up top + Clawd asleep at the desk (static, so the 244.1 retime gap can't shift it)
+    if (R) camBegin(975, 790, 2.2); else camBegin(1650, 215, z);   // R34: static, the desk clock the hero beside sleeping Clawd   // R34 (v19): one static shot, the wall clock up top + Clawd asleep at the desk (static, so the 244.1 retime gap can't shift it)
     room(t, { grey: { games: 1, sites: 1, agents: 1 }, moonK: .6, glow: .5, clock: flip ? 'ПН 00:00' : 'ВС 23:59', clockGlow: hitK(t, [219.18], .6),
       clawd: R ? sitClawd(t, { eyes: 'closed', lookX: 0, mouth: 'smile', blush: true, aL: .15, aR: .3 }) : undefined });
+    if (R) deskClock(t, flip ? 0 : 23, flip ? 0 : 59, hitK(t, [219.18], .6));
     camEnd();
     if (Math.abs(t - 219.18) < .05) flash(.25, '#FF4A40');
   }
@@ -343,7 +347,7 @@
 
   // v3 only (tokens3 warp): he says «Сука» with his eyes shut; the band crash cuts to this snap: the eyes fly open, red, on a zoom punch (v2 225.0+)
   const SNAP = 225.0;
-  // R34: the close-ups become a full-body medium shot inside the 3:4 picture (u 84, arms down, ground at 1060): the MON 12:00 AM clock over
+  // R34: the close-ups become a full-body medium shot inside the 3:4 picture (u 84, arms down, ground at 1060): the 00:00 LED clock over
   // his head, the back of the laptop in front of him; the eyes sit at ~45% height so the red snap reads
   const lidBack = (glow) => {
     glowAt(960, 980, 420, glow, 90);
@@ -386,7 +390,7 @@
       // till the face fills the frame; sSnap holds it, eyes red
       const z = lerp(1.05, 1.3, seg(t, 224.2, 224.73)) + .45 * backOut(seg(t, 224.735, 224.85));
       camBegin(960, 1060 - 6 * u, z);
-      clock(740, -90, 440, 190, 'ПН 00:00', t, .3);
+      ledClock(960, 330, 0, 0, t, .3, .55);                                  // the same LED clock as the night run (was the 'ПН 00:00' box), same footprint
       clawd(960, 1060, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
       lidBack('#9CFFB8');
       return camEnd();
