@@ -227,14 +227,15 @@
       if (e > 0) fire(lerp(MX, 1660, q), lerp(MY, 330, q) + 60, 220 - 18 * k, 320 * e, t + k, { seed: 40 + k, glow: false }); }
     if (hit) glowAt(MX, MY, 900, TK.orange, 150 * (1 - seg(br, .1, .3)));
   }
-  // v12r open:m (user: «возьми старт как в русской сессии — на первый такт зажигается спичка, а потом поджигается токен»): a straight
-  // port of a01_strike (tokens2/ch/a01_boot.js) — same coordinates, Clawd, hook-arm match, strike strip, token, sparks, ignition burst,
-  // vignette — minus ПРЕСС №1 (the user banned the press): the token lies on the press's bed slab + hazard strip, nothing above it.
-  // No shake, no sfx lettering. Timing on the EN window (drums.json is silent 20.004 → 22.181; the synth is the first beat):
-  //   RU 1.66 the third scrape catches     → EN 20.168 synth entry (frame 1 is mid-stroke)
-  //   RU 1.85–2.78 lift to the wick         → EN 21.18 (downbeat) – 22.06, the camera follows up and opens for the title
-  //   RU 2.93 the token ignites             → EN 22.181 drum hit (snare 1.33 + kick) + BURN THE TOKENS, held to the 22.40 cut
-  const MSQ = SONG.reels?.yt === 'square', MSCR = OSY, MLIFT = [21.18, 22.06];
+  // v12r open:m (user: «возьми старт как в русской сессии — на первый такт зажигается спичка, а потом поджигается токен»; then «нарастить
+  // секунду до, чтобы продлить заголовок»): a straight port of a01_strike (tokens2/ch/a01_boot.js) — same coordinates, Clawd, hook-arm match,
+  // strike strip, token, sparks, ignition burst, vignette — minus ПРЕСС №1 (banned): the token lies on the press's bed slab + hazard strip.
+  // The short cut starts at M0 = 19.05 (dark). No shake / punches, no sfx lettering. RU → EN (drums.json snare fill, then the synth):
+  //   RU scrapes 0.2 / 0.86 / 1.66        → EN dud scrapes on the fill hits 19.116 / 19.487 / 19.865, the 4th stroke catches on the synth 20.168
+  //   RU 1.85–2.78 lift to the wick         → EN 20.25–21.08, the camera follows up and opens for the title
+  //   RU 2.93 the token ignites             → EN 21.18 bar downbeat + BURN THE TOKENS (held to the 22.40 cut, ~1.2 s)
+  //   (RU 4.86 the title-shot fire)         → EN 22.181 drum hit: the fire flares, a second burst of sparks
+  const MSQ = SONG.reels?.yt === 'square', M0 = 19.05, MSTR = [19.116, 19.487, 19.865, OSY], MSCR = OSY, MLIFT = [20.25, 21.08], MIGN = 21.18, MFL = 22.181;
   const MTOK = [960, 777, 62], MU = 26, MG = 990, ML = 190, MR = 2.2 * MU + ML, MPY = MG - 4.5 * MU;
   const mSparks = (x, y, age, seed, n, R0, dir = 1) => { if (age < 0 || age > .5) return; const p = age / .5;   // a01_sparks verbatim
     for (let i = 0; i < n; i++) { const a = -Math.PI * (.05 + hash(i + seed) * .55), sp = .35 + hash(i + seed + 7) * .9, d = R0 * sp * easeOut(p);
@@ -251,22 +252,28 @@
   }
   function mHead(t) {                                                                                   // a01_head on the EN beats
     const X0 = 1010, X1 = 730, Y = 905;
-    let hx = t < MSCR - .05 ? X0 : lerp(X0, X1, easeOut(seg(t, MSCR - .05, MSCR + .09))), hy = Y - 40 * ease(seg(t, MSCR + .12, MSCR + .45));   // off the strip, held up
+    let hx = X0, hy = Y;
+    for (let i = 0; i < MSTR.length; i++) {                                                           // a stroke per scrape, back over the gap
+      const s = MSTR[i]; if (t < s - .05) break;
+      hx = lerp(X0, X1, easeOut(seg(t, s - .05, s + .09))); hy = Y;
+      if (i + 1 < MSTR.length) { const r = seg(t, s + .1, MSTR[i + 1] - .07); hx = lerp(hx, X0, ease(r)); hy = Y - 30 * Math.sin(r * Math.PI); }
+    }
+    hy -= 40 * ease(seg(t, MSCR + .1, MSCR + .3));                                                     // caught: off the strip
     const lift = ease(seg(t, ...MLIFT));
     hx = lerp(hx, 946, lift); hy = lerp(hy, 716, lift) - Math.sin(lift * Math.PI) * 60;
     return [hx, hy, lift];
   }
   function matchM(t) {
     const [TX, TY, TR] = MTOK, [hx, hy, lift] = mHead(t), lit = t >= MSCR ? clamp((t - MSCR) / .1) : 0;
-    const ia = t - FINAL, on = ia >= 0, fk = on ? easeOut(clamp(ia / .35)) : 0;
-    const E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .3) : 0;
+    const ia = t - MIGN, on = ia >= 0, fk = on ? easeOut(clamp(ia / .35)) : 0, fa = t - MFL, fl = fa >= 0 ? easeOut(clamp(fa / .12)) : 0;
+    let E = 0; MSTR.forEach((s, i) => { if (t >= s) E += (i === 0 || s === MSCR ? 1.6 : 1) * Math.exp(-(t - s) / (i === 0 || s === MSCR ? .3 : .2)); });
     back('#0B0C0F');
     paint(rectPts(-600, 930, 3200, 1400), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });   // floor
     inkLine([[-600, 931], [2600, 931]], 1, INK, 'inkfine', 0);
     if (fk > .02) paint(ellPts(TX, 960, 520 * fk, 40, 18), { fill: A2.sodium, fillOp: 90 * fk, bleed: .3, ink: null });          // reflection on the floor
     paint(rectPts(749, 839, 422, 50, 1), { wash: A2.gunmetal, ink: INK, sw: 1.3 });                                              // the press's bed, no press
     hazard(658, 889, 605, 41);                                                                                                    // the strike strip
-    if (fk > .02) fire(TX, TY + 30, 230, 360, t, { k: fk * (1 + .1 * Math.sin(t * 9)), seed: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
+    if (fk > .02) fire(TX, TY + 30, 230 * (1 + .45 * fl), 360 * (1 + .45 * fl), t, { k: fk * (1 + .1 * Math.sin(t * 9) + .15 * Math.exp(-Math.max(0, fa) / .15) * (fa >= 0)), seed: 7, cols: [A2.rust, A2.sodium, A2.hazard] });
     token(TX, TY, TR, { burn: on ? .22 * clamp(ia * 2) : 0, glow: on ? .45 : .1 });
     // Clawd: the match is his left arm's hook; he steps so that the head sits at (hx, hy)
     const a = Math.asin(clamp((MPY - hy) / MR, -1, 1)), bx = hx + MR * Math.cos(a) + 4.9 * MU;
@@ -274,20 +281,22 @@
       eyes: on ? 'happy' : 'look', lookX: -1, lookY: lift > .1 ? -.4 : .6, mouth: on ? 'smile' : lit > .5 ? 'o' : 'flat',
       armL: (u, sw) => { paint(rectPts(0, -.16 * u, ML, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
         paint(ellPts(ML, 0, .55 * u, .45 * u, 10), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
-    mSparks(lerp(1010, 730, .6), 905, t - MSCR, 11, 34, 420, 1);                                        // the strike's spark shower
+    MSTR.forEach((s, i) => mSparks(lerp(1010, 730, .6), 905, t - s, 11 + i * 7, i === 0 || s === MSCR ? 34 : 22, i === 0 || s === MSCR ? 420 : 300, 1));   // a shower per scrape
     if (lit > .02) { glowAt(hx, hy - 30, 170, A2.hazard, 110 * lit); mFlame(hx, hy + 6, 46, 110 * lit * (1 + .08 * Math.sin(t * 11)), t, 3); }
     if (on && ia < .7) for (let i = 0; i < 16; i++) {                                                   // ignition burst
       const q = clamp(ia / .7), ang = hash(i * 3.3) * TAU, d = 50 + q * (220 + hash(i) * 180);
       paint(ellPts(TX + Math.cos(ang) * d, TY - 60 + Math.sin(ang) * d * .7 - q * 60, 6 * (1 - q) + 2, 6 * (1 - q) + 2, 6), { wash: i % 2 ? A2.hazard : A2.sodium, ink: null }); }
-    if (on) { mSparks(TX, TY - TR, ia, 40, 16, 300, 1); mSparks(TX, TY - TR, ia, 47, 16, 300, -1); }
+    for (const [g, sd] of [[ia, 40], [fa, 60]]) if (g >= 0 && g < .7) { mSparks(TX, TY - TR, g, sd, 16, 300, 1); mSparks(TX, TY - TR, g, sd + 7, 16, 300, -1);   // ignition + the 22.181 flare
+      if (sd === 60) for (let i = 0; i < 16; i++) { const q = clamp(g / .7), ang = hash(i * 5.1 + 2) * TAU, d = 80 + q * (300 + hash(i + 3) * 220);
+        paint(ellPts(TX + Math.cos(ang) * d, TY - 120 + Math.sin(ang) * d * .7 - q * 60, 7 * (1 - q) + 2, 7 * (1 - q) + 2, 6), { wash: i % 2 ? A2.hazard : A2.sodium, ink: null }); } }
     // the dark: opens with the spark shower, then with the fire (RU screen radii / RU zoom)
     mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6))) / 2.2 : (230 + 1100 * clamp(E) + 330 * lit) / 2.4, on ? 90 : 150);
-    if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
-    flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on, '#FFC27A');
+    if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, MIGN, { col: A2.hazard, rot: -.05, punch: 0 });
+    flash(.2 * Math.exp(-(t - MSTR[0]) * 9) * (t >= MSTR[0]) + .15 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on + .2 * Math.exp(-fa * 8) * (fa >= 0), '#FFC27A');
   }
   function intro(tv) {
     const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
-    if (OPV === 'm' && t >= OPEN0 - .4) return matchM(t);
+    if (OPV === 'm' && t >= M0 - .4) return matchM(t);
     back('#16181D');
     for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);            // the wall of the pit
     // while Clawd crests the sky goes ember and FAR AWAY a factory skyline rises out of the haze on the horizon, windows switching on beat by beat
@@ -443,8 +452,8 @@
     c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]],
     e1: [[OPEN0, 1360, 390, 740, 0], [21.4, SL.px - 40, 350, 1000, 1], [FINAL - .01, SL.px - 40, 350, 1020, 1], [IB - .002, SL.px - 40, 350, 1060, 1]],
     e2: [[OPEN0, 1440, 360, 1060, 0], [FINAL - .01, 1440, 350, 1020, 1], [IB - .002, 1440, 350, 1080, 1]],
-    m: SONG.reels?.yt === 'square' ? [[OPEN0, 900, 860, 415, 0], [21.10, 905, 850, 400, 1], [22.10, 960, 610, 670, 1], [IB - .002, 960, 605, 690, 1]]   // RU a01 framing: close on the strip → follow the match up, open for the title
-      : [[OPEN0, 870, 930, 330, 0], [21.10, 880, 910, 320, 1], [22.10, 960, 650, 600, 1], [IB - .002, 960, 645, 615, 1]],   // 16:9 (adj: y −50, view h ≈ 1.26·w)
+    m: SONG.reels?.yt === 'square' ? [[M0, 900, 860, 415, 0], [20.20, 905, 850, 400, 1], [21.10, 960, 610, 670, 1], [IB - .002, 960, 600, 700, 1]]   // RU a01 framing: close on the strip → follow the match up, open for the title
+      : [[M0, 870, 930, 330, 0], [20.20, 880, 910, 320, 1], [21.10, 960, 650, 600, 1], [IB - .002, 960, 640, 625, 1]],   // 16:9 (adj: y −50, view h ≈ 1.26·w)
     g1: [[OPEN0, 1600, 360, 1080, 0], [FINAL - .01, 1600, 350, 1040, 1], [IB - .002, 1600, 350, 1100, 1]] }[OPV === 'g2' ? 'g1' : OPV];
   const opn = L => OPV === 'b' ? [[N2O(OPEN0), ...L.reduce((r, k) => O2N(k[0]) <= 14.35 ? k : r, L[0]).slice(1, 4), 0], ...L.filter(k => O2N(k[0]) > 14.35).map(([k, ...r]) => [N2O(toReal(O2N(k))), ...r])]
     : OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0]) + .001)] : L;
@@ -454,7 +463,8 @@
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
   if (OPV === 'c') EN_PUNCH.push([N2O(OSY), 16]);
-  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...KN.map(d => [N2O(d), Math.round(14 * Math.max(.5, kAmp(d)))]), ...STR.map((h, q) => [N2O(h), [8, 8, 14, 20][q] || 9]));
+  EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...KN.map(d => [N2O(d), Math.round(14 * Math.max(.5, kAmp(d)))]), ...(OPV === 'm' ? [] : STR.map((h, q) => [N2O(h), [8, 8, 14, 20][q] || 9])));
+  if (OPV === 'm') { const s0 = window.CAM_SHAKE; if (s0) window.CAM_SHAKE = t => t >= N2O(M0 - .5) && t < N2O(IB) ? [0, 0] : s0(t); }   // open:m: a still camera, no beat shake
 
   // ======== 2+3. real 30.42–38.34: one take at the desk, Sunday night ========
   // v11 (user: «let the CALENDAR burn, just fix the effect»). «Every last token has to»: on each word a token hops off the stack into the
