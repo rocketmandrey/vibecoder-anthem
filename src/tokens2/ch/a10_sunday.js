@@ -347,7 +347,7 @@
 
   // v3 only (tokens3 warp): he says «Сука» with his eyes shut; the band crash cuts to this snap: the eyes fly open, red, on a zoom punch (v2 225.0+)
   const SNAP = 225.0;
-  // R34: the close-ups become a full-body medium shot inside the 3:4 picture (u 84, arms down, ground at 1060): the MON 12:00 AM clock over
+  // R34: the close-ups become a full-body medium shot inside the 3:4 picture (u 84, arms down, ground at 1060): the 00:00 LED clock over
   // his head, the back of the laptop in front of him; the eyes sit at ~45% height so the red snap reads
   const lidBack = (glow) => {
     glowAt(960, 980, 420, glow, 90);
@@ -390,7 +390,7 @@
       // till the face fills the frame; sSnap holds it, eyes red
       const z = lerp(1.05, 1.3, seg(t, 224.2, 224.73)) + .45 * backOut(seg(t, 224.735, 224.85));
       camBegin(960, 1060 - 6 * u, z);
-      clock(740, -90, 440, 190, 'ПН 00:00', t, .3);
+      ledClock(960, 330, 0, 0, t, .3, .55);                                  // the same LED clock as the night run (was the 'ПН 00:00' box), same footprint
       clawd(960, 1060, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
       lidBack('#9CFFB8');
       return camEnd();
