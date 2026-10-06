@@ -111,7 +111,7 @@
 
   // NO BIG TEXT (user rule for BURN THE TOKENS): outside the title windows, lettering ≥ BIG world px, every stamp, ransom caption and
   // counter is dropped (the jokes are pictures, the lyric is in the subtitle band); Cyrillic that survived translation is dropped everywhere.
-  const TITLE_OK = [[0, 18.16], [241.6, 1e9]], BIG = 64;
+  const TITLE_OK = [[0, 18.34], [241.6, 1e9]], BIG = 64;   // 18.34 = the intro's own end (real 22.40): the 22.18 hit's title payoff stays up to the office cut
   const titleOk = () => TITLE_OK.some(([a, b]) => T >= a && T < b);
   // [from, to, max size]: the reused a04 report shot (its small EN labels may stay: cover, sticky note); the chorus 2 CANNED TOKENS billboard
   // (user: the slogan in huge type)

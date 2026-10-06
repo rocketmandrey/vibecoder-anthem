@@ -83,7 +83,16 @@
   //   c cold open: the ram drops on the synth entry and stamps BURN THE TOKENS huge into the plateau, the press heaves, the 22.18 hit
   const OPV = ((window.BTT_VAR || {}).open || '').toLowerCase(), OPEN0 = 20.15, OSY = 20.168;
   const OSP = Array.from({ length: 12 }, (_, i) => OSY + i * .1635);
-  const PI = OPV === 'a' ? [FINAL] : OPV === 'c' ? [...INH.slice(0, -1), OSY, FINAL] : INH;     // the press's strokes in this cut
+  // v12p hooks on the a-cover (user: «обложка класс, но не сильно понятно» → «спичка и печка», 2 stagings each, all on the cover):
+  // the poster (title + press + skyline + the token on the bed, ram up) stays; the action runs in front of it from frame 1, every
+  // synth pulse (OSP) escalates, the 22.18 hit pays off and the title catches fire; then the office.
+  //   e1 the match, close: Clawd strikes a giant match on the token's rim (frame 1 = mid-scrape), the camera pulls back as the flame grows
+  //   e2 the match, wide: he drags a log-sized match along the bed's hazard strip (sparks per pulse), it lights, he heaves it up — the token detonates
+  //   g1 the furnace, front: a stove beside the press, Clawd shovels a coin into its mouth on every pulse (each lands ON the pulse), flames grow
+  //   g2 the furnace, cut-away: a boiler, the fire rising behind a cut-away window, a pressure gauge needle climbing per pulse, the door
+  //      rattling under Clawd's back; the hit blasts the door off and the fire jets into the title
+  const HK = ['e1', 'e2', 'g1', 'g2'].includes(OPV) ? OPV : '', HKG = HK[0] === 'g';
+  const PI = HK ? [] : OPV === 'a' ? [FINAL] : OPV === 'c' ? [...INH.slice(0, -1), OSY, FINAL] : INH;     // the press's strokes in this cut
   const OB = [[OPEN0, 14.35], [OSP[2], TOP], [FINAL, SLAM]];                                   // b: real → story time
   const pw = (T, i, j) => t => { if (t < T[0][i]) return t; if (t >= T[T.length - 1][i]) return t - T[T.length - 1][i] + T[T.length - 1][j];
     for (let q = 1; q < T.length; q++) if (t < T[q][i]) return lerp(T[q - 1][j], T[q][j], (t - T[q - 1][i]) / (T[q][i] - T[q - 1][i])); };
@@ -93,7 +102,7 @@
   // the ending's engine extras, drawn over the press (every stroke = a drum-stem hit)
   const strokes = t => STR.reduce((a, s, q) => a + (q === STR.length - 1 ? 2 : 1) * easeOut(seg(t, s, s + .35)), 0);
   function engine(t, PX, PY, PW, PH, back) {
-    if (t < SLAM || (OPV === 'a' && t < FINAL)) return;
+    if (t < SLAM || ((OPV === 'a' || HK) && t < FINAL)) return;
     const base = SL.B[1] + 8;
     if (VE === 'a' && back) {
       // power cables: sagging lines from the press crossbeam to the rooftops, a spark runs along each one to its building
@@ -126,6 +135,97 @@
         inkLine(fill, 7, '#FFC23A', 'ink', 0); const e = fill[fill.length - 1]; glowAt(e[0], e[1], 30, '#FFE08A', 120 * (f < Ltot)); });
       const pump = kick(t, STR, .2); paint(ellPts(SL.px, base - 30, 120 + 30 * pump, 30 + 8 * pump, 20), { wash: '#FFC23A', washOp: 120 * pump, ink: null });
     }
+  }
+  const npl = t => OSP.reduce((a, p) => a + easeOut(seg(t, p, p + .07)), 0);                      // synth pulses so far, eased steps
+  const TKX = SL.px, TKY = SL.B[1] + 10 - 1000 * .12 - SL.r, GR = SL.B[1];                        // the token on the bed (its centre), the plateau
+  const mstick = (a, b, w, hr) => {                                                                // a giant match: wood stick a → b, red head at b
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    inkLine([a, b], w + 6, INK, 'ink', 0); inkLine([a, b], w, '#E9C98E', 'ink', 0);
+    paint(rotPts(ellPts(b[0], b[1], hr * 1.3, hr, 16), b[0], b[1], ang), { wash: '#C8352A', fill: '#7A1A14', fillOp: 70, ink: INK, sw: 1.6 }); };
+  const boom = (x, y, r, br, seed) => { if (br < 0 || br > .4) return; const k = easeOut(seg(br, 0, .1));   // the payoff fireball
+    glowAt(x, y, r * 6, TK.orange, 170 * k); fire(x, y + r, r * 4.2, r * 7 * k, T, { seed }); sparks(x, y, br, seed, 30, 560); };
+  function hook(t) {
+    const n = npl(t), esc = Math.min(1, n / 12), pk = kick(t, OSP, .12), br = t - FINAL, hit = br >= 0;
+    if (HK === 'e1' || HK === 'e2') {
+      let cx, cy = GR, u, hd, hand, flip = false, fk;
+      if (HK === 'e1') {                       // close: he stands at the bed's left end, the head scrapes over the rim, then hovers on it
+        cx = 1165; u = 15; hand = [cx + 7 * u, cy - 7.6 * u];
+        const sk = seg(t, OPEN0 - .12, OSY), a = hit ? -2.75 + .25 * easeOut(seg(br, 0, .05)) : lerp(-2.0, -2.75, sk) + .03 * Math.sin(t * 50) * esc;
+        const d = SL.r + (hit ? 0 : 16 - 8 * esc); hd = [TKX + Math.cos(a) * d, TKY + Math.sin(a) * d];
+        fk = t < OSY ? 0 : .35 + .65 * esc;
+        if (t < OSY + .25) { sparks(hd[0], hd[1], t - (OPEN0 - .08), 77, 16, 200); sparks(hd[0], hd[1], t - OSY, 78, 12, 160); }
+      } else {                                 // wide: he hauls a log-sized match, the head grinding along the bed's hazard strip
+        const ign = OSP[2], drag = seg(t, OPEN0 - .4, ign), up = ease(seg(t, ign + .1, FINAL - .02)); u = 19; flip = true;
+        cx = t < ign ? lerp(2010, 1900, drag) : 1900 - 40 * up;
+        hd = t < ign ? [lerp(1700, 1590, drag), GR - 26] : [lerp(1590, TKX + SL.r + 18, up), lerp(GR - 26, TKY + 30, up)];
+        if (hit) hd = [TKX + SL.r - 10, TKY + 30];
+        hand = [cx - 5 * u, cy - 9 * u]; fk = t < ign ? 0 : .45 + .55 * seg(n, 3, 12);
+        for (const p of OSP) if (p <= ign + .01 && t >= p && t < p + .3) sparks(hd[0], hd[1], t - p, p * 9, 14, 230);
+        if (t < ign) sparks(hd[0], hd[1], frac(t * 9) * .11, Math.floor(t * 9), 6, 140);
+      }
+      if (HK === 'e1') mstick(hand, hd, 13, 22);
+      clawd(cx, cy, u, { flip, walk: HK === 'e2' && t < OSP[2] ? t * 5 : null, rot: HK === 'e2' && !hit ? -.12 : 0, sq: .12 * pk + (hit ? .15 : 0),
+        eyes: hit ? 'spark' : HK === 'e2' && t < OSP[2] ? 'angry' : 'narrow', mouth: hit ? 'O' : 'grin', lookX: flip ? -1 : 1, lookY: -.4,
+        aL: HK === 'e2' ? 1.2 : .3, aR: HK === 'e2' ? 1.2 : .9, noShadow: true });
+      if (HK === 'e2') mstick(hand, hd, 20, 32);
+      if (fk > 0) { const f = fk * (1 + .3 * pk); glowAt(hd[0], hd[1], 160 + 260 * f, TK.orange, 60 + 70 * f); fire(hd[0], hd[1] + 14, 50 + (HK === 'e2' ? 150 : 90) * f, 90 + (HK === 'e2' ? 340 : 230) * f, t, { seed: 7 }); }
+      glowAt(TKX, TKY, SL.r * 2.2, TK.ember, 60 * esc * (1 + pk));                                  // the token heats up
+      boom(TKX, TKY, SL.r * (HK === 'e2' ? 1.3 : 1), br, 21);
+      return;
+    }
+    // g: the furnace on the plateau right of the press (x 1890–2270), glowing hotter and shaking per pulse
+    const sh = hit ? 0 : 2 + 10 * esc * pk, ox = (hash(Math.floor(t * 48)) - .5) * sh, oy = (hash(Math.floor(t * 48) + 3) - .5) * sh * .6;
+    const FX = 1890 + ox, FW = 380, FT = 330 + oy, FH = GR - FT, heat = esc * (1 + .25 * pk), MX = FX + FW / 2, MY = GR - 105;
+    glowAt(MX, MY, 320 + 260 * heat, TK.orange, 50 + 100 * heat);
+    paint(rectPts(MX - 40, -900, 80, FT + 920), { wash: '#3A3F48', ink: INK, sw: 1.6 });                                       // the flue
+    smoke(MX, -60, t, { r: 40 + 40 * esc, h: 380, n: 5, per: 1.4, seed: 9, col: '#5A4A44' });
+    paint(rrPts(FX, FT, FW, FH, 34, 1), { wash: mixCol('#5C3B30', '#C0482A', .7 * heat), fill: '#3A2420', fillOp: 90, tex: .6, border: .4, ink: INK, sw: 2.6 });
+    for (let r = 1; r < 6; r++) inkLine([[FX + 10, FT + r * FH / 6], [FX + FW - 10, FT + r * FH / 6]], 1, '#2A1814', 'inkfine', 0);   // brick courses
+    paint(rectPts(FX - 14, GR - 26, FW + 28, 26), { wash: A2.gunmetal, ink: INK, sw: 1.4 });                                  // the iron plinth
+    const flare = (x, y, w, h) => fire(x, y, w, h * (1 + .45 * pk), t, { seed: 3, glow: false });
+    if (HK === 'g1') {
+      // front: the arched mouth, fire inside; Clawd at x 1780 swings a shovel, a coin lands in the fire ON every pulse
+      const mouth = [[MX - 105, MY + 70], [MX - 105, MY - 20], ...Array.from({ length: 11 }, (_, i) => { const a = Math.PI + i * Math.PI / 10; return [MX + Math.cos(a) * 105, MY - 20 + Math.sin(a) * 85]; }), [MX + 105, MY + 70]];
+      paint(mouth, { wash: '#2A0E08', ink: INK, sw: 3 });
+      flare(MX, MY + 66, 190, 70 + 150 * esc);
+      inkLine([...mouth, mouth[0]], 9, '#2A2C33', 'ink', 0);
+      const cx = 1760, u = 18, PV = [cx + 5 * u, GR - 5.4 * u], R0 = OSY - .14;
+      const ph = frac((t - R0) / .1635), th = hit ? -1.1 : ph < .25 ? lerp(-1.05, -.55, ph / .25) : ph < .7 ? lerp(-.55, .5, (ph - .25) / .45) : lerp(.5, -1.05, easeIn((ph - .7) / .3));
+      clawd(cx, GR, u, { rot: .1 * Math.sin(th), sq: .1 * pk, eyes: hit ? 'spark' : 'narrow', mouth: hit ? 'O' : 'grin', lookX: 1, aL: .4 - th * .6, aR: .4 - th * .6, noShadow: true });
+      const BL = [PV[0] + Math.cos(th) * 170, PV[1] + Math.sin(th) * 170];
+      inkLine([PV, BL], 12, INK, 'ink', 0); inkLine([PV, BL], 7, '#B08A5A', 'ink', 0);
+      paint(rotPts(rectPts(BL[0] - 6, BL[1] - 26, 52, 52, 1), BL[0], BL[1], th), { wash: A2.steel, ink: INK, sw: 1.4 });
+      if (!hit && ph > .45) token(BL[0] + 22 * Math.cos(th), BL[1] + 22 * Math.sin(th) - 18, 20);   // the next coin on the blade
+      const R1 = [PV[0] + Math.cos(-1.05) * 190, PV[1] + Math.sin(-1.05) * 190 - 18];
+      for (const p of OSP) { const q = (t - (p - .14)) / .14; if (q >= 0 && q < 1 && p < FINAL) token(lerp(R1[0], MX, q), lerp(R1[1], MY + 20, q) - 150 * 4 * q * (1 - q), 22, { spin: q * 2 });
+        if (t >= p && t < p + .3) sparks(MX, MY + 10, t - p, p * 7, 8, 150); }
+    } else {
+      // cut-away: the fire rises behind a torn window in the boiler, a gauge needle climbs into the red, Clawd's back holds the rattling door
+      const win = [[FX + 60, FT + 50], [FX + 150, FT + 38], [FX + 250, FT + 56], [FX + FW - 50, FT + 44], [FX + FW - 46, FT + 190], [FX + 230, FT + 204], [FX + 120, FT + 196], [FX + 56, FT + 206]];
+      paint(win, { wash: '#2A0E08', ink: null });
+      flare(MX + 20, FT + 205, 270, 40 + 150 * esc);
+      inkLine([...win, win[0]], 6, '#2A1814', 'ink', 0);
+      const GX = FX + FW - 80, GY = FT - 70;                                                                                   // the gauge
+      inkLine([[GX, GY + 40], [GX, FT + 6]], 14, A2.steel, 'ink', 0);
+      paint(ellPts(GX, GY, 64, 64, 24), { wash: '#F2E6CC', ink: INK, sw: 2.4 });
+      inkLine(Array.from({ length: 9 }, (_, i) => { const a = lerp(.35, .9, i / 8) * Math.PI * 1.5 - Math.PI * 1.25; return [GX + Math.cos(a) * 50, GY + Math.sin(a) * 50]; }), 9, '#D8302A', 'ink', 0);
+      const nv = hit ? 1.15 + br * 20 : .15 + .8 * esc + .04 * pk + .015 * Math.sin(t * 60) * esc, na = nv * Math.PI * 1.5 - Math.PI * 1.25;
+      inkLine([[GX, GY], [GX + Math.cos(na) * 52, GY + Math.sin(na) * 52]], 5, INK, 'ink', 0);
+      paint(ellPts(GX, GY, 9, 9, 10), { wash: INK, ink: null });
+      const dr = hit ? easeOut(seg(br, 0, .1)) : 0, rat = (1 - dr) * (2 + 9 * esc) * pk * (hash(Math.floor(t * 48) + 9) - .5) * 2;
+      const DX = FX - 4 - 600 * dr + rat, DY = MY - 30 - 300 * dr;                                                             // the door, on the left face
+      glowAt(FX, MY - 30, 120 + 160 * heat, TK.yellow, 60 + 90 * heat);
+      paint(rotPts(rrPts(DX - 22, DY - 120, 44, 240, 12), DX, DY, -4 * dr), { wash: '#2E3138', fill: '#1E2127', fillOp: 90, ink: INK, sw: 2.2 });
+      for (const sy of [-80, 0, 80]) paint(ellPts(DX, DY + sy, 7, 7, 8), { wash: A2.steelLt, ink: null });
+      if (!hit) for (const sd of [-1, 1]) steam(FX - 4, MY - 30 + sd * 118, t, { dir: Math.PI + sd * .5, k: .2 + .6 * esc * (1 + pk), len: 160, seed: 60 + sd, n: 3, per: .7 });
+      const cx = hit ? FX - 130 - 700 * dr : FX - 110 + .6 * rat, u = 18;
+      clawd(cx, GR - 380 * dr * (1 - dr) * 4 * (hit ? 1 : 0), u, { flip: true, rot: hit ? -6 * dr : -.1, sq: .14 * pk, eyes: hit ? 'spark' : 'scared', mouth: hit ? 'O' : 'flat', lookX: 1, aL: 1.3, aR: 1.3, noShadow: true });
+      if (hit) for (let k = 0; k < 6; k++) { const q = k / 5, e = easeOut(seg(br, .015 * k, .015 * k + .08));               // the jet out of the door, curling up to the title
+        if (e > 0) fire(lerp(FX - 40, 1700, q), lerp(MY - 30, 330, q * q) + 60, 200 - 18 * k, 300 * e, t + k, { seed: 40 + k, glow: false }); }
+    }
+    if (HK === 'g1' && hit) for (let k = 0; k < 6; k++) { const q = k / 5, e = easeOut(seg(br, .015 * k, .015 * k + .08));     // the burst out of the mouth into the title
+      if (e > 0) fire(lerp(MX, 1660, q), lerp(MY, 330, q) + 60, 220 - 18 * k, 320 * e, t + k, { seed: 40 + k, glow: false }); }
+    if (hit) glowAt(MX, MY, 900, TK.orange, 150 * (1 - seg(br, .1, .3)));
   }
   function intro(tv) {
     const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
@@ -187,12 +287,12 @@
     engine(t, PX, PY, PW, PH);
     if ((t > SLAM + 1.2 && t < STR[0] - .1) || (t > 20.3 && t < FINAL)) for (const sd of [-1, 1]) steam(SL.px + sd * 230, PY + PH * .3, t, { dir: sd < 0 ? Math.PI + .4 : -.4, k: .45 + .2 * Math.sin(t * 3), len: 260, seed: 90 + sd, n: 3, per: 1.1 });   // the rest: it hisses
     // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
-    const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= (OPV === 'a' ? FINAL : SLAM) ? .2 : 1;
+    const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = HK ? 1 : t >= (OPV === 'a' ? FINAL : SLAM) ? .2 : 1;
     const ov = 1 - eased(t, SL.top - .15, SL.top + .25);
     const tk = V === 'c' && lastLE(KN, t) != null ? kick(t, KN, .14) * kAmp(lastLE(KN, t)) : 0;   // c: the token bounces back onto him
     const bx = gx0 + SLN[0] * SL.r * ov - SLD[0] * 70 * tk, by = -SLD[1] * 70 * tk + lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);
-    push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
-    token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
+    push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : HK && t < FINAL ? .07 * Math.sin(t * 41) * Math.min(1, npl(t) / 10) : 0);
+    token(0, 0, SL.r, { spin: .02, burn: HK ? (t >= FINAL ? (HKG ? .6 : 1) : .12 * Math.min(1, npl(t) / 10) * (HK[0] === 'e')) : t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // the heroic last push — an ember aura + speed streaks behind him from the last knock to the bed
     const hero = (V !== 'b') * seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
@@ -206,7 +306,7 @@
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
+    if (!HK) clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true, ...(inRoll ? { dy: -.5 * rk, sx: 1 + .03 * rk } : {}),
       ...(SWV === 'c' && t > SWC[0] && t < SWC[1] + .35 ? { rot: t < SWC[1] + .08 ? .2 * Math.sin((t - SWC[0]) * 75) : 0, sq: t < SWC[1] ? .08 : 0, aL: 1.2, aR: 1.2, eyes: t < SWC[1] + .08 ? 'closed' : 'happy', mouth: t < SWC[1] + .08 ? 'flat' : 'grin' } : {}) });   // c: a wet-dog shake
@@ -254,12 +354,15 @@
         pop(); }
     }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
+    if (HK) hook(t);
     for (const h of PI) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     // YouTube (square / 16:9): the stamp lies level on the plateau under the press, clear of the slope's diagonal edge
-    if (OPV === 'a') { const br = t - FINAL, al = 1 - seg(br, 0, .4), pk = kick(t, OSP, .12);   // a: the poster title, shattering on the hit
-      if (al > 0) [['BURN THE', SL.px - 40, 20, 170], ['TOKENS', SL.px - 40, 230, 240]].forEach(([w, x0, y0, sz], li) => { const cw = sz * .62, n = w.length;
-        for (let j = 0; j < n; j++) { if (w[j] === ' ') continue; const h = hash(j * 7 + li * 31), ang = -Math.PI / 2 + (h - .5) * 2.6, v = 900 + 700 * hash(j + li * 9), b = Math.max(0, br);
-          letter(w[j], x0 + (j - (n - 1) / 2) * cw + Math.cos(ang) * v * b, y0 - 8 * pk * (j % 2 ? 1 : -1) + Math.sin(ang) * v * b + 1400 * b * b, sz * (1 + .06 * pk), TK.yellow,
+    if (OPV === 'a' || HK) { const br = t - FINAL, al = HK ? 1 : 1 - seg(br, 0, .4), pk = kick(t, OSP, .12), X0 = SL.px - 40;   // ponytail: letters clip at the 3:4 frame's right edge (x ~1900), so the title stays put for g too   // a: the poster title, shattering on the hit; hooks: it catches fire
+      if (al > 0) [['BURN THE', X0, 20, 170], ['TOKENS', X0, 230, 240]].forEach(([w, x0, y0, sz], li) => { const cw = sz * .62, n = w.length;
+        if (HK && br >= 0) fire(x0, y0 + sz * .4, cw * n * 1.1, sz * 1.9 * easeOut(seg(br, .03 * li, .12 + .03 * li)), t, { seed: 30 + li });
+        if (HK && br >= 0) flushN();                                     // p5.brush defers: composite the flames now, under the letters
+        for (let j = 0; j < n; j++) { if (w[j] === ' ') continue; const h = hash(j * 7 + li * 31), ang = -Math.PI / 2 + (h - .5) * 2.6, v = 900 + 700 * hash(j + li * 9), b = HK ? 0 : Math.max(0, br);
+          letter(w[j], x0 + (j - (n - 1) / 2) * cw + Math.cos(ang) * v * b, y0 - 8 * pk * (j % 2 ? 1 : -1) + Math.sin(ang) * v * b + 1400 * b * b, sz * (1 + .06 * pk), HK && br >= 0 && Math.sin(t * 40 + j * 2) > 0 ? TK.orange : TK.yellow,
             { font: ruFont(Math.round(sz * (1 + .06 * pk))), stroke: PAL.ink, rot: -.06 + b * (h - .5) * 10, alpha: al }); } });
     } else if (OPV === 'c') stamp('BURN THE TOKENS', SL.px, SL.B[1] + 170, 92, t, OSY, { col: TK.yellow, rot: -.03 });   // c: stamped by the press on the synth
     else if (t >= SLAM) stamp('BURN THE TOKENS', YT ? SL.px + 60 : 1380, YT ? 880 : 930, 78, t, SLAM, { col: TK.yellow, rot: YT ? 0 : -.04 });
@@ -278,7 +381,10 @@
     [N2O(SL.lift[1]), SL.px, 370, 980, 1], [N2O(SLAM - .01), SL.px, 350, 1080, 1], [N2O(STR[0]), SL.px, 360, 1000, 1], [N2O(FINAL), SL.px, 370, 1200, 1], [N2O(IB) - .001, SL.px, 370, 1210, 1]];
   // open:x — own keys from OPEN0 (real), the full list's keys after the last one kept; b maps the story-time keys back to real time
   const OK3 = { a: [[OPEN0, SL.px - 40, 340, 1020, 0], [FINAL - .01, SL.px - 40, 360, 980, 1]],
-    c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]] }[OPV];
+    c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]],
+    e1: [[OPEN0, 1360, 390, 740, 0], [21.4, SL.px - 40, 350, 1000, 1], [FINAL - .01, SL.px - 40, 350, 1020, 1], [IB - .002, SL.px - 40, 350, 1060, 1]],
+    e2: [[OPEN0, 1440, 360, 1060, 0], [FINAL - .01, 1440, 350, 1020, 1], [IB - .002, 1440, 350, 1080, 1]],
+    g1: [[OPEN0, 1600, 360, 1080, 0], [FINAL - .01, 1600, 350, 1040, 1], [IB - .002, 1600, 350, 1100, 1]] }[OPV === 'g2' ? 'g1' : OPV];
   const opn = L => OPV === 'b' ? [[N2O(OPEN0), ...L.reduce((r, k) => O2N(k[0]) <= 14.35 ? k : r, L[0]).slice(1, 4), 0], ...L.filter(k => O2N(k[0]) > 14.35).map(([k, ...r]) => [N2O(toReal(O2N(k))), ...r])]
     : OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0]) + .001)] : L;
   if (window.RU34 && YT) RU34.push([N2O(IA), N2O(IB), opn(YK)], [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);
