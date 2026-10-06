@@ -390,7 +390,6 @@
       // till the face fills the frame; sSnap holds it, eyes red
       const z = lerp(1.05, 1.3, seg(t, 224.2, 224.73)) + .45 * backOut(seg(t, 224.735, 224.85));
       camBegin(960, 1060 - 6 * u, z);
-      ledClock(960, 330, 0, 0, t, .3, .55);                                  // the same LED clock as the night run (was the 'ПН 00:00' box), same footprint
       clawd(960, 1060, u, { eyes: shut ? 'closed' : 'narrow', squint: shut ? 0 : lerp(.9, .35, seg(t, 224.57, 224.7)), mouth: 'flat', aL: -1.5, aR: -1.5, noShadow: true, seed: 3 });
       lidBack('#9CFFB8');
       return camEnd();
