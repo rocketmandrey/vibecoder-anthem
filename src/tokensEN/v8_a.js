@@ -234,7 +234,10 @@
   //   RU 1.66 the third scrape catches     → EN 20.168 synth entry (frame 1 is mid-stroke)
   //   RU 1.85–2.78 lift to the wick         → EN 21.18 (downbeat) – 22.06, the camera follows up and opens for the title
   //   RU 2.93 the token ignites             → EN 22.181 drum hit (snare 1.33 + kick) + BURN THE TOKENS, held to the 22.40 cut
-  const MSQ = SONG.reels?.yt === 'square', MSCR = OSY, MLIFT = [21.18, 22.06];
+  // v12s (user: start the cut at 19.83 so the first sound is the fill's last hit): frame 1 is pure dark, a dud scrape on the 19.865
+  // kick+snare (sparks, no light), the match catches on the synth 20.168 as before. Every dud element is gated t < MSCR, so from
+  // 20.168 on the frames are exactly v12r's.
+  const MSQ = SONG.reels?.yt === 'square', M0 = 19.83, MD = 19.865, MSCR = OSY, MLIFT = [21.18, 22.06];
   const MTOK = [960, 777, 62], MU = 26, MG = 990, ML = 190, MR = 2.2 * MU + ML, MPY = MG - 4.5 * MU;
   const mSparks = (x, y, age, seed, n, R0, dir = 1) => { if (age < 0 || age > .5) return; const p = age / .5;   // a01_sparks verbatim
     for (let i = 0; i < n; i++) { const a = -Math.PI * (.05 + hash(i + seed) * .55), sp = .35 + hash(i + seed + 7) * .9, d = R0 * sp * easeOut(p);
@@ -251,7 +254,9 @@
   }
   function mHead(t) {                                                                                   // a01_head on the EN beats
     const X0 = 1010, X1 = 730, Y = 905;
-    let hx = t < MSCR - .05 ? X0 : lerp(X0, X1, easeOut(seg(t, MSCR - .05, MSCR + .09))), hy = Y - 40 * ease(seg(t, MSCR + .12, MSCR + .45));   // off the strip, held up
+    let hx = lerp(X0, X1, easeOut(seg(t, MSCR - .05, MSCR + .09))), hy = Y - 40 * ease(seg(t, MSCR + .12, MSCR + .45));   // off the strip, held up
+    if (t < MSCR - .05) { const r = seg(t, MD + .1, MSCR - .07);                                         // the dud stroke, then back over the gap
+      hx = lerp(lerp(X0, X1, easeOut(seg(t, MD - .05, MD + .09))), X0, ease(r)); hy = Y - 30 * Math.sin(r * Math.PI); }
     const lift = ease(seg(t, ...MLIFT));
     hx = lerp(hx, 946, lift); hy = lerp(hy, 716, lift) - Math.sin(lift * Math.PI) * 60;
     return [hx, hy, lift];
@@ -259,8 +264,9 @@
   function matchM(t) {
     const [TX, TY, TR] = MTOK, [hx, hy, lift] = mHead(t), lit = t >= MSCR ? clamp((t - MSCR) / .1) : 0;
     const ia = t - FINAL, on = ia >= 0, fk = on ? easeOut(clamp(ia / .35)) : 0;
-    const E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .3) : 0;
+    const dud = t >= MD && t < MSCR, E = t >= MSCR ? 1.6 * Math.exp(-(t - MSCR) / .3) : dud ? Math.exp(-(t - MD) / .2) : 0;
     back('#0B0C0F');
+    if (t < MD) return;                                                                                 // 19.83: clean dark until the dud hit
     paint(rectPts(-600, 930, 3200, 1400), { wash: A2.gunmetal, fill: A2.gunDk, fillOp: 100, tex: .6, border: .3, ink: null });   // floor
     inkLine([[-600, 931], [2600, 931]], 1, INK, 'inkfine', 0);
     if (fk > .02) paint(ellPts(TX, 960, 520 * fk, 40, 18), { fill: A2.sodium, fillOp: 90 * fk, bleed: .3, ink: null });          // reflection on the floor
@@ -275,6 +281,7 @@
       armL: (u, sw) => { paint(rectPts(0, -.16 * u, ML, .32 * u), { wash: '#E8C07A', fill: '#B98A44', fillOp: 70, tex: .5, ink: INK, sw: sw * .5 });
         paint(ellPts(ML, 0, .55 * u, .45 * u, 10), { wash: lit > 0 ? '#3A2222' : '#C8323A', ink: INK, sw: sw * .4 }); } });
     mSparks(lerp(1010, 730, .6), 905, t - MSCR, 11, 34, 420, 1);                                        // the strike's spark shower
+    if (dud) mSparks(lerp(1010, 730, .6), 905, t - MD, 18, 22, 300, 1);                                  // the dud's sparks
     if (lit > .02) { glowAt(hx, hy - 30, 170, A2.hazard, 110 * lit); mFlame(hx, hy + 6, 46, 110 * lit * (1 + .08 * Math.sin(t * 11)), t, 3); }
     if (on && ia < .7) for (let i = 0; i < 16; i++) {                                                   // ignition burst
       const q = clamp(ia / .7), ang = hash(i * 3.3) * TAU, d = 50 + q * (220 + hash(i) * 180);
@@ -284,7 +291,7 @@
     mVig(on ? TX : hx, on ? TY - 60 : hy, on ? (420 + 900 * easeOut(clamp(ia / 1.6))) / 2.2 : (230 + 1100 * clamp(E) + 330 * lit) / 2.4, on ? 90 : 150);
     // ponytail: open:m has no title (user, 2026-10-06)
     // if (on) stamp('BURN THE TOKENS', 960, MSQ ? 260 : 330, 88, t, FINAL, { col: A2.hazard, rot: -.05, punch: 0 });
-    flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on, '#FFC27A');
+    flash(.2 * Math.exp(-(t - MSCR) * 9) * (t >= MSCR) + .2 * Math.exp(-ia * 8) * on + .15 * Math.exp(-(t - MD) * 9) * dud, '#FFC27A');
   }
   function intro(tv) {
     const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
@@ -444,8 +451,8 @@
     c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]],
     e1: [[OPEN0, 1360, 390, 740, 0], [21.4, SL.px - 40, 350, 1000, 1], [FINAL - .01, SL.px - 40, 350, 1020, 1], [IB - .002, SL.px - 40, 350, 1060, 1]],
     e2: [[OPEN0, 1440, 360, 1060, 0], [FINAL - .01, 1440, 350, 1020, 1], [IB - .002, 1440, 350, 1080, 1]],
-    m: SONG.reels?.yt === 'square' ? [[OPEN0, 900, 860, 415, 0], [21.10, 905, 850, 400, 1], [22.10, 960, 610, 670, 1], [IB - .002, 960, 605, 690, 1]]   // RU a01 framing: close on the strip → follow the match up, open for the title
-      : [[OPEN0, 870, 930, 330, 0], [21.10, 880, 910, 320, 1], [22.10, 960, 650, 600, 1], [IB - .002, 960, 645, 615, 1]],   // 16:9 (adj: y −50, view h ≈ 1.26·w)
+    m: SONG.reels?.yt === 'square' ? [[M0, 900, 860, 415, 0], [OPEN0, 900, 860, 415, 0], [21.10, 905, 850, 400, 1], [22.10, 960, 610, 670, 1], [IB - .002, 960, 605, 690, 1]]   // RU a01 framing: close on the strip → follow the match up, open for the title
+      : [[M0, 870, 930, 330, 0], [OPEN0, 870, 930, 330, 0], [21.10, 880, 910, 320, 1], [22.10, 960, 650, 600, 1], [IB - .002, 960, 645, 615, 1]],   // 16:9 (adj: y −50, view h ≈ 1.26·w)
     g1: [[OPEN0, 1600, 360, 1080, 0], [FINAL - .01, 1600, 350, 1040, 1], [IB - .002, 1600, 350, 1100, 1]] }[OPV === 'g2' ? 'g1' : OPV];
   const opn = L => OPV === 'b' ? [[N2O(OPEN0), ...L.reduce((r, k) => O2N(k[0]) <= 14.35 ? k : r, L[0]).slice(1, 4), 0], ...L.filter(k => O2N(k[0]) > 14.35).map(([k, ...r]) => [N2O(toReal(O2N(k))), ...r])]
     : OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0]) + .001)] : L;
