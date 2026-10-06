@@ -225,9 +225,9 @@ function a04_extinguisher(t, lt) {
     paint(rectPts(-40, -126, 80, 30), { wash: '#E8DDA8', washOp: 200, ink: null });
     pop();
     const zs = Math.min(42, 290 / (textW('ЗА ЭКОНОМИЮ', ruFont(100)) / 100)) * k;   // both lines fit the 340-wide notice
-    const dr = (x, y) => [ex + (x - ex) * Math.cos(droop) - (y - ey) * Math.sin(droop), ey + (x - ex) * Math.sin(droop) + (y - ey) * Math.cos(droop)];   // letter() ignores push(): apply the droop by hand
-    letter('ВЫГОВОР', ...dr(965, 425), 52 * k, TK.ember, { font: ruFont(52 * k), rot: -.12 + droop, ink: false });
-    letter('ЗА ЭКОНОМИЮ', ...dr(972, 495), zs, PAL.ink, { font: ruFont(zs), rot: -.12 + droop, ink: false });
+    // (the droop push above carries the lettering too: letter() follows the transform, core.js)
+    letter('ВЫГОВОР', 965, 425, 52 * k, TK.ember, { font: ruFont(52 * k), rot: -.12, ink: false });
+    letter('ЗА ЭКОНОМИЮ', 972, 495, zs, PAL.ink, { font: ruFont(zs), rot: -.12, ink: false });
   }
   pop();
   // foam jet

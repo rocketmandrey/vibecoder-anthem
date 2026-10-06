@@ -580,7 +580,7 @@
     paint(rrPts(X - 14, Y - 14, Wd + 28, Hd + 28, 10), { wash: '#5A5F6A', ink: INK, sw: 1.2 });
     paint(rectPts(X, Y, Wd, Hd, 1), { wash: '#FBF8F1', ink: null });
     paint(rectPts(X, Y, Wd, 64), { wash: '#2FBF71', ink: null });
-    letter('MORE TOKENS', X + Wd / 2, Y + 34 - lift, 40, '#FBF8F1', { ink: false });
+    letter('MORE TOKENS', X + Wd / 2, Y + 34, 40, '#FBF8F1', { ink: false });
     inkLine([[X + 22, Y + 90], [X + 22, base], [X + Wd - 10, base]], 2.4, INK, 'ink', 0);
     const tops = [], pump = 1 + .04 * Math.sin(ang) + .06 * wk;
     CELLS.forEach(([w, ty], k) => { const age = s - w - FLT; if (age < 0) return;

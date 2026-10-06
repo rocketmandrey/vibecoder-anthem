@@ -57,8 +57,11 @@ const shakeXY = (t, amt) => { const f = Math.floor(t * 24); return [(hash(f * 1.
 // camBegin(cx, cy, zoom, rot): world point (cx, cy) lands at screen centre. Letters queued while a camera is
 // active are placed through it automatically (pass {screen:true} to opt out). One level only: always pair with camEnd().
 let CAM = null;
-function camBegin(cx = W / 2, cy = H / 2, zoom = 1, rot = 0) { push(); translate(W / 2, H / 2); rotate(rot); scale(zoom); translate(-cx, -cy); CAM = { cx, cy, zoom, rot }; }
-function camEnd() { pop(); CAM = null; }
+function camBegin(cx = W / 2, cy = H / 2, zoom = 1, rot = 0) { push(); translate(W / 2, H / 2); rotate(rot); scale(zoom); translate(-cx, -cy); CAM = { cx, cy, zoom, rot, ref: LREF }; LREF = mat2(); }
+function camEnd() { pop(); if (CAM) LREF = CAM.ref; CAM = null; }
+// the model matrix as a 2D affine [a, b, c, d, e, f] (x' = a x + c y + e, y' = b x + d y + f)
+let LREF = null;
+function mat2() { const m = (p5.instance || window._p5Instance)._renderer.states.uModelMatrix.mat4; return [m[0], m[1], m[4], m[5], m[12], m[13]]; }
 function toScreen(x, y) {
   if (!CAM) return [x, y];
   const c = Math.cos(CAM.rot), s = Math.sin(CAM.rot), dx = (x - CAM.cx) * CAM.zoom, dy = (y - CAM.cy) * CAM.zoom;
@@ -128,6 +131,16 @@ function inkLine(pts, sw = 1, col = PAL.ink, br = 'ink', curv = .5) {
 
 // ---------- lettering (drawn on the 2D compositor, under the paper grain) ----------
 function letter(txt, x, y, size, color, o = {}) {
+  // honour a local push()/translate()/rotate()/scale() around the call (an object drawn in its own frame): map through the
+  // model matrix relative to the frame's base (LREF), so the text moves, turns and scales with the shapes painted next to it
+  if (LREF && !o.screen) { const R = LREF, M = mat2(), det = R[0] * R[3] - R[1] * R[2];
+    const ia = R[3] / det, ib = -R[1] / det, ic = -R[2] / det, id = R[0] / det;
+    const a = ia * M[0] + ic * M[1], b = ib * M[0] + id * M[1], c = ia * M[2] + ic * M[3], d = ib * M[2] + id * M[3];
+    const e = ia * (M[4] - R[4]) + ic * (M[5] - R[5]), f = ib * (M[4] - R[4]) + id * (M[5] - R[5]);
+    if (Math.abs(a - 1) + Math.abs(b) + Math.abs(c) + Math.abs(d - 1) + Math.abs(e) + Math.abs(f) > 1e-4) {
+      const k = Math.sqrt(Math.abs(a * d - b * c)); [x, y] = [a * x + c * y + e, b * x + d * y + f]; size *= k;
+      o = { ...o, rot: (o.rot || 0) + Math.atan2(b, a) }; if (o.font) o.font = o.font.replace(/(\d+(\.\d+)?)px/, (m, v) => (v * k) + 'px');
+    } }
   if (CAM && !o.screen) { [x, y] = toScreen(x, y); size *= CAM.zoom; o = { ...o, rot: (o.rot || 0) + CAM.rot }; if (o.font) o.font = o.font.replace(/(\d+(\.\d+)?)px/, (m, v) => (v * CAM.zoom) + 'px'); }
   LETTERS.push({ txt, x, y, size, color, ...o });
 }
@@ -208,13 +221,13 @@ function draw() {
   if (!window.ready) return;
   LETTERS = []; KARAOKE = null; METER_SHOWN = false; CAM = null;
   push(); translate(-width / 2, -height / 2); image(paperG, 0, 0); pop();
-  push(); sqView();
+  push(); sqView(); LREF = mat2();
   // the linework boils at BOIL (12) fps; a song can boil at 24 over near-static stretches (SONG.boil24 = [[a, b], …]),
   // where a 12-fps boil with no other motion reads as the whole picture running on twos
   const boil = (SONG.boil24 || []).some(([a, b]) => T >= a && T < b) ? 24 : BOIL;
   randomSeed(1000 + Math.floor(T * boil)); noiseSeed(77);
   drawWorld(T);
-  pop();
+  pop(); LREF = null;
 }
 // the world → canvas transform (WEBGL origin is the centre): 16:9 = the frame as is; square = the square camera
 function sqView() {

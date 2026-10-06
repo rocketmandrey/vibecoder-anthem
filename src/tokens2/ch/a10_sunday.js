@@ -16,15 +16,15 @@
 
   // R34 (EN reels, 3:4 picture): the room is re-laid for the fixed view x 420–1500, y -180..1260 (RU34 keys at the end): window top-left,
   // the clock over the corkboard top-right, the games shelf / the 42-agent grid in the middle, the desk along the bottom. Each group is drawn
-  // with its 16:9 code under a [dx, dy, scale] map; sub() moves the brush AND the letter camera (CAM) so the labels follow.
+  // with its 16:9 code under a [dx, dy, scale] map; sub() moves the brush; letter() follows the transform, so the labels follow.
   const R = window.R34;
   const L34 = { win: [445.6, -169.4, .68], games: [-166, 11.8, 1.1], sites: [417.4, -13, .72], clock: [-395, -220, 1], agents: [-23.2, -12.3, .78], desk: [-35, 230, 1] };
   const at = (g, x, y) => { if (!R) return [x, y]; const [dx, dy, s] = L34[g]; return [dx + x * s, dy + y * s]; };
   function sub(g, fn) {
     if (!R) return fn();
-    const [dx, dy, s] = L34[g], C = CAM;
-    push(); translate(dx, dy); scale(s); if (C) CAM = { ...C, cx: (C.cx - dx) / s, cy: (C.cy - dy) / s, zoom: C.zoom * s };
-    try { fn(); } finally { pop(); CAM = C; }
+    const [dx, dy, s] = L34[g];
+    push(); translate(dx, dy); scale(s);                                   // letter() follows push/translate/scale itself (core.js)
+    try { fn(); } finally { pop(); }
   }
 
   // ---------- the room (world = 1920 x 1080) ----------
