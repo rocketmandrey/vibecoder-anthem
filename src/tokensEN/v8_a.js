@@ -44,17 +44,9 @@
   const DROP = O2N(EN_HITS.map(h => h[0]).find(h => O2N(h) > .5) ?? N2O(1));
   const SWC = [15.726, 15.894];                                           // sweat:c — the brow wipe (drum hit) and the flick (snare)
   const SLAM = 16.213, TOP = 15.0, VOX = [5.22, 13.24], KD = .14, CREEP = .25;
-  // v13 SHORT-INTRO openings, --var=open:a|b|c (render --clip from OPEN0; unset = the full 0–22.4 intro). The cut starts on the synth-bass
-  // entry (6.04: the low swell's attack, the first drum burst 6.10–6.59 right on it) and runs into the same slam 16.21 / press / office cut.
-  //   a cover: a poster title shot (title + Clawd + token at the foot, press + skyline silhouette), alive on the 6.10–6.59 snares, it
-  //     shatters on the 8.75 snare → one push to the top (no knock-backs but the 13.40 roll push)
-  //   b straight to the summit: one continuous push from the synth on, the 13.40 push the only knock, crest on the roll peak
-  //   c cold open: a close-up on the token, it IGNITES on the 6.10 snare, the camera pulls back to reveal mountain + press, he pushes the burning token up
-  const OPV = ((window.BTT_VAR || {}).open || '').toLowerCase(), OPEN0 = 6.04, OCOV = 8.748;
-  const C0 = OPV === 'a' ? OCOV : OPV === 'c' ? 6.59 : OPV === 'b' ? OPEN0 : 0;     // when the climb starts
-  const KN = OPV ? [13.395] : [1.217, 6.086, 8.73, 13.395];
-  const KL = OPV ? [.15] : { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
-  const HB = RBT.filter((b, i, a) => b > Math.max(1.2, C0 + .1) && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
+  const KN = [1.217, 6.086, 8.73, 13.395];
+  const KL = { a: [.06, .09, .12, .16], b: [.08, .08, .12, .2], c: [.05, .08, .11, .15] }[V] || [.06, .09, .12, .16], LASTK = KN[KN.length - 1];
+  const HB = RBT.filter((b, i, a) => b > 1.2 && b < TOP + .05 && KN.every(d => b < d - .1 || b > d + .2) && !(i && b - a[i - 1] < .25))
     .map(b => [b, (b > VOX[0] && b < VOX[1] ? 1.8 : 1) * (b > LASTK ? 4 : 1)]);                          // a shove every beat, bigger while the gang sings
   const HV = HB.filter(([, w]) => w > 1.5).map(([b]) => b);
   const HW = HB.reduce((a, [, w]) => a + w, 0), KSUM = KL.reduce((a, l) => a + l, 0);
@@ -76,17 +68,32 @@
   });
   const SK = (SL.A[1] - SL.B[1]) / (SL.B[0] - SL.A[0]), hillY = x => x < SL.B[0] ? SL.A[1] - (x - SL.A[0]) * SK : SL.B[1];
   // progress: a slow creep + a shove on every beat (they pay back the knock-backs), minus a sharp KL backslide in KD from each knock beat
-  const climb = t => Math.max(0, CREEP * seg(t, C0, TOP) + HB.reduce((a, [b, w]) => a + (1 - CREEP + KSUM) * w / HW * easeOut(seg(t, b - .03, b + .26)), 0)
+  const climb = t => Math.max(0, CREEP * Math.min(1, t / TOP) + HB.reduce((a, [b, w]) => a + (1 - CREEP + KSUM) * w / HW * easeOut(seg(t, b - .03, b + .26)), 0)
     - KN.reduce((a, d, i) => a + KL[i] * easeOut(seg(t, d, d + KD)), 0));
   const slopeAt = t => { const u = .15 + .85 * Math.min(1, climb(t));   // starts a bit up the slope: the camera can't see left of x 0
     if (t < SL.top) return [lerp(SL.A[0], SL.B[0], u), lerp(SL.A[1], SL.B[1], u), u * SLL];
     const x = lerp(SL.B[0], SL.px, easeOut(seg(t, SL.top, SL.lift[0]))); return [x, SL.B[1], SLL + x - SL.B[0]]; };
+  // v12o super-short square openings (user: «с 13-й секунды — супер-короткое интро для квадрата»): the cut starts on the synth entry,
+  // real 20.150 (the first gated synth pulse attacks at 20.165, pulses every ~.164 s; a 25 ms audio fade in front), 2.25 s to the 22.18
+  // hit + the 22.40 office cut. --var=open:a|b|c (unset = the full intro, unchanged):
+  //   a cover: a poster — BURN THE / TOKENS over Clawd + the burning token on the bed under the raised ram, the title pulsing on the
+  //     synth; the 22.18 hit drops the ram, the title shatters (doubles as the thumbnail / first frame)
+  //   b roll it to the top: the last stretch of the climb compressed into the window (story 14.35 → 15.0 crest on the synth's 3rd pulse
+  //     → lift → the SLAM + title on the 22.18 hit)
+  //   c cold open: the ram drops on the synth entry and stamps BURN THE TOKENS huge into the plateau, the press heaves, the 22.18 hit
+  const OPV = ((window.BTT_VAR || {}).open || '').toLowerCase(), OPEN0 = 20.15, OSY = 20.168;
+  const OSP = Array.from({ length: 12 }, (_, i) => OSY + i * .1635);
+  const PI = OPV === 'a' ? [FINAL] : OPV === 'c' ? [...INH.slice(0, -1), OSY, FINAL] : INH;     // the press's strokes in this cut
+  const OB = [[OPEN0, 14.35], [OSP[2], TOP], [FINAL, SLAM]];                                   // b: real → story time
+  const pw = (T, i, j) => t => { if (t < T[0][i]) return t; if (t >= T[T.length - 1][i]) return t - T[T.length - 1][i] + T[T.length - 1][j];
+    for (let q = 1; q < T.length; q++) if (t < T[q][i]) return lerp(T[q - 1][j], T[q][j], (t - T[q - 1][i]) / (T[q][i] - T[q - 1][i])); };
+  const toStory = OPV === 'b' ? pw(OB, 0, 1) : t => t, toReal = OPV === 'b' ? pw(OB, 1, 0) : t => t;
   const lastLE = (arr, t) => { let r = null; for (const x of arr) { if (x > t) break; r = x; } return r; };
   const kAmp = d => KL[KN.indexOf(d)] / .08;                                                                           // ~.6 → 2.5 (the last one)
   // the ending's engine extras, drawn over the press (every stroke = a drum-stem hit)
   const strokes = t => STR.reduce((a, s, q) => a + (q === STR.length - 1 ? 2 : 1) * easeOut(seg(t, s, s + .35)), 0);
   function engine(t, PX, PY, PW, PH, back) {
-    if (t < SLAM) return;
+    if (t < SLAM || (OPV === 'a' && t < FINAL)) return;
     const base = SL.B[1] + 8;
     if (VE === 'a' && back) {
       // power cables: sagging lines from the press crossbeam to the rooftops, a spark runs along each one to its building
@@ -105,7 +112,7 @@
       glowAt(wx, wy, R * 1.3, '#FFC860', 50 * kick(t, STR, .3));
     } else if (VE === 'b') {
       // each stroke: a shockwave ring along the ground, out from the press
-      for (const s of STR) { const e = t - s, life = s === FINAL ? 1.6 : 1.1; if (e < 0 || e > life) continue;
+      for (const s of OPV === 'c' ? [OSY, ...STR] : STR) { const e = t - s, life = s === FINAL ? 1.6 : 1.1; if (e < 0 || e > life) continue;
         const rx = 2600 * e, f = 1 - e / life;
         for (const [dr, w, c] of [[0, 10, TK.yellow], [-60, 4, '#FFE2A8']]) if (rx + dr > 20) inkLine(ellPts(SL.px, base, rx + dr, (rx + dr) * .09, 48), w * f, c, 'ink', 0);
         paint(ellPts(SL.px, base, rx * .9, rx * .08, 40), { wash: '#FFC860', washOp: 30 * f, ink: null }); }
@@ -120,29 +127,16 @@
       const pump = kick(t, STR, .2); paint(ellPts(SL.px, base - 30, 120 + 30 * pump, 30 + 8 * pump, 20), { wash: '#FFC23A', washOp: 120 * pump, ink: null });
     }
   }
-  const OIGN = 6.101, OSN = [6.101, 6.269, 6.432, 6.594];                  // c: the ignition snare; a: the burst the cover pulses on
-  function cover(t) {                                                     // a: the poster backdrop + title, shattering on OCOV
-    const br = t - OCOV, gone = seg(br, 0, .5), al = 1 - gone, pk = kick(t, OSN, .12);
-    if (al <= 0) return;
-    glowAt(1300, 760, 700 + 60 * pk, TK.ember, (60 + 40 * pk) * al);                       // the real press + skyline stand behind (sky forced on below)
-    [['BURN THE', 950, 620, 190], ['TOKENS', 950, 850, 260]].forEach(([w, x0, y0, sz], li) => {
-      const cw = sz * .62, n = w.length;
-      for (let j = 0; j < n; j++) { if (w[j] === ' ') continue; const h = hash(j * 7 + li * 31), ang = -Math.PI / 2 + (h - .5) * 2.6, v = 900 + 700 * hash(j + li * 9);
-        const x = x0 + (j - (n - 1) / 2) * cw + Math.cos(ang) * v * br * (br > 0), y = y0 - 8 * pk * (j % 2 ? 1 : -1) + (Math.sin(ang) * v * br + 1400 * br * br) * (br > 0);
-        letter(w[j], x, y, sz * (1 + .06 * pk), TK.yellow, { font: ruFont(Math.round(sz * (1 + .06 * pk))), stroke: PAL.ink, rot: -.06 + (br > 0 ? br * (h - .5) * 10 : 0), alpha: al }); } });
-    if (br > 0 && br < .2) flash(.35 * (1 - br / .2), TK.yellowLt);
-  }
   function intro(tv) {
-    const t = O2N(tv), hit = kick(t, INH, .25);
+    const t = toStory(O2N(tv)), hit = kick(t, PI, .25);
     back('#16181D');
-    for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);
-    if (OPV === 'a' && t < OCOV + .5) cover(t);            // the wall of the pit
+    for (let x = -300; x < 2300; x += 220) inkLine([[x, -800], [x, 2600]], .6, '#23262D', 'inkfine', 0);            // the wall of the pit
     // while Clawd crests the sky goes ember and FAR AWAY a factory skyline rises out of the haze on the horizon, windows switching on beat by beat
-    const covK = OPV === 'a' ? 1 - seg(t, OCOV, OCOV + .45) : 0, sky = Math.max(covK, easeOut(seg(t, 13.9, 15.7)));   // a: the cover shows the skyline, it sinks on the break
+    const sky = easeOut(seg(t, 13.9, 15.7));
     if (sky > 0) {
       glowAt(SL.px, 640, 1100, TK.ember, 30 * sky + 15 * hit);
       FAR.forEach((b, i) => {
-        const k = Math.max(covK, easeOut(seg(t, b.at, b.at + .9))); if (k <= 0) return;
+        const k = easeOut(seg(t, b.at, b.at + .9)); if (k <= 0) return;
         const top = 735 - b.h * k;
         if (b.ch) { const cx = b.x + b.w * .7, ct = top - b.ch * k; paint(rectPts(cx - 7, ct, 14, 735 - ct), { wash: '#4A3A3A', ink: null });
           if (k > .9 && t > litAt[i]) smoke(cx, ct - 6, t + i, { r: (10 + 6 * hit) * Math.min(1, (t - litAt[i]) * 2), h: 120, n: 4, per: 2.4, seed: 70 + i, col: '#8A6A5A' }); }
@@ -188,18 +182,17 @@
     const inRoll = t > ROLL[0] - .01 && t < STR[0], rk = inRoll ? kick(t, ROLL, .06) : 0, nR = inRoll ? ROLL.filter(h => h <= t).length : 0;
     const PX = SL.px - PW / 2 + wob + (nR % 2 ? 3 : -3) * rk, PY = SL.B[1] + 10 - PH, bedY = PY + PH - PH * .12;
     engine(t, PX, PY, PW, PH, true);
-    press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : INH, { seed: 3, token: false, creep: inRoll ? .018 * nR + .012 * rk : 0 });
+    press(PX, PY, PW, PH, t, t < SLAM - .2 ? [999] : PI, { seed: 3, token: false, creep: inRoll ? .018 * nR + .012 * rk : 0 });
     if (inRoll) for (const h of ROLL) if (t >= h && t < h + .2) sparks(SL.px + (hash(h * 7) - .5) * 300, bedY - 10, t - h, h * 11, 4, 110);   // a tick of sparks per roll hit
     engine(t, PX, PY, PW, PH);
     if ((t > SLAM + 1.2 && t < STR[0] - .1) || (t > 20.3 && t < FINAL)) for (const sd of [-1, 1]) steam(SL.px + sd * 230, PY + PH * .3, t, { dir: sd < 0 ? Math.PI + .4 : -.4, k: .45 + .2 * Math.sin(t * 3), len: 260, seed: 90 + sd, n: 3, per: 1.1 });   // the rest: it hisses
     // the token: rolled up the slope, along the plateau, lifted onto the bed, flattened by the slam
-    const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= SLAM ? .2 : 1;
+    const [gx0, gy0, s] = slopeAt(t), lift = eased(t, SL.lift[0], SL.lift[1]), sq = t >= (OPV === 'a' ? FINAL : SLAM) ? .2 : 1;
     const ov = 1 - eased(t, SL.top - .15, SL.top + .25);
     const tk = V === 'c' && lastLE(KN, t) != null ? kick(t, KN, .14) * kAmp(lastLE(KN, t)) : 0;   // c: the token bounces back onto him
     const bx = gx0 + SLN[0] * SL.r * ov - SLD[0] * 70 * tk, by = -SLD[1] * 70 * tk + lerp(lerp(gy0, bedY, lift), gy0 + SLN[1] * SL.r + SL.r, ov);
     push(); translate(bx, by); scale(1 + (1 - sq) * .5, sq); translate(0, -SL.r); rotate(t < SL.lift[0] ? s / SL.r : 0);
-    token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : OPV === 'c' ? .8 * easeOut(seg(t, OIGN, OIGN + .5)) : 0 }); pop();
-    if (OPV === 'c' && t > OIGN - .02 && t < OIGN + .5) { glowAt(bx, by - SL.r, 260 * (1 - seg(t, OIGN, OIGN + .5)), TK.orange, 150); sparks(bx, by - SL.r * 1.4, t - OIGN, 61, 18, 320); }   // c: the ignition
+    token(0, 0, SL.r, { spin: .02, burn: t > SLAM + .6 ? seg(t, SLAM + .6, SLAM + 4) * .6 : 0 }); pop();
     // the heroic last push — an ember aura + speed streaks behind him from the last knock to the bed
     const hero = (V !== 'b') * seg(t, LASTK + .06, LASTK + .16) * (1 - seg(t, SL.lift[0], SL.lift[1]));
     // Clawd right behind it, leaning in; after the lift he hops back under the press and stares up
@@ -213,7 +206,7 @@
       for (let i = 0; i < 6; i++) { const q = frac(t * 3 + hash(i + 80)), o = (hash(i + 81) - .5) * 160; inkLine([[fx - SLD[0] * (60 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (60 + 260 * q) + SLN[1] * o], [fx - SLD[0] * (200 + 260 * q) + SLN[0] * o, fy - 50 - SLD[1] * (200 + 260 * q) + SLN[1] * o]], 3 * hero, TK.yellowLt, 'ink', 0); } }
     const ld = lastLE(KN, t), slip = ld != null && t - ld < .45, heave = kick(t, HV, .25), bump = kick(t, KN, .12) * (ld != null ? Math.min(1.6, kAmp(ld)) : 1);
     const walk = 1.6 * t + 1.4 * Math.max(0, Math.min(t, VOX[1]) - VOX[0]) + 3 * Math.max(0, t - LASTK - .06);   // faster steps while the gang sings
-    clawd(fx, fy, cu, { walk: pushing && !slip && t >= C0 ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
+    clawd(fx, fy, cu, { walk: pushing && !slip ? walk + .7 * heave : null, rot: gAng + (pushing ? .12 + .1 * heave - .25 * bump : 0) - (V === 'b' && slip ? TAU * easeOut(seg(t, ld, ld + .42)) : 0), sq: -.06 * heave + (V === 'c' ? .6 : .22) * bump + (t > SLAM ? .08 * hit : 0),
       eyes: t > SLAM ? 'spark' : slip ? 'scared' : hero > .5 ? 'angry' : pushing ? 'narrow' : 'look', lookX: 1, lookY: t > SL.lift[1] ? -1 : 0,
       mouth: t > SLAM ? 'O' : heave > .3 || slip || hero > .5 ? 'O' : pushing ? 'flat' : 'smile', aL: pushing ? 1.3 : .3, aR: pushing ? 1.3 : .3, noShadow: true, ...(inRoll ? { dy: -.5 * rk, sx: 1 + .03 * rk } : {}),
       ...(SWV === 'c' && t > SWC[0] && t < SWC[1] + .35 ? { rot: t < SWC[1] + .08 ? .2 * Math.sin((t - SWC[0]) * 75) : 0, sq: t < SWC[1] ? .08 : 0, aL: 1.2, aR: 1.2, eyes: t < SWC[1] + .08 ? 'closed' : 'happy', mouth: t < SWC[1] + .08 ? 'flat' : 'grin' } : {}) });   // c: a wet-dog shake
@@ -261,30 +254,39 @@
         pop(); }
     }
     for (const d of KN) if (t >= d && t < d + .5) { const [cx, cy] = slopeAt(d); sparks(cx - 60, cy - 40, t - d, d * 5, Math.round(10 * Math.max(1, kAmp(d))), 200 * Math.max(.7, kAmp(d)));; }   // the impact burst where it hit him
-    for (const h of INH) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
+    for (const h of PI) { sparks(SL.px, bedY - 20, t - h, h * 3, 16, 360); rubble(SL.px, SL.B[1] + 10, 560, t - h, h); }
     // YouTube (square / 16:9): the stamp lies level on the plateau under the press, clear of the slope's diagonal edge
-    if (t >= SLAM) stamp('BURN THE TOKENS', YT ? SL.px + 60 : 1380, YT ? 880 : 930, 78, t, SLAM, { col: TK.yellow, rot: YT ? 0 : -.04 });
-    flash(Math.min(.3, kick(t, [SLAM], .2) * .3) + .3 * kick(t, [FINAL], .15), TK.yellowLt);
+    if (OPV === 'a') { const br = t - FINAL, al = 1 - seg(br, 0, .4), pk = kick(t, OSP, .12);   // a: the poster title, shattering on the hit
+      if (al > 0) [['BURN THE', SL.px - 40, 20, 170], ['TOKENS', SL.px - 40, 230, 240]].forEach(([w, x0, y0, sz], li) => { const cw = sz * .62, n = w.length;
+        for (let j = 0; j < n; j++) { if (w[j] === ' ') continue; const h = hash(j * 7 + li * 31), ang = -Math.PI / 2 + (h - .5) * 2.6, v = 900 + 700 * hash(j + li * 9), b = Math.max(0, br);
+          letter(w[j], x0 + (j - (n - 1) / 2) * cw + Math.cos(ang) * v * b, y0 - 8 * pk * (j % 2 ? 1 : -1) + Math.sin(ang) * v * b + 1400 * b * b, sz * (1 + .06 * pk), TK.yellow,
+            { font: ruFont(Math.round(sz * (1 + .06 * pk))), stroke: PAL.ink, rot: -.06 + b * (h - .5) * 10, alpha: al }); } });
+    } else if (OPV === 'c') stamp('BURN THE TOKENS', SL.px, SL.B[1] + 170, 92, t, OSY, { col: TK.yellow, rot: -.03 });   // c: stamped by the press on the synth
+    else if (t >= SLAM) stamp('BURN THE TOKENS', YT ? SL.px + 60 : 1380, YT ? 880 : 930, 78, t, SLAM, { col: TK.yellow, rot: YT ? 0 : -.04 });
+    flash(Math.min(.3, kick(t, [SLAM], .2) * .3) + .3 * kick(t, [FINAL], .15) + (OPV === 'c') * .3 * kick(t, [OSY], .15), TK.yellowLt);
   }
   dropCh('en_intro');
   chapter('en_v8_intro', N2O(IA), N2O(IB), [[N2O(IA), native(intro)]], { real: true });
   // the 3:4 camera follows the climb, a key per bar; pushes in on the heroic last push
   // (sweat a|b: the c keys frame back, centre at the token − (60, −20) instead of + (40, −110), so his head has air on the knocks)
   const KT = [0, 1.48, 2.66, 3.94, 5.28, 6.6, 7.92, 9.24, 10.6, 11.92, 13.24, 14.3, 14.6, SL.top];
-  const IK0 = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
+  const IK = V === 'b' ? [[N2O(0), 880, 860, 1750, 0], [N2O(13.4), 960, 780, 1550, 1], [N2O(SL.top), 1150, 620, 1250, 1]]   // b: wide, the whole mountain
     : KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5);
       return V === 'c' ? (SWV === 'a' || SWV === 'b' ? [N2O(k), x - 60, y + 20, 600, i ? 1 : 0] : [N2O(k), x + 40, y - 110, 600, i ? 1 : 0]) : k > 14 ? [N2O(k), x - 20, y - 90, 700, 1] : [N2O(k), x - 150 + 130 * k / SL.top, y - 100, 760, i ? 1 : 0]; });
   // YouTube re-shoot: the climb centred on the token's slope point (the 45° slope runs corner to corner), then the press centred on its axis
-  const YK0 = [...KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5); return [N2O(k), x + 10, y - 70, k > 14 ? 700 : 760, i ? 1 : 0]; }),
+  const YK = [...KT.map((k, i) => { const [x, y] = slopeAt(k > 14 ? k : k + .5); return [N2O(k), x + 10, y - 70, k > 14 ? 700 : 760, i ? 1 : 0]; }),
     [N2O(SL.lift[1]), SL.px, 370, 980, 1], [N2O(SLAM - .01), SL.px, 350, 1080, 1], [N2O(STR[0]), SL.px, 360, 1000, 1], [N2O(FINAL), SL.px, 370, 1200, 1], [N2O(IB) - .001, SL.px, 370, 1210, 1]];
-  const OK3 = { a: [[OPEN0, 950, 1200, 1140, 0], [OCOV, 950, 1200, 1140, 1]], c: [[OPEN0, 560, 1640, 420, 0], [OIGN + .5, 560, 1640, 470, 1], [OCOV, 900, 1250, 1300, 1]], b: [[OPEN0, 620, 1600, 640, 0]] }[OPV];
-  const withOpen = L => OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0] + .5))] : L;   // the opening's own keys, then the climb's
-  const IK = withOpen(IK0), YK = withOpen(YK0);
-  if (window.RU34 && YT) RU34.push([N2O(IA), N2O(IB), YK], [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);
-  else if (window.RU34) RU34.push([N2O(IA), N2O(IB), [...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
-      : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])]],
+  // open:x — own keys from OPEN0 (real), the full list's keys after the last one kept; b maps the story-time keys back to real time
+  const OK3 = { a: [[OPEN0, SL.px - 40, 340, 1020, 0], [FINAL - .01, SL.px - 40, 360, 980, 1]],
+    c: [[OPEN0, SL.px, 700, 760, 0], [OSY + .5, SL.px, 650, 840, 1], [21.7, SL.px, 420, 1120, 1]] }[OPV];
+  const opn = L => OPV === 'b' ? [[N2O(OPEN0), ...L.reduce((r, k) => O2N(k[0]) <= 14.35 ? k : r, L[0]).slice(1, 4), 0], ...L.filter(k => O2N(k[0]) > 14.35).map(([k, ...r]) => [N2O(toReal(O2N(k))), ...r])]
+    : OK3 ? [...OK3.map(([k, ...r]) => [N2O(k), ...r]), ...L.filter(k => k[0] > N2O(OK3[OK3.length - 1][0]) + .001)] : L;
+  if (window.RU34 && YT) RU34.push([N2O(IA), N2O(IB), opn(YK)], [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);
+  else if (window.RU34) RU34.push([N2O(IA), N2O(IB), opn([...IK, [N2O(SL.lift[1]), 1330, 400, 980, 1], [N2O(SLAM - .01), 1380, 330, 1080, 1], ...(VE === 'b' ? [[N2O(STR[0]), 1380, 360, 960, 1], [N2O(FINAL), 1280, 400, 1420, 1], [N2O(IB) - .001, 1280, 405, 1440, 1]]
+      : [[N2O(STR[0] - .5), 1380, 340, 1080, 1], [N2O(FINAL), 1300, 380, 1250, 1], [N2O(IB) - .001, 1300, 385, 1260, 1]])])],
     [N2O(IB), N2O(IB) + .001, [[N2O(IB), 960, 500, 860]]]);   // cut back to a02's office key (its 18.16 key fell inside the span above)
   dropPunch(N2O(IA), N2O(IB));
+  if (OPV === 'c') EN_PUNCH.push([N2O(OSY), 16]);
   EN_PUNCH.push([N2O(SLAM), 18], [N2O(DROP), 8], ...KN.map(d => [N2O(d), Math.round(14 * Math.max(.5, kAmp(d)))]), ...STR.map((h, q) => [N2O(h), [8, 8, 14, 20][q] || 9]));
 
   // ======== 2+3. real 30.42–38.34: one take at the desk, Sunday night ========
