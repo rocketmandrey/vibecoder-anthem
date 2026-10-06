@@ -181,12 +181,12 @@
 
   // ---------- 157.35 AGI «ВЕСНА»: calendar crossed out year by year ----------
   const CAL = [[2023, 157.47, 157.9], [2024, 158.42, 158.75], [2025, 159.02, 159.2], [2026, 99, 99]];
-  function a08_calPage(cx, cy, w, h, year, crossK, q) {
+  function a08_calPage(cx, cy, w, h, year, crossK, bare) {   // bare: no letters — letter() ignores push/translate, so a flying page's text lands at world (0,0) (visible top-left in yt wide)
     paint(rectPts(cx - w / 2, cy - h / 2, w, h, 1), { wash: '#FFFDF6', fill: '#E4DCCB', fillOp: 50, tex: .4, ink: INK, sw: 1 });
     paint(rectPts(cx - w / 2, cy - h / 2, w, h * .26), { wash: '#3E8F4E', ink: null });
-    letter('ВЕСНА', cx, cy - h * .37, h * .15, '#FFFDF6', { font: ruFont(h * .15), ink: false });
-    letter(String(year) + (year === 2026 ? '?' : ''), cx, cy + h * .06, h * .3, '#1E1E24', { font: ruFont(h * .3), ink: false });
-    letter('AGI ГОТОВ!', cx, cy + h * .34, h * .09, '#3E8F4E', { font: ruFont(h * .09), ink: false });
+    if (!bare) letter('ВЕСНА', cx, cy - h * .37, h * .15, '#FFFDF6', { font: ruFont(h * .15), ink: false });
+    if (!bare) letter(String(year) + (year === 2026 ? '?' : ''), cx, cy + h * .06, h * .3, '#1E1E24', { font: ruFont(h * .3), ink: false });
+    if (!bare) letter('AGI ГОТОВ!', cx, cy + h * .34, h * .09, '#3E8F4E', { font: ruFont(h * .09), ink: false });
     for (let i = 0; i < 3; i++) paint(ellPts(cx - w / 2 + 14 + i * 18, cy + h * .34 + (i % 2) * 8, 5, 5, 6), { wash: '#F2B632', ink: null });
     if (crossK > 0) {
       const a = clamp(crossK * 2), b = clamp(crossK * 2 - 1);
@@ -208,7 +208,7 @@
         const age = t - CAL[i - 1][2]; if (age < .45) {
           const p = easeOut(age / .45);
           push(); translate(cx + p * 520, cy - p * 260); rotate(p * .9); scale(1 - p * .4);
-          a08_calPage(0, 0, pw, ph, CAL[i - 1][0], 1);
+          a08_calPage(0, 0, pw, ph, CAL[i - 1][0], 1, true);
           pop();
         }
       }
