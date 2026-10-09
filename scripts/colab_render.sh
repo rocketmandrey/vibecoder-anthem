@@ -3,7 +3,7 @@
 #   scripts/colab_render.sh --song=tokensENr --clip=0:264.811 --out=out/reels/btt_full.mp4
 #   env: VMS="L4 L4 A100 A100" (Colab allows 2 per type), JOBS=6 (Chromes per VM), MAXMIN=45 (hard cap, minutes),
 #        CHROME_VERSION (default: the Mac's Chrome), CHROME_GL
-#        CHUNK_MIN=36 (smallest chunk, frames)
+#        CHUNK_MIN=36 (smallest chunk, frames), PFX=bt (session name prefix: <PFX>-<pid>-<i>)
 # Work queue: the clip is cut into chunks that shrink toward the end (guided: remaining / (2 x workers), >= CHUNK_MIN), and each
 # of the VMs' JOBS worker slots claims the next free chunk (mkdir lock here) and renders it as `render.mjs --part` (video only,
 # same x264 params as the local render), streamed back over ssh while it renders. Heavy scenes no longer pin one VM, a VM that
@@ -16,14 +16,14 @@ read -ra VMT <<< "${VMS:-L4 L4 A100 A100}"; JOBS=${JOBS:-6} MAXMIN=${MAXMIN:-45}
 CHROME_VERSION=${CHROME_VERSION:-$("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version 2>/dev/null | grep -oE '[0-9.]{8,}' || echo 154.0.8037.92)}
 CHROME_GL=${CHROME_GL:---no-sandbox --enable-gpu --use-gl=angle --use-angle=gl-egl}
 TMP=$(mktemp -d) CS=/tmp/cbt-$$ t0=$(date +%s); mkdir -p "$CS"   # ssh ControlPath must stay short (<104 bytes)
-NAMES=(); for i in "${!VMT[@]}"; do NAMES+=("bt-$$-$i"); done
+PFX=${PFX:-bt}; NAMES=(); for i in "${!VMT[@]}"; do NAMES+=("$PFX-$$-$i"); done
 
 cleanup() {
   local rc=$? s j; trap - EXIT INT TERM; set +e
   for j in $(jobs -p); do pkill -P "$j"; kill "$j"; done 2>/dev/null
   for s in "${NAMES[@]}"; do ssh -F "$TMP/ssh" -O exit "$s" 2>/dev/null; colab stop -s "$s" >/dev/null 2>&1 & done; wait
-  for s in $(colab sessions 2>/dev/null | grep -oE "\[bt-$$-[0-9]+\]" | tr -d '[]'); do colab stop -s "$s" >/dev/null 2>&1; done   # a late `colab new`
-  if colab sessions 2>/dev/null | grep -F "[bt-$$-"; then echo "!! Colab sessions STILL RUNNING: colab stop -s <name>" >&2; rc=1
+  for s in $(colab sessions 2>/dev/null | grep -oE "\[$PFX-$$-[0-9]+\]" | tr -d '[]'); do colab stop -s "$s" >/dev/null 2>&1; done   # a late `colab new`
+  if colab sessions 2>/dev/null | grep -F "[$PFX-$$-"; then echo "!! Colab sessions STILL RUNNING: colab stop -s <name>" >&2; rc=1
   else echo "colab: all ${#NAMES[@]} sessions stopped"; fi
   rm -rf "$TMP" "$CS"; exit $rc
 }
@@ -31,7 +31,7 @@ trap cleanup EXIT; trap 'exit 130' INT TERM
 ( sleep $((MAXMIN * 60)); echo "!! MAXMIN=$MAXMIN reached, aborting" >&2; kill -TERM $$ ) & WD=$!
 
 cat > "$TMP/ssh" <<EOF
-Host bt-*
+Host $PFX-*
   User root
   ProxyCommand colab ssh --proxy-mode -s %n
   StrictHostKeyChecking no
