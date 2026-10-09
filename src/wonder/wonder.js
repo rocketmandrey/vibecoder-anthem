@@ -48,6 +48,36 @@ function inkPoly(c, pts, fill, ink = '#120D1A', lw = 3, close = true) {
 }
 const FULL = Math.hypot(W / 2, H / 2);
 
+// ---------- the reference's surface vocabulary: hatching, pencil construction lines, grain ----------
+let HPX = 1;   // world units per screen px of the world being drawn, so strokes keep a pen size at any zoom
+function hatchIn(c, clip, cx, cy, R, seed, dark, light, px = HPX) {
+  const sr = R / px; if (sr < 12) return;
+  const n = Math.min(340, Math.round(sr * sr / 380)), r = rng(seed);
+  c.save(); clip(); c.clip(); c.lineCap = 'round'; c.lineWidth = 2 * px;
+  c.strokeStyle = dark; c.beginPath();
+  for (let i = 0; i < n; i++) { const a = r() * TAU, q = Math.sqrt(r()) * R, x = cx + Math.cos(a) * q, y = cy + Math.sin(a) * q, sd = ((x - cx) * .6 + (y - cy) * .8) / R, l = (9 + r() * 24) * px;
+    if (sd < -.05 + r() * .25) continue; c.moveTo(x, y); c.lineTo(x + l * .5, y - l * .87); }
+  c.stroke(); c.strokeStyle = light; c.beginPath();
+  for (let i = 0; i < n * .7; i++) { const a = r() * TAU, q = Math.sqrt(r()) * R, x = cx + Math.cos(a) * q, y = cy + Math.sin(a) * q, sd = ((x - cx) * .6 + (y - cy) * .8) / R, l = (8 + r() * 20) * px;
+    if (sd > -.15 - r() * .2) continue; c.moveTo(x, y); c.lineTo(x + l, y + l * .06); }
+  c.stroke(); c.restore();
+}
+function pencilRing(c, x, y, rx, ry, px, dashed, a = .3, rot = 0) { if (a <= .01) return; c.save(); c.strokeStyle = `rgba(225,220,255,${a})`; c.lineWidth = 1.2 * px; if (dashed) c.setLineDash([9 * px, 8 * px]); c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); c.stroke(); c.restore(); }
+function crosshair(c, x, y, l, px, a = .25) { if (a <= .01) return; c.save(); c.strokeStyle = `rgba(225,220,255,${a})`; c.lineWidth = px; c.beginPath(); c.moveTo(x - l, y); c.lineTo(x + l, y); c.moveTo(x, y - l); c.lineTo(x, y + l); c.stroke(); c.restore(); }
+let TEX = null;
+function textures() {   // static full-frame layers: rain-like hatch for dark grounds, signed grain (anti-banding), painted nebula
+  const mk = f => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; f(cv.getContext('2d')); return cv; }, r = rng(77);
+  TEX = {
+    rain: mk(c => { c.lineCap = 'round'; for (let i = 0; i < 5200; i++) { const x = r() * W, y = r() * H, l = 6 + r() * 22; c.strokeStyle = `rgba(200,190,255,${.03 + r() * .05})`; c.lineWidth = 1 + r(); c.beginPath(); c.moveTo(x, y); c.lineTo(x + l * .45, y - l * .9); c.stroke(); } }),
+    grain: mk(c => { const id = c.createImageData(W, H), d = id.data; for (let i = 0; i < d.length; i += 4) { const v = 128 + (r() - .5) * 70; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } c.putImageData(id, 0, 0); }),
+    neb: mk(c => { for (const [col, n] of [['#6A3FD0', 26], ['#C0408C', 16], ['#2E8FA8', 14], ['#3F55D8', 18]]) for (let i = 0; i < n; i++) { const x = r() * W, y = r() * H, R = 120 + r() * 420, g = c.createRadialGradient(x, y, 0, x, y, R);
+      g.addColorStop(0, col + '2A'); g.addColorStop(1, col + '00'); c.fillStyle = g; c.fillRect(x - R, y - R, 2 * R, 2 * R); }
+      c.lineCap = 'round'; for (let i = 0; i < 2600; i++) { const x = r() * W, y = r() * H, l = 10 + r() * 30; c.strokeStyle = `rgba(${r() < .5 ? '190,150,255' : '255,170,220'},${.03 + r() * .05})`; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x, y); c.lineTo(x + l, y + l * .1 * (r() - .5)); c.stroke(); }
+      for (let i = 0; i < 700; i++) { const x = r() * W, y = r() * H, sz = r() < .08 ? 3 : 1.4; c.fillStyle = `rgba(255,246,224,${.25 + r() * .6})`; c.fillRect(x, y, sz, sz);
+        if (sz > 2) { c.strokeStyle = 'rgba(255,240,210,.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x - 7, y + 1.5); c.lineTo(x + 10, y + 1.5); c.moveTo(x + 1.5, y - 7); c.lineTo(x + 1.5, y + 10); c.stroke(); } } }),
+  };
+}
+
 // ---------- geometry ----------
 // snowflake: one dendritic arm along +x, mirrored side branches at ±60°, six copies; p = path length from the centre
 const SNOW = (() => {
@@ -102,11 +132,10 @@ function lattice(c, cx, cy, R, la, ma, s) {
     for (const [x, y] of A) { Hs.push([x + nb[1][0] / E * OH, y + nb[1][1] / E * OH, x + nb[1][0], y + nb[1][1]], [x + nb[2][0] / E * OH, y + nb[2][1] / E * OH, x + nb[2][0], y + nb[2][1]], [x, y + E - OH, x, y]); }
     c.setLineDash([.18, .16]); c.strokeStyle = '#BFF4FF'; c.lineWidth = Math.max(2 * px, .07); c.beginPath();
     for (const [hx, hy, ox, oy] of Hs) { const dx = ox - hx, dy = oy - hy, l = Math.hypot(dx, dy); c.moveTo(hx, hy); c.lineTo(ox - dx / l * .7, oy - dy / l * .7); } c.stroke(); c.setLineDash([]);
-    const ball = (x, y, r, c0, c1) => { const g = c.createRadialGradient(x - r * .35, y - r * .35, r * .1, x, y, r); g.addColorStop(0, c0); g.addColorStop(1, c1);
-      c.beginPath(); c.arc(x, y, r, 0, TAU); c.fillStyle = g; c.fill(); c.strokeStyle = '#120D1A'; c.lineWidth = Math.max(2.4 * px, .05); c.stroke(); };
-    for (const [x, y] of A) { ball(x, y, .62, '#FF9A7A', '#C2302E'); ball(x, y + E, .62, '#FF9A7A', '#C2302E'); }
-    for (const [hx, hy] of Hs) ball(hx, hy, .3, '#FFFFFF', '#C9C3B6');
-    for (const [x, y] of A) ball(x + .28, y + E - .3, .26, '#FFFFFF', '#C9C3B6');
+    HPX = px; const bl = (x, y, r, c0, c1) => ball(c, x, y, r, c0, c1, Math.max(2.4 * px, .05));
+    for (const [x, y] of A) { bl(x, y, .62, '#FF9A7A', '#C2302E'); bl(x, y + E, .62, '#FF9A7A', '#C2302E'); }
+    for (const [hx, hy] of Hs) bl(hx, hy, .3, '#FFFFFF', '#C9C3B6');
+    for (const [x, y] of A) bl(x + .28, y + E - .3, .26, '#FFFFFF', '#C9C3B6');
     c.globalAlpha = g0;
   }
   c.globalAlpha /= la || 1;
@@ -116,7 +145,8 @@ function snowWorld(c, s, rot, k, t, ox, oy) {
   bg(c, '#141B52', '#05082A'); stars(c, 3, 220, .8, t * 2);
   c.setTransform(1, 0, 0, 1, 0, 0); c.translate(ox, oy); c.rotate(rot); c.scale(s, s); c.translate(-ARM_V[0] * k, -ARM_V[1] * k);
   radial(c, 0, 0, 700, '#3C5BC2', .5);
-  const ls = Math.log(s), deep = sstep(Math.log(6), Math.log(40), ls), px = 1 / s;
+  const ls = Math.log(s), deep = sstep(Math.log(6), Math.log(40), ls), px = 1 / s; HPX = px;
+  pencilRing(c, 0, 0, 505, 505, px, true, .4 * (1 - deep)); pencilRing(c, 0, 0, 580, 580, px, false, .25 * (1 - deep)); pencilRing(c, 0, 0, 120, 120, px, true, .3 * (1 - deep)); crosshair(c, 0, 0, 660, px, .22 * (1 - deep));
   segs(c, SNOW.segs, 1e9, [{ col: '#7FD8FF', add: 26, a: .12 * (1 - deep), op: 'lighter' }, { col: '#0A0F33', add: 7 + 2 * px }, { col: mix('#D9F6FF', '#123C66', deep), add: px }, { col: '#FFFFFF', mul: .3, a: 1 - deep }]);
   const hex = r => Array.from({ length: 6 }, (_, i) => [Math.cos(i * Math.PI / 3 + Math.PI / 6) * r, Math.sin(i * Math.PI / 3 + Math.PI / 6) * r]);
   inkPoly(c, hex(62), mix('#BFEFFF', '#123C66', deep), '#0A0F33', 5); inkPoly(c, hex(34), mix('#EFFFFF', '#1B4C7A', deep), '#0A0F33', 3);
@@ -144,12 +174,14 @@ const TILT = -.3, BA = .38;
 const PLAN = [[170, '#B9A48E', 9], [235, '#E8C07A', 14], [310, '#3E8FD8', 15], [390, '#D9653B', 12], [530, '#E3B07A', 36], [660, '#E9D29A', 30], [780, '#8FD3E0', 21], [890, '#4E6FE0', 21]];
 const EL = PLAN.map((p, i) => ({ ring: i < 2 ? 0 : 1, ph: i < 2 ? i * Math.PI + .4 : (i - 2) / 6 * TAU + .9, w: i < 2 ? 2.4 : 1.6, wp: .7 / Math.pow(p[0] / 170, 1.2) }));
 const orbXY = (r, a) => { const x = Math.cos(a) * r, y = Math.sin(a) * r * BA; return [x * Math.cos(TILT) - y * Math.sin(TILT), x * Math.sin(TILT) + y * Math.cos(TILT)]; };
-function ball(c, x, y, r, c0, c1, lw, ink = '#120D1A') {
+function ball(c, x, y, r, c0, c1, lw, ink = '#120D1A', seed = (x * 131 + y * 71) | 0) {
   const g = c.createRadialGradient(x - r * .35, y - r * .35, r * .08, x, y, r); g.addColorStop(0, c0); g.addColorStop(1, c1);
-  c.beginPath(); c.arc(x, y, r, 0, TAU); c.fillStyle = g; c.fill(); if (ink) { c.strokeStyle = ink; c.lineWidth = lw; c.stroke(); }
+  c.beginPath(); c.arc(x, y, r, 0, TAU); c.fillStyle = g; c.fill();
+  hatchIn(c, () => { c.beginPath(); c.arc(x, y, r, 0, TAU); }, x, y, r, seed, 'rgba(40,12,44,.5)', 'rgba(255,252,244,.75)');
+  if (ink) { c.beginPath(); c.arc(x, y, r, 0, TAU); c.strokeStyle = ink; c.lineWidth = lw; c.stroke(); }
 }
 function atomWorld(c, az, ox, oy, t, A = 1) {
-  const tau = TAUT(t), sunK = sstep(16.9, 17.7, t), fus = seg(t, 16.4, 17.5), px = 1 / az, la = Math.log(az), g0 = c.globalAlpha;
+  const tau = TAUT(t), sunK = sstep(16.9, 17.7, t), fus = seg(t, 16.4, 17.5), px = 1 / az, la = Math.log(az), g0 = c.globalAlpha; HPX = px;
   c.setTransform(az, 0, 0, az, ox, oy); c.globalAlpha = g0 * A;
   // electron cloud (fades as we fall through it, and when the star lights)
   const cloud = (1 - sunK) * (1 - sstep(Math.log(1.6), Math.log(5), la));
@@ -161,6 +193,8 @@ function atomWorld(c, az, ox, oy, t, A = 1) {
     c.restore();
     c.fillStyle = '#CFE9FF'; c.globalAlpha = g0 * A * .55 * cloud; const ds = 2.4 * px; for (const [x, y] of CLOUD) c.fillRect(x - ds / 2, y - ds / 2, ds, ds); c.globalAlpha = g0 * A;
   }
+  pencilRing(c, 0, 0, 120, 120, px, true, .4 * cloud); pencilRing(c, 0, 0, 300, 300, px, false, .25 * cloud); pencilRing(c, 0, 0, 470, 470, px, true, .3 * cloud); crosshair(c, 0, 0, 540, px, .2 * cloud);
+  if (sunK > 0) { pencilRing(c, 0, 0, 165, 165, px, true, .35 * sunK); crosshair(c, 0, 0, 980, px, .14 * sunK); for (const [r] of PLAN) pencilRing(c, 0, 0, r * 1.035, r * BA * 1.035, px, true, .16 * sunK, TILT); }
   // rings → orbits, electrons → planets
   const rings = [200, 400], tauS = TAUT(17), ringA = 1 - sstep(Math.log(2.5), Math.log(7), la);
   const pos = EL.map((e, i) => { const r = lerp(rings[e.ring], PLAN[i][0], sunK), a = e.ph + e.w * Math.min(tau, tauS) + e.wp * Math.max(0, tau - tauS); return orbXY(r, a).concat([r, a]); });
@@ -173,16 +207,17 @@ function atomWorld(c, az, ox, oy, t, A = 1) {
   const body = (i, [x, y, , a]) => {
     if (ringA <= 0) return; c.globalAlpha = g0 * A * ringA;
     const r = lerp(7, PLAN[i][2], sunK);
-    if (sunK < 1) { c.globalAlpha = g0 * A * ringA * (1 - sunK); c.drawImage(sprite('#7FE3FF'), x - r * 3, y - r * 3, r * 6, r * 6); ball(c, x, y, r * .7, '#FFFFFF', '#7FE3FF', 1.6 * px); }
+    if (sunK < 1) { c.globalAlpha = g0 * A * ringA * (1 - sunK); c.drawImage(sprite('#7FE3FF'), x - r * 3, y - r * 3, r * 6, r * 6); ball(c, x, y, r * .7, '#FFFFFF', '#7FE3FF', 1.6 * px, '#120D1A', i); }
     if (sunK > 0) { c.globalAlpha = g0 * A * ringA * sunK;
       if (i === 5) { c.save(); c.translate(x, y); c.rotate(-.35); c.scale(1, .32); c.beginPath(); c.arc(0, 0, r * 2.1, Math.PI, TAU); c.strokeStyle = '#120D1A'; c.lineWidth = r * .9; c.stroke(); c.strokeStyle = '#F2DCA6'; c.lineWidth = r * .6; c.stroke(); c.restore(); }
-      ball(c, x, y, r, mix(PLAN[i][1], '#FFFFFF', .35), PLAN[i][1], 2.6 * px);
+      ball(c, x, y, r, mix(PLAN[i][1], '#FFFFFF', .35), PLAN[i][1], 2.6 * px, '#120D1A', 50 + i);
       c.save(); c.beginPath(); c.arc(x, y, r, 0, TAU); c.clip(); const l = Math.hypot(x, y) || 1; c.fillStyle = 'rgba(10,6,24,.55)'; c.beginPath(); c.arc(x + x / l * r * .9, y + y / l * r * .9, r * 1.1, 0, TAU); c.fill(); c.restore();
       c.beginPath(); c.arc(x, y, r, 0, TAU); c.strokeStyle = '#120D1A'; c.lineWidth = 2.6 * px; c.stroke();
       if (i === 5) { c.save(); c.translate(x, y); c.rotate(-.35); c.scale(1, .32); c.beginPath(); c.arc(0, 0, r * 2.1, 0, Math.PI); c.strokeStyle = '#120D1A'; c.lineWidth = r * .9; c.stroke(); c.strokeStyle = '#F2DCA6'; c.lineWidth = r * .6; c.stroke(); c.restore(); }
     }
     c.globalAlpha = g0 * A;
   };
+  if (sunK > 0) { c.fillStyle = '#CDBFA9'; c.globalAlpha = g0 * A * sunK * .85; for (let i = 0; i < 1100; i++) { const belt = i < 700, rr = belt ? 445 + 60 * hash(i * 1.7) : 950 + 130 * hash(i * 2.9), a = hash(i * 5.3) * TAU + tau * (belt ? .12 : .04), [x, y] = orbXY(rr, a), sz = (1.3 + 1.8 * hash(i * 9.1)) * px; c.fillRect(x - sz / 2, y - sz / 2, sz, sz); } c.globalAlpha = g0 * A; }
   pos.forEach((p, i) => { if (Math.sin(p[3]) < 0) body(i, p); });
   // nucleus → star
   if (sunK < 1) {
@@ -190,7 +225,7 @@ function atomWorld(c, az, ox, oy, t, A = 1) {
     radial(c, 0, 0, 90, '#FF8A5C', .5 * (1 - cloud * .5));
     const inside = sstep(Math.log(150), Math.log(500), Math.log(13 * az));
     NUC.forEach((n, i) => { if (n === PS && inside > 0) return; const j = Math.sin(tau * 9 + i * 2.1) * .9, k = Math.cos(tau * 7 + i * 1.3) * .9;
-      ball(c, n.x + j, n.y + k, 13, n.pr ? '#FFB08F' : '#C6D6FF', n.pr ? '#C8342C' : '#3E5BA8', Math.max(2.4 * px, .15)); });
+      ball(c, n.x + j, n.y + k, 13, n.pr ? '#FFB08F' : '#C6D6FF', n.pr ? '#C8342C' : '#3E5BA8', Math.max(2.4 * px, .15), '#120D1A', 100 + i); });
     if (inside > 0) proton(c, tau, inside, px);
     if (fus > 0) { c.globalCompositeOperation = 'lighter'; radial(c, 0, 0, 60 + 400 * fus, '#FFF2B0', Math.sin(Math.PI * fus) * .9);
       for (let i = 0; i < 14; i++) { const a = i * 2.4 + tau, rr = 20 + 60 * frac(fus * 3 + i * .37); c.drawImage(sprite('#FFFFFF'), Math.cos(a) * rr - 14, Math.sin(a) * rr - 14, 28, 28); }
@@ -203,7 +238,7 @@ function atomWorld(c, az, ox, oy, t, A = 1) {
     for (let i = 0; i < 26; i++) { const a = i / 26 * TAU, l = R * (i % 2 ? 1.32 : 1.58), w = .075;
       inkPoly(c, [[Math.cos(a - w) * R * 1.06, Math.sin(a - w) * R * 1.06], [Math.cos(a) * l, Math.sin(a) * l], [Math.cos(a + w) * R * 1.06, Math.sin(a + w) * R * 1.06]], i % 2 ? '#FFD45A' : '#FFB02E', '#3A1606', 2.4 * px); }
     c.restore();
-    ball(c, 0, 0, R, '#FFF6C0', '#F07A1E', 4 * px, '#3A1606');
+    ball(c, 0, 0, R, '#FFF6C0', '#F07A1E', 4 * px, '#3A1606', 7);
     c.fillStyle = 'rgba(255,214,90,.55)'; for (let i = 0; i < 70; i++) { const a = hash(i) * TAU, rr = Math.sqrt(hash(i * 3.3)) * R * .9, s = R * (.05 + .05 * hash(i * 7)); c.beginPath(); c.arc(Math.cos(a) * rr, Math.sin(a) * rr, s, 0, TAU); c.fill(); }
   }
   c.globalAlpha = g0 * A;
@@ -214,7 +249,7 @@ function atomWorld(c, az, ox, oy, t, A = 1) {
 function proton(c, tau, k, px) {
   const { x, y } = PS, R = 13, g0 = c.globalAlpha;
   c.save(); c.translate(x, y);
-  ball(c, 0, 0, R, '#FF9C80', '#7A1830', Math.max(2.4 * px, .05)); c.beginPath(); c.arc(0, 0, R, 0, TAU); c.clip();
+  ball(c, 0, 0, R, '#FF9C80', '#7A1830', Math.max(2.4 * px, .05), '#120D1A', 300); c.beginPath(); c.arc(0, 0, R, 0, TAU); c.clip();
   c.globalAlpha = g0 * k; c.fillStyle = '#16061C'; c.fill(); radial(c, 0, 0, R, '#5A1648', .9);
   const q = [0, 1, 2].map(i => { const a = i / 3 * TAU - Math.PI / 2 + tau * .35; return [Math.cos(a) * 5.4 + Math.sin(tau * 5 + i) * .5, Math.sin(a) * 5.4 + Math.cos(tau * 4 + i * 2) * .5]; });
   // sea quarks
@@ -228,7 +263,7 @@ function proton(c, tau, k, px) {
     c.globalCompositeOperation = 'lighter'; path(); c.strokeStyle = `rgba(255,210,90,${.35 * fl})`; c.lineWidth = 1.4; c.stroke(); c.globalCompositeOperation = 'source-over';
     path(); c.strokeStyle = '#FFE9A0'; c.lineWidth = .28; c.stroke(); }
   const qc = [['#FF8A8A', '#D3203A'], ['#9BF0B0', '#1F9A4A'], ['#9CC2FF', '#2A55D0']];
-  q.forEach(([qx, qy], i) => { c.globalCompositeOperation = 'lighter'; c.drawImage(sprite(qc[i][0]), qx - 6, qy - 6, 12, 12); c.globalCompositeOperation = 'source-over'; ball(c, qx, qy, 2.4, qc[i][0], qc[i][1], Math.max(2.4 * px, .04)); });
+  q.forEach(([qx, qy], i) => { c.globalCompositeOperation = 'lighter'; c.drawImage(sprite(qc[i][0]), qx - 6, qy - 6, 12, 12); c.globalCompositeOperation = 'source-over'; ball(c, qx, qy, 2.4, qc[i][0], qc[i][1], Math.max(2.4 * px, .04), '#120D1A', 200 + i); });
   c.restore(); c.globalAlpha = g0;
   c.beginPath(); c.arc(x, y, R, 0, TAU); c.strokeStyle = '#120D1A'; c.lineWidth = Math.max(3 * px, .06); c.stroke();
 }
@@ -284,9 +319,11 @@ function web(c, wz, ox, oy, A, cluA) {
   const P = ([x, y]) => [ox + x * wz, oy + y * wz];
   for (const [i, j] of WEB.E) { const [ax, ay] = P(WEB.n[i]), [bx, by] = P(WEB.n[j]), mx = (ax + bx) / 2 + (hash(i * 3 + j) - .5) * .3 * (by - ay), my = (ay + by) / 2 - (hash(i + j * 5) - .5) * .3 * (bx - ax);
     if (Math.max(ax, bx, mx) < -50 || Math.min(ax, bx, mx) > W + 50 || Math.max(ay, by, my) < -50 || Math.min(ay, by, my) > H + 50) continue;
-    c.beginPath(); c.moveTo(ax, ay); c.quadraticCurveTo(mx, my, bx, by); c.strokeStyle = 'rgba(150,100,255,.5)'; c.lineWidth = Math.max(6, 90 * wz); c.stroke(); c.strokeStyle = 'rgba(255,210,170,.75)'; c.lineWidth = Math.max(2, 18 * wz); c.stroke();
-    for (let k = 1; k < 12; k++) { const u = k / 12, x = (1 - u) * (1 - u) * ax + 2 * u * (1 - u) * mx + u * u * bx, y = (1 - u) * (1 - u) * ay + 2 * u * (1 - u) * my + u * u * by, s = 6 + 10 * hash(i * 9 + k); c.drawImage(sprite('#C9A8FF'), x - s / 2, y - s / 2, s, s); } }
-  WEB.n.forEach((p, i) => { const [x, y] = P(p), s = Math.max(10, 200 * wz) * (.6 + .25 * WEB.deg[i]); if (x < -s || x > W + s || y < -s || y > H + s) return; if (i === 0 && cluA > .5) return; c.drawImage(sprite('#FFC877'), x - s / 2, y - s / 2, s, s); });
+    c.beginPath(); c.moveTo(ax, ay); c.quadraticCurveTo(mx, my, bx, by); c.strokeStyle = 'rgba(150,100,255,.3)'; c.lineWidth = Math.max(4, 50 * wz); c.stroke(); c.strokeStyle = 'rgba(255,215,180,.6)'; c.lineWidth = Math.max(1.2, 6 * wz); c.stroke();
+    const L2 = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / (L2 || 1), ny = (bx - ax) / (L2 || 1), np = Math.min(70, 8 + L2 / 12);
+    for (let k = 1; k < np; k++) { const u = k / np, h = hash(i * 9.3 + j * 3.1 + k * 1.7), o = (h - .5) * (h - .5) * 4 * Math.max(8, 70 * wz) * (hash(k * 5 + i) < .5 ? -1 : 1), x = (1 - u) * (1 - u) * ax + 2 * u * (1 - u) * mx + u * u * bx + nx * o, y = (1 - u) * (1 - u) * ay + 2 * u * (1 - u) * my + u * u * by + ny * o, sz = 3 + 6 * hash(i * 9 + k);
+      c.drawImage(sprite(h < .3 ? '#FFD8A8' : '#C9A8FF'), x - sz / 2, y - sz / 2, sz, sz); } }
+  WEB.n.forEach((p, i) => { const [x, y] = P(p), s = Math.max(8, 110 * wz) * (.6 + .25 * WEB.deg[i]); if (x < -s || x > W + s || y < -s || y > H + s) return; if (i === 0 && cluA > .5) return; c.drawImage(sprite('#FFC877'), x - s / 2, y - s / 2, s, s); });
   c.globalCompositeOperation = 'source-over'; c.globalAlpha = g0;
 }
 let CMB = null, CMBF = null;
@@ -313,13 +350,14 @@ function cmb(c, mz, ox, oy, A, fK) {
   c.save(); c.translate(x, y); c.rotate(rot); c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, TAU); c.save(); c.clip();
   if (fK < 1) { c.globalAlpha = g0 * A * (1 - fK); c.drawImage(CMB, -rx, -ry, 2 * rx, 2 * ry); }
   if (fK > 0) { c.globalAlpha = g0 * A * fK; const R = Math.max(rx, ry); c.drawImage(CMBF, -R, -R, 2 * R, 2 * R); }
-  c.restore(); c.globalAlpha = g0 * A; c.strokeStyle = '#120D1A'; c.lineWidth = 7; c.stroke(); c.strokeStyle = 'rgba(255,240,210,.35)'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, 0, rx + 9, ry + 9, 0, 0, TAU); c.stroke();
+  c.globalAlpha = g0 * A * (1 - fK); c.strokeStyle = 'rgba(30,20,40,.35)'; c.lineWidth = 1.3; c.beginPath(); for (const k of [.25, .5, .75]) c.ellipse(0, 0, rx * k, ry, 0, 0, TAU); for (const k of [-.66, -.33, 0, .33, .66]) { const hw = rx * Math.sqrt(1 - k * k); c.moveTo(-hw, ry * k); c.lineTo(hw, ry * k); } c.stroke();
+  c.restore(); c.globalAlpha = g0 * A; c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, TAU); c.strokeStyle = '#120D1A'; c.lineWidth = 7; c.stroke(); c.strokeStyle = 'rgba(255,240,210,.35)'; c.lineWidth = 2; c.beginPath(); c.ellipse(0, 0, rx + 9, ry + 9, 0, 0, TAU); c.stroke();
   c.restore(); c.globalAlpha = g0;
 }
 // everything from the oxygen atom outward, one scale chain: atom → galaxy (×40) → cluster (×12) → web (×10) → CMB (×8)
 function cosmos(c, t, az) {
   const L = Math.log, sunK = sstep(16.9, 17.7, t), k2 = sstep(11.5, 12.9, t) * (1 - sstep(15.9, 16.7, t));
-  bg(c, '#070514', '#0C0820'); stars(c, 31, 320, sstep(16.8, 18, t), t * 2);
+  bg(c, '#070514', '#0C0820'); { const nb = sstep(16.8, 18, t); if (nb > 0) { const g = c.globalAlpha; c.globalAlpha = g * nb; c.drawImage(TEX.neb, 0, 0); c.globalAlpha = g; } } stars(c, 31, 320, sstep(16.8, 18, t), t * 2);
   const gz = az * 40, cz = gz * 12, wz = cz * 10, mz = wz * 8;
   let Oa = [CEN[0] - PS.x * az * k2, CEN[1] - PS.y * az * k2];
   const Og0 = [Oa[0] - GAL.sun[0] * gz, Oa[1] - GAL.sun[1] * gz], Oc0 = [Og0[0] - AC[0] * cz, Og0[1] - AC[1] * cz], Ow0 = [Oc0[0] - WEB.n[0][0] * wz, Oc0[1] - WEB.n[0][1] * wz];
@@ -348,7 +386,8 @@ function wonder(c, t, fx = W / 2, fy = H / 2) {
         c.globalAlpha = sstep(10.45, 11.15, t); bg(c, '#070514', '#0C0820'); atomWorld(c, az, fx + vx, fy + vy, t, 1); c.globalAlpha = 1; } }
     else cosmos(c, t, az);
   }
-  // paper fibre over the night, so pigment sits on the same sheet as Clawd
+  // rain-hatch on the dark ground and a signed grain (dithers the glows, no banding), then the paper fibre
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'screen'; c.drawImage(TEX.rain, 0, 0); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .16; c.drawImage(TEX.grain, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
   c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = .35; c.globalCompositeOperation = 'soft-light'; c.drawImage(paperG.canvas || paperG.elt, 0, 0); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
 }
 
@@ -361,6 +400,23 @@ function flakePos(t) {   // falling with a sway, lands on his head at 4.4
   const k = seg(t, 0, 4.4), x = lerp(1240, FL[0], ease(k)) + Math.sin(t * 2.3) * 70 * (1 - k), y = lerp(-60, FL[1], k);
   return [x, y, t * 1.4 * (1 - k)];
 }
+function pencilBurst(u, x, y, k) {   // concentration lines + construction circles around what he's looking at (screen px)
+  if (k <= .01) return; const r = rng(515); u.save(); u.lineCap = 'round'; u.globalAlpha = k; u.lineWidth = 1.1;
+  u.strokeStyle = 'rgba(70,60,50,.42)'; u.beginPath();
+  for (let i = 0; i < 180; i++) { const a = r() * TAU, r0 = 150 + r() * 260 + (1 - k) * 200, l = 60 + r() * 440; u.moveTo(x + Math.cos(a) * r0, y + Math.sin(a) * r0); u.lineTo(x + Math.cos(a) * (r0 + l), y + Math.sin(a) * (r0 + l)); }
+  u.stroke(); u.strokeStyle = 'rgba(70,60,50,.33)';
+  for (const [R, d] of [[110, 0], [200, 1], [330, 0], [520, 1]]) { u.setLineDash(d ? [7, 6] : []); u.beginPath(); u.arc(x, y, R * (.7 + .3 * k), 0, TAU); u.stroke(); }
+  u.restore();
+}
+const CLH = (() => { const r = rng(808), d = [], l = []; for (let i = 0; i < 150; i++) { const x = -4.8 + r() * 9.6, y = -7.8 + r() * 5.6, k = (x + 5) / 10 * .45 + (y + 8) / 6 * .55; if (k > .4 + r() * .3) d.push([x, y, .5 + r() * .9]); else if (k < .55) l.push([x, y, .5 + r() * 1.1]); } return { d, l }; })();
+function clawdHatch(c, toS, z, x, y, flip) {   // the reference's pencil hatching on the body, in body units (fixed: no boil), eyes and mouth kept clean
+  const [sx, sy] = toS(x, y), u = U * z; c.save(); c.setTransform(u * (flip ? -1 : 1), 0, 0, u, sx, sy);
+  c.beginPath(); c.rect(-4.85, -7.85, 9.7, 5.7); c.rect(-3.6, -7.6, 2.2, 3); c.rect(1.4, -7.6, 2.2, 3); c.rect(-1.3, -5, 2.6, 1.2); c.clip('evenodd');
+  c.lineCap = 'round'; c.lineWidth = 1.5 / u * Math.min(3, Math.sqrt(z));
+  c.strokeStyle = 'rgba(140,52,30,.5)'; c.beginPath(); for (const [px, py, l] of CLH.d) { c.moveTo(px, py); c.lineTo(px + l * .45, py - l * .9); } c.stroke();
+  c.strokeStyle = 'rgba(255,196,166,.6)'; c.beginPath(); for (const [px, py, l] of CLH.l) { c.moveTo(px, py); c.lineTo(px + l, py + l * .05); } c.stroke();
+  c.restore();
+}
 function flushBrush() { brush.noStroke(); brush.noHatch(); brush.noWash(); brush.fill('#000000', 1); brush.fillBleed(0); brush.fillTexture(0, 0); brush.polygon([[-50, -50], [-40, -50], [-40, -40]]); brush.noFill(); }
 function steadyClawd(x, y, u, o) { randomSeed(4242); clawd(x, y, u, o); }       // fixed seed: one model, no boil
 
@@ -369,7 +425,8 @@ function paperScene(t) {
   const hap = t > 29.45, hop = hap ? Math.max(0, Math.sin(seg(t, 29.9, 31.7) * Math.PI * 3)) : 0, F = [FL[0], FL[1] - hop * 1.6 * U];
   const cx = lerp(W / 2, F[0], fk), cy = lerp(H / 2, F[1], fk), toS = (px, py) => [(px - cx) * z + W / 2, (py - cy) * z + H / 2];
   { const u = UL.drawingContext; u.setTransform(1, 0, 0, 1, 0, 0); u.clearRect(0, 0, W, H); u.strokeStyle = '#8C8274'; u.lineWidth = Math.max(1.4, 1.4 * z); u.lineCap = 'round'; u.beginPath();
-    for (let gx = -900; gx <= W + 900; gx += 40) { const [a, b2] = toS(gx, GY + Math.sin(gx * .013) * .9 + Math.sin(gx * .071) * .5); gx === -900 ? u.moveTo(a, b2) : u.lineTo(a, b2); } u.stroke(); image(UL, 0, 0, W, H); }
+    for (let gx = -900; gx <= W + 900; gx += 40) { const [a, b2] = toS(gx, GY + Math.sin(gx * .013) * .9 + Math.sin(gx * .071) * .5); gx === -900 ? u.moveTo(a, b2) : u.lineTo(a, b2); } u.stroke();
+    const [bx, by] = toS(...F); pencilBurst(u, bx, by, out ? sstep(27.8, 28.3, t) * (1 - sstep(28.9, 29.5, t)) : sstep(4.7, 5.4, t) * (1 - sstep(6.6, 7.0, t))); image(UL, 0, 0, W, H); }
   camBegin(cx, cy, z);
   const x = clawdX(t), walking = t > .3 && t < 3.1;
   const o = { flip: walking, walk: walking ? (2150 - x) / 95 : null, dy: walking ? -Math.abs(Math.sin((2150 - x) / 95 * Math.PI)) * .25 : -hop * 1.6,
@@ -379,8 +436,9 @@ function paperScene(t) {
   if (t > 4.4 && t < 4.65) o.sq = .07 * Math.sin(seg(t, 4.4, 4.65) * Math.PI);
   steadyClawd(x, GY, U, o);
   camEnd(); flushBrush();
-  // overlay (2D, screen space): the flake (or the whole wonder frame fading in/out around it), snowfall at the end
+  // overlay (2D, screen space): hatching on Clawd, the flake (or the whole wonder frame fading in/out around it), snowfall at the end
   const c = OV.drawingContext; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H);
+  clawdHatch(c, toS, z, x, GY + o.dy * U, o.flip);
   const fp = t < 4.4 ? flakePos(t) : [F[0], F[1], hap ? Math.sin(t * 3) * .15 : 0], [sx, sy] = toS(fp[0], fp[1]);
   const wa = out ? 1 - sstep(28.15, 28.65, t) : sstep(6.45, 6.95, t);
   flakeSnow(c, sx, sy, SN * z * (t < 4.4 ? 1 + 1.4 * (1 - seg(t, 0, 4.4)) : 1), fp[2]);
@@ -391,6 +449,7 @@ function paperScene(t) {
 }
 
 function drawWorld(t) {
+  if (!TEX) textures();
   if (!WG) { WG = createGraphics(W, H); WG.pixelDensity(1); OV = createGraphics(W, H); OV.pixelDensity(1); UL = createGraphics(W, H); UL.pixelDensity(1); }
   if (t >= 7.0 && t < 28.1) { wonder(WG.drawingContext, t); image(WG, 0, 0, W, H); }
   else paperScene(t);

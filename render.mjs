@@ -121,10 +121,10 @@ if (args.sheet) {
   const n = Math.round((b - a) * fps), [i0, i1] = args.part ? String(args.part).split(':').map(Number) : [0, n], start = Date.now();
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
     ...(args.part ? [] : ['-ss', String(a), '-t', String(b - a), '-i', S.audio, ...(args.fade ? ['-af', `afade=t=in:d=0.06:curve=tri,afade=t=out:st=${(b - a - .35).toFixed(3)}:d=0.35`] : []), '-map', '0:v', '-map', '1:a']),
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', ...(args.part ? [] : ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest']), out],
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', String(args.crf || 19), '-pix_fmt', 'yuv420p', ...(args.part ? [] : ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest']), out],
     { stdio: ['pipe', 'inherit', 'inherit'] });
   for (let i = i0; i < i1; i++) {
-    const buf = await frameOf(page, a + i / fps, 'image/jpeg', .92);
+    const buf = await frameOf(page, a + i / fps, 'image/jpeg', +(args.q || .92));
     if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
     if (i % 24 === 0 || i === i1 - 1) console.log(`frame ${i + 1}/${n}  ${((Date.now() - start) / (i - i0 + 1)).toFixed(0)} ms/frame`);
   }
