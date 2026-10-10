@@ -1,5 +1,6 @@
 // s5_flight.js: segment E (21.25 – 28.75): ink burst → ring tunnel → warp → beam → rocket → arc/Moon → Earth-rise → push-in → Julia zoom → soup bubble.
 (() => {
+  let BO = 0, FLK = 0, BA = 1;   // boil frame index and star-flicker amplitude (the reference redraws lines/stars at 12 fps in the Earth-rise)
   const T0 = 21.25, T1 = 28.75, CX = W / 2, CY = H / 2;
   const { mono, sstep, rng, hash } = K;
   const fr = n => (n - 1) / 24;
@@ -23,14 +24,13 @@
     MOON = K.canvas(W, 420); const g = MOON.getContext('2d');
     const gr = g.createLinearGradient(0, 0, 0, 420); gr.addColorStop(0, '#B4B4BE'); gr.addColorStop(.35, '#7C7C86'); gr.addColorStop(1, '#5F5F6B'); g.fillStyle = gr; g.fillRect(0, 0, W, 420);
     r = rng(23); g.lineCap = 'round';
-    for (let i = 0; i < 1400; i++) { const x = r() * W, y = r() * 420, l = 8 + r() * 26; g.strokeStyle = `rgba(${r() < .5 ? '60,60,72' : '200,200,212'},${.08 + r() * .12})`; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y + l * .05); g.stroke(); }
     const cr = [[220, 120, 80, 18], [540, 70, 30, 9], [900, 200, 70, 20], [1130, 40, 30, 9], [1470, 130, 70, 20], [1700, 200, 60, 16], [300, 250, 120, 30], [740, 330, 100, 24], [1250, 330, 130, 30], [1600, 300, 90, 20], [60, 190, 50, 12], [1860, 110, 40, 12], [980, 90, 50, 12]];
     for (const [x, y, rx, ry] of cr) { g.fillStyle = 'rgba(88,88,100,.55)'; g.beginPath(); g.ellipse(x, y, rx * .8, ry * .8, 0, 0, 7); g.fill(); g.strokeStyle = 'rgba(205,205,218,.8)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y + 2, rx, ry, 0, .15, Math.PI - .15); g.stroke(); g.strokeStyle = 'rgba(60,60,74,.55)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(x, y, rx, ry, 0, Math.PI + .2, 6.1); g.stroke(); }
   };
 
   const starField = (c, a = 1, cross = true) => {
     if (a <= 0) return; const g0 = c.globalAlpha; c.fillStyle = '#FFF2DA';
-    for (const s of STARS) { c.globalAlpha = g0 * a * s.k; c.fillRect(s.x, s.y, s.s, s.s); if (cross && s.cross) { c.fillRect(s.x - 5, s.y + .5, 12, 1); c.fillRect(s.x + .5, s.y - 5, 1, 12); } }
+    for (let i = 0; i < STARS.length; i++) { const s = STARS[i]; c.globalAlpha = g0 * a * s.k * (1 - FLK + FLK * 1.3 * hash(i * 1.7 + BO * 5.1)); c.fillRect(s.x, s.y, s.s, s.s); if (cross && s.cross) { c.fillRect(s.x - 5, s.y + .5, 12, 1); c.fillRect(s.x + .5, s.y - 5, 1, 12); } }
     c.globalAlpha = g0;
   };
   const glow = (c, x, y, r, col, a = 1) => { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, rgb(...col, a)); g.addColorStop(.35, rgb(...col, a * .35)); g.addColorStop(1, rgb(...col, 0)); c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r); };
@@ -105,22 +105,25 @@
   const BW = mono([[22.4, 20], [22.5, 25], [23.0, 35], [23.25, 45], [23.42, 68], [24.0, 68]]);
   const NOZ = mono([[23.40, -140], [23.46, -50], [23.5, 80], [23.58, 500], [23.67, 660], [23.75, 700], [23.92, 760], [24.0, 770], [24.083, 830]]);
   const beamX = y => CX + Math.sin(y * .006 + 1) * 3;
+  const BWK = mono([[23.2, 1], [23.46, 1.7]]), FWK = mono([[23.46, 1.7], [23.6, 1.35], [23.78, 1]]);
   const beam = (c, t, y0) => {  // vertical golden beam from y0 to the bottom: flat white core 44 px, gold halo ~60 px each side
     if (y0 > H) return;
-    const x = CX, top = Math.max(-5, y0);
+    const x = CX, top = Math.max(-5, y0), k = BWK(t);
+    c.save(); c.translate(x, 0); c.scale(k, 1); c.translate(-x, 0);
     let g = c.createLinearGradient(x - 110, 0, x + 110, 0);
     g.addColorStop(0, 'rgba(255,170,60,0)'); g.addColorStop(.25, 'rgba(255,190,90,.25)'); g.addColorStop(.38, 'rgba(255,210,122,.6)'); g.addColorStop(.5, 'rgba(255,225,150,.85)'); g.addColorStop(.62, 'rgba(255,210,122,.6)'); g.addColorStop(.75, 'rgba(255,190,90,.25)'); g.addColorStop(1, 'rgba(255,170,60,0)');
     c.fillStyle = g; c.fillRect(x - 110, top, 220, H - top);
     g = c.createLinearGradient(x - 26, 0, x + 26, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.1, '#FFFFFF'); g.addColorStop(.9, '#FFFFFF'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    c.fillStyle = g; c.fillRect(x - 26, top, 52, H - top);
+    c.fillStyle = g; c.fillRect(x - 26, top, 52, H - top); c.restore();
   };
-  const flame = (c, x, y0) => {   // beam-width plume under the nozzle
+  const flame = (c, x, y0, t) => {   // beam-width plume under the nozzle
+    c.save(); c.translate(x, 0); c.scale(FWK(t), 1); c.translate(-x, 0);
     let g = c.createLinearGradient(x - 110, 0, x + 110, 0);
     g.addColorStop(0, 'rgba(255,170,60,0)'); g.addColorStop(.3, 'rgba(255,190,90,.3)'); g.addColorStop(.4, 'rgba(255,210,122,.65)'); g.addColorStop(.5, 'rgba(255,225,150,.9)'); g.addColorStop(.6, 'rgba(255,210,122,.65)'); g.addColorStop(.7, 'rgba(255,190,90,.3)'); g.addColorStop(1, 'rgba(255,170,60,0)');
     c.fillStyle = g; c.fillRect(x - 110, y0 + 20, 220, H - y0);
     glow(c, x, y0 + 40, 90, [255, 210, 122], .6);
     g = c.createLinearGradient(x - 26, 0, x + 26, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.12, '#FFFFFF'); g.addColorStop(.88, '#FFFFFF'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    c.fillStyle = g; c.fillRect(x - 26, y0 + 10, 52, H - y0);
+    c.fillStyle = g; c.fillRect(x - 26, y0 + 10, 52, H - y0); c.restore();
   };
   const rocket = (c, x, y, ang, s) => {
     c.save(); c.translate(x, y); c.rotate(ang); c.scale(s, s);
@@ -167,10 +170,12 @@
 
   // ---------- D. Moon + Earth ----------
   const LIMB = [0, 905, 960, 765, 1920, 905];
-  const moon = (c, dy, a = 1) => {
+  const moon = (c, dy, a = 1, band = false) => {
     const o = circ(0, LIMB[1], 960, LIMB[3], 1920, LIMB[5]); c.save(); c.translate(0, dy);
     c.beginPath(); c.arc(o.x, o.y, o.r, 0, 6.2832); c.clip(); c.globalAlpha = a;
+    if (band) { c.beginPath(); c.moveTo(0, 0); c.lineTo(W, 0); for (let x = W; x >= 0; x -= 40) c.lineTo(x, 945 + 9 * Math.sin(x * .02) + 6 * Math.sin(x * .057)); c.closePath(); c.clip(); }
     c.drawImage(MOON, 0, LIMB[3]); c.fillStyle = '#5F5F6B'; c.fillRect(0, LIMB[3] + 420, W, 600);
+    { const r = rng(BO * 977 + 13); c.lineCap = 'round'; c.lineWidth = 1.2; for (let i = 0; i < 3600 * BA; i++) { const x = r() * W, y = LIMB[3] + 6 + r() * 420, l = 8 + r() * 26, d = r() < .5; c.strokeStyle = `rgba(${d ? '60,60,72' : '215,215,228'},${Math.min(.8, (.14 + r() * .22) * (1 + .5 * (BA - 1)))})`; c.beginPath(); c.moveTo(x, y); c.lineTo(x + l, y + l * .05); c.stroke(); } }
     c.restore(); c.save(); c.translate(0, dy); c.strokeStyle = 'rgba(225,225,235,.9)'; c.lineWidth = 3; c.beginPath(); c.arc(o.x, o.y, o.r, 0, 6.2832); c.stroke(); c.restore();
   };
   const E0 = 198, EY = mono([[25.33, 943], [25.417, 873], [26.0, 709], [26.5, 622], [27.0, 585], [27.21, 578], [27.3, 577]]);
@@ -183,9 +188,10 @@
   const CLOUD = [[[725, 320], [870, 285], [1080, 282]], [[870, 385], [1000, 350], [1200, 365], [1390, 420]], [[1060, 575], [1200, 535], [1370, 625]], [[860, 900], [1000, 925], [1200, 940]], [[780, 1030], [850, 1010], [965, 1002]], [[925, 115], [1030, 130], [1130, 115]]].map(U);
   const ISL = [(960 - 1118) / 622, (570 - 677) / 622];
   const land = (c, p, R, f, hatch) => {
+    c.save(); c.translate((hash(BO * 1.37 + p.length) - .5) * R / 20 * BA, (hash(BO * 2.11 + p.length) - .5) * R / 20 * BA);
     c.beginPath(); p.forEach(([x, y], i) => i ? c.lineTo(x * R, y * R) : c.moveTo(x * R, y * R)); c.closePath(); c.fillStyle = f; c.fill();
-    c.save(); c.clip(); c.strokeStyle = hatch; c.lineWidth = Math.max(1, R / 300); c.beginPath(); const st = R / 34; for (let x = -R * 1.2; x < R * 1.2; x += st) for (let y = -R * 1.2; y < R * 1.2; y += st * 1.1) { c.moveTo(x + (hash(x * .1 + y) - .5) * st * .5, y); c.lineTo(x + st * .35, y + st * .9); } c.stroke(); c.restore();
-    c.beginPath(); p.forEach(([x, y], i) => i ? c.lineTo(x * R, y * R) : c.moveTo(x * R, y * R)); c.closePath(); c.strokeStyle = 'rgba(10,25,70,.9)'; c.lineWidth = Math.max(1.5, R / 150); c.lineJoin = 'round'; c.stroke();
+    c.save(); c.clip(); c.strokeStyle = hatch; c.lineWidth = Math.max(1, R / 300); c.beginPath(); const st = R / 34; for (let x = -R * 1.2; x < R * 1.2; x += st) for (let y = -R * 1.2; y < R * 1.2; y += st * 1.1) { c.moveTo(x + (hash(x * .1 + y + BO * 3.7) - .5) * st * .8, y + (hash(x + y * .3 + BO * 1.9) - .5) * st * .5); c.lineTo(x + st * .35, y + st * .9); } c.stroke(); c.restore();
+    c.beginPath(); p.forEach(([x, y], i) => i ? c.lineTo(x * R, y * R) : c.moveTo(x * R, y * R)); c.closePath(); c.strokeStyle = 'rgba(10,25,70,.9)'; c.lineWidth = Math.max(1.5, R / 150); c.lineJoin = 'round'; c.stroke(); c.restore();
   };
   let OCEAN = null;
   const earth = (c, cx, cy, R, swirlA, det = 1, dk = 0) => {
@@ -193,7 +199,7 @@
     c.beginPath(); c.arc(0, 0, R, 0, 7); c.save(); c.clip();
     const g = c.createLinearGradient(-R, -R, R * .5, R); g.addColorStop(0, K.mix('#2F7BE0', '#1C448A', dk)); g.addColorStop(1, K.mix('#1F58B4', '#1C448A', dk)); c.fillStyle = g; c.fillRect(-R, -R, 2 * R, 2 * R);
     const lg = c.createRadialGradient(ISL[0] * R, ISL[1] * R, 0, ISL[0] * R, ISL[1] * R, R * .5); lg.addColorStop(0, `rgba(150,205,255,${.55 * (1 - dk)})`); lg.addColorStop(1, 'rgba(150,205,255,0)'); c.fillStyle = lg; c.fillRect(-R, -R, 2 * R, 2 * R);
-    c.strokeStyle = 'rgba(15,50,140,.28)'; c.lineWidth = Math.max(1, R / 330); c.lineCap = 'round'; c.beginPath(); const r = rng(9); for (let i = 0; i < 70; i++) { const x = (r() * 2 - 1) * R, y = (r() * 2 - 1) * R, l = R * .05; c.moveTo(x, y); c.lineTo(x + l, y + l * .05); } c.stroke();
+    c.strokeStyle = `rgba(15,50,140,${Math.min(.8, .4 * BA)})`; c.lineWidth = Math.max(1, R / 280); c.lineCap = 'round'; c.beginPath(); const r = rng(9 + (BO % 997) * 17); for (let i = 0; i < 70; i++) { const x = (r() * 2 - 1) * R, y = (r() * 2 - 1) * R, l = R * .05; c.moveTo(x, y); c.lineTo(x + l, y + l * .05); } c.stroke();
     c.globalAlpha = det;
     land(c, GLEFT, R, '#58B552', 'rgba(35,110,50,.65)'); land(c, OCH, R, '#E6B95C', 'rgba(80,160,70,.5)'); land(c, GTOP, R, '#58B552', 'rgba(35,110,50,.65)');
     c.fillStyle = 'rgba(88,181,82,.95)'; c.beginPath(); c.ellipse((1285 - 1118) / 622 * R, (590 - 677) / 622 * R, .21 * R, .27 * R, 0, 0, 7); c.fill();
@@ -202,7 +208,7 @@
     if (swirlA > 0) { c.globalAlpha = swirlA; c.lineWidth = Math.max(2, R / 30); c.beginPath(); for (let a = 0; a < 11; a += .12) { const rr = (.02 + a * .012) * R, x = ISL[0] * R + Math.cos(a) * rr, y = ISL[1] * R + Math.sin(a) * rr; a ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); c.globalAlpha = 1; }
     // night side: the lit circle shifted left/down; crosshatched
     c.save(); c.globalAlpha = det; c.beginPath(); c.rect(-R, -R, 2 * R, 2 * R); c.arc(-.42 * R, .08 * R, R * 1.02, 0, 7); c.clip('evenodd'); c.fillStyle = 'rgba(8,22,80,.82)'; c.fillRect(-R, -R, 2 * R, 2 * R);
-    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(1, R / 260); c.beginPath(); const r2 = rng(4); for (let i = 0; i < 220; i++) { const x = (-.2 + r2() * 1.3) * R, y = (r2() * 2 - 1) * R, l = R * .07; c.moveTo(x, y); c.lineTo(x + l, y - l); c.moveTo(x, y); c.lineTo(x + l, y + l); } c.stroke(); c.restore();
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(1, R / 260); c.beginPath(); const r2 = rng(4 + (BO % 997) * 13); for (let i = 0; i < 220; i++) { const x = (-.2 + r2() * 1.3) * R, y = (r2() * 2 - 1) * R, l = R * .07; c.moveTo(x, y); c.lineTo(x + l, y - l); c.moveTo(x, y); c.lineTo(x + l, y + l); } c.stroke(); c.restore();
     c.globalAlpha = 1; c.restore();
     c.lineWidth = Math.max(2, R / 60); c.strokeStyle = '#6CC0F2'; c.beginPath(); c.arc(0, 0, R * 1.015, Math.PI * .55, Math.PI * 1.75); c.stroke();
     c.lineWidth = Math.max(1.5, R / 150); c.strokeStyle = 'rgba(12,16,50,.9)'; c.beginPath(); c.arc(0, 0, R * 1.03, 0, 7); c.stroke();
@@ -276,6 +282,7 @@ const LSK = mono([[27.5, 1], [27.917, 1], [28.08, .96], [28.2, 1.2], [28.35, 1.5
   SC.add(T0, T1, { draw: (c, t) => {
     init();
     if (t >= 24.8 && t < 27.2) t = Math.floor(t * 12 + 1e-6) / 12;       // Earth-rise is on twos
+    BO = t >= 25.4 ? (t < 27.21 ? Math.floor(t * 12 + 1e-6) : Math.floor(t * 24 + 1e-6)) : Math.floor(t * 24 + 1e-6); BA = t >= 27.21 ? 3.2 : 1; FLK = t >= 25.4 ? .95 : (t >= 22.5 ? .12 : 0);
     if (t < fr(513)) return t < 21.272 ? burst(c) : flash(c);
     if (t < 22.3) {                                                      // rings → dark disc → warp
       if (t < 22.0) rings(c, t);
@@ -292,7 +299,7 @@ const LSK = mono([[27.5, 1], [27.917, 1], [28.08, .96], [28.2, 1.2], [28.35, 1.5
       if (t < 24.083) {
         const ny = t < 23.4 ? -1e3 : NOZ(t);
         if (t < 23.4) { const hy = HEAD(t); beam(c, t, Math.max(hy, 0)); if (hy > -60) { glow(c, CX, hy, 110, [255, 225, 160], .8); c.fillStyle = '#FFFFFF'; c.beginPath(); c.arc(CX, hy, 28, 0, 7); c.fill(); } }
-        else if (t < 23.46) beam(c, t, -5); else { flame(c, t < 23.75 ? CX : NX(t), ny + 4); }
+        else if (t < 23.46) beam(c, t, -5); else { flame(c, t < 23.75 ? CX : NX(t), ny + 4, t); }
         if (t >= 23.46) rocket(c, t < 23.75 ? CX : NX(t), ny, t < 23.92 ? 0 : NA(t), t < 23.75 ? 1 : NS(t));
         return;
       }
@@ -303,7 +310,7 @@ const LSK = mono([[27.5, 1], [27.917, 1], [28.08, .96], [28.2, 1.2], [28.35, 1.5
     }
     // Moon + Earth
     const dy = mono([[27.208, 0], [27.5, 30], [27.62, 95], [27.7, 150], [27.85, 400]])(t);
-    if (t < 27.3) { const ey = EY(t), R = E0; earth(c, 964, ey, R, 1); moon(c, 0); return; }
+    if (t < 27.3) { const ey = EY(t), R = E0; earth(c, 964, ey, R, 1); moon(c, 0, 1, t < 25.4); return; }
     // push into Earth about the island
     const R = Math.exp(ER(t)), k = R / E0, cx = PIV[0] + (EC0[0] - PIV[0]) * k, cy = PIV[1] + (EC0[1] - PIV[1]) * k;
     if (t < 27.84) {

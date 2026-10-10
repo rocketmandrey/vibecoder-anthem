@@ -67,10 +67,11 @@
     const cs = Math.cos(h.rot), sn = Math.sin(h.rot);
     let x = p.sx, y = p.sy;
     if (t < 13.95) { const u = sstep(13.69 + .06 * p.r4, 13.93, t); x = lerp(p.ix, p.sx, u) + p.jx * 24 * Math.sin(3.14 * u) * (1 - u); y = lerp(p.iy, p.sy, u) + p.jy * 24 * Math.sin(3.14 * u) * (1 - u); }
+    if (t > 13.95 && t < 15.5) { const f = Math.round(t * 24); x += (hash(f * 3.7 + p.i) - .5) * (t < 14.4 ? 6 : 3.5); y += (hash(f * 5.3 + p.i * 1.3) - .5) * (t < 14.4 ? 6 : 3.5); }
     return [h.x + x * cs - y * sn, h.y + x * sn + y * cs];
   }
   function drawFlower(c, t) {
-    const h = headState(t), R = HR;
+    const h = headState(t), R = HR, fr = Math.round(t * 24), ba = t < 15.5 ? 1 : 0, bj = (k, a) => (hash(fr * 7.31 + k * 1.7) - .5) * a * ba * 1.8;
     c.save(); c.translate(h.x, h.y); c.rotate(h.rot);
     
     // sepals
@@ -82,8 +83,9 @@
       if (p.L !== L) continue;
       const g = ease.out(Math.min(1, Math.max(0, (t - p.d) / .22)));
       if (g <= 0) continue;
-      const len = p.len * g, w = p.w * (.35 + .65 * g), bend = p.bend * g;
-      c.save(); c.rotate(p.th + (1 - g) * .5); c.translate(R - 18, 0);
+      const pk = petals.indexOf(p), lj = 1 + bj(pk + 40, .1) * g;
+      const len = p.len * g * lj, w = p.w * (.35 + .65 * g) * lj, bend = p.bend * g + bj(pk + 80, .5);
+      c.save(); c.rotate(p.th + (1 - g) * .5 + bj(pk, .16) * g); c.translate(R - 18, 0);
       c.fillStyle = L ? '#f2b41b' : '#fec01c'; c.strokeStyle = '#3b2a10'; c.lineWidth = 2;
       c.beginPath(); c.moveTo(0, -w * .3); c.bezierCurveTo(len * .3, -w * .6, len * .75, -w * .42 + bend * 20, len, bend * 30);
       c.bezierCurveTo(len * .75, w * .42 + bend * 20, len * .3, w * .6, 0, w * .3); c.closePath(); c.fill(); c.stroke();
@@ -133,7 +135,7 @@
   const galPos = (p, t) => { const f = p.phi + .16 / (p.rho + .25) * (t - 17.5); return [GCx + GAx * p.rho * Math.cos(f), GCy + GBy * p.rho * Math.sin(f)]; };
   const Sc = mono([[20.5, 1], [20.8, .97], [20.9, .89], [21.0, .78], [21.042, .6], [21.1, .48], [21.167, .4], [21.3, .38]]);
   const dA = mono([[18.8, 440], [19.0, 452], [19.3, 535], [19.6, 575], [20.0, 608], [20.5, 622], [20.9, 626]]), dBr = mono([[19, .36], [19.6, .35], [20, .34], [20.9, .31], [21.25, .3]]);
-  const dRot = mono([[19, 0], [19.6, -.07], [20, -.18], [20.5, -.25], [20.9, -.3], [21.1, -.34], [21.25, -.4]]), hR = mono([[19, 88], [20, 104], [20.9, 104]]), hatK = mono([[19, 2], [19.3, 2.4], [19.6, 2.65], [20, 2.9], [20.5, 3.15], [20.9, 3.2]]);
+  const dRotB = mono([[19, 0], [19.6, -.07], [20, -.18], [20.5, -.25], [20.9, -.3], [21.1, -.34], [21.25, -.4]]), dRot = t => dRotB(t) + .025 * sstep(19.4, 19.8, t) * Math.sin(t * 5), hR = mono([[19, 88], [20, 104], [20.9, 104]]), hatK = mono([[19, 2], [19.3, 2.4], [19.6, 2.65], [20, 2.9], [20.5, 3.15], [20.9, 3.2]]);
   const tiltK = t => sstep(19.4, 20.1, t);
   const BHx = 955, BHy = 535;
   function diskGeom(t) {
@@ -141,7 +143,7 @@
     return { s, a, b: a * dBr(t), rot: dRot(t), r, Rh: r * hatK(t), x: BHx + (1 - s) * 0, y: BHy, cx: BHx + 8 * tk * s, cy: BHy - 28 * tk * s };
   }
   const diskPos = (p, t, G) => {
-    const q = .55 + .52 * Math.pow(p.rho, .8), f = p.phi + .7 / (q + .25) * (t - 18.9), ex = G.a * q * Math.cos(f), ey = G.b * q * Math.sin(f), cs = Math.cos(G.rot), sn = Math.sin(G.rot);
+    const fr = Math.round(t * 24), q = .55 + .52 * Math.pow(p.rho, .8), f = p.phi + .7 / (q + .25) * (t - 18.9) + (t > 19.3 ? (hash(fr * 3.1 + p.i) - .5) * .08 : 0), ex = G.a * q * Math.cos(f), ey = G.b * q * Math.sin(f), cs = Math.cos(G.rot), sn = Math.sin(G.rot);
     return { x: G.cx + ex * cs - ey * sn, y: G.cy + ex * sn + ey * cs, q, f, tx: (-G.a * Math.sin(f)) * cs - (G.b * Math.cos(f)) * sn, ty: (-G.a * Math.sin(f)) * sn + (G.b * Math.cos(f)) * cs };
   };
   const qCols = ['#fff3c4', '#ffd25a', '#f9a043', '#f06a58', '#d8479a', '#a640a8'];
@@ -171,7 +173,7 @@
       let q = 0, td = 0;
       if (dg) {
         td = sstep(0, 1, (t - 18.76 - .12 * p.r4) / .3);
-        if (td > 0) { const d = diskPos(p, t, dg); x = lerp(x, d.x, td); y = lerp(y, d.y, td); const L = Math.hypot(d.tx, d.ty); hx = lerp(hx, d.tx / L, td); hy = lerp(hy, d.ty / L, td); q = d.q; len = lerp(len, 12 + 34 * d.q * dg.s, td); }
+        if (td > 0) { const d = diskPos(p, t, dg); x = lerp(x, d.x, td); y = lerp(y, d.y, td); const L = Math.hypot(d.tx, d.ty); hx = lerp(hx, d.tx / L, td); hy = lerp(hy, d.ty / L, td); q = d.q; len = lerp(len, (12 + 34 * d.q * dg.s) * (t > 19.3 ? .7 + .6 * hash(Math.round(t * 24) * 1.9 + p.i * .7) : 1), td); }
       }
       if (p.hid) len *= 1 - sstep(17.2, 17.4, t) * (1 - sstep(17.55, 17.75, t));
       pts.push([x, y, Math.atan2(hy, hx || 1e-6), col, td, q, len, p]);
@@ -230,6 +232,16 @@
     const gr = c.createRadialGradient(0, 0, G.a * qi, 0, 0, G.a * fo);
     gr.addColorStop(0, '#fff1c0'); gr.addColorStop(.15, '#ffe07a'); gr.addColorStop(.45, '#fab048'); gr.addColorStop(.72, '#f48c46'); gr.addColorStop(.88, '#ea6a70'); gr.addColorStop(1, '#c044a0');
     c.globalAlpha = ap; c.fillStyle = gr; c.beginPath(); c.arc(0, 0, G.a * fo, 0, 6.2832); c.arc(0, 0, G.a * qi, 0, 6.2832, true); c.fill('evenodd');
+    c.globalAlpha = ap * sstep(19.15, 19.5, t); const fr = Math.round(t * 24);
+    [['rgba(255,246,210,.95)', 0], ['rgba(255,140,60,.9)', 1], ['rgba(245,80,150,.9)', 2], ['rgba(150,50,110,.7)', 3]].forEach(([col, kk]) => {
+      c.strokeStyle = col; c.lineWidth = 5.5; c.beginPath();
+      for (let k = 0; k < 1000; k++) {
+        const u = hc(k + kk * 300, 40), q = kk === 0 ? qi + (.75 - qi) * u : kk === 1 ? .55 + .35 * u : .8 + .2 * u, R = G.a * q;
+        const f = hc(k + kk * 300, 41) * 6.2832 + .7 / (q + .25) * t + (hash(fr * 2.3 + k + kk * 300) - .5) * .3, L = (30 + 60 * hc(k + kk * 300, 42)) * (.5 + 1.0 * hash(fr * 1.7 + k + kk)) / R;
+        c.moveTo(R * Math.cos(f), R * Math.sin(f)); c.arc(0, 0, R, f, f + L);
+      }
+      c.stroke();
+    });
     c.globalAlpha = 1; c.fillStyle = '#0a0a1c'; c.beginPath(); c.arc(0, 0, G.a * qi * 1.02, 0, 6.2832); c.fill();
     c.restore(); return; }
     // hat
