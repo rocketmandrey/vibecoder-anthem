@@ -53,7 +53,7 @@
     c.strokeStyle = 'rgba(180,185,235,.35)'; c.lineWidth = 1.5; c.setLineDash([9, 9]); c.beginPath(); c.ellipse(900, 640, 790, 1300, 0, 0, TAU); c.stroke(); c.setLineDash([]);
     // blobs: flat-colour regions segmented from the reference (painter's order, biggest first), each drifting a little; two neighbouring key sets crossfade
     c.lineJoin = 'round';
-    BLF[cl(Math.floor(t * 24 + 1e-6) + 1, 180, 202)].forEach(b => { const P = b[3]; c.beginPath();
+    BLF[t < 20 ? cl(Math.floor(t * 24 + 1e-6) + 1, 180, 202) : 183].forEach(b => { const P = b[3]; c.beginPath();
       for (let j = 0; j < P.length; j += 2) { const x = 960 + P[j], y = 540 + P[j + 1], x2 = 960 + P[(j + 2) % P.length], y2 = 540 + P[(j + 3) % P.length]; j ? c.quadraticCurveTo(x, y, (x + x2) / 2, (y + y2) / 2) : c.moveTo((x + x2) / 2, (y + y2) / 2); }
       c.closePath(); c.fillStyle = rgba(b[0], b[1], b[2], 1); c.fill(); c.strokeStyle = rgba(b[0], b[1], b[2], 1); c.lineWidth = 4; c.stroke();
       if (b[0] + b[1] + b[2] > 200) { c.save(); c.clip(); c.fillStyle = hp(c, T.hatch, F); c.globalAlpha *= .3; c.fillRect(0, 0, 1920, 1080); c.restore(); }
