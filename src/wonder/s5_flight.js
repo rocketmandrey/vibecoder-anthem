@@ -302,7 +302,7 @@ const LSK = mono([[27.5, 1], [27.917, 1], [28.08, .96], [28.2, 1.2], [28.35, 1.5
       return;
     }
     // Moon + Earth
-    const dy = mono([[27.25, 0], [27.5, 30], [27.62, 95], [27.7, 150], [27.85, 400]])(t);
+    const dy = mono([[27.208, 0], [27.5, 30], [27.62, 95], [27.7, 150], [27.85, 400]])(t);
     if (t < 27.3) { const ey = EY(t), R = E0; earth(c, 964, ey, R, 1); moon(c, 0); return; }
     // push into Earth about the island
     const R = Math.exp(ER(t)), k = R / E0, cx = PIV[0] + (EC0[0] - PIV[0]) * k, cy = PIV[1] + (EC0[1] - PIV[1]) * k;

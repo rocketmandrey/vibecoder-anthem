@@ -57,8 +57,8 @@
     petals.push({ L, th: (k + L * .5) / 21 * 6.2832 + (hc(id, 9) - .5) * .16, len: (L ? 166 : 195) * (.88 + .24 * hc(id, 10)), w: (L ? 56 : 62) * (.9 + .2 * hc(id, 11)), d: 14.08 + .22 * hc(id, 12), bend: (hc(id, 13) - .5) * .5 });
   }
   const dropY = mono([[15.417, 0], [15.458, 5], [15.5, 22], [15.542, 47], [15.583, 80], [15.625, 127], [15.667, 181], [15.75, 261], [15.79, 301], [15.875, 413], [15.958, 527], [16.05, 800], [16.2, 1100]]);
-  const twos = t => t > 14.58 && t < 15.15 ? Math.floor(t * 12 + 1e-6) / 12 : t;
-  const headState = t => { // sway on twos 14.6–15.1
+  const twos = t => t > 14.79 && t < 15.17 ? Math.floor(t * 12 + 1e-6) / 12 : t;
+  const headState = t => { // sway on twos 14.79–15.17 (ref holds odd frames there; on ones before)
     const tw = twos(t);
     return { x: CX + 3 * Math.sin(tw * 4.3), y: 528 + dropY(t) + 2 * Math.sin(tw * 3.1), rot: .035 * Math.sin(tw * 3.7) + .12 * (tw - 14.6) };
   };
