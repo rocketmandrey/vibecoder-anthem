@@ -145,7 +145,7 @@
   // FIT-END
   const smooth = A => A.map((r, i) => r[0] < 313 || !A[i + 1] ? r : r.map((v, j) => j ? (A[i - 1][j] + 2 * v + A[i + 1][j]) / 4 : v));
   const FITS = FITK.map(r => r.slice());
-  const QRATE = -0.12;
+  const QRATE = -0.4;
   { // sparse monotone-ish keys replace the jittery per-frame fit for 308..321 (smooth camera)
     const SK = { 1: [[308, 1368], [310, 1351], [312, 1200], [314, 1111], [317, 1170], [321, 1210]], 3: [[308, 1404], [310, 1216], [311, 923], [312, 520], [313, 330], [314, 270], [315, 250], [316, 245], [319, 288], [321, 311]],
       4: [[308, 399], [310, 397], [312, 352], [313, 326], [315, 322], [317, 340], [319, 345], [321, 351]], 5: [[308, 966], [310, 972], [312, 947], [314, 926], [316, 900], [318, 883], [321, 878]],
@@ -156,8 +156,9 @@
   const FIT = [FV, PSI, DC, PIT, CX, CY, OX, f => ROT(f) + SCAM(f) * TAU / PIT(f)].map((m, i) => { const ks = []; for (let f = 285; f <= 299; f++) ks.push([f, m(f)]); for (const r of FITS) ks.push([r[0], r[i + 1]]); return mono(ks); });
   const QA = mono([[313, 0], [323, 0]]);   // extra end-on rotation (rad)
   const XTIP = mono([[303, -50], [304, 160], [305, 300], [307, 600], [308, 690], [309, 760], [310, 820], [311, 900]]);   // ref helix is finite: its far end sweeps right
-  const FM = mono([[322.5, 1], [330, 1]]);   // dots stage is ~1.5x the fitted radius in the ref
+  const FM = mono([[313, 1], [323, 1.06], [325, 1.2], [328, 1.42], [330, 1.55]]);   // dots stage is ~1.5x the fitted radius in the ref
   const PM = mono([[322, 1], [324, .84], [326, .78], [330, .76]]);   // tighter turns in the dots stage
+  let QRV = 0.2; const QR = f => QRV * Math.max(0, Math.min(f, 328) - 313);   // rungs spin faster than the strands (ref: ~0.2 rad/frame)
   const hs = (i, k) => K.hash(i * 3.17 + k * 7.1);
   function helix(c, f, xa, xb, o = {}) {
     let F = FIT[0](f) * FM(f), psi = FIT[1](f), dc = FIT[2](f), p = FIT[3](f), cx = FIT[4](f), cy = FIT[5](f), ox = FIT[6](f), rot = FIT[7](f) + QA(f), sc = 0;
@@ -176,7 +177,7 @@
         if (a) { ch.push(a); if (ch.length > CH) { items.push({ t: 0, k, pts: ch, d: ch.reduce((u, q) => u + q.d, 0) / ch.length }); ch = [a]; } } else { if (ch.length > 1) items.push({ t: 0, k, pts: ch, d: ch.reduce((u, q) => u + q.d, 0) / ch.length }); ch = []; } }
       if (ch.length > 1) items.push({ t: 0, k, pts: ch, d: ch.reduce((u, q) => u + q.d, 0) / ch.length });
     }
-    if (rungA > 0) for (let j = Math.floor(phiMin / .5); j * .5 < phiMax; j++) { const phi = j * .5, a = proj(phi, Rh * (.86 + .16 * rungMix), rot), bb = proj(phi, Rh * (.86 * (1 - rungMix) + .52 * rungMix), rot + OFF * (1 - rungMix));
+    if (rungA > 0) for (let j = Math.floor(phiMin / .5); j * .5 < phiMax; j++) { const phi = j * .5, a = proj(phi, Rh * (.86 + .16 * rungMix), rot + QR(f)), bb = proj(phi, Rh * (.86 * (1 - rungMix) + .52 * rungMix), rot + QR(f) + OFF * (1 - rungMix));
       if (a && bb && (xf === undefined || a.x < xf) && Math.min(a.d, bb.d) > DMIN(f) * 1.15 && Math.hypot(a.x - bb.x, a.y - bb.y) < 260 + 300 * rungMix) items.push({ t: 1, j, a, b: bb, d: (a.d + bb.d) / 2 }); }
     items.sort((u, v) => v.d - u.d);
     c.save(); c.beginPath(); c.rect(xa, 0, xb - xa, H); c.clip(); c.lineCap = 'round';
