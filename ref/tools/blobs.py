@@ -20,7 +20,7 @@ def box(m,r=3):
         for dx in range(2*r+1): out+=p[dy:dy+H,dx:dx+W]
     return out
 cnt=np.stack([box(oh[k]) for k in range(K_)]); L=cnt.argmax(0)
-np.save('out/qa_B/L.npy',L); np.save('out/qa_B/C.npy',C)
+np.save('out/qa_B/L%d.npy'%n,L); np.save('out/qa_B/C%d.npy'%n,C); sys.exit(0)   # blobs2.py does the rest
 # components
 seen=np.zeros((H,W),bool); comps=[]
 for y in range(H):

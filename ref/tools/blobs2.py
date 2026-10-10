@@ -1,7 +1,7 @@
 # step 2 of blobs.py: boundary-trace the label map (out/qa_B/L.npy,C.npy) -> compact polygon JS array on stdout
 import numpy as np, json, sys
-SX,SY,U=(float(v) for v in sys.argv[1:4]) if len(sys.argv)>3 else (962,543,1.0)   # star centre + soup scale of this frame -> soup units
-L=np.load('out/qa_B/L.npy'); C=np.load('out/qa_B/C.npy'); H,W=L.shape
+SX,SY,U=(float(v) for v in sys.argv[1:4]) if len(sys.argv)>3 else (962,543,1.0); N=int(sys.argv[4]) if len(sys.argv)>4 else 183   # star centre + soup scale of this frame -> soup units
+L=np.load('out/qa_B/L%d.npy'%N); C=np.load('out/qa_B/C%d.npy'%N); H,W=L.shape
 seen=np.zeros((H,W),bool); comps=[]
 for y in range(H):
     for x in range(W):

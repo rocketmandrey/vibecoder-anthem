@@ -23,10 +23,11 @@ const out = {};
 const order = [...frames, ...frames.slice().reverse().slice(1)], bestScore = {};
 for (const f of order) {
   const base = await page.evaluate(async f => { window.__OV = { [f]: null }; T = TMAP((f - 1) / 24 + 1e-4); await redraw(); composite(T); return window.helixParams ? window.helixParams() : null; }, f);
-  let cur = (order.indexOf(f) < frames.length ? out[f - 1] : out[f + 1]) || out[f] || seed0[f] || base; const names = ['psi', 'dc', 'sc', 'p', 'cx', 'cy', 'rot', 'F', 'ox']; const sig = { psi: .05, dc: .08, sc: 60, p: .05, cx: 25, cy: 15, rot: .25, F: .08, ox: 30 }; // dc, p relative; psi, rot rad
+  let cur = base; const names = ['psi', 'dc', 'sc', 'p', 'cx', 'cy', 'rot', 'F', 'ox']; const sig = { psi: .05, dc: .08, sc: 60, p: .05, cx: 25, cy: 15, rot: .25, F: .08, ox: 30 }; // dc, p relative; psi, rot rad
   const evalP = async P => page.evaluate(async (f, P, n) => { window.__OV = { [f]: P }; const im = await loadRef(n); return scoreAt(f, window.__refCache[n]); }, f, P, f);
   await page.evaluate(async f => { window.__refCache = window.__refCache || {}; const im = await loadRef(f); window.__refCache[f] = maskOf(im); }, f);
   let best = await evalP(cur); let sc = 1;
+  for (const cand0 of [order.indexOf(f) < frames.length ? out[f - 1] : out[f + 1], out[f], seed0[f]]) if (cand0) { const s0 = await evalP({ ox: 0, ...cand0 }); if (s0 > best) { best = s0; cur = { ox: 0, ...cand0 }; } }
   for (let it = 0; it < iters; it++) {
     const cand = { ...cur }; for (const k of names) if (Math.random() < .5) { const r = (Math.random() + Math.random() + Math.random() - 1.5) * 1.15 * sc; if (k === 'dc' || k === 'p' || k === 'F') cand[k] = cur[k] * (1 + sig[k] * r); else cand[k] = cur[k] + sig[k] * r; }
     const s = await evalP(cand);
