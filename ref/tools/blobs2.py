@@ -1,5 +1,6 @@
 # step 2 of blobs.py: boundary-trace the label map (out/qa_B/L.npy,C.npy) -> compact polygon JS array on stdout
 import numpy as np, json, sys
+SX,SY,U=(float(v) for v in sys.argv[1:4]) if len(sys.argv)>3 else (962,543,1.0)   # star centre + soup scale of this frame -> soup units
 L=np.load('out/qa_B/L.npy'); C=np.load('out/qa_B/C.npy'); H,W=L.shape
 seen=np.zeros((H,W),bool); comps=[]
 for y in range(H):
@@ -41,7 +42,7 @@ for k,pts in comps:
     P=trace(m)
     if len(P)<8 or len(pts)/len(P)<2.6: continue          # thin streaks = ring lines
     S=rdp(P+[P[0]],1.0)[:-1]
-    out.append((len(pts),[int(v) for v in col],[[int(x*4+2-960),int(y*4+2-540)] for y,x in S]))
+    out.append((len(pts),[int(v) for v in col],[[int(round((x*4+2-SX)/U)),int(round((y*4+2-SY)/U))] for y,x in S]))
 out.sort(key=lambda o:-o[0])
 print('[' + ','.join('[%d,%d,%d,[%s]]'%(c[0],c[1],c[2],','.join('%d,%d'%(x,y) for x,y in P)) for _,c,P in out)+']')
 sys.stderr.write('%d blobs, %d pts\n'%(len(out),sum(len(o[2]) for o in out)))

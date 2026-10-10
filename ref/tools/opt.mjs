@@ -20,9 +20,10 @@ await page.evaluate(() => {
   window.scoreAt = async (f, ref) => { T = TMAP((f - 1) / 24 + 1e-4); await redraw(); composite(T); const o = maskOf(finalC()); return .7 * ncc(o.m, ref.m) + .3 * ncc(o.s, ref.s); };
 });
 const out = {};
-for (const f of frames) {
+const order = [...frames, ...frames.slice().reverse().slice(1)], bestScore = {};
+for (const f of order) {
   const base = await page.evaluate(async f => { window.__OV = { [f]: null }; T = TMAP((f - 1) / 24 + 1e-4); await redraw(); composite(T); return window.helixParams ? window.helixParams() : null; }, f);
-  let cur = out[f - 1] || seed0[f] || base; const names = ['psi', 'dc', 'sc', 'p', 'cx', 'cy', 'rot', ...(f < 306 ? ['F'] : [])]; const sig = { psi: .05, dc: .08, sc: 60, p: .05, cx: 25, cy: 15, rot: .25, F: .08 }; // dc, p relative; psi, rot rad
+  let cur = (order.indexOf(f) < frames.length ? out[f - 1] : out[f + 1]) || out[f] || seed0[f] || base; const names = ['psi', 'dc', 'sc', 'p', 'cx', 'cy', 'rot', 'F', 'ox']; const sig = { psi: .05, dc: .08, sc: 60, p: .05, cx: 25, cy: 15, rot: .25, F: .08, ox: 30 }; // dc, p relative; psi, rot rad
   const evalP = async P => page.evaluate(async (f, P, n) => { window.__OV = { [f]: P }; const im = await loadRef(n); return scoreAt(f, window.__refCache[n]); }, f, P, f);
   await page.evaluate(async f => { window.__refCache = window.__refCache || {}; const im = await loadRef(f); window.__refCache[f] = maskOf(im); }, f);
   let best = await evalP(cur); let sc = 1;
@@ -31,7 +32,8 @@ for (const f of frames) {
     const s = await evalP(cand);
     if (s > best) { best = s; cur = cand; } if (it % 200 === 199) sc *= .75;
   }
-  out[f] = cur; console.log(f, best.toFixed(3), JSON.stringify(cur, (k, v) => typeof v === 'number' ? +v.toFixed(3) : v));
+  if (!(bestScore[f] > best)) { out[f] = cur; bestScore[f] = best; } console.log(f, best.toFixed(3), JSON.stringify(cur, (k, v) => typeof v === 'number' ? +v.toFixed(3) : v));
 }
+import { writeFileSync } from 'node:fs'; writeFileSync('out/qa_C/fit.json', JSON.stringify(out));
 console.log(JSON.stringify(out));
 await browser.close();

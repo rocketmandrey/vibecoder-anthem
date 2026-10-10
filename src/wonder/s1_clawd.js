@@ -115,7 +115,7 @@
     if (a <= .01) return;
     c.save(); c.setTransform(1, 0, 0, 1, 0, 0); const ins = .3 * s; c.beginPath(); c.roundRect(sx - ww / 2 + ins, sy - wh / 2 + ins, ww - 2 * ins, wh - 2 * ins, 5.2 * s); c.clip();
     c.fillStyle = '#181430'; c.fillRect(sx - ww / 2 - 2, sy - wh / 2 - 2, ww + 4, wh + 4);
-    if (K.soup) { try { K.soup(c, t, sx, sy, wh * .25 * (1 - .32 * K.sstep(26, 55, s)), a); } catch (e) { } }
+    if (K.soup) { try { { const R = K.soupR ? K.soupR(t) : wh * .25 * (1 - .32 * K.sstep(26, 55, s)), sc = K.soupC && s > 20 ? K.soupC(t) : [sx, sy], m = K.sstep(20, 60, s); K.soup(c, t, sx + (sc[0] - sx) * m, sy + (sc[1] - sy) * m, R, a); }; } catch (e) { } }
     c.restore();
   };
 
