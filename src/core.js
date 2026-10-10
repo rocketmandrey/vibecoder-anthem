@@ -240,7 +240,7 @@ function composite(t) {
   c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
   c.drawImage(drawingContext.canvas, 0, 0, W, H);
   drawLetters(c);
-  c.globalCompositeOperation = 'multiply'; c.drawImage(grainC, 0, 0);
+  if (SONG.grain !== false) { c.globalCompositeOperation = 'multiply'; c.drawImage(grainC, 0, 0); }   // SONG.grain=false: the scenes paint their own paper (wonder)
   c.globalCompositeOperation = 'source-over';
   drawKaraokeText(c);
   if (window.VERT) vertComposite(outC, t);                                 // 9:16 reframe (src/vertical.js)
